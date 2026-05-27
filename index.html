@@ -5,147 +5,242 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="MiPrecio ayuda a negocios independientes a definir precios rentables con claridad sobre costos, margen y competencia."
+      content="MiPrecio ayuda a negocios a cargar productos, controlar stock y compartir listas de precios actualizadas con un link o código QR."
     />
-    <meta property="og:title" content="MiPrecio - Precios rentables sin hojas de cálculo eternas" />
+    <meta property="og:title" content="MiPrecio - Tu catálogo online, tus precios al día" />
     <meta
       property="og:description"
-      content="Una forma clara de entender costos, comparar escenarios y sostener márgenes antes de publicar un precio."
+      content="Cargá tus productos, controlá stock y compartí tu lista de precios siempre actualizada."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://miprecio.app" />
     <link rel="stylesheet" href="/assets/styles.css" />
-    <title>MiPrecio | Precios rentables para tu negocio</title>
+    <title>MiPrecio | Tu catálogo online, tus precios al día</title>
   </head>
   <body>
     <header class="site-header" data-header>
       <a class="brand" href="#inicio" aria-label="MiPrecio inicio">
-        <span class="brand-mark">M</span>
-        <span>MiPrecio</span>
+        <img src="/images/miprecio-logo-pencil.png" alt="MiPrecio" />
       </a>
       <nav class="nav-links" aria-label="Navegación principal">
         <a href="#producto">Producto</a>
-        <a href="#valor">Valor</a>
-        <a href="#contacto">Contacto</a>
+        <a href="#funciones">Funciones</a>
+        <a href="#precios">Precios</a>
+        <a href="#faq">Recursos</a>
       </nav>
-      <a class="header-cta" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Solicitar acceso</a>
+      <div class="header-actions">
+        <a class="login-link" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Iniciar sesión</a>
+        <a class="header-cta" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Probar gratis</a>
+      </div>
     </header>
 
     <main>
       <section id="inicio" class="hero">
-        <div class="hero-media" aria-hidden="true">
-          <img src="/images/miprecio-hero.png" alt="" />
-        </div>
-        <div class="hero-overlay"></div>
+        <div class="hero-glow one"></div>
+        <div class="hero-glow two"></div>
         <div class="hero-content">
-          <p class="eyebrow">Precios con margen, contexto y confianza</p>
-          <h1>Define precios rentables antes de vender.</h1>
-          <p class="hero-copy">
-            MiPrecio convierte costos, comisiones, impuestos y escenarios de venta en una decisión clara:
-            cuánto cobrar, cuánto ganas y qué margen estás protegiendo.
-          </p>
-          <div class="hero-actions">
-            <a class="button primary" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Solicitar acceso</a>
-            <a class="button secondary" href="#producto">Ver cómo funciona</a>
+          <div class="hero-copy">
+            <p class="pill">Nuevo · Compartí tu lista con un QR</p>
+            <h1>Tu catálogo online. Tus precios al día.</h1>
+            <p class="lead">
+              Cargá tus productos, controlá tu stock y compartí tu lista de precios con un link o un código QR.
+              Sin planillas, sin PDFs desactualizados, sin complicarte.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Crear cuenta gratis</a>
+              <a class="button secondary" href="#producto">Ver demo</a>
+            </div>
+            <p class="trusted">Más de 2.500 negocios ya usan MiPrecio</p>
+          </div>
+
+          <div class="product-card" aria-label="Vista previa de lista de precios">
+            <div class="card-header">
+              <div>
+                <strong>Lista de precios</strong>
+                <span>Distribuidora ACME · Actualizada hoy</span>
+              </div>
+              <em>miprecio.app/p/acme</em>
+            </div>
+            <div class="search">Buscar producto...</div>
+            <div class="table">
+              <div class="table-head">
+                <span>Producto</span>
+                <span>SKU</span>
+                <span>Precio</span>
+                <span>Stock</span>
+              </div>
+              <div class="table-row">
+                <strong>Tornillo hex. 8mm</strong>
+                <span>FER-001</span>
+                <b>$85</b>
+                <small class="ok">Disponible</small>
+              </div>
+              <div class="table-row">
+                <strong>Cable eléctrico 2.5</strong>
+                <span>ELE-220</span>
+                <b>$1.250</b>
+                <small class="ok">Disponible</small>
+              </div>
+              <div class="table-row">
+                <strong>Pintura látex 4L</strong>
+                <span>PIN-104</span>
+                <b>$9.800</b>
+                <small class="warn">Bajo stock</small>
+              </div>
+              <div class="table-row">
+                <strong>Cemento 50kg</strong>
+                <span>CON-050</span>
+                <b>$6.300</b>
+                <small class="bad">Sin stock</small>
+              </div>
+            </div>
+            <div class="mini-panels">
+              <div>
+                <span>Link público</span>
+                <strong>miprecio.app/p/acme</strong>
+              </div>
+              <div>
+                <span>Stock actualizado</span>
+                <strong>Hace 2 min</strong>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="producto" class="section intro-section">
+      <section id="producto" class="section">
         <div class="section-heading">
-          <p class="eyebrow">El problema</p>
-          <h2>Vender más no sirve si cada precio nace con dudas.</h2>
-        </div>
-        <div class="intro-grid">
-          <p>
-            Muchos negocios todavía calculan precios entre hojas sueltas, memoria y mensajes viejos.
-            El costo cambia, las comisiones pesan, el envío se mueve y el margen real aparece demasiado tarde.
-          </p>
-          <p>
-            MiPrecio centraliza esa decisión para que cada producto tenga una lógica visible, comparable
-            y fácil de defender frente al equipo, proveedores y clientes.
-          </p>
-        </div>
-      </section>
-
-      <section class="section feature-band" aria-labelledby="funciona-title">
-        <div class="section-heading compact">
-          <p class="eyebrow">Cómo funciona</p>
-          <h2 id="funciona-title">De costo a precio final en minutos.</h2>
+          <p class="eyebrow">Funciones</p>
+          <h2>Todo lo que tu negocio necesita para vender mejor.</h2>
         </div>
         <div class="feature-grid">
-          <article>
-            <span class="step">01</span>
-            <h3>Carga tus costos reales</h3>
-            <p>Materia prima, empaques, horas, comisiones, impuestos y gastos asociados en un solo lugar.</p>
-          </article>
-          <article>
-            <span class="step">02</span>
-            <h3>Compara escenarios</h3>
-            <p>Evalúa ventas al detal, mayoristas, promociones y canales con reglas de margen distintas.</p>
-          </article>
-          <article>
-            <span class="step">03</span>
-            <h3>Decide con claridad</h3>
-            <p>Publica precios sabiendo qué margen queda, qué variables pesan más y cuándo conviene ajustar.</p>
-          </article>
+          <article><i>✓</i><h3>Catálogo de productos</h3><p>Cargá productos, variantes, fotos y precios. Organizalos por categorías en minutos.</p></article>
+          <article><i>✓</i><h3>Control de stock</h3><p>Actualizá unidades en tiempo real y recibí alertas cuando un producto está por agotarse.</p></article>
+          <article><i>✓</i><h3>Lista compartible</h3><p>Generá un link público o un QR para que tus clientes vean siempre la última versión.</p></article>
+          <article><i>✓</i><h3>Códigos QR personalizados</h3><p>Imprimí el QR para tu mostrador, catálogo impreso o redes sociales.</p></article>
+          <article><i>✓</i><h3>Multimoneda y listas por cliente</h3><p>Mostrá precios en pesos, dólares o por canal de venta.</p></article>
+          <article><i>✓</i><h3>Actualizaciones masivas</h3><p>Ajustá precios por porcentaje en toda una categoría sin rehacer planillas.</p></article>
         </div>
       </section>
 
-      <section id="valor" class="section value-section">
-        <div class="value-copy">
-          <p class="eyebrow">Para negocios en movimiento</p>
-          <h2>Una herramienta práctica para equipos que no pueden frenar a recalcular todo.</h2>
-          <p>
-            MiPrecio está pensado para comercios, marcas independientes y operaciones pequeñas que necesitan
-            ordenar su criterio de precios sin implementar un ERP completo.
-          </p>
+      <section id="funciones" class="section steps-section">
+        <div class="section-heading">
+          <p class="eyebrow">Cómo funciona</p>
+          <h2>Empezá en 3 pasos.</h2>
         </div>
-        <div class="metrics" aria-label="Beneficios principales">
-          <div>
-            <strong>Margen visible</strong>
-            <span>desde el primer cálculo</span>
-          </div>
-          <div>
-            <strong>Escenarios claros</strong>
-            <span>por canal y promoción</span>
-          </div>
-          <div>
-            <strong>Menos retrabajo</strong>
-            <span>al cambiar costos o reglas</span>
-          </div>
+        <div class="steps">
+          <article><strong>1</strong><h3>Cargá tus productos</h3><p>Importá tu lista o creala desde cero en pocos clics.</p></article>
+          <article><strong>2</strong><h3>Generá tu link o QR</h3><p>Activá el link público y descargá el QR para compartirlo.</p></article>
+          <article><strong>3</strong><h3>Compartí con tus clientes</h3><p>Tus precios y stock siempre actualizados, sin reimprimir nada.</p></article>
         </div>
       </section>
 
-      <section class="section proof-section">
-        <div class="proof-card">
-          <p class="quote">
-            “La meta de MiPrecio es que cada negocio pueda responder cuánto gana por venta sin abrir cinco archivos.”
-          </p>
-          <p class="quote-source">Equipo MiPrecio</p>
+      <section class="section client-section">
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="phone-hero">
+              <span>Actualizado</span>
+              <h3>Ferretería y pintura</h3>
+              <div class="phone-stats"><b>142<small>prods</small></b><b>24h<small>envíos</small></b></div>
+            </div>
+            <div class="phone-body">
+              <div class="search">Buscar...</div>
+              <div class="chips"><span>Todos</span><span>Ferretería</span><span>Pinturas</span></div>
+              <article><strong>Taladro Bosch</strong><small>Bosch · 13mm</small><b>UYU 8.990</b></article>
+              <article><strong>Pintura látex 4L</strong><small>Alba · Blanco</small><b>UYU 1.430</b></article>
+              <article><strong>Cemento 50kg</strong><small>Bolsa</small><b>UYU 985</b></article>
+              <article><strong>Lámpara LED 9W</strong><small>Philips · E27</small><b>UYU 145</b></article>
+            </div>
+          </div>
         </div>
-        <div class="proof-points">
-          <h2>Preparado para crecer con el producto.</h2>
-          <ul>
-            <li>Base pública lista para miprecio.app.</li>
-            <li>Despliegue Docker independiente del stack de Plane.</li>
-            <li>Estructura simple para iterar copy, secciones y medición.</li>
+        <div>
+          <p class="eyebrow">Para tus clientes</p>
+          <h2>Tus clientes ven una lista profesional, siempre actualizada.</h2>
+          <p class="body-copy">
+            Compartí tu catálogo con un link o un QR y olvidate de mandar PDFs desactualizados por WhatsApp.
+            Tus precios y tu stock siempre al día, vean de donde te vean.
+          </p>
+          <ul class="check-list">
+            <li>Sin necesidad de descargar apps.</li>
+            <li>Compatible con móvil y escritorio.</li>
+            <li>Personalizá colores y logo de tu marca.</li>
           </ul>
         </div>
       </section>
 
-      <section id="contacto" class="cta-section">
-        <p class="eyebrow">Acceso inicial</p>
-        <h2>Construye precios con más método y menos intuición.</h2>
-        <p>Estamos preparando los primeros espacios para negocios que quieren ordenar su estrategia de precios.</p>
-        <a class="button primary dark" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Escribir a MiPrecio</a>
+      <section class="stats-section">
+        <div class="section-heading inverted">
+          <p class="eyebrow">Resultados</p>
+          <h2>Negocios que ya tienen su lista de precios online.</h2>
+        </div>
+        <div class="stats-grid">
+          <article><strong>2.500+</strong><span>Negocios activos</span></article>
+          <article><strong>180k</strong><span>Productos cargados</span></article>
+          <article><strong>1.2M</strong><span>QR escaneados</span></article>
+          <article><strong>98%</strong><span>Recomendarían MiPrecio</span></article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <p class="eyebrow">Testimonios</p>
+          <h2>Lo que dicen quienes ya usan MiPrecio.</h2>
+        </div>
+        <div class="testimonial-grid">
+          <article><p>"Antes mandaba la lista por PDF cada vez que cambiaban los precios. Ahora mis clientes escanean el QR y siempre ven la versión correcta."</p><footer><b>LF</b><span>Lucía Fernández<small>Dueña, Almacén Norte</small></span></footer></article>
+          <article><p>"El control de stock cambió la forma en que reponemos mercadería. Las alertas nos avisan antes de quedar sin producto."</p><footer><b>MS</b><span>Martín Sosa<small>Gerente, Distrimax</small></span></footer></article>
+          <article><p>"Tener una lista por cliente es oro para ventas mayoristas. Cada uno ve sus precios, sin confusiones ni descuentos a mano."</p><footer><b>CP</b><span>Carla Pérez<small>Comercial, AceroPlus</small></span></footer></article>
+        </div>
+      </section>
+
+      <section id="precios" class="section pricing-section">
+        <div class="section-heading">
+          <p class="eyebrow">Precios</p>
+          <h2>Planes simples, pensados para pymes.</h2>
+          <span>Probá MiPrecio gratis 14 días. Sin tarjeta de crédito.</span>
+        </div>
+        <div class="pricing-grid">
+          <article><h3>Inicial</h3><p>Para empezar a tener tu lista online.</p><strong>Gratis</strong><small>Por siempre</small><ul><li>Hasta 10 productos</li><li>1 lista pública</li><li>QR personalizado</li><li>Soporte por email</li></ul><a href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Empezar gratis</a></article>
+          <article class="featured"><em>Más popular</em><h3>Pyme</h3><p>Para negocios que ya están creciendo.</p><strong>$19</strong><small>USD por mes</small><ul><li>Productos ilimitados</li><li>Listas por cliente</li><li>Control de stock + alertas</li><li>Multiusuario (5)</li><li>Soporte prioritario</li></ul><a href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Probar 14 días</a></article>
+          <article><h3>Negocio</h3><p>Para equipos comerciales y mayoristas.</p><strong>$49</strong><small>USD por mes</small><ul><li>Todo lo de Pyme</li><li>Multimoneda</li><li>Importación masiva</li><li>Usuarios ilimitados</li><li>Integración con WhatsApp</li></ul><a href="mailto:hola@miprecio.app?subject=Ventas%20MiPrecio">Hablar con ventas</a></article>
+        </div>
+      </section>
+
+      <section id="faq" class="section faq-section">
+        <div class="section-heading">
+          <p class="eyebrow">Preguntas frecuentes</p>
+          <h2>Todo lo que necesitás saber.</h2>
+        </div>
+        <div class="faq-list">
+          <details open><summary>¿Necesito instalar algo en mi computadora?</summary><p>No. MiPrecio funciona 100% en el navegador y en el celular.</p></details>
+          <details><summary>¿Mis clientes necesitan registrarse para ver la lista?</summary><p>No. Abren el link o escanean el QR y ven la lista pública sin crear cuenta.</p></details>
+          <details><summary>¿Puedo tener listas distintas por cliente o canal?</summary><p>Sí. Podés manejar listas por cliente, mayorista, minorista o canal de venta.</p></details>
+          <details><summary>¿Cómo se actualizan los precios y el stock?</summary><p>Actualizás desde tu panel y el cambio se refleja inmediatamente en el link compartido.</p></details>
+        </div>
+      </section>
+
+      <section id="contacto" class="final-cta">
+        <h2>Tu lista de precios, lista en 5 minutos.</h2>
+        <p>Creá tu cuenta gratis hoy y empezá a compartir tu catálogo con un link o un QR.</p>
+        <div>
+          <a class="button primary light" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Crear cuenta gratis</a>
+          <a class="button secondary" href="mailto:hola@miprecio.app?subject=Ventas%20MiPrecio">Hablar con ventas</a>
+        </div>
       </section>
     </main>
 
     <footer class="site-footer">
-      <span>MiPrecio</span>
-      <span>miprecio.app</span>
-      <a href="mailto:hola@miprecio.app">hola@miprecio.app</a>
+      <div>
+        <img src="/images/miprecio-logo-white-pencil.png" alt="MiPrecio" />
+        <p>La plataforma simple para que tu negocio cargue productos, controle stock y comparta su lista de precios con un link o un QR.</p>
+      </div>
+      <nav>
+        <a href="#producto">Funciones</a>
+        <a href="#precios">Precios</a>
+        <a href="#faq">Recursos</a>
+        <a href="mailto:hola@miprecio.app">Contacto</a>
+      </nav>
+      <span>© 2026 MiPrecio. Todos los derechos reservados.</span>
     </footer>
 
     <script src="/assets/main.js"></script>

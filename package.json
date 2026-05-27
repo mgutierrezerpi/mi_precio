@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "check": "test -f index.html && test -f assets/styles.css && test -f assets/main.js && test -f images/miprecio-hero.png"
+    "check": "test -f index.html && test -f assets/styles.css && test -f assets/main.js && test -f images/miprecio-logo-pencil.png && test -f images/miprecio-logo-white-pencil.png"
   }
 }
