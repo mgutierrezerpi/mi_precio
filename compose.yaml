@@ -38,7 +38,7 @@ services:
     environment:
       VITE_API_URL: "http://localhost:${API_PORT:-8000}/api/v1"
     ports:
-      - "${WEB_APP_PORT:-5173}:5173"
+      - "${WEB_APP_PORT:-3000}:3000"
     depends_on:
       - api
 

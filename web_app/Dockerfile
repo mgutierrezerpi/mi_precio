@@ -7,6 +7,6 @@ RUN corepack enable && yarn install --frozen-lockfile
 
 COPY . .
 
-EXPOSE 5173
+EXPOSE 3000
 
-CMD ["yarn", "dev", "--host", "0.0.0.0"]
+CMD ["yarn", "dev", "--host", "0.0.0.0", "--port", "3000"]
