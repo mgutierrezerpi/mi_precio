@@ -1,0 +1,123 @@
+<div class="mb-8">
+  <h2 class="text-3xl font-bold text-gray-900">Dashboard</h2>
+  <p class="mt-2 text-gray-600">Manage your restaurant's price lists and menu items</p>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
+  <!-- Total Lists -->
+  <div class="bg-white overflow-hidden shadow rounded-lg">
+    <div class="p-5">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+        </div>
+        <div class="ml-5 w-0 flex-1">
+          <dl>
+            <dt class="text-sm font-medium text-gray-500 truncate">Total Lists</dt>
+            <dd class="text-3xl font-semibold text-gray-900"><%= @total_lists %></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Published Lists -->
+  <div class="bg-white overflow-hidden shadow rounded-lg">
+    <div class="p-5">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <svg class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="ml-5 w-0 flex-1">
+          <dl>
+            <dt class="text-sm font-medium text-gray-500 truncate">Published</dt>
+            <dd class="text-3xl font-semibold text-gray-900"><%= @published_lists %></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Items -->
+  <div class="bg-white overflow-hidden shadow rounded-lg">
+    <div class="p-5">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <svg class="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+          </svg>
+        </div>
+        <div class="ml-5 w-0 flex-1">
+          <dl>
+            <dt class="text-sm font-medium text-gray-500 truncate">Total Items</dt>
+            <dd class="text-3xl font-semibold text-gray-900"><%= @total_items %></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="bg-white shadow rounded-lg p-6 mb-8">
+  <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+  <div class="space-y-3">
+    <%= link_to admin_lists_path, class: "block p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors" do %>
+      <div class="flex items-center">
+        <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <span class="ml-3 text-sm font-medium text-gray-900">Manage Price Lists</span>
+      </div>
+    <% end %>
+
+    <%= link_to tenant_root_path, class: "block p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors" do %>
+      <div class="flex items-center">
+        <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+        </svg>
+        <span class="ml-3 text-sm font-medium text-gray-900">View Public Page</span>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Recent Lists -->
+<div class="bg-white shadow rounded-lg overflow-hidden">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h3 class="text-lg font-medium text-gray-900">Your Price Lists</h3>
+  </div>
+  <ul class="divide-y divide-gray-200">
+    <% if @lists.any? %>
+      <% @lists.each do |list| %>
+        <li class="px-6 py-4 hover:bg-gray-50">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-medium text-gray-900"><%= list.name %></h4>
+              <p class="text-sm text-gray-500">
+                <%= list.list_versions.count %> version(s)
+                <% if list.published %>
+                  <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Published</span>
+                <% end %>
+                <% if list.show_on_index %>
+                  <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">On Index</span>
+                <% end %>
+              </p>
+            </div>
+            <%= link_to "View", admin_list_path(list), class: "inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+          </div>
+        </li>
+      <% end %>
+    <% else %>
+      <li class="px-6 py-4 text-center text-gray-500">
+        No price lists yet. Create your first one!
+      </li>
+    <% end %>
+  </ul>
+</div>

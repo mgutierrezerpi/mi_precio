@@ -1,0 +1,437 @@
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+  <!-- Header -->
+  <div class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <h1 class="text-4xl font-bold text-gray-900 mb-2">
+        <%= @current_tenant.name %>
+      </h1>
+      <% if @list_version %>
+        <p class="text-gray-600 flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <%= @list.name %> - <%= @list_version.name %>
+        </p>
+      <% else %>
+        <p class="text-gray-600 flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          Browse our menu and price list below
+        </p>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto pt-8 px-4 sm:px-6 lg:px-8 py-10">
+
+    <% if @items.any? %>
+      <!-- Display Real Items from Database -->
+      <div class="mb-10">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-1 h-8 bg-blue-500 rounded"></div>
+          <h2 class="text-3xl font-bold text-gray-900"><%= @list.name %></h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <% @items.each do |item| %>
+            <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+              <% if item.picture.attached? %>
+                <div class="aspect-w-16 aspect-h-9 bg-gray-200">
+                  <%= image_tag item.picture, class: "w-full h-48 object-cover" %>
+                </div>
+              <% end %>
+
+              <div class="p-6">
+                <div class="flex justify-between items-start mb-3">
+                  <h3 class="text-xl font-semibold text-gray-900"><%= item.name %></h3>
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-blue-700 bg-blue-100 ml-2 whitespace-nowrap">
+                    $<%= number_with_precision(item.price, precision: 2) %>
+                  </span>
+                </div>
+
+                <% if item.description.present? %>
+                  <p class="text-gray-600 text-sm">
+                    <%= item.description %>
+                  </p>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+    <% else %>
+      <!-- Empty State / Sample Menu -->
+
+    <!-- Appetizers Section -->
+    <div class="mb-10">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-1 h-8 bg-blue-500 rounded"></div>
+        <h2 class="text-3xl font-bold text-gray-900">Appetizers</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Appetizer Card 1 -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-xl font-semibold text-gray-900">Bruschetta Classica</h3>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-blue-700 bg-blue-100">
+                $12
+              </span>
+            </div>
+            <p class="text-gray-600 mb-4">
+              Toasted bread topped with fresh tomatoes, garlic, basil, and extra virgin olive oil
+            </p>
+            <div class="flex items-center gap-1 text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <span class="ml-2 text-sm text-gray-600">(4.9)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appetizer Card 2 -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-xl font-semibold text-gray-900">Calamari Fritti</h3>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-blue-700 bg-blue-100">
+                $15
+              </span>
+            </div>
+            <p class="text-gray-600 mb-4">
+              Lightly fried calamari rings served with marinara sauce and lemon wedges
+            </p>
+            <div class="flex items-center gap-1 text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 text-gray-300 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <span class="ml-2 text-sm text-gray-600">(4.2)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appetizer Card 3 -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-xl font-semibold text-gray-900">Caprese Salad</h3>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-blue-700 bg-blue-100">
+                $14
+              </span>
+            </div>
+            <p class="text-gray-600 mb-4">
+              Fresh mozzarella, ripe tomatoes, and basil drizzled with balsamic glaze
+            </p>
+            <div class="flex items-center gap-1 text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <span class="ml-2 text-sm text-gray-600">(4.8)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appetizer Card 4 -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-xl font-semibold text-gray-900">Spinach Artichoke Dip</h3>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-blue-700 bg-blue-100">
+                $13
+              </span>
+            </div>
+            <p class="text-gray-600 mb-4">
+              Creamy blend of spinach, artichokes, and cheese served with crispy tortilla chips
+            </p>
+            <div class="flex items-center gap-1 text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 text-gray-300 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <span class="ml-2 text-sm text-gray-600">(4.5)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Courses Section -->
+    <div class="mb-10">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-1 h-8 bg-green-500 rounded"></div>
+        <h2 class="text-3xl font-bold text-gray-900">Main Courses</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Main Course Card 1 -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <h3 class="text-xl font-semibold text-gray-900">Grilled Ribeye Steak</h3>
+                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-red-700 bg-red-100 mt-1">
+                  Chef's Special
+                </span>
+              </div>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-green-700 bg-green-100">
+                $32
+              </span>
+            </div>
+            <p class="text-gray-600 mb-4">
+              12oz premium ribeye with roasted vegetables, garlic mashed potatoes, and red wine reduction
+            </p>
+            <div class="flex items-center gap-1 text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <span class="ml-2 text-sm text-gray-600">(5.0)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Course Card 2 -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-xl font-semibold text-gray-900">Seafood Linguine</h3>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-green-700 bg-green-100">
+                $28
+              </span>
+            </div>
+            <p class="text-gray-600 mb-4">
+              Fresh linguine with shrimp, mussels, and calamari in a white wine garlic sauce
+            </p>
+            <div class="flex items-center gap-1 text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 text-gray-300 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <span class="ml-2 text-sm text-gray-600">(4.7)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Course Card 3 -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-xl font-semibold text-gray-900">Chicken Parmesan</h3>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-green-700 bg-green-100">
+                $22
+              </span>
+            </div>
+            <p class="text-gray-600 mb-4">
+              Breaded chicken breast topped with marinara and melted mozzarella, served with spaghetti
+            </p>
+            <div class="flex items-center gap-1 text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <span class="ml-2 text-sm text-gray-600">(4.6)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Course Card 4 -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <h3 class="text-xl font-semibold text-gray-900">Vegetarian Risotto</h3>
+                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-green-700 bg-green-100 mt-1">
+                  Vegetarian
+                </span>
+              </div>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-green-700 bg-green-100">
+                $20
+              </span>
+            </div>
+            <p class="text-gray-600 mb-4">
+              Creamy arborio rice with seasonal vegetables, parmesan cheese, and truffle oil
+            </p>
+            <div class="flex items-center gap-1 text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 text-gray-300 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <span class="ml-2 text-sm text-gray-600">(4.4)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desserts Section -->
+    <div class="mb-10">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-1 h-8 bg-pink-500 rounded"></div>
+        <h2 class="text-3xl font-bold text-gray-900">Desserts</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Dessert Card 1 -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-xl font-semibold text-gray-900">Tiramisu</h3>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-pink-700 bg-pink-100">
+                $9
+              </span>
+            </div>
+            <p class="text-gray-600 mb-4">
+              Classic Italian dessert with espresso-soaked ladyfingers and mascarpone
+            </p>
+            <div class="flex items-center gap-1 text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <span class="ml-2 text-sm text-gray-600">(5.0)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dessert Card 2 -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-xl font-semibold text-gray-900">Chocolate Lava Cake</h3>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-pink-700 bg-pink-100">
+                $10
+              </span>
+            </div>
+            <p class="text-gray-600 mb-4">
+              Warm chocolate cake with molten center, served with vanilla ice cream
+            </p>
+            <div class="flex items-center gap-1 text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <span class="ml-2 text-sm text-gray-600">(4.9)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dessert Card 3 -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-xl font-semibold text-gray-900">New York Cheesecake</h3>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-lg font-bold text-pink-700 bg-pink-100">
+                $8
+              </span>
+            </div>
+            <p class="text-gray-600 mb-4">
+              Creamy cheesecake with graham cracker crust and berry compote
+            </p>
+            <div class="flex items-center gap-1 text-yellow-400">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <svg class="w-4 h-4 text-gray-300 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+              <span class="ml-2 text-sm text-gray-600">(4.7)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Beverages Section -->
+    <div class="mb-10">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-1 h-8 bg-orange-500 rounded"></div>
+        <h2 class="text-3xl font-bold text-gray-900">Beverages</h2>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <ul class="divide-y divide-gray-200">
+          <li class="p-6 hover:bg-gray-50 transition-colors">
+            <div class="flex justify-between items-center">
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Fresh Squeezed Lemonade</h3>
+                <p class="text-gray-600 text-sm">Homemade lemonade with fresh mint</p>
+              </div>
+              <span class="text-xl font-bold text-orange-700 ml-4">$5</span>
+            </div>
+          </li>
+          <li class="p-6 hover:bg-gray-50 transition-colors">
+            <div class="flex justify-between items-center">
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Italian Espresso</h3>
+                <p class="text-gray-600 text-sm">Rich and bold double shot espresso</p>
+              </div>
+              <span class="text-xl font-bold text-orange-700 ml-4">$4</span>
+            </div>
+          </li>
+          <li class="p-6 hover:bg-gray-50 transition-colors">
+            <div class="flex justify-between items-center">
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">House Red Wine</h3>
+                <p class="text-gray-600 text-sm">Glass of premium Cabernet Sauvignon</p>
+              </div>
+              <span class="text-xl font-bold text-orange-700 ml-4">$12</span>
+            </div>
+          </li>
+          <li class="p-6 hover:bg-gray-50 transition-colors">
+            <div class="flex justify-between items-center">
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Craft Beer Selection</h3>
+                <p class="text-gray-600 text-sm">Ask your server for today's rotating craft beers</p>
+              </div>
+              <span class="text-xl font-bold text-orange-700 ml-4">$8</span>
+            </div>
+          </li>
+          <li class="p-6 hover:bg-gray-50 transition-colors">
+            <div class="flex justify-between items-center">
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Sparkling Water</h3>
+                <p class="text-gray-600 text-sm">San Pellegrino or Perrier</p>
+              </div>
+              <span class="text-xl font-bold text-orange-700 ml-4">$4</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <% end %> <!-- End of if @items.any? -->
+
+    <!-- Footer -->
+    <div class="mt-12 bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+      <div class="flex items-center justify-center gap-2 mb-4">
+        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        </svg>
+        <p class="text-gray-700 font-medium">Powered by MiPrecio - Digital Menus Made Easy</p>
+      </div>
+      <%= link_to root_url(subdomain: false), class: "inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors" do %>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Back to main site
+      <% end %>
+    </div>
+  </div>
+</div>

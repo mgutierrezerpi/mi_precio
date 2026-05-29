@@ -1,0 +1,362 @@
+/* Landing Page Styles */
+/* Extracted from landing/index.html.erb for better Rails organization */
+
+/* Mobile Navigation Styles - Clean Modern Design */
+@media screen and (max-width: 767px) {
+  .navbar_component {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  
+  .navbar_container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    max-width: 100%;
+  }
+  
+  .navbar_logo-link {
+    text-decoration: none;
+  }
+  
+  .navbar_logo {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.5px;
+  }
+  
+  /* Modern Hamburger Button */
+  .navbar_menu-button {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  
+  .navbar_menu-button:hover {
+    opacity: 0.7;
+  }
+  
+  .menu-icon1 {
+    width: 24px;
+    height: 18px;
+    position: relative;
+  }
+  
+  .menu-icon1_line-top,
+  .menu-icon1_line-middle-inner,
+  .menu-icon1_line-bottom {
+    position: absolute;
+    width: 24px;
+    height: 2.5px;
+    background: #1a1a1a;
+    border-radius: 2px;
+    transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+    left: 0;
+  }
+  
+  .menu-icon1_line-top {
+    top: 0;
+  }
+  
+  .menu-icon1_line-middle {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .menu-icon1_line-middle-inner {
+    position: relative;
+    width: 24px;
+  }
+  
+  .menu-icon1_line-bottom {
+    bottom: 0;
+  }
+  
+  /* Smooth X Animation */
+  .navbar_menu-button.active .menu-icon1_line-top {
+    transform: translateY(8px) rotate(45deg);
+  }
+  
+  .navbar_menu-button.active .menu-icon1_line-middle-inner {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  
+  .navbar_menu-button.active .menu-icon1_line-bottom {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+  
+  /* Elegant Mobile Menu */
+  .navbar_mobile-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+    transition: all 0.3s ease;
+  }
+  
+  .navbar_mobile-menu.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+  }
+  
+  .navbar_mobile-menu:not(.hidden) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .navbar_mobile-menu-content {
+    padding: 1.5rem;
+  }
+  
+  .navbar_mobile-link {
+    display: block;
+    padding: 1rem 1.25rem;
+    color: #4a4a4a;
+    text-decoration: none;
+    font-size: 1.0625rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  
+  .navbar_mobile-link:hover,
+  .navbar_mobile-link:active {
+    background: rgba(0, 0, 0, 0.04);
+    color: #1a1a1a;
+    transform: translateX(4px);
+  }
+  
+  .navbar_mobile-link:last-of-type {
+    margin-bottom: 1rem;
+  }
+  
+  /* Mobile CTA Button - Matching Desktop Style */
+  .navbar_mobile-buttons {
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+  
+  /* Use same style as desktop button */
+  .navbar_mobile-buttons .btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    /* Let the existing btn and data-button-variant styles apply */
+  }
+  
+  .navbar_mobile-buttons .btn div {
+    /* Inherit color from parent button */
+  }
+}
+
+/* Hide mobile button on desktop */
+@media screen and (min-width: 768px) {
+  .navbar_menu-button {
+    display: none !important;
+  }
+  
+  .navbar_mobile-menu {
+    display: none !important;
+  }
+}
+
+/* Make text look crisper and more legible in all browsers */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Focus state style for keyboard navigation for the focusable elements */
+*[tabindex]:focus-visible,
+input[type="file"]:focus-visible {
+  outline: 0.125rem solid #4d65ff;
+  outline-offset: 0.125rem;
+}
+
+/* Set color style to inherit */
+.inherit-color * {
+  color: inherit;
+}
+
+/* Get rid of top margin on first element in any rich text element */
+.w-richtext > :not(div):first-child, .w-richtext > div:first-child > :first-child {
+  margin-top: 0 !important;
+}
+
+/* Get rid of bottom margin on last element in any rich text element */
+.w-richtext>:last-child, .w-richtext ol li:last-child, .w-richtext ul li:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Make sure containers never lose their center alignment */
+.container-medium,.container-small, .container-large {
+  margin-right: auto !important;
+  margin-left: auto !important;
+}
+
+/*
+Make the following elements inherit typography styles from the parent and not have hardcoded values.
+Important: You will not be able to style for example "All Links" in Designer with this CSS applied.
+Uncomment this CSS to use it in the project. Leave this message for future hand-off.
+*/
+/*
+a,
+.w-input,
+.w-select,
+.w-tab-link,
+.w-nav-link,
+.w-dropdown-btn,
+.w-dropdown-toggle,
+.w-dropdown-link {
+  color: inherit;
+  text-decoration: inherit;
+  font-size: inherit;
+}
+*/
+
+/* Apply "..." after 3 lines of text */
+.text-style-3lines {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* Apply "..." after 2 lines of text */
+.text-style-2lines {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* These classes are never overwritten */
+.hide {
+  display: none !important;
+}
+
+@media screen and (max-width: 991px) {
+  .hide, .hide-tablet {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .hide-mobile-landscape{
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 479px) {
+  .hide-mobile{
+    display: none !important;
+  }
+}
+
+.margin-0 {
+  margin: 0rem !important;
+}
+
+.padding-0 {
+  padding: 0rem !important;
+}
+
+.spacing-clean {
+  padding: 0rem !important;
+  margin: 0rem !important;
+}
+
+.margin-top {
+  margin-right: 0rem !important;
+  margin-bottom: 0rem !important;
+  margin-left: 0rem !important;
+}
+
+.padding-top {
+  padding-right: 0rem !important;
+  padding-bottom: 0rem !important;
+  padding-left: 0rem !important;
+}
+
+.margin-right {
+  margin-top: 0rem !important;
+  margin-bottom: 0rem !important;
+  margin-left: 0rem !important;
+}
+
+.padding-right {
+  padding-top: 0rem !important;
+  padding-bottom: 0rem !important;
+  padding-left: 0rem !important;
+}
+
+.margin-bottom {
+  margin-top: 0rem !important;
+  margin-right: 0rem !important;
+  margin-left: 0rem !important;
+}
+
+.padding-bottom {
+  padding-top: 0rem !important;
+  padding-right: 0rem !important;
+  padding-left: 0rem !important;
+}
+
+.margin-left {
+  margin-top: 0rem !important;
+  margin-right: 0rem !important;
+  margin-bottom: 0rem !important;
+}
+
+.padding-left {
+  padding-top: 0rem !important;
+  padding-right: 0rem !important;
+  padding-bottom: 0rem !important;
+}
+
+.margin-horizontal {
+  margin-top: 0rem !important;
+  margin-bottom: 0rem !important;
+}
+
+.padding-horizontal {
+  padding-top: 0rem !important;
+  padding-bottom: 0rem !important;
+}
+
+.margin-vertical {
+  margin-right: 0rem !important;
+  margin-left: 0rem !important;
+}
+
+.padding-vertical {
+  padding-right: 0rem !important;
+  padding-left: 0rem !important;
+}

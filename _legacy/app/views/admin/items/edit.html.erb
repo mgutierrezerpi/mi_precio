@@ -1,0 +1,94 @@
+<div class="mb-8">
+  <nav class="flex mb-3" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1">
+      <li class="inline-flex items-center">
+        <%= link_to "Lists", admin_lists_path, class: "text-gray-500 hover:text-gray-700" %>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="w-3 h-3 text-gray-400 mx-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          <%= link_to @list.name, admin_list_path(@list), class: "text-gray-500 hover:text-gray-700" %>
+        </div>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="w-3 h-3 text-gray-400 mx-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          <%= link_to @version.name, admin_list_version_items_path(@list, @version), class: "text-gray-500 hover:text-gray-700" %>
+        </div>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="w-3 h-3 text-gray-400 mx-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          <span class="text-gray-700">Edit <%= @item.name %></span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+  <h2 class="text-3xl font-bold text-gray-900">Edit Item</h2>
+</div>
+
+<div class="bg-white shadow rounded-lg">
+  <%= form_with model: [:admin, @list, @version, @item], class: "p-6 space-y-6" do |f| %>
+    <% if @item.errors.any? %>
+      <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+        <h3 class="font-medium">Please fix the following errors:</h3>
+        <ul class="list-disc list-inside mt-2">
+          <% @item.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= f.label :name, class: "block text-sm font-medium text-gray-700 mb-2" %>
+      <%= f.text_field :name, class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500", placeholder: "e.g., Margherita Pizza" %>
+    </div>
+
+    <div>
+      <%= f.label :price, class: "block text-sm font-medium text-gray-700 mb-2" %>
+      <div class="relative rounded-md shadow-sm">
+        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          <span class="text-gray-500 sm:text-sm">$</span>
+        </div>
+        <%= f.number_field :price, step: 0.01, class: "block w-full rounded-md border-gray-300 pl-7 focus:border-blue-500 focus:ring-blue-500", placeholder: "0.00" %>
+      </div>
+    </div>
+
+    <div>
+      <%= f.label :description, class: "block text-sm font-medium text-gray-700 mb-2" %>
+      <%= f.text_area :description, rows: 4, class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500", placeholder: "Describe your menu item..." %>
+    </div>
+
+    <div>
+      <%= f.label :picture, "Item Photo", class: "block text-sm font-medium text-gray-700 mb-2" %>
+
+      <% if @item.picture.attached? %>
+        <div class="mb-4">
+          <%= image_tag @item.picture, class: "h-32 w-32 object-cover rounded-lg border border-gray-300" %>
+          <p class="mt-2 text-sm text-gray-500">Current photo (upload a new one to replace)</p>
+        </div>
+      <% end %>
+
+      <%= f.file_field :picture, accept: "image/*", class: "block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" %>
+      <p class="mt-2 text-sm text-gray-500">PNG, JPG, GIF up to 10MB</p>
+    </div>
+
+    <div>
+      <%= f.label :position, class: "block text-sm font-medium text-gray-700 mb-2" %>
+      <%= f.number_field :position, class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" %>
+      <p class="mt-2 text-sm text-gray-500">Specify the display order (lower numbers appear first)</p>
+    </div>
+
+    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+      <%= link_to "Cancel", admin_list_version_items_path(@list, @version), class: "inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+      <%= f.submit "Update Item", class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700" %>
+    </div>
+  <% end %>
+</div>

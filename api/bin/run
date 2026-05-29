@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+if ! command -v pipenv >/dev/null 2>&1; then
+  echo "pipenv is not installed. Install it with: pip install --user pipenv" >&2
+  exit 1
+fi
+
+pipenv run uvicorn app:app --reload

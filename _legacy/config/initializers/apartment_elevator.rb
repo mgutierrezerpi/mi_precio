@@ -1,0 +1,1 @@
+# Middleware configuration moved to apartment_skip_middleware.rb

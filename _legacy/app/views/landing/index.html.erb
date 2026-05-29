@@ -1,0 +1,378 @@
+<div class="page-wrapper">
+   <!-- Phosphor regular icons -->
+   <%= stylesheet_link_tag "https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css", "data-turbo-track": "reload" %>
+   <!-- Landing page specific styles -->
+   <%= stylesheet_link_tag "landing", "data-turbo-track": "reload" %>
+   
+   <!-- GSAP Libraries -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+   
+   <!-- Stub for premium GSAP plugins -->
+   <script>
+   // Create stubs for premium plugins to prevent errors
+   if (typeof InertiaPlugin === 'undefined') window.InertiaPlugin = {};
+   if (typeof ScrambleTextPlugin === 'undefined') {
+     window.ScrambleTextPlugin = {
+       version: "3.12.2",
+       name: "scrambleText"
+     };
+     gsap.registerPlugin({
+       name: "scrambleText",
+       init: function(target, value, tween) {
+         this.target = target;
+         this.originalText = target.textContent;
+         this.scrambleText = value.text || this.originalText;
+         this.chars = value.chars || "0123456789";
+         this.revealDelay = value.revealDelay || 0.5;
+         this.duration = tween.duration();
+         return true;
+       },
+       render: function(ratio) {
+         if (ratio >= this.revealDelay) {
+           this.target.textContent = this.scrambleText;
+         } else {
+           let scrambled = "";
+           for (let i = 0; i < this.scrambleText.length; i++) {
+             scrambled += this.chars[Math.floor(Math.random() * this.chars.length)];
+           }
+           this.target.textContent = scrambled;
+         }
+       }
+     });
+   }
+   if (typeof SplitText === 'undefined') {
+     window.SplitText = function(target, vars) {
+       this.elements = [];
+       this.chars = [];
+       this.words = [];
+       this.lines = [];
+       
+       const element = typeof target === "string" ? document.querySelector(target) : target;
+       if (element) {
+         const text = element.textContent;
+         element.innerHTML = "";
+         
+         // Simple character split
+         for (let i = 0; i < text.length; i++) {
+           const span = document.createElement("span");
+           span.textContent = text[i];
+           span.style.display = "inline-block";
+           element.appendChild(span);
+           this.chars.push(span);
+         }
+       }
+     };
+   }
+   </script>
+   
+   <!-- Landing page JavaScript -->
+   <%= javascript_include_tag "landing", "data-turbo-track": "reload" %>
+   </div>
+   <!-- Hybrid Navigation: Original desktop styling with improved mobile -->
+   <div data-animation="default" class="navbar_component w-nav" data-easing2="ease" fs-scrolldisable-element="smart-nav" data-easing="ease" data-collapse="medium" data-navbar-id="navbar-component" role="banner" data-duration="400">
+      <div class="navbar_container">
+         <a href="#" class="navbar_logo-link w-nav-brand">
+            <div class="navbar_logo"><%= t('landing.hero.title_1') %><%= t('landing.hero.title_2') %></div>
+         </a>
+         
+         <!-- Desktop Menu with original styling -->
+         <nav role="navigation" class="navbar_menu is-page-height-tablet w-nav-menu hidden md:flex">
+            <div class="navbar_menu-links">
+               <a href="#mission" class="navbar_link w-nav-link"><%= t('landing.approach.title') %></a>
+               <a href="#stats" class="navbar_link w-nav-link"><%= t('landing.restaurants.title') %></a>
+            </div>
+            <div class="navbar_menu-buttons">
+               <a data-button-variant="full-red" href="#footer" class="btn w-inline-block">
+                  <div><%= t('landing.restaurants.get_started') %></div>
+               </a>
+            </div>
+         </nav>
+         
+         <!-- Mobile menu button - styled better -->
+         <button id="mobile-menu-button" class="navbar_menu-button md:hidden" aria-label="menu">
+            <div class="menu-icon1">
+               <div class="menu-icon1_line-top"></div>
+               <div class="menu-icon1_line-middle">
+                  <div class="menu-icon1_line-middle-inner"></div>
+               </div>
+               <div class="menu-icon1_line-bottom"></div>
+            </div>
+         </button>
+      </div>
+      
+      <!-- Mobile Menu - better styled -->
+      <div id="mobile-menu" class="hidden md:hidden navbar_mobile-menu">
+         <div class="navbar_mobile-menu-content">
+            <a href="#mission" class="navbar_mobile-link">
+               <%= t('landing.approach.title') %>
+            </a>
+            <a href="#stats" class="navbar_mobile-link">
+               <%= t('landing.restaurants.title') %>
+            </a>
+            <div class="navbar_mobile-buttons">
+               <a href="#footer" class="btn w-inline-block" data-button-variant="full-red">
+                  <div><%= t('landing.restaurants.get_started') %></div>
+               </a>
+            </div>
+         </div>
+      </div>
+   </div>
+   <main class="main-wrapper">
+      <header class="section_hero">
+         <div class="padding-global">
+            <div class="container-large is--100">
+               <div class="hero_content">
+                  <div class="padding-global">
+                     <div class="margin-bottom margin-medium">
+                        <div class="_2col_grid z-index-2">
+                           <h1 class="hero-title" aria-label="<%= t('landing.hero.title_1') %><%= t('landing.hero.title_2') %>"><%= t('landing.hero.title_1') %><%= t('landing.hero.title_2') %></h1>
+                           <p class="text-size-medium text-weight-semibold"><%= t('landing.hero.subtitle') %></p>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="hero_visuals" style="translate: none; rotate: none; scale: none; opacity: 1; transform: translate(0px, 0px);">
+                     <%= image_tag "price_tag.jpg", loading: "lazy", alt: "Digital menu and price tag for modern restaurants", class: "hero_img" %>
+                     <div class="noise is-hero"></div>
+                     <div class="dark_gradient"></div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </header>
+      
+      <!-- Spacer section for visual breathing room -->
+      <div class="py-4"></div>
+      
+      <header id="vision" class="section_vision background-color-gradient1">
+         <section class="section_marquee z-index-1">
+            <div class="marquee_component">
+               <div aria-hidden="true" class="marquee_inner-wrapper" style="translate: none; rotate: none; scale: none; transform-origin: 638.5px 58px; transform: translate3d(0px, 0px, 0px);">
+                  <div class="marquee_marquee">
+                     <div class="marquee_image-wrapper">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" alt="Price Tag" style="height: 60px; width: auto;" class="commerce-icon">
+                     </div>
+                     <div class="marquee_heading-wrapper">
+                        <div class="heading-style-h1">Innovar</div>
+                     </div>
+                     <div class="marquee_image-wrapper">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" alt="Price Tag" style="height: 60px; width: auto;" class="commerce-icon">
+                     </div>
+                     <div class="marquee_heading-wrapper">
+                        <div class="heading-style-h1">Actuar</div>
+                     </div>
+                     <div class="marquee_image-wrapper">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" alt="Price Tag" style="height: 60px; width: auto;" class="commerce-icon">
+                     </div>
+                     <div class="marquee_heading-wrapper hide-tablet">
+                        <div class="heading-style-h1">Facilitar</div>
+                     </div>
+                     <div class="marquee_image-wrapper">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" alt="Price Tag" style="height: 60px; width: auto;" class="commerce-icon">
+                     </div>
+                     <div class="marquee_heading-wrapper hide-mobile-landscape">
+                        <div class="heading-style-h1">Actuar</div>
+                     </div>
+                  </div>
+                  <div class="marquee_marquee">
+                     <div class="marquee_image-wrapper">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" alt="Price Tag" style="height: 60px; width: auto;" class="commerce-icon">
+                     </div>
+                     <div class="marquee_heading-wrapper">
+                        <div class="heading-style-h1">Innovar</div>
+                     </div>
+                     <div class="marquee_image-wrapper">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" alt="Price Tag" style="height: 60px; width: auto;" class="commerce-icon">
+                     </div>
+                     <div class="marquee_heading-wrapper">
+                        <div class="heading-style-h1">Actuar</div>
+                     </div>
+                     <div class="marquee_image-wrapper">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" alt="Price Tag" style="height: 60px; width: auto;" class="commerce-icon">
+                     </div>
+                     <div class="marquee_heading-wrapper hide-tablet">
+                        <div class="heading-style-h1">Facilitar</div>
+                     </div>
+                     <div class="marquee_image-wrapper">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" alt="Price Tag" style="height: 60px; width: auto;" class="commerce-icon">
+                     </div>
+                     <div class="marquee_heading-wrapper hide-mobile-landscape">
+                        <div class="heading-style-h1">Actuar</div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </section>
+         <div class="vision_component pb-8">
+            <div class="padding-global">
+               <div class="container-small">
+                  <div class="padding-top padding-large">
+                     <div class="text-align-center">
+                        <div class="margin-bottom margin-small">
+                           <h2><%= t('landing.vision.title') %></h2>
+                        </div>
+                        <p class="text-size-medium"><%= t('landing.vision.description') %></p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+            <!-- Vision images section removed for cleaner layout -->
+         </div>
+      </header>
+      <section id="stats" class="section_stats">
+         <div class="padding-global">
+            <div class="container-large">
+               <div class="padding-section-large">
+                  <div class="stats_component">
+                     <div class="margin-bottom margin-xxlarge">
+                        <div class="text-align-center">
+                           <h2><%= t('landing.results.title') %></h2>
+                        </div>
+                     </div>
+                     <div class="w-layout-grid stats_list">
+                        <% if @tenants.present? %>
+                           <% colors = ['background-color-purple', 'background-color-vermillion', 'background-color-lightblue', 'background-color-orange'] %>
+                           <% @tenants.each_with_index do |tenant, index| %>
+                              <%
+                                if Rails.env.development?
+                                  tenant_url = "http://#{tenant.subdomain}.localhost:3000"
+                                  tenant_display = "#{tenant.subdomain}.localhost:3000"
+                                else
+                                  tenant_url = "https://#{tenant.subdomain}.miprecio.uy"
+                                  tenant_display = "#{tenant.subdomain}.miprecio.uy"
+                                end
+                              %>
+                              <a href="<%= tenant_url %>" target="_blank" class="stats_item <%= colors[index % colors.length] %>" style="text-decoration: none; cursor: pointer; transition: transform 0.2s;">
+                                 <div class="margin-bottom margin-large">
+                                    <h3 class="heading-style-h5"><%= tenant.name %></h3>
+                                 </div>
+                                 <div class="stats_item-content">
+                                    <div class="text-size-small" style="opacity: 0.9;">
+                                       <%= tenant_display %> →
+                                    </div>
+                                 </div>
+                                 <img src="https://cdn.prod.website-files.com/68011fed23249a9699d7b42b/6802fc54afb8dcd46830bebd_pinkish.avif" loading="lazy" alt="" class="stats_texture is-overlay-40">
+                              </a>
+                           <% end %>
+                        <% else %>
+                           <div class="stats_item background-color-purple">
+                              <div class="margin-bottom margin-large">
+                                 <h3 class="heading-style-h5">Próximamente</h3>
+                              </div>
+                              <div class="stats_item-content">
+                                 <p>Pronto anunciaremos nuestros primeros clientes</p>
+                              </div>
+                              <img src="https://cdn.prod.website-files.com/68011fed23249a9699d7b42b/6802fc54afb8dcd46830bebd_pinkish.avif" loading="lazy" alt="" class="stats_texture is-overlay-40">
+                           </div>
+                           <div class="stats_item background-color-lightblue">
+                              <div class="margin-bottom margin-large">
+                                 <h3 class="heading-style-h5">¿Tu Negocio Aquí?</h3>
+                              </div>
+                              <div class="stats_item-content">
+                                 <p>Empieza gratis →</p>
+                              </div>
+                              <img src="https://cdn.prod.website-files.com/68011fed23249a9699d7b42b/6802f7ee988ceb30729e28a2_purple_blue.avif" loading="lazy" alt="" class="stats_texture is-darken-40">
+                           </div>
+                        <% end %>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </section>
+   </main>
+   <footer id="footer" class="footer_component background-color-gradient2">
+      <div class="padding-global z-index-2">
+         <div class="container-large">
+            <div animation-container="text-fade-in" class="cta_component">
+               <div class="cta_card">
+                  <div class="cta_card-content">
+                     <div class="max-width-large">
+                        <div class="text-align-center">
+                           <div class="margin-bottom margin-small">
+                              <h2><%= t('landing.cta.title') %></h2>
+                           </div>
+                        </div>
+                     </div>
+                     <div class="margin-top margin-medium">
+                        <div class="button-group is-center">
+                           <a data-button-variant="full-red" href="#" class="btn w-inline-block">
+                              <div><%= t('landing.restaurants.get_started') %></div>
+                           </a>
+                        </div>
+                     </div>
+                  </div>
+                  <div id="container-draggable" class="cta_background-wrapper">
+                     <div class="peach-gradient"></div>
+                     <div class="grain"></div>
+                     <div class="noise"></div>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 154 112" fill="none" class="hand-icon draggable _1" style="translate: none; rotate: none; scale: none; transform: rotate(11.656deg) scale(0.9, 0.9); opacity: 0;">
+                        <path d="M76.9184 112C70.9404 112.013 65.06 110.506 59.8287 107.634C52.3191 103.604 43.245 103.817 35.9298 108.183C33.2296 109.775 30.0103 110.234 26.9727 109.451C23.9416 108.675 21.3388 106.722 19.7485 104.031L1.58708 73.0656C0.00984326 70.3553 -0.412006 67.1274 0.412269 64.1C1.2301 61.0792 3.2292 58.5046 5.96172 56.9522L36.7082 39.7781C43.7571 35.8257 51.9613 34.422 59.9259 35.7999C51.3516 11.0382 82.552 -11.2016 103.07 6.31532C130.46 -15.3216 164.498 23.6517 138.314 47.7859C145.869 48.5362 152.061 54.0799 153.625 61.4799C155.19 68.88 151.756 76.4353 145.155 80.1543L93.69 107.834C88.5298 110.577 82.7669 112.006 76.9184 112ZM48.3719 94.4185C54.1161 94.412 59.7696 95.8351 64.8257 98.5584C72.2705 102.634 81.273 102.692 88.7695 98.7201L140.092 71.125V71.1185C143.383 69.2685 144.583 65.135 142.798 61.8166C141.007 58.5046 136.885 57.2174 133.523 58.9315L107.418 72.1858C103.497 77.8846 96.3315 80.4009 89.6915 78.4151L64.6693 71.3707V71.3642C61.9433 70.5621 60.379 67.7224 61.1514 64.999C61.9237 62.2822 64.7473 60.6779 67.4927 61.4089L92.6379 68.492C95.5976 69.3005 98.6677 67.6187 99.5765 64.6948C100.485 61.7709 98.9014 58.6596 96.0002 57.6569L61.4303 46.7896C54.8877 44.7326 47.787 45.4571 41.7967 48.7948L11.0503 65.9689L11.0568 65.9754C10.7322 66.1371 10.4856 66.4282 10.3882 66.784C10.2909 67.1333 10.3428 67.5084 10.5375 67.8125L28.7122 98.8106C28.881 99.134 29.1731 99.3734 29.5236 99.4704C29.8741 99.5675 30.2505 99.5157 30.5556 99.3217C35.9364 96.1068 42.0948 94.412 48.3719 94.4185ZM74.8547 40.1522L99.0776 47.7659H99.0711C104.458 49.4671 108.547 53.8594 109.846 59.3383L114.324 57.0614L132.245 39.2017V39.2082C136.723 34.9906 138.417 28.6126 136.613 22.7455C132.069 10.8044 117.998 4.95702 106.963 16.8719H106.97C105.99 17.9586 104.601 18.5795 103.134 18.5926C101.673 18.5991 100.271 17.9975 99.2782 16.9237C96.325 13.1784 91.9242 10.8496 87.1536 10.5068C82.3829 10.1705 77.6967 11.8523 74.2372 15.1384C70.7777 18.431 68.8759 23.0172 68.9928 27.7846C69.1097 32.5455 71.2395 37.0342 74.8547 40.1522Z" fill="currentColor" class="hand-icon-path"></path>
+                     </svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 154 112" fill="none" class="hand-icon draggable _2" style="translate: none; rotate: none; scale: none; transform: rotate(9.62386deg) scale(0.9, 0.9); opacity: 0;">
+                        <path d="M76.9184 112C70.9404 112.013 65.06 110.506 59.8287 107.634C52.3191 103.604 43.245 103.817 35.9298 108.183C33.2296 109.775 30.0103 110.234 26.9727 109.451C23.9416 108.675 21.3388 106.722 19.7485 104.031L1.58708 73.0656C0.00984326 70.3553 -0.412006 67.1274 0.412269 64.1C1.2301 61.0792 3.2292 58.5046 5.96172 56.9522L36.7082 39.7781C43.7571 35.8257 51.9613 34.422 59.9259 35.7999C51.3516 11.0382 82.552 -11.2016 103.07 6.31532C130.46 -15.3216 164.498 23.6517 138.314 47.7859C145.869 48.5362 152.061 54.0799 153.625 61.4799C155.19 68.88 151.756 76.4353 145.155 80.1543L93.69 107.834C88.5298 110.577 82.7669 112.006 76.9184 112ZM48.3719 94.4185C54.1161 94.412 59.7696 95.8351 64.8257 98.5584C72.2705 102.634 81.273 102.692 88.7695 98.7201L140.092 71.125V71.1185C143.383 69.2685 144.583 65.135 142.798 61.8166C141.007 58.5046 136.885 57.2174 133.523 58.9315L107.418 72.1858C103.497 77.8846 96.3315 80.4009 89.6915 78.4151L64.6693 71.3707V71.3642C61.9433 70.5621 60.379 67.7224 61.1514 64.999C61.9237 62.2822 64.7473 60.6779 67.4927 61.4089L92.6379 68.492C95.5976 69.3005 98.6677 67.6187 99.5765 64.6948C100.485 61.7709 98.9014 58.6596 96.0002 57.6569L61.4303 46.7896C54.8877 44.7326 47.787 45.4571 41.7967 48.7948L11.0503 65.9689L11.0568 65.9754C10.7322 66.1371 10.4856 66.4282 10.3882 66.784C10.2909 67.1333 10.3428 67.5084 10.5375 67.8125L28.7122 98.8106C28.881 99.134 29.1731 99.3734 29.5236 99.4704C29.8741 99.5675 30.2505 99.5157 30.5556 99.3217C35.9364 96.1068 42.0948 94.412 48.3719 94.4185ZM74.8547 40.1522L99.0776 47.7659H99.0711C104.458 49.4671 108.547 53.8594 109.846 59.3383L114.324 57.0614L132.245 39.2017V39.2082C136.723 34.9906 138.417 28.6126 136.613 22.7455C132.069 10.8044 117.998 4.95702 106.963 16.8719H106.97C105.99 17.9586 104.601 18.5795 103.134 18.5926C101.673 18.5991 100.271 17.9975 99.2782 16.9237C96.325 13.1784 91.9242 10.8496 87.1536 10.5068C82.3829 10.1705 77.6967 11.8523 74.2372 15.1384C70.7777 18.431 68.8759 23.0172 68.9928 27.7846C69.1097 32.5455 71.2395 37.0342 74.8547 40.1522Z" fill="currentColor" class="hand-icon-path"></path>
+                     </svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 154 112" fill="none" class="hand-icon draggable _3" style="translate: none; rotate: none; scale: none; transform: rotate(13.3455deg) scale(0.9, 0.9); opacity: 0;">
+                        <path d="M76.9184 112C70.9404 112.013 65.06 110.506 59.8287 107.634C52.3191 103.604 43.245 103.817 35.9298 108.183C33.2296 109.775 30.0103 110.234 26.9727 109.451C23.9416 108.675 21.3388 106.722 19.7485 104.031L1.58708 73.0656C0.00984326 70.3553 -0.412006 67.1274 0.412269 64.1C1.2301 61.0792 3.2292 58.5046 5.96172 56.9522L36.7082 39.7781C43.7571 35.8257 51.9613 34.422 59.9259 35.7999C51.3516 11.0382 82.552 -11.2016 103.07 6.31532C130.46 -15.3216 164.498 23.6517 138.314 47.7859C145.869 48.5362 152.061 54.0799 153.625 61.4799C155.19 68.88 151.756 76.4353 145.155 80.1543L93.69 107.834C88.5298 110.577 82.7669 112.006 76.9184 112ZM48.3719 94.4185C54.1161 94.412 59.7696 95.8351 64.8257 98.5584C72.2705 102.634 81.273 102.692 88.7695 98.7201L140.092 71.125V71.1185C143.383 69.2685 144.583 65.135 142.798 61.8166C141.007 58.5046 136.885 57.2174 133.523 58.9315L107.418 72.1858C103.497 77.8846 96.3315 80.4009 89.6915 78.4151L64.6693 71.3707V71.3642C61.9433 70.5621 60.379 67.7224 61.1514 64.999C61.9237 62.2822 64.7473 60.6779 67.4927 61.4089L92.6379 68.492C95.5976 69.3005 98.6677 67.6187 99.5765 64.6948C100.485 61.7709 98.9014 58.6596 96.0002 57.6569L61.4303 46.7896C54.8877 44.7326 47.787 45.4571 41.7967 48.7948L11.0503 65.9689L11.0568 65.9754C10.7322 66.1371 10.4856 66.4282 10.3882 66.784C10.2909 67.1333 10.3428 67.5084 10.5375 67.8125L28.7122 98.8106C28.881 99.134 29.1731 99.3734 29.5236 99.4704C29.8741 99.5675 30.2505 99.5157 30.5556 99.3217C35.9364 96.1068 42.0948 94.412 48.3719 94.4185ZM74.8547 40.1522L99.0776 47.7659H99.0711C104.458 49.4671 108.547 53.8594 109.846 59.3383L114.324 57.0614L132.245 39.2017V39.2082C136.723 34.9906 138.417 28.6126 136.613 22.7455C132.069 10.8044 117.998 4.95702 106.963 16.8719H106.97C105.99 17.9586 104.601 18.5795 103.134 18.5926C101.673 18.5991 100.271 17.9975 99.2782 16.9237C96.325 13.1784 91.9242 10.8496 87.1536 10.5068C82.3829 10.1705 77.6967 11.8523 74.2372 15.1384C70.7777 18.431 68.8759 23.0172 68.9928 27.7846C69.1097 32.5455 71.2395 37.0342 74.8547 40.1522Z" fill="currentColor" class="hand-icon-path"></path>
+                     </svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 154 112" fill="none" class="hand-icon draggable _4" style="translate: none; rotate: none; scale: none; transform: rotate(-7.32579deg) scale(0.9, 0.9); opacity: 0;">
+                        <path d="M76.9184 112C70.9404 112.013 65.06 110.506 59.8287 107.634C52.3191 103.604 43.245 103.817 35.9298 108.183C33.2296 109.775 30.0103 110.234 26.9727 109.451C23.9416 108.675 21.3388 106.722 19.7485 104.031L1.58708 73.0656C0.00984326 70.3553 -0.412006 67.1274 0.412269 64.1C1.2301 61.0792 3.2292 58.5046 5.96172 56.9522L36.7082 39.7781C43.7571 35.8257 51.9613 34.422 59.9259 35.7999C51.3516 11.0382 82.552 -11.2016 103.07 6.31532C130.46 -15.3216 164.498 23.6517 138.314 47.7859C145.869 48.5362 152.061 54.0799 153.625 61.4799C155.19 68.88 151.756 76.4353 145.155 80.1543L93.69 107.834C88.5298 110.577 82.7669 112.006 76.9184 112ZM48.3719 94.4185C54.1161 94.412 59.7696 95.8351 64.8257 98.5584C72.2705 102.634 81.273 102.692 88.7695 98.7201L140.092 71.125V71.1185C143.383 69.2685 144.583 65.135 142.798 61.8166C141.007 58.5046 136.885 57.2174 133.523 58.9315L107.418 72.1858C103.497 77.8846 96.3315 80.4009 89.6915 78.4151L64.6693 71.3707V71.3642C61.9433 70.5621 60.379 67.7224 61.1514 64.999C61.9237 62.2822 64.7473 60.6779 67.4927 61.4089L92.6379 68.492C95.5976 69.3005 98.6677 67.6187 99.5765 64.6948C100.485 61.7709 98.9014 58.6596 96.0002 57.6569L61.4303 46.7896C54.8877 44.7326 47.787 45.4571 41.7967 48.7948L11.0503 65.9689L11.0568 65.9754C10.7322 66.1371 10.4856 66.4282 10.3882 66.784C10.2909 67.1333 10.3428 67.5084 10.5375 67.8125L28.7122 98.8106C28.881 99.134 29.1731 99.3734 29.5236 99.4704C29.8741 99.5675 30.2505 99.5157 30.5556 99.3217C35.9364 96.1068 42.0948 94.412 48.3719 94.4185ZM74.8547 40.1522L99.0776 47.7659H99.0711C104.458 49.4671 108.547 53.8594 109.846 59.3383L114.324 57.0614L132.245 39.2017V39.2082C136.723 34.9906 138.417 28.6126 136.613 22.7455C132.069 10.8044 117.998 4.95702 106.963 16.8719H106.97C105.99 17.9586 104.601 18.5795 103.134 18.5926C101.673 18.5991 100.271 17.9975 99.2782 16.9237C96.325 13.1784 91.9242 10.8496 87.1536 10.5068C82.3829 10.1705 77.6967 11.8523 74.2372 15.1384C70.7777 18.431 68.8759 23.0172 68.9928 27.7846C69.1097 32.5455 71.2395 37.0342 74.8547 40.1522Z" fill="currentColor" class="hand-icon-path"></path>
+                     </svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 154 112" fill="none" class="hand-icon draggable _5" style="translate: none; rotate: none; scale: none; transform: rotate(-12.0414deg) scale(0.9, 0.9); opacity: 0;">
+                        <path d="M76.9184 112C70.9404 112.013 65.06 110.506 59.8287 107.634C52.3191 103.604 43.245 103.817 35.9298 108.183C33.2296 109.775 30.0103 110.234 26.9727 109.451C23.9416 108.675 21.3388 106.722 19.7485 104.031L1.58708 73.0656C0.00984326 70.3553 -0.412006 67.1274 0.412269 64.1C1.2301 61.0792 3.2292 58.5046 5.96172 56.9522L36.7082 39.7781C43.7571 35.8257 51.9613 34.422 59.9259 35.7999C51.3516 11.0382 82.552 -11.2016 103.07 6.31532C130.46 -15.3216 164.498 23.6517 138.314 47.7859C145.869 48.5362 152.061 54.0799 153.625 61.4799C155.19 68.88 151.756 76.4353 145.155 80.1543L93.69 107.834C88.5298 110.577 82.7669 112.006 76.9184 112ZM48.3719 94.4185C54.1161 94.412 59.7696 95.8351 64.8257 98.5584C72.2705 102.634 81.273 102.692 88.7695 98.7201L140.092 71.125V71.1185C143.383 69.2685 144.583 65.135 142.798 61.8166C141.007 58.5046 136.885 57.2174 133.523 58.9315L107.418 72.1858C103.497 77.8846 96.3315 80.4009 89.6915 78.4151L64.6693 71.3707V71.3642C61.9433 70.5621 60.379 67.7224 61.1514 64.999C61.9237 62.2822 64.7473 60.6779 67.4927 61.4089L92.6379 68.492C95.5976 69.3005 98.6677 67.6187 99.5765 64.6948C100.485 61.7709 98.9014 58.6596 96.0002 57.6569L61.4303 46.7896C54.8877 44.7326 47.787 45.4571 41.7967 48.7948L11.0503 65.9689L11.0568 65.9754C10.7322 66.1371 10.4856 66.4282 10.3882 66.784C10.2909 67.1333 10.3428 67.5084 10.5375 67.8125L28.7122 98.8106C28.881 99.134 29.1731 99.3734 29.5236 99.4704C29.8741 99.5675 30.2505 99.5157 30.5556 99.3217C35.9364 96.1068 42.0948 94.412 48.3719 94.4185ZM74.8547 40.1522L99.0776 47.7659H99.0711C104.458 49.4671 108.547 53.8594 109.846 59.3383L114.324 57.0614L132.245 39.2017V39.2082C136.723 34.9906 138.417 28.6126 136.613 22.7455C132.069 10.8044 117.998 4.95702 106.963 16.8719H106.97C105.99 17.9586 104.601 18.5795 103.134 18.5926C101.673 18.5991 100.271 17.9975 99.2782 16.9237C96.325 13.1784 91.9242 10.8496 87.1536 10.5068C82.3829 10.1705 77.6967 11.8523 74.2372 15.1384C70.7777 18.431 68.8759 23.0172 68.9928 27.7846C69.1097 32.5455 71.2395 37.0342 74.8547 40.1522Z" fill="currentColor" class="hand-icon-path"></path>
+                     </svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 154 112" fill="none" class="hand-icon draggable _6" style="translate: none; rotate: none; scale: none; transform: rotate(-0.43379deg) scale(0.9, 0.9); opacity: 0;">
+                        <path d="M76.9184 112C70.9404 112.013 65.06 110.506 59.8287 107.634C52.3191 103.604 43.245 103.817 35.9298 108.183C33.2296 109.775 30.0103 110.234 26.9727 109.451C23.9416 108.675 21.3388 106.722 19.7485 104.031L1.58708 73.0656C0.00984326 70.3553 -0.412006 67.1274 0.412269 64.1C1.2301 61.0792 3.2292 58.5046 5.96172 56.9522L36.7082 39.7781C43.7571 35.8257 51.9613 34.422 59.9259 35.7999C51.3516 11.0382 82.552 -11.2016 103.07 6.31532C130.46 -15.3216 164.498 23.6517 138.314 47.7859C145.869 48.5362 152.061 54.0799 153.625 61.4799C155.19 68.88 151.756 76.4353 145.155 80.1543L93.69 107.834C88.5298 110.577 82.7669 112.006 76.9184 112ZM48.3719 94.4185C54.1161 94.412 59.7696 95.8351 64.8257 98.5584C72.2705 102.634 81.273 102.692 88.7695 98.7201L140.092 71.125V71.1185C143.383 69.2685 144.583 65.135 142.798 61.8166C141.007 58.5046 136.885 57.2174 133.523 58.9315L107.418 72.1858C103.497 77.8846 96.3315 80.4009 89.6915 78.4151L64.6693 71.3707V71.3642C61.9433 70.5621 60.379 67.7224 61.1514 64.999C61.9237 62.2822 64.7473 60.6779 67.4927 61.4089L92.6379 68.492C95.5976 69.3005 98.6677 67.6187 99.5765 64.6948C100.485 61.7709 98.9014 58.6596 96.0002 57.6569L61.4303 46.7896C54.8877 44.7326 47.787 45.4571 41.7967 48.7948L11.0503 65.9689L11.0568 65.9754C10.7322 66.1371 10.4856 66.4282 10.3882 66.784C10.2909 67.1333 10.3428 67.5084 10.5375 67.8125L28.7122 98.8106C28.881 99.134 29.1731 99.3734 29.5236 99.4704C29.8741 99.5675 30.2505 99.5157 30.5556 99.3217C35.9364 96.1068 42.0948 94.412 48.3719 94.4185ZM74.8547 40.1522L99.0776 47.7659H99.0711C104.458 49.4671 108.547 53.8594 109.846 59.3383L114.324 57.0614L132.245 39.2017V39.2082C136.723 34.9906 138.417 28.6126 136.613 22.7455C132.069 10.8044 117.998 4.95702 106.963 16.8719H106.97C105.99 17.9586 104.601 18.5795 103.134 18.5926C101.673 18.5991 100.271 17.9975 99.2782 16.9237C96.325 13.1784 91.9242 10.8496 87.1536 10.5068C82.3829 10.1705 77.6967 11.8523 74.2372 15.1384C70.7777 18.431 68.8759 23.0172 68.9928 27.7846C69.1097 32.5455 71.2395 37.0342 74.8547 40.1522Z" fill="currentColor" class="hand-icon-path"></path>
+                     </svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 154 112" fill="none" class="hand-icon draggable _7" style="translate: none; rotate: none; scale: none; transform: rotate(4.39096deg) scale(0.9, 0.9); opacity: 0;">
+                        <path d="M76.9184 112C70.9404 112.013 65.06 110.506 59.8287 107.634C52.3191 103.604 43.245 103.817 35.9298 108.183C33.2296 109.775 30.0103 110.234 26.9727 109.451C23.9416 108.675 21.3388 106.722 19.7485 104.031L1.58708 73.0656C0.00984326 70.3553 -0.412006 67.1274 0.412269 64.1C1.2301 61.0792 3.2292 58.5046 5.96172 56.9522L36.7082 39.7781C43.7571 35.8257 51.9613 34.422 59.9259 35.7999C51.3516 11.0382 82.552 -11.2016 103.07 6.31532C130.46 -15.3216 164.498 23.6517 138.314 47.7859C145.869 48.5362 152.061 54.0799 153.625 61.4799C155.19 68.88 151.756 76.4353 145.155 80.1543L93.69 107.834C88.5298 110.577 82.7669 112.006 76.9184 112ZM48.3719 94.4185C54.1161 94.412 59.7696 95.8351 64.8257 98.5584C72.2705 102.634 81.273 102.692 88.7695 98.7201L140.092 71.125V71.1185C143.383 69.2685 144.583 65.135 142.798 61.8166C141.007 58.5046 136.885 57.2174 133.523 58.9315L107.418 72.1858C103.497 77.8846 96.3315 80.4009 89.6915 78.4151L64.6693 71.3707V71.3642C61.9433 70.5621 60.379 67.7224 61.1514 64.999C61.9237 62.2822 64.7473 60.6779 67.4927 61.4089L92.6379 68.492C95.5976 69.3005 98.6677 67.6187 99.5765 64.6948C100.485 61.7709 98.9014 58.6596 96.0002 57.6569L61.4303 46.7896C54.8877 44.7326 47.787 45.4571 41.7967 48.7948L11.0503 65.9689L11.0568 65.9754C10.7322 66.1371 10.4856 66.4282 10.3882 66.784C10.2909 67.1333 10.3428 67.5084 10.5375 67.8125L28.7122 98.8106C28.881 99.134 29.1731 99.3734 29.5236 99.4704C29.8741 99.5675 30.2505 99.5157 30.5556 99.3217C35.9364 96.1068 42.0948 94.412 48.3719 94.4185ZM74.8547 40.1522L99.0776 47.7659H99.0711C104.458 49.4671 108.547 53.8594 109.846 59.3383L114.324 57.0614L132.245 39.2017V39.2082C136.723 34.9906 138.417 28.6126 136.613 22.7455C132.069 10.8044 117.998 4.95702 106.963 16.8719H106.97C105.99 17.9586 104.601 18.5795 103.134 18.5926C101.673 18.5991 100.271 17.9975 99.2782 16.9237C96.325 13.1784 91.9242 10.8496 87.1536 10.5068C82.3829 10.1705 77.6967 11.8523 74.2372 15.1384C70.7777 18.431 68.8759 23.0172 68.9928 27.7846C69.1097 32.5455 71.2395 37.0342 74.8547 40.1522Z" fill="currentColor" class="hand-icon-path"></path>
+                     </svg>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <div class="container-large">
+            <div class="padding-vertical padding-xxlarge">
+               <div class="padding-bottom padding-xxlarge hide-tablet">
+                  <div class="w-layout-grid footer_top-wrapper">
+                     <div id="w-node-_3c1647a3-ad80-8d9a-9574-5e7580b647df-99d7b557" class="footer_left-wrapper">
+                        <a href="#" class="footer_logo-link w-nav-brand">
+                           <div class="navbar_logo"><%= t('landing.hero.title_1') %><%= t('landing.hero.title_2') %></div>
+                        </a>
+                        <p class="text-size-small"><%= t('landing.footer.tagline') %></p>
+                     </div>
+                     <div class="footer_right-wrapper">
+                        <div class="margin-bottom margin-xsmall">
+                           <div class="text-weight-semibold">Contacto</div>
+                        </div>
+                        <div class="footer_form-block w-form">
+                           <form id="email-form" name="email-form" data-name="Email Form" method="get" class="footer_form" data-wf-page-id="68011fee23249a9699d7b557" data-wf-element-id="3c1647a3-ad80-8d9a-9574-5e7580b647f2" aria-label="Email Form"><input class="form_input w-input" maxlength="256" name="email-2" data-name="Email 2" placeholder="Tu email" type="email" id="email-2" required=""><input type="submit" data-wait="Enviando..." class="cta_form-button w-button" value="Contactar"></form>
+                           <div class="text-size-tiny">Al contactarnos, aceptas nuestra <a href="#"><span>Política de Privacidad</span></a> </div>
+                           <div class="form_message-success-wrapper w-form-done" tabindex="-1" role="region" aria-label="Email Form success">
+                              <div class="form_message-success">
+                                 <div>¡Gracias! Tu mensaje ha sido enviado correctamente.</div>
+                              </div>
+                           </div>
+                           <div class="form_message-error-wrapper w-form-fail" tabindex="-1" role="region" aria-label="Email Form failure">
+                              <div class="form_message-error">
+                                 <div>¡Ops! Algo salió mal al enviar el formulario.</div>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div class="divider-horizontal"></div>
+               <div class="padding-top padding-medium">
+                  <div class="footer_bottom-wrapper">
+                     <div class="w-layout-grid footer_legal-list"><a href="#" class="footer_legal-link">Política de Privacidad</a><a href="#" class="footer_legal-link">Términos de Servicio</a></div>
+                     <div class="footer_credit-text"><%= t('landing.footer.rights') %> <%= t('landing.hero.title_1') %><%= t('landing.hero.title_2') %>. <%= t('landing.footer.made_in') %></div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </footer>
+</div>

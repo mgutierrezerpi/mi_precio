@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+cd "$(dirname "$0")/.."
+
+pipenv run python -c "
+from peewee_migrate import Router
+from models.base import db
+
+router = Router(db, migrate_dir='migrations')
+
+import sys
+if len(sys.argv) > 1 and sys.argv[1] == 'rollback':
+    router.rollback()
+    print('Rolled back last migration')
+else:
+    router.run()
+    print('Migrations complete')
+" "$@"

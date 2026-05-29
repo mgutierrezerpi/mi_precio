@@ -1,0 +1,65 @@
+<div class="mb-8">
+  <div class="sm:flex sm:items-center sm:justify-between">
+    <div>
+      <h2 class="text-3xl font-bold text-gray-900">Price Lists</h2>
+      <p class="mt-2 text-gray-600">Manage your restaurant's menus and price lists</p>
+    </div>
+    <%= link_to new_admin_list_path, class: "mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700" do %>
+      <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      </svg>
+      New List
+    <% end %>
+  </div>
+</div>
+
+<% if @lists.any? %>
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <ul class="divide-y divide-gray-200">
+      <% @lists.each do |list| %>
+        <li class="px-6 py-4 hover:bg-gray-50">
+          <div class="flex items-center justify-between">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-lg font-medium text-gray-900"><%= list.name %></h3>
+              <div class="mt-2 flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  <%= list.list_versions.count %> version(s)
+                </span>
+                <% if list.published %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Published
+                  </span>
+                <% end %>
+                <% if list.show_on_index %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Shown on Index
+                  </span>
+                <% end %>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              <%= link_to "View", admin_list_path(list), class: "inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+              <%= link_to "Edit", edit_admin_list_path(list), class: "inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+            </div>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% else %>
+  <div class="text-center bg-white rounded-lg shadow p-12">
+    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+    </svg>
+    <h3 class="mt-2 text-sm font-medium text-gray-900">No price lists</h3>
+    <p class="mt-1 text-sm text-gray-500">Get started by creating a new price list</p>
+    <div class="mt-6">
+      <%= link_to new_admin_list_path, class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700" do %>
+        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        New List
+      <% end %>
+    </div>
+  </div>
+<% end %>

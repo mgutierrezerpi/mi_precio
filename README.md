@@ -5,6 +5,9 @@ Monorepo for MiPrecio projects.
 ## Projects
 
 - `landing/` - public landing page for `miprecio.app`, served with Nginx in Docker.
+- `api/` - Python API for the MiPrecio product.
+- `web_app/` - React/Vite web application for the MiPrecio product.
+- `_legacy/` - previous Rails implementation kept for reference/migration history.
 
 ## Current Production Deploy
 

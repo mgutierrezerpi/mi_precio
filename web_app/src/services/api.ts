@@ -1,0 +1,228 @@
+import type { Tenant, PriceList, ListVersion, Item, AuthToken } from '../types'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+
+type ApiResponse<T> = { data: T; error?: never } | { data?: never; error: string }
+
+type AuthErrorCallback = () => void
+let onAuthError: AuthErrorCallback | null = null
+
+export function setAuthErrorHandler(callback: AuthErrorCallback | null) {
+  onAuthError = callback
+}
+
+function snakeToCamel(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+}
+
+function transformKeys<T>(obj: unknown): T {
+  if (obj === null || obj === undefined) return obj as T
+  if (Array.isArray(obj)) return obj.map(transformKeys) as T
+  if (typeof obj !== 'object') return obj as T
+
+  const transformed: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    transformed[snakeToCamel(key)] = transformKeys(value)
+  }
+  return transformed as T
+}
+
+class ApiService {
+  private baseUrl: string
+  private token: string | null = null
+
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl
+    this.token = localStorage.getItem('auth_token')
+  }
+
+  setToken(token: string | null) {
+    this.token = token
+    if (token) {
+      localStorage.setItem('auth_token', token)
+    } else {
+      localStorage.removeItem('auth_token')
+    }
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    }
+
+    if (this.token) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers,
+      })
+
+      if (!response.ok) {
+        if (response.status === 401 && onAuthError) {
+          onAuthError()
+        }
+        const errorData = await response.json().catch(() => ({}))
+        return { error: errorData.detail || `Error ${response.status}` }
+      }
+
+      const data = await response.json()
+      return { data: transformKeys<T>(data) }
+    } catch {
+      return { error: 'Error de conexión' }
+    }
+  }
+
+  // Auth endpoints
+  async sendCode(email: string): Promise<ApiResponse<{ email: string }>> {
+    return this.request('/auth/codes', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    })
+  }
+
+  async verifyCode(email: string, code: string): Promise<ApiResponse<AuthToken>> {
+    return this.request('/auth/tokens', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    })
+  }
+
+  // Tenant endpoints
+  async getTenants(): Promise<ApiResponse<Tenant[]>> {
+    return this.request('/tenants')
+  }
+
+  async getTenant(id: string): Promise<ApiResponse<Tenant>> {
+    return this.request(`/tenants/${id}`)
+  }
+
+  async updateTenant(id: string, data: { name?: string; subdomain?: string; currency?: string }): Promise<ApiResponse<Tenant>> {
+    return this.request(`/tenants/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  // Lists endpoints
+  async getLists(tenantId: string): Promise<ApiResponse<PriceList[]>> {
+    return this.request(`/tenants/${tenantId}/lists`)
+  }
+
+  async getList(listId: string): Promise<ApiResponse<PriceList>> {
+    return this.request(`/lists/${listId}`)
+  }
+
+  async createList(tenantId: string, name: string): Promise<ApiResponse<PriceList>> {
+    return this.request(`/tenants/${tenantId}/lists`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    })
+  }
+
+  async updateList(listId: string, data: { name?: string; published?: boolean; showOnIndex?: boolean }): Promise<ApiResponse<PriceList>> {
+    return this.request(`/lists/${listId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        name: data.name,
+        published: data.published,
+        show_on_index: data.showOnIndex,
+      }),
+    })
+  }
+
+  async deleteList(listId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/lists/${listId}`, { method: 'DELETE' })
+  }
+
+  // Version endpoints
+  async getVersions(listId: string): Promise<ApiResponse<ListVersion[]>> {
+    return this.request(`/lists/${listId}/versions`)
+  }
+
+  async getVersion(versionId: string): Promise<ApiResponse<ListVersion>> {
+    return this.request(`/versions/${versionId}`)
+  }
+
+  async createVersion(listId: string, name: string): Promise<ApiResponse<ListVersion>> {
+    return this.request(`/lists/${listId}/versions`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    })
+  }
+
+  async updateVersion(versionId: string, data: { name?: string; published?: boolean }): Promise<ApiResponse<ListVersion>> {
+    return this.request(`/versions/${versionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async duplicateVersion(versionId: string, name?: string): Promise<ApiResponse<ListVersion>> {
+    const params = name ? `?name=${encodeURIComponent(name)}` : ''
+    return this.request(`/versions/${versionId}/duplicate${params}`, { method: 'POST' })
+  }
+
+  // Items endpoints
+  async getItems(versionId: string): Promise<ApiResponse<Item[]>> {
+    return this.request(`/versions/${versionId}/items`)
+  }
+
+  async getItem(itemId: string): Promise<ApiResponse<Item>> {
+    return this.request(`/items/${itemId}`)
+  }
+
+  async createItem(versionId: string, data: { name: string; price: number; description?: string; currency?: string; category?: string }): Promise<ApiResponse<Item>> {
+    return this.request(`/versions/${versionId}/items`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateItem(itemId: string, data: { name?: string; price?: number; description?: string; category?: string }): Promise<ApiResponse<Item>> {
+    return this.request(`/items/${itemId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteItem(itemId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/items/${itemId}`, { method: 'DELETE' })
+  }
+
+  async reorderItems(versionId: string, itemIds: string[]): Promise<ApiResponse<{ reordered: boolean }>> {
+    return this.request(`/versions/${versionId}/items/order`, {
+      method: 'PUT',
+      body: JSON.stringify({ item_ids: itemIds }),
+    })
+  }
+
+  // Public endpoints
+  async getPublicMenu(subdomain: string): Promise<ApiResponse<{ tenant: Tenant; lists: PriceList[] }>> {
+    return this.request(`/public/${subdomain}`)
+  }
+
+  // Import endpoints
+  async importFromUrl(url: string): Promise<ApiResponse<{ items: { name: string; price: number; description: string | null }[]; count: number }>> {
+    return this.request('/import/from-url', {
+      method: 'POST',
+      body: JSON.stringify({ url }),
+    })
+  }
+
+  async importFromImages(imageUrls: string[]): Promise<ApiResponse<{ items: { name: string; price: number; description: string | null }[]; count: number }>> {
+    return this.request('/import/from-images', {
+      method: 'POST',
+      body: JSON.stringify({ image_urls: imageUrls }),
+    })
+  }
+}
+
+export const api = new ApiService(API_URL)
+export default api

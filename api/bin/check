@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+cd "$(dirname "$0")/.."
+
+echo "Running linter..."
+pipenv run ruff check .
+
+echo ""
+echo "Running type checker..."
+pipenv run mypy .
+
+echo ""
+echo "Running tests..."
+# Exit code 5 means no tests collected, which is ok
+pipenv run pytest || test $? -eq 5
+
+echo ""
+echo "All checks passed!"

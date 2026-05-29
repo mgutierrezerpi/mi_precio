@@ -1,0 +1,111 @@
+# Files in the config/locales directory are used for internationalization and
+# are automatically loaded by Rails. If you want to use locales other than
+# English, add the necessary files in this directory.
+#
+# To use the locales, use `I18n.t`:
+#
+#     I18n.t "hello"
+#
+# In views, this is aliased to just `t`:
+#
+#     <%= t("hello") %>
+#
+# To use a different locale, set it with `I18n.locale`:
+#
+#     I18n.locale = :es
+#
+# This would use the information in config/locales/es.yml.
+#
+# To learn more about the API, please read the Rails Internationalization guide
+# at https://guides.rubyonrails.org/i18n.html.
+#
+# Be aware that YAML interprets the following case-insensitive strings as
+# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
+# must be quoted to be interpreted as strings. For example:
+#
+#     en:
+#       "yes": yup
+#       enabled: "ON"
+
+en:
+  hello: "Hello world"
+  
+  # Landing page
+  landing:
+    hero:
+      title_1: "Mi"
+      title_2: "Precio"
+      subtitle: "The digital pricing platform that transforms your customers' experience. Update prices in seconds, eliminate printing costs, and offer always up-to-date QR code catalogs."
+      view_restaurants: "View Clients"
+      learn_more: "Learn More"
+      performance: "PERFORMANCE"
+      tech_stack: "POWERED BY"
+      vertical_text: "PAPERLESS • INSTANT UPDATES • ECO-FRIENDLY • GUARANTEED SAVINGS"
+    stats:
+      digital_first: "100% Digital"
+      available: "24/7 Available"
+      updates: "Unlimited Updates"
+      print_costs: "$0 Printing"
+      faster: "10x Faster"
+    approach:
+      title: "Why MiPrecio?"
+      subtitle: "The ultimate digital pricing solution your business needs"
+      realtime_title: "Complete Real-Time Control"
+      realtime_text: "Product price changed? New special offer? Update your catalog in seconds from any device. Your customers will always see the correct prices and real availability."
+      multitenant_title: "Your Brand, Your Space"
+      multitenant_text: "Get your own digital space with custom URL (yourbusiness.miprecio.uy). Design adapted to your brand image, colors and unique style."
+      modern_title: "Premium Customer Experience"
+      modern_text: "Ultra-fast catalogs that load instantly. Perfect responsive design on mobile. Smart search, category filters and high-quality image display."
+      zero_maintenance_title: "Simple as WhatsApp"
+      zero_maintenance_text: "No installations, no updates, no technical complications. Access from any browser, update with one click. We take care of the rest."
+    restaurants:
+      title: "Success Stories"
+      subtitle: "Businesses Already Trusting MiPrecio"
+      description: "From local shops to large retailers, over 50 businesses in Uruguay are already enjoying the benefits of MiPrecio."
+      digital_menu: "View Digital Catalog"
+      available: "Live"
+      coming_soon: "Coming Soon"
+      your_restaurant: "Your Business Here?"
+      get_started: "Start Free"
+    footer:
+      tagline: "Join the commercial digital revolution. No hidden costs, no commissions, no surprises."
+      made_in: "Made with ❤️ in Uruguay"
+      rights: "© 2025"
+    features:
+      qr_title: "Smart QR Code"
+      qr_text: "One QR code for life. Customers scan and access your updated catalog without apps."
+      analytics_title: "Real-Time Analytics"
+      analytics_text: "Discover which products are most viewed, peak hours and your customers' behavior."
+      multilang_title: "Automatic Multi-language"
+      multilang_text: "Your catalog automatically adapts to the customer's device language. Spanish, English, Portuguese and more."
+      images_title: "Photos that Sell"
+      images_text: "Upload professional photos of your products. Customers buy with their eyes, give them what they want to see."
+    pricing:
+      title: "Transparent Pricing"
+      subtitle: "No fine print, no surprises"
+      free_title: "Free Plan"
+      free_features: "Up to 20 products • 1 language • Unlimited updates • Basic QR code"
+      pro_title: "Professional Plan"
+      pro_features: "Unlimited products • Multi-language • Advanced analytics • Priority support • Custom domain"
+      price_free: "FREE"
+      price_pro: "$29 USD/month"
+    results:
+      title: "Businesses already trusting MiPrecio"
+      description: "Transforming how businesses display prices across Uruguay."
+      restaurants_supported: "Businesses digitally transformed"
+      restaurants_description: "Over 50 businesses across various sectors have modernized their operations with digital catalogs, improving their customers' experience and optimizing their processes."
+      cost_savings: "Cost Reduction"
+      cost_savings_description: "Average savings in printing costs, catalog updates, and price management that businesses achieve by adopting our digital platform."
+      customer_satisfaction: "Customer Satisfaction"
+      customer_satisfaction_description: "Of customers prefer digital catalogs for their ease of use, updated information, and modern interactive experience."
+      our_clients: "Our Active Clients"
+      clients_subtitle: "Businesses already transforming how they display prices"
+    vision:
+      tagline: ""
+      title: "The technology that drives the commerce of tomorrow."
+      description: "We simplify price management so you can focus on what really matters: growing your business."
+    team:
+      tagline: "Our team"
+      title: "Driving the digital transformation of Uruguayan commerce. Connecting local businesses with cutting-edge technology that simplifies, modernizes and empowers every venture."
+    cta:
+      title: "Ready to digitize your price list? Join MiPrecio and offer your customers always up-to-date information."
