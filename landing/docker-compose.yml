@@ -1,3 +1,5 @@
+name: mi_precio
+
 services:
   miprecio-landing:
     build:
