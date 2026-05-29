@@ -1,0 +1,46 @@
+name: mi_precio
+
+services:
+  landing:
+    build:
+      context: ./landing
+      dockerfile: Dockerfile
+    image: mi_precio/landing:dev
+    ports:
+      - "${LANDING_PORT:-8088}:80"
+    depends_on:
+      - api
+      - web_app
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    image: mi_precio/api:dev
+    environment:
+      APP_NAME: Mi Precio API
+      DEBUG: "true"
+      DATABASE_PATH: /data/mi_precio.db
+      SECRET_KEY: change_me_for_local_development
+      CORS_ORIGINS: '["http://localhost:3000", "http://localhost:5173"]'
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRE_MINUTES: "1440"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - api_data:/data
+
+  web_app:
+    build:
+      context: ./web_app
+      dockerfile: Dockerfile
+    image: mi_precio/web_app:dev
+    environment:
+      VITE_API_URL: "http://localhost:${API_PORT:-8000}/api/v1"
+    ports:
+      - "${WEB_APP_PORT:-5173}:5173"
+    depends_on:
+      - api
+
+volumes:
+  api_data:

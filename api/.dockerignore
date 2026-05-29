@@ -1,0 +1,11 @@
+.env
+.mypy_cache
+.pytest_cache
+.ruff_cache
+__pycache__
+*.db
+*.pyc
+*.sqlite
+*.sqlite3
+db
+htmlcov
