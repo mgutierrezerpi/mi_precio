@@ -13,6 +13,7 @@ export interface PriceList {
   id: string
   tenantId: string
   name: string
+  slug: string | null
   published: boolean
   showOnIndex: boolean
   createdAt: string

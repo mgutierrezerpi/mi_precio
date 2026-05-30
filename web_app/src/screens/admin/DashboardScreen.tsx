@@ -144,7 +144,7 @@ export function DashboardScreen() {
               {lists.map((list, index) => (
                 <Link
                   key={list.id}
-                  to={`/p/${tenant?.subdomain}/${list.id}`}
+                  to={`/p/${tenant?.subdomain}/${list.slug || list.id}`}
                   className={`flex items-center justify-between p-4 rounded-xl border border-[var(--color-border)] bg-gradient-to-r from-[var(--color-bg-card)] to-[var(--color-bg-secondary)] hover:border-[var(--color-border-accent)] hover:shadow-[var(--shadow-soft)] transition-all duration-300 group hover:-translate-y-0.5 animate-fade-in-up`}
                   style={{ animationDelay: `${0.3 + index * 0.05}s` }}
                 >

@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { MinimalLayout } from './components/MinimalLayout'
 import { HomeScreen } from './screens/home/HomeScreen'
+import { OldLandingScreen } from './screens/home/OldLandingScreen'
 import { MenuScreen } from './screens/menu/MenuScreen'
 import { LoginScreen } from './screens/admin/LoginScreen'
 import { DashboardScreen } from './screens/admin/DashboardScreen'
@@ -14,6 +15,10 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <HomeScreen />,
+  },
+  {
+    path: '/old_landing',
+    element: <OldLandingScreen />,
   },
   {
     path: '/p/:subdomain',

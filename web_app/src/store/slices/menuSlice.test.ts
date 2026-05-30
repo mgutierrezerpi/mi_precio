@@ -24,6 +24,7 @@ describe('menuSlice', () => {
       id: '1',
       tenantId: '1',
       name: 'Test List',
+      slug: 'test_list',
       published: true,
       showOnIndex: true,
       createdAt: '2024-01-01',

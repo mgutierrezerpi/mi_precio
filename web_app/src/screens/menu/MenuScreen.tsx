@@ -7,6 +7,7 @@ import type { Tenant, ListVersion, Item } from '../../types'
 interface PublicList {
   id: string
   name: string
+  slug: string | null
   version: ListVersion & { items: Item[] }
 }
 
@@ -28,7 +29,7 @@ export function MenuScreen() {
   })
 
   // Filter to specific list if listId is provided
-  const displayLists = listId ? lists.filter(l => l.id === listId) : lists
+  const displayLists = listId ? lists.filter(l => l.id === listId || l.slug === listId) : lists
 
   // Apply menu theme
   useEffect(() => {

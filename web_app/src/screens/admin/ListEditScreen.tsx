@@ -18,6 +18,7 @@ import {
 } from '../../store/slices/menuSlice'
 import { toast } from '../../components/Toast'
 import api from '../../services/api'
+import { selectTenant } from '../../store/slices/authSlice'
 
 interface ExtractedItem {
   name: string
@@ -30,12 +31,15 @@ export function ListEditScreen() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const list = useAppSelector(selectCurrentList)
+  const tenant = useAppSelector(selectTenant)
   const currentVersion = useAppSelector(selectCurrentVersion)
   const items = useAppSelector(selectItems)
   const isLoading = useAppSelector(selectIsLoading)
 
   const [isEditingName, setIsEditingName] = useState(false)
   const [editedName, setEditedName] = useState('')
+  const [isEditingSlug, setIsEditingSlug] = useState(false)
+  const [editedSlug, setEditedSlug] = useState('')
   const [showAddItem, setShowAddItem] = useState(false)
   const [newItem, setNewItem] = useState({ name: '', price: '', description: '' })
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
@@ -79,6 +83,7 @@ export function ListEditScreen() {
   useEffect(() => {
     if (list) {
       setEditedName(list.name)
+      setEditedSlug(list.slug || '')
     }
   }, [list])
 
@@ -90,6 +95,16 @@ export function ListEditScreen() {
     await dispatch(updateList({ listId: id, data: { name: editedName.trim() } }))
     setIsEditingName(false)
     toast.success('Nombre actualizado')
+  }
+
+  const handleUpdateSlug = async () => {
+    if (!id || !editedSlug.trim() || editedSlug === list?.slug) {
+      setIsEditingSlug(false)
+      return
+    }
+    await dispatch(updateList({ listId: id, data: { slug: editedSlug.trim() } }))
+    setIsEditingSlug(false)
+    toast.success('Link actualizado')
   }
 
   const handleTogglePublished = async () => {
@@ -350,6 +365,9 @@ export function ListEditScreen() {
     )
   }
 
+  const publicListPath = `/p/${tenant?.subdomain || ''}/${list.slug || list.id}`
+  const publicListUrl = `${window.location.origin}${publicListPath}`
+
   return (
     <div className="max-w-4xl mx-auto pb-20">
       {/* Breadcrumb */}
@@ -431,6 +449,57 @@ export function ListEditScreen() {
                 <StarIcon className={`w-4 h-4 ${list.showOnIndex ? 'fill-current' : ''}`} />
                 Principal
               </button>
+            </div>
+
+            <div className="mt-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
+              <p className="text-xs tracking-widest uppercase text-[var(--color-text-subtle)] mb-2">
+                Link público
+              </p>
+              {isEditingSlug ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
+                    /p/{tenant?.subdomain || 'tu_negocio'}/
+                  </span>
+                  <input
+                    type="text"
+                    value={editedSlug}
+                    onChange={(e) => setEditedSlug(e.target.value)}
+                    className="soft-input flex-1 text-sm"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleUpdateSlug()
+                      if (e.key === 'Escape') setIsEditingSlug(false)
+                    }}
+                  />
+                  <button
+                    onClick={handleUpdateSlug}
+                    className="p-2 text-[var(--color-success)] hover:bg-[var(--color-success-soft)] rounded-xl transition-colors"
+                  >
+                    <CheckIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setIsEditingSlug(false)}
+                    className="p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] rounded-xl transition-colors"
+                  >
+                    <XIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3">
+                  <Link
+                    to={publicListPath}
+                    className="text-sm text-[var(--color-accent)] hover:underline break-all"
+                  >
+                    {publicListUrl}
+                  </Link>
+                  <button
+                    onClick={() => setIsEditingSlug(true)}
+                    className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors whitespace-nowrap"
+                  >
+                    Editar link
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

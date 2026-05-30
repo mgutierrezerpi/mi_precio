@@ -1,6 +1,7 @@
 """Lists context - price list operations."""
 
 from models import PriceList, ListVersion
+from models.price_list import unique_list_slug
 from lib.ctx.identity_context import get_tenant
 from lib.value_objects import CreatedList
 
@@ -33,6 +34,12 @@ def update_list(list_id: str, **updates) -> PriceList | None:
 
     # Check if we're changing published status
     publishing = updates.get("published")
+
+    if updates.get("name") and not updates.get("slug"):
+        updates["slug"] = unique_list_slug(price_list.tenant_id, updates["name"], price_list.id)
+
+    if updates.get("slug"):
+        updates["slug"] = unique_list_slug(price_list.tenant_id, updates["slug"], price_list.id)
 
     for key, value in updates.items():
         if value is not None:

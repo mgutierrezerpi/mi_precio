@@ -7,6 +7,7 @@ class PriceListView(BaseView):
     id: str
     tenant_id: str
     name: str
+    slug: str | None = None
     published: bool
     show_on_index: bool
     created_at: datetime

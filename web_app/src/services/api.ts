@@ -126,11 +126,12 @@ class ApiService {
     })
   }
 
-  async updateList(listId: string, data: { name?: string; published?: boolean; showOnIndex?: boolean }): Promise<ApiResponse<PriceList>> {
+  async updateList(listId: string, data: { name?: string; slug?: string; published?: boolean; showOnIndex?: boolean }): Promise<ApiResponse<PriceList>> {
     return this.request(`/lists/${listId}`, {
       method: 'PATCH',
       body: JSON.stringify({
         name: data.name,
+        slug: data.slug,
         published: data.published,
         show_on_index: data.showOnIndex,
       }),

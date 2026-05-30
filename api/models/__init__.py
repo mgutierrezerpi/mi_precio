@@ -12,3 +12,10 @@ Item.list_version.set_model(ListVersion)
 
 def create_tables():
     db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item])
+    ensure_columns()
+
+
+def ensure_columns():
+    list_columns = [column.name for column in db.get_columns("lists")]
+    if "slug" not in list_columns:
+        db.execute_sql("ALTER TABLE lists ADD COLUMN slug VARCHAR(255)")
