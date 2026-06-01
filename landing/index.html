@@ -14,13 +14,19 @@
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://miprecio.app" />
-    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
     <title>MiPrecio | Tu catálogo online, tus precios al día</title>
   </head>
   <body>
     <header class="site-header" data-header>
       <a class="brand" href="#inicio" aria-label="MiPrecio inicio">
-        <img src="/images/miprecio-logo-pencil.png" alt="MiPrecio" />
+        <img src="images/miprecio-logo-pencil.png" alt="MiPrecio" />
       </a>
       <nav class="nav-links" aria-label="Navegación principal">
         <a href="#producto">Producto</a>
@@ -48,78 +54,105 @@
             </p>
             <div class="hero-actions">
               <a class="button primary" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Crear cuenta gratis</a>
-              <a class="button secondary" href="#producto">Ver demo</a>
+              <a class="button ghost" href="#producto"><i data-lucide="play"></i>Ver demo</a>
             </div>
-            <p class="trusted">Más de 2.500 negocios ya usan MiPrecio</p>
+            <div class="hero-rating">
+              <span class="stars" aria-hidden="true">
+                <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+              </span>
+              <span class="trusted">Más de 2.500 negocios ya usan MiPrecio</span>
+            </div>
           </div>
 
-          <div class="product-card" aria-label="Vista previa de lista de precios">
-            <div class="card-header">
-              <div>
-                <strong>Lista de precios</strong>
-                <span>Distribuidora ACME · Actualizada hoy</span>
+          <div class="hero-visual">
+            <div class="product-card" aria-label="Vista previa de lista de precios">
+              <div class="card-header">
+                <div>
+                  <strong>Lista de precios</strong>
+                  <span>Distribuidora ACME · Actualizada hoy</span>
+                </div>
+                <span class="card-tag"><i data-lucide="circle-check"></i>En vivo</span>
               </div>
-              <em>miprecio.app/p/acme</em>
-            </div>
-            <div class="search">Buscar producto...</div>
-            <div class="table">
-              <div class="table-head">
-                <span>Producto</span>
-                <span>SKU</span>
-                <span>Precio</span>
-                <span>Stock</span>
+              <label class="card-search"><i data-lucide="search"></i><span>Buscar producto…</span></label>
+              <div class="table">
+                <div class="table-head">
+                  <span>Producto</span>
+                  <span>SKU</span>
+                  <span>Precio</span>
+                  <span>Stock</span>
+                </div>
+                <div class="table-row">
+                  <span class="cell-product"><i class="prod-icon" data-lucide="package"></i>Tornillo hex. 8mm</span>
+                  <span class="cell-sku">FER-001</span>
+                  <b>$ 85</b>
+                  <span><small class="ok">Disponible</small></span>
+                </div>
+                <div class="table-row">
+                  <span class="cell-product"><i class="prod-icon" data-lucide="package"></i>Cable eléctrico 2.5</span>
+                  <span class="cell-sku">ELE-220</span>
+                  <b>$ 1.250</b>
+                  <span><small class="ok">Disponible</small></span>
+                </div>
+                <div class="table-row">
+                  <span class="cell-product"><i class="prod-icon" data-lucide="package"></i>Pintura látex 4L</span>
+                  <span class="cell-sku">PIN-104</span>
+                  <b>$ 9.800</b>
+                  <span><small class="warn">Bajo stock</small></span>
+                </div>
+                <div class="table-row">
+                  <span class="cell-product"><i class="prod-icon" data-lucide="package"></i>Cemento 50kg</span>
+                  <span class="cell-sku">CON-050</span>
+                  <b>$ 6.300</b>
+                  <span><small class="bad">Sin stock</small></span>
+                </div>
               </div>
-              <div class="table-row">
-                <strong>Tornillo hex. 8mm</strong>
-                <span>FER-001</span>
-                <b>$85</b>
-                <small class="ok">Disponible</small>
-              </div>
-              <div class="table-row">
-                <strong>Cable eléctrico 2.5</strong>
-                <span>ELE-220</span>
-                <b>$1.250</b>
-                <small class="ok">Disponible</small>
-              </div>
-              <div class="table-row">
-                <strong>Pintura látex 4L</strong>
-                <span>PIN-104</span>
-                <b>$9.800</b>
-                <small class="warn">Bajo stock</small>
-              </div>
-              <div class="table-row">
-                <strong>Cemento 50kg</strong>
-                <span>CON-050</span>
-                <b>$6.300</b>
-                <small class="bad">Sin stock</small>
-              </div>
-            </div>
-            <div class="mini-panels">
-              <div>
-                <span>Link público</span>
-                <strong>miprecio.app/p/acme</strong>
-              </div>
-              <div>
-                <span>Stock actualizado</span>
-                <strong>Hace 2 min</strong>
+              <div class="card-foot">
+                <span class="card-link"><i data-lucide="link-2"></i>miprecio.app/p/acme</span>
+                <span class="card-qr"><i data-lucide="qr-code"></i></span>
               </div>
             </div>
+            <div class="float-badge badge-qr"><i data-lucide="qr-code"></i>miprecio.app/p/acme</div>
+            <div class="float-badge badge-stock"><span class="dot"></span>Stock actualizado</div>
           </div>
         </div>
       </section>
 
-      <section id="producto" class="section">
+      <section id="producto" class="section features-section">
         <div class="section-heading">
           <p class="eyebrow">Funciones</p>
           <h2>Todo lo que tu negocio necesita para vender mejor.</h2>
         </div>
         <div class="feature-grid">
-          <article><i>✓</i><h3>Catálogo de productos</h3><p>Cargá productos, variantes, fotos y precios. Organizalos por categorías en minutos.</p></article>
-          <article><i>✓</i><h3>Control de stock</h3><p>Actualizá unidades en tiempo real y recibí alertas cuando un producto está por agotarse.</p></article>
-          <article><i>✓</i><h3>Lista compartible</h3><p>Generá un link público o un QR para que tus clientes vean siempre la última versión.</p></article>
-          <article><i>✓</i><h3>Códigos QR personalizados</h3><p>Imprimí el QR para tu mostrador, catálogo impreso o redes sociales.</p></article>
-          <article><i>✓</i><h3>Multimoneda y listas por cliente</h3><p>Mostrá precios en pesos, dólares o por canal de venta.</p></article>
-          <article><i>✓</i><h3>Actualizaciones masivas</h3><p>Ajustá precios por porcentaje en toda una categoría sin rehacer planillas.</p></article>
+          <article>
+            <span class="feat-icon violet"><i data-lucide="package"></i></span>
+            <h3>Catálogo de productos</h3>
+            <p>Cargá productos, variantes, fotos y precios. Organizalos por categorías en minutos.</p>
+          </article>
+          <article>
+            <span class="feat-icon green"><i data-lucide="boxes"></i></span>
+            <h3>Control de stock</h3>
+            <p>Actualizá unidades en tiempo real y recibí alertas cuando un producto está por agotarse.</p>
+          </article>
+          <article>
+            <span class="feat-icon violet"><i data-lucide="link-2"></i></span>
+            <h3>Lista de precios compartible</h3>
+            <p>Generá un link público o un QR para que tus clientes vean siempre la última versión.</p>
+          </article>
+          <article>
+            <span class="feat-icon sky"><i data-lucide="qr-code"></i></span>
+            <h3>Códigos QR personalizados</h3>
+            <p>Imprimí el QR para tu mostrador, catálogo impreso o redes sociales. Sin apps adicionales.</p>
+          </article>
+          <article>
+            <span class="feat-icon amber"><i data-lucide="dollar-sign"></i></span>
+            <h3>Multimoneda y listas por cliente</h3>
+            <p>Mostrá precios en pesos, dólares o por canal de venta. Una lista distinta por cliente.</p>
+          </article>
+          <article>
+            <span class="feat-icon rose"><i data-lucide="refresh-cw"></i></span>
+            <h3>Actualizaciones masivas</h3>
+            <p>Subí cambios desde un archivo o ajustá precios por porcentaje en toda una categoría.</p>
+          </article>
         </div>
       </section>
 
@@ -136,36 +169,48 @@
       </section>
 
       <section class="section client-section">
+       <div class="client-inner">
         <div class="phone">
           <div class="phone-screen">
-            <div class="phone-hero">
-              <span>Actualizado</span>
-              <h3>Ferretería y pintura</h3>
-              <div class="phone-stats"><b>142<small>prods</small></b><b>24h<small>envíos</small></b></div>
+            <div class="phone-topbar">
+              <span class="phone-logo"><i data-lucide="shopping-bag"></i></span>
+              <span class="phone-biz">
+                <strong>Mi Negocio S.R.L.</strong>
+                <small>Montevideo, Uruguay</small>
+              </span>
+              <span class="phone-menu"><i data-lucide="menu"></i></span>
             </div>
             <div class="phone-body">
-              <div class="search">Buscar...</div>
-              <div class="chips"><span>Todos</span><span>Ferretería</span><span>Pinturas</span></div>
-              <article><strong>Taladro Bosch</strong><small>Bosch · 13mm</small><b>UYU 8.990</b></article>
-              <article><strong>Pintura látex 4L</strong><small>Alba · Blanco</small><b>UYU 1.430</b></article>
-              <article><strong>Cemento 50kg</strong><small>Bolsa</small><b>UYU 985</b></article>
-              <article><strong>Lámpara LED 9W</strong><small>Philips · E27</small><b>UYU 145</b></article>
+              <div class="phone-hero">
+                <span class="phone-tag">Actualizado</span>
+                <h3>Ferretería y pintura</h3>
+                <a class="phone-cart" href="#"><i data-lucide="shopping-cart"></i>Mi carrito</a>
+              </div>
+              <div class="phone-search"><i data-lucide="search"></i><span>Buscar...</span></div>
+              <div class="chips"><span class="active">Todos</span><span>Ferretería</span><span>Pinturas</span></div>
+              <div class="phone-grid">
+                <article><span class="ph-thumb"></span><strong>Taladro Bosch</strong><small>Bosch · 13mm</small><b>UYU 8.990</b></article>
+                <article><span class="ph-thumb"></span><strong>Pintura látex 4L</strong><small>Alba · Blanco</small><b>UYU 1.430</b></article>
+                <article><span class="ph-thumb"></span><strong>Cemento 50kg</strong><small>Bolsa</small><b>UYU 985</b></article>
+                <article><span class="ph-thumb"></span><strong>Lámpara LED 9W</strong><small>Philips · E27</small><b>UYU 145</b></article>
+              </div>
             </div>
           </div>
         </div>
-        <div>
-          <p class="eyebrow">Para tus clientes</p>
+        <div class="client-copy">
+          <span class="badge">Para tus clientes</span>
           <h2>Tus clientes ven una lista profesional, siempre actualizada.</h2>
           <p class="body-copy">
             Compartí tu catálogo con un link o un QR y olvidate de mandar PDFs desactualizados por WhatsApp.
             Tus precios y tu stock siempre al día, vean de donde te vean.
           </p>
           <ul class="check-list">
-            <li>Sin necesidad de descargar apps.</li>
-            <li>Compatible con móvil y escritorio.</li>
-            <li>Personalizá colores y logo de tu marca.</li>
+            <li><i data-lucide="circle-check"></i>Sin necesidad de descargar apps.</li>
+            <li><i data-lucide="circle-check"></i>Compatible con móvil y escritorio.</li>
+            <li><i data-lucide="circle-check"></i>Personalizá colores y logo de tu marca.</li>
           </ul>
         </div>
+       </div>
       </section>
 
       <section class="stats-section">
@@ -174,22 +219,34 @@
           <h2>Negocios que ya tienen su lista de precios online.</h2>
         </div>
         <div class="stats-grid">
-          <article><strong>2.500+</strong><span>Negocios activos</span></article>
+          <article><strong>2.500+</strong><span>Negocios activos en MiPrecio</span></article>
           <article><strong>180k</strong><span>Productos cargados</span></article>
-          <article><strong>1.2M</strong><span>QR escaneados</span></article>
+          <article><strong>1.2M</strong><span>QR escaneados por clientes</span></article>
           <article><strong>98%</strong><span>Recomendarían MiPrecio</span></article>
         </div>
       </section>
 
-      <section class="section">
+      <section class="section testimonials-section">
         <div class="section-heading">
           <p class="eyebrow">Testimonios</p>
           <h2>Lo que dicen quienes ya usan MiPrecio.</h2>
         </div>
         <div class="testimonial-grid">
-          <article><p>"Antes mandaba la lista por PDF cada vez que cambiaban los precios. Ahora mis clientes escanean el QR y siempre ven la versión correcta."</p><footer><b>LF</b><span>Lucía Fernández<small>Dueña, Almacén Norte</small></span></footer></article>
-          <article><p>"El control de stock cambió la forma en que reponemos mercadería. Las alertas nos avisan antes de quedar sin producto."</p><footer><b>MS</b><span>Martín Sosa<small>Gerente, Distrimax</small></span></footer></article>
-          <article><p>"Tener una lista por cliente es oro para ventas mayoristas. Cada uno ve sus precios, sin confusiones ni descuentos a mano."</p><footer><b>CP</b><span>Carla Pérez<small>Comercial, AceroPlus</small></span></footer></article>
+          <article>
+            <span class="stars" aria-hidden="true"><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i></span>
+            <p>"Antes mandaba la lista por PDF cada vez que cambiaban los precios. Ahora mis clientes simplemente escanean el QR y siempre ven la versión correcta."</p>
+            <footer><b class="av-violet">LF</b><span>Lucía Fernández<small>Dueña, Almacén Norte</small></span></footer>
+          </article>
+          <article>
+            <span class="stars" aria-hidden="true"><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i></span>
+            <p>"El control de stock cambió la forma en que reponemos mercadería. Las alertas nos avisan antes de quedar sin producto y ahorramos horas de planillas."</p>
+            <footer><b class="av-sky">MS</b><span>Martín Sosa<small>Gerente, Distrimax</small></span></footer>
+          </article>
+          <article>
+            <span class="stars" aria-hidden="true"><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i></span>
+            <p>"Tener una lista por cliente es oro para ventas mayoristas. Cada uno ve sus precios, sin confusiones ni descuentos a mano."</p>
+            <footer><b class="av-green">CP</b><span>Carla Pérez<small>Comercial, AceroPlus</small></span></footer>
+          </article>
         </div>
       </section>
 
@@ -200,9 +257,48 @@
           <span>Probá MiPrecio gratis 14 días. Sin tarjeta de crédito.</span>
         </div>
         <div class="pricing-grid">
-          <article><h3>Inicial</h3><p>Para empezar a tener tu lista online.</p><strong>Gratis</strong><small>Por siempre</small><ul><li>Hasta 10 productos</li><li>1 lista pública</li><li>QR personalizado</li><li>Soporte por email</li></ul><a href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Empezar gratis</a></article>
-          <article class="featured"><em>Más popular</em><h3>Pyme</h3><p>Para negocios que ya están creciendo.</p><strong>$19</strong><small>USD por mes</small><ul><li>Productos ilimitados</li><li>Listas por cliente</li><li>Control de stock + alertas</li><li>Multiusuario (5)</li><li>Soporte prioritario</li></ul><a href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Probar 14 días</a></article>
-          <article><h3>Negocio</h3><p>Para equipos comerciales y mayoristas.</p><strong>$49</strong><small>USD por mes</small><ul><li>Todo lo de Pyme</li><li>Multimoneda</li><li>Importación masiva</li><li>Usuarios ilimitados</li><li>Integración con WhatsApp</li></ul><a href="mailto:hola@miprecio.app?subject=Ventas%20MiPrecio">Hablar con ventas</a></article>
+          <article>
+            <h3>Inicial</h3>
+            <p>Para empezar a tener tu lista online.</p>
+            <strong>$ 5</strong><small>USD por mes</small>
+            <span class="trial"><i data-lucide="sparkles"></i>14 días de prueba gratis</span>
+            <ul>
+              <li><i data-lucide="check"></i>Hasta 10 productos</li>
+              <li><i data-lucide="check"></i>1 lista pública</li>
+              <li><i data-lucide="check"></i>QR personalizado</li>
+              <li><i data-lucide="check"></i>Soporte por email</li>
+            </ul>
+            <a class="plan-cta" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Probar 14 días</a>
+          </article>
+          <article class="featured">
+            <em>Más popular</em>
+            <h3>Pyme</h3>
+            <p>Para negocios que ya están creciendo.</p>
+            <strong>$ 20</strong><small>USD por mes</small>
+            <span class="trial"><i data-lucide="sparkles"></i>14 días de prueba gratis</span>
+            <ul>
+              <li><i data-lucide="check"></i>Productos ilimitados</li>
+              <li><i data-lucide="check"></i>Listas por cliente</li>
+              <li><i data-lucide="check"></i>Control de stock + alertas</li>
+              <li><i data-lucide="check"></i>Multiusuario (5)</li>
+              <li><i data-lucide="check"></i>Soporte prioritario</li>
+            </ul>
+            <a class="plan-cta" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Probar 14 días</a>
+          </article>
+          <article>
+            <h3>Negocio Pro</h3>
+            <p>Para equipos comerciales y mayoristas.</p>
+            <strong>$ 35</strong><small>USD por mes</small>
+            <span class="trial"><i data-lucide="sparkles"></i>14 días de prueba gratis</span>
+            <ul>
+              <li><i data-lucide="check"></i>Todo lo de Pyme</li>
+              <li><i data-lucide="check"></i>Multimoneda</li>
+              <li><i data-lucide="check"></i>Importación masiva</li>
+              <li><i data-lucide="check"></i>Usuarios ilimitados</li>
+              <li><i data-lucide="check"></i>Integración con WhatsApp</li>
+            </ul>
+            <a class="plan-cta" href="mailto:hola@miprecio.app?subject=Ventas%20MiPrecio">Hablar con ventas</a>
+          </article>
         </div>
       </section>
 
@@ -212,37 +308,90 @@
           <h2>Todo lo que necesitás saber.</h2>
         </div>
         <div class="faq-list">
-          <details open><summary>¿Necesito instalar algo en mi computadora?</summary><p>No. MiPrecio funciona 100% en el navegador y en el celular.</p></details>
-          <details><summary>¿Mis clientes necesitan registrarse para ver la lista?</summary><p>No. Abren el link o escanean el QR y ven la lista pública sin crear cuenta.</p></details>
-          <details><summary>¿Puedo tener listas distintas por cliente o canal?</summary><p>Sí. Podés manejar listas por cliente, mayorista, minorista o canal de venta.</p></details>
-          <details><summary>¿Cómo se actualizan los precios y el stock?</summary><p>Actualizás desde tu panel y el cambio se refleja inmediatamente en el link compartido.</p></details>
+          <details open>
+            <summary>¿Necesito instalar algo en mi computadora?<i class="faq-icon" data-lucide="minus"></i></summary>
+            <p>No. MiPrecio funciona 100% en el navegador y en el celular. Solo creás tu cuenta y empezás a cargar productos.</p>
+          </details>
+          <details>
+            <summary>¿Mis clientes necesitan registrarse para ver la lista?<i class="faq-icon" data-lucide="plus"></i></summary>
+            <p>No. Abren el link o escanean el QR y ven la lista pública sin crear cuenta.</p>
+          </details>
+          <details>
+            <summary>¿Puedo tener listas distintas por cliente o canal?<i class="faq-icon" data-lucide="plus"></i></summary>
+            <p>Sí. Podés manejar listas por cliente, mayorista, minorista o canal de venta.</p>
+          </details>
+          <details>
+            <summary>¿Cómo se actualizan los precios y el stock?<i class="faq-icon" data-lucide="plus"></i></summary>
+            <p>Actualizás desde tu panel y el cambio se refleja inmediatamente en el link compartido.</p>
+          </details>
+          <details>
+            <summary>¿Hay límite de productos o usuarios?<i class="faq-icon" data-lucide="plus"></i></summary>
+            <p>Depende del plan: Inicial admite hasta 10 productos, mientras que Pyme y Negocio no tienen límite de productos ni de usuarios.</p>
+          </details>
         </div>
       </section>
 
-      <section id="contacto" class="final-cta">
-        <h2>Tu lista de precios, lista en 5 minutos.</h2>
-        <p>Creá tu cuenta gratis hoy y empezá a compartir tu catálogo con un link o un QR.</p>
-        <div>
-          <a class="button primary light" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Crear cuenta gratis</a>
-          <a class="button secondary" href="mailto:hola@miprecio.app?subject=Ventas%20MiPrecio">Hablar con ventas</a>
+      <section id="contacto" class="final-cta-section">
+        <div class="final-cta">
+          <h2>Tu lista de precios, lista en 5 minutos.</h2>
+          <p>Creá tu cuenta gratis hoy y empezá a compartir tu catálogo con un link o un QR.</p>
+          <div class="final-cta-actions">
+            <a class="button primary light" href="mailto:hola@miprecio.app?subject=Quiero%20probar%20MiPrecio">Crear cuenta gratis<i data-lucide="arrow-right"></i></a>
+            <a class="button outline-light" href="mailto:hola@miprecio.app?subject=Ventas%20MiPrecio">Hablar con ventas</a>
+          </div>
         </div>
       </section>
     </main>
 
     <footer class="site-footer">
-      <div>
-        <img src="/images/miprecio-logo-white-pencil.png" alt="MiPrecio" />
-        <p>La plataforma simple para que tu negocio cargue productos, controle stock y comparta su lista de precios con un link o un QR.</p>
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <img src="images/miprecio-logo-white-pencil.png" alt="MiPrecio" />
+          <p>La plataforma simple para que tu negocio cargue productos, controle stock y comparta su lista de precios con un link o un QR.</p>
+          <div class="socials">
+            <a href="#" aria-label="Instagram"><i data-lucide="instagram"></i></a>
+            <a href="#" aria-label="LinkedIn"><i data-lucide="linkedin"></i></a>
+            <a href="#" aria-label="Twitter"><i data-lucide="twitter"></i></a>
+            <a href="#" aria-label="YouTube"><i data-lucide="youtube"></i></a>
+          </div>
+        </div>
+        <nav class="footer-col">
+          <strong>Producto</strong>
+          <a href="#producto">Funciones</a>
+          <a href="#precios">Precios</a>
+          <a href="#producto">Casos de uso</a>
+          <a href="#inicio">Novedades</a>
+          <a href="#producto">Demo</a>
+        </nav>
+        <nav class="footer-col">
+          <strong>Empresa</strong>
+          <a href="#">Sobre nosotros</a>
+          <a href="#">Blog</a>
+          <a href="#">Clientes</a>
+          <a href="mailto:hola@miprecio.app">Contacto</a>
+          <a href="#">Trabajá con nosotros</a>
+        </nav>
+        <nav class="footer-col">
+          <strong>Recursos</strong>
+          <a href="#faq">Centro de ayuda</a>
+          <a href="#">Documentación</a>
+          <a href="#">Estado del servicio</a>
+          <a href="#">Guías para pymes</a>
+          <a href="#">Comunidad</a>
+        </nav>
+        <nav class="footer-col">
+          <strong>Legal</strong>
+          <a href="#">Términos</a>
+          <a href="#">Privacidad</a>
+          <a href="#">Cookies</a>
+          <a href="#">Seguridad</a>
+        </nav>
       </div>
-      <nav>
-        <a href="#producto">Funciones</a>
-        <a href="#precios">Precios</a>
-        <a href="#faq">Recursos</a>
-        <a href="mailto:hola@miprecio.app">Contacto</a>
-      </nav>
-      <span>© 2026 MiPrecio. Todos los derechos reservados.</span>
+      <div class="footer-divider"></div>
+      <span class="footer-copy">© 2026 MiPrecio. Todos los derechos reservados.</span>
     </footer>
 
-    <script src="/assets/main.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="assets/main.js"></script>
   </body>
 </html>
