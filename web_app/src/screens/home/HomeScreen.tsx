@@ -1,6 +1,10 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectIsAuthenticated } from '../../store/slices/authSlice'
+import { AuthModal } from '../../components/AuthModal'
+
+type OpenAuth = () => void
 
 const features = [
   ['Catálogo de productos', 'Cargá productos, variantes, fotos y precios. Organizalos por categorías en minutos.'],
@@ -63,26 +67,45 @@ const productRows = [
 
 export function HomeScreen() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
-  const appLink = isAuthenticated ? '/admin' : '/login'
+  const navigate = useNavigate()
+  const location = useLocation()
+  // Opening /login (or any auth CTA) shows the modal over the landing.
+  const [authOpen, setAuthOpen] = useState(location.pathname === '/login' && !isAuthenticated)
+
+  // Open the auth modal, or go straight to the panel if already signed in.
+  const openAuth: OpenAuth = () => {
+    if (isAuthenticated) {
+      navigate('/admin')
+      return
+    }
+    setAuthOpen(true)
+  }
 
   return (
     <main className="min-h-screen bg-white font-sans text-slate-900">
-      <Nav appLink={appLink} isAuthenticated={isAuthenticated} />
-      <Hero appLink={appLink} />
+      <Nav onAuth={openAuth} isAuthenticated={isAuthenticated} />
+      <Hero onAuth={openAuth} />
       <Features />
       <HowItWorks />
       <ClientPreview />
       <Stats />
       <Testimonials />
-      <Pricing appLink={appLink} />
+      <Pricing onAuth={openAuth} />
       <Faq />
-      <FinalCta appLink={appLink} />
+      <FinalCta onAuth={openAuth} />
       <Footer />
+      <AuthModal
+        open={authOpen}
+        onClose={() => {
+          setAuthOpen(false)
+          if (location.pathname === '/login') navigate('/', { replace: true })
+        }}
+      />
     </main>
   )
 }
 
-function Nav({ appLink, isAuthenticated }: { appLink: string; isAuthenticated: boolean }) {
+function Nav({ onAuth, isAuthenticated }: { onAuth: OpenAuth; isAuthenticated: boolean }) {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
@@ -96,19 +119,19 @@ function Nav({ appLink, isAuthenticated }: { appLink: string; isAuthenticated: b
           <a href="#faq" className="hover:text-violet-700">Recursos</a>
         </nav>
         <div className="flex items-center gap-3">
-          <Link to={appLink} className="hidden text-sm font-bold text-violet-700 sm:inline-flex">
+          <button type="button" onClick={onAuth} className="hidden text-sm font-bold text-violet-700 sm:inline-flex">
             {isAuthenticated ? 'Mi panel' : 'Iniciar sesión'}
-          </Link>
-          <Link to={appLink} className="rounded-full bg-violet-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-700/20 hover:bg-violet-800">
+          </button>
+          <button type="button" onClick={onAuth} className="rounded-full bg-violet-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-700/20 hover:bg-violet-800">
             Probar gratis
-          </Link>
+          </button>
         </div>
       </div>
     </header>
   )
 }
 
-function Hero({ appLink }: { appLink: string }) {
+function Hero({ onAuth }: { onAuth: OpenAuth }) {
   return (
     <section id="producto" className="relative overflow-hidden bg-[#24105f]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(168,85,247,0.55),transparent_32%),radial-gradient(circle_at_88%_15%,rgba(236,72,153,0.35),transparent_28%),linear-gradient(135deg,#351279_0%,#14082f_100%)]" />
@@ -125,9 +148,9 @@ function Hero({ appLink }: { appLink: string }) {
             Cargá tus productos, controlá tu stock y compartí tu lista de precios con un link o un código QR. Sin planillas, sin PDFs desactualizados.
           </p>
           <div className="mt-9 flex flex-col gap-4 sm:flex-row">
-            <Link to={appLink} className="rounded-full bg-white px-6 py-3.5 text-center text-sm font-bold text-slate-950 shadow-xl shadow-black/20 hover:bg-violet-50">
+            <button type="button" onClick={onAuth} className="rounded-full bg-white px-6 py-3.5 text-center text-sm font-bold text-slate-950 shadow-xl shadow-black/20 hover:bg-violet-50">
               Crear cuenta gratis
-            </Link>
+            </button>
             <Link to="/p/demo" className="rounded-full border border-white/25 px-6 py-3.5 text-center text-sm font-bold text-white hover:bg-white/10">
               Ver demo
             </Link>
@@ -335,7 +358,7 @@ function Testimonials() {
   )
 }
 
-function Pricing({ appLink }: { appLink: string }) {
+function Pricing({ onAuth }: { onAuth: OpenAuth }) {
   return (
     <section id="precios" className="bg-slate-50 px-5 py-24 md:px-8">
       <div className="mx-auto max-w-7xl">
@@ -358,9 +381,9 @@ function Pricing({ appLink }: { appLink: string }) {
                   </li>
                 ))}
               </ul>
-              <Link to={appLink} className={`mt-8 flex rounded-full px-5 py-3 text-center text-sm font-bold ${plan.highlighted ? 'bg-violet-700 text-white hover:bg-violet-600' : 'bg-slate-100 text-slate-950 hover:bg-slate-200'}`}>
+              <button type="button" onClick={onAuth} className={`mt-8 flex rounded-full px-5 py-3 text-center text-sm font-bold ${plan.highlighted ? 'bg-violet-700 text-white hover:bg-violet-600' : 'bg-slate-100 text-slate-950 hover:bg-slate-200'}`}>
                 <span className="w-full">{plan.cta}</span>
-              </Link>
+              </button>
             </article>
           ))}
         </div>
@@ -397,14 +420,14 @@ function Faq() {
   )
 }
 
-function FinalCta({ appLink }: { appLink: string }) {
+function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
   return (
     <section className="px-5 pb-24 md:px-8">
       <div className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-violet-700 to-slate-950 p-10 text-center text-white shadow-2xl shadow-violet-200 md:p-16">
         <h2 className="text-4xl font-black tracking-tight md:text-6xl">Tu lista de precios, lista en 5 minutos.</h2>
         <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-indigo-100">Creá tu cuenta gratis hoy y empezá a compartir tu catálogo con un link o un QR.</p>
         <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-          <Link to={appLink} className="rounded-full bg-white px-6 py-3.5 text-sm font-bold text-violet-700">Crear cuenta gratis</Link>
+          <button type="button" onClick={onAuth} className="rounded-full bg-white px-6 py-3.5 text-sm font-bold text-violet-700">Crear cuenta gratis</button>
           <a href="mailto:hola@miprecio.app" className="rounded-full border border-white/25 px-6 py-3.5 text-sm font-bold text-white hover:bg-white/10">Hablar con ventas</a>
         </div>
       </div>
