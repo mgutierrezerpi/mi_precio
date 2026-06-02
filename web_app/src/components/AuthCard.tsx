@@ -36,6 +36,7 @@ const MailIcon = ({ className, size = 18 }: IconProps) => svg(size, className, <
 const LockIcon = ({ className, size = 18 }: IconProps) => svg(size, className, <><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>)
 const ArrowRight = ({ className, size = 18 }: IconProps) => svg(size, className, <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>)
 const ShieldCheck = ({ className, size = 14 }: IconProps) => svg(size, className, <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></>)
+/* Iconos de login social — deshabilitados temporalmente (solo email por ahora).
 const GoogleIcon = ({ size = 18 }: IconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" />
@@ -49,8 +50,10 @@ const AppleIcon = ({ size = 18 }: IconProps) => (
     <path d="M17.05 12.54c-.02-2.06 1.68-3.05 1.76-3.1-0.96-1.4-2.45-1.6-2.98-1.62-1.27-.13-2.48.75-3.12.75-.64 0-1.64-.73-2.7-.71-1.39.02-2.67.81-3.38 2.05-1.44 2.5-.37 6.2 1.04 8.23.69.99 1.51 2.1 2.58 2.06 1.04-.04 1.43-.67 2.69-.67 1.25 0 1.61.67 2.7.65 1.12-.02 1.83-1.01 2.51-2.01.79-1.15 1.12-2.27 1.13-2.33-.02-.01-2.17-.83-2.19-3.29zM15.0 6.36c.57-.69.95-1.65.85-2.61-.82.03-1.81.55-2.4 1.24-.53.61-.99 1.59-.87 2.52.91.07 1.85-.46 2.42-1.15z" />
   </svg>
 )
+*/
 
 /* ── Visual bits ──────────────────────────────────────────────── */
+/* Botón de login social — deshabilitado temporalmente (solo email por ahora).
 function SocialButton({ provider }: { provider: 'google' | 'apple' }) {
   return (
     <button
@@ -64,6 +67,7 @@ function SocialButton({ provider }: { provider: 'google' | 'apple' }) {
     </button>
   )
 }
+*/
 
 const inputCls =
   'min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-[#0F172A] outline-none placeholder:text-[#94A3B8] focus:border-0 focus:outline-none focus:ring-0'
@@ -163,6 +167,7 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
       {!codeSent ? (
         /* Step 1: Email input */
         <>
+          {/* Login social temporalmente deshabilitado: por ahora solo email.
           <div className="flex gap-3">
             <SocialButton provider="google" />
             <SocialButton provider="apple" />
@@ -173,6 +178,7 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
             <span className="text-xs font-medium text-[#94A3B8]">o ingresá con tu email</span>
             <span className="h-px flex-1 bg-[#E2E8F0]" />
           </div>
+          */}
 
           <form onSubmit={handleSendCode} className="flex flex-col gap-4">
             <Field label="Email" icon={<MailIcon />}>
