@@ -163,13 +163,69 @@ input, textarea, select, button, a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-light);
+  background: #7C3AED;
   border-radius: 10px;
-  border: 3px solid var(--color-bg-primary);
+  border: 3px solid transparent;
+  background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+  background: #6D28D9;
+  background-clip: padding-box;
+}
+
+/* Firefox */
+* {
+  scrollbar-color: #7C3AED transparent;
+}
+
+/* ==========================================
+   CRM Dashboard palette (light / dark)
+   ========================================== */
+.dash {
+  --dash-bg: #F5F3FF;
+  --dash-surface: #FFFFFF;
+  --dash-border: #E2E8F0;
+  --dash-divider: #F1F5F9;
+  --dash-soft: #F5F3FF;
+  --dash-soft-border: transparent;
+  --dash-table-head: #FAF5FF;
+  --dash-text: #0F172A;
+  --dash-text2: #475569;
+  --dash-muted: #94A3B8;
+  --dash-link: #6D28D9;
+
+  --tone-violet-bg: #EDE9FE; --tone-violet-fg: #7C3AED;
+  --tone-sky-bg: #E0F2FE;    --tone-sky-fg: #0EA5E9;
+  --tone-blue-bg: #DBEAFE;   --tone-blue-fg: #3B82F6;
+  --tone-green-bg: #ECFDF5;  --tone-green-fg: #10B981;
+  --tone-amber-bg: #FFFBEB;  --tone-amber-fg: #F59E0B;
+  --tone-orange-bg: #FEF3C7; --tone-orange-fg: #D97706;
+  --tone-red-bg: #FEF2F2;    --tone-red-fg: #EF4444;
+  --tone-pink-bg: #FCE7F3;   --tone-pink-fg: #A855F7;
+}
+
+[data-theme="dark"] .dash {
+  --dash-bg: #0F0823;
+  --dash-surface: #1A0F36;
+  --dash-border: #2E1065;
+  --dash-divider: #2E1065;
+  --dash-soft: #241452;
+  --dash-soft-border: #3B1F77;
+  --dash-table-head: #241452;
+  --dash-text: #FFFFFF;
+  --dash-text2: #CBD5E1;
+  --dash-muted: #8A7BB0;
+  --dash-link: #C4B5FD;
+
+  --tone-violet-bg: #3B1F77; --tone-violet-fg: #C4B5FD;
+  --tone-sky-bg: #0C4A6E;    --tone-sky-fg: #7DD3FC;
+  --tone-blue-bg: #1E3A8A;   --tone-blue-fg: #93C5FD;
+  --tone-green-bg: #064E3B;  --tone-green-fg: #6EE7B7;
+  --tone-amber-bg: #451A03;  --tone-amber-fg: #FCD34D;
+  --tone-orange-bg: #451A03; --tone-orange-fg: #FCD34D;
+  --tone-red-bg: #450A0A;    --tone-red-fg: #FCA5A5;
+  --tone-pink-bg: #4A1D3F;   --tone-pink-fg: #F0ABFC;
 }
 
 /* Selection */
