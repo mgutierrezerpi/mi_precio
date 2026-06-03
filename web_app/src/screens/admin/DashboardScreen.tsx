@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
 import { fetchProducts, selectProducts, selectProductsLoading } from '../../store/slices/productsSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
-import type { Product } from '../../types'
+import type { Product, CustomerStats } from '../../types'
 import api, { type VisitStats } from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
@@ -17,7 +17,7 @@ const FAVICON = '/miprecio-favicon.png'
 const quickActions: { icon: IconName; title: string; desc: string }[] = [
   { icon: 'plus', title: 'Nuevo producto', desc: 'Agregalo al catálogo' },
   { icon: 'list-plus', title: 'Crear lista', desc: 'Selecciona productos' },
-  { icon: 'file-spreadsheet', title: 'Importar Excel', desc: 'Cargá un .xlsx' },
+  { icon: 'user-plus', title: 'Nuevo cliente', desc: 'Agregá un contacto' },
   { icon: 'qr-code', title: 'Compartir QR', desc: 'Generá y descargá' },
 ]
 
@@ -37,6 +37,7 @@ export function DashboardScreen() {
   const loading = useAppSelector(selectProductsLoading)
   const lists = useAppSelector(selectLists)
   const [visits, setVisits] = useState<VisitStats | null>(null)
+  const [custStats, setCustStats] = useState<CustomerStats | null>(null)
   const [search, setSearch] = useState('')
 
   useEffect(() => {
@@ -51,6 +52,9 @@ export function DashboardScreen() {
     let cancelled = false
     api.getVisitStats(tenant.id).then((res) => {
       if (!cancelled && res.data) setVisits(res.data)
+    })
+    api.getCustomerStats(tenant.id).then((res) => {
+      if (!cancelled && res.data) setCustStats(res.data)
     })
     return () => { cancelled = true }
   }, [tenant?.id])
@@ -73,16 +77,8 @@ export function DashboardScreen() {
 
   const goProducts = () => navigate('/admin/items')
   const goQr = () => navigate('/admin/qr')
-
-  const qrStats = visits?.qr
-  const scans = qrStats?.total ?? 0
-  const scanPct = qrStats?.changePct ?? 0
-  const kpis: { icon: IconName; iconTone: Tone; value: string | number; label: string; tag: string; tagTone: Tone; note: string }[] = [
-    { icon: 'package', iconTone: 'violet', value: total, label: 'Productos', tag: `${available} disp.`, tagTone: 'green', note: 'En tu catálogo' },
-    { icon: 'list-checks', iconTone: 'violet', value: lists.length, label: 'Listas', tag: `${activeLists} activas`, tagTone: 'green', note: 'Compartibles por link y QR' },
-    { icon: 'qr-code', iconTone: 'sky', value: new Intl.NumberFormat('es-AR').format(scans), label: 'Escaneos QR', tag: `${scanPct >= 0 ? '+' : ''}${scanPct}%`, tagTone: scanPct >= 0 ? 'green' : 'red', note: `${qrStats?.today ?? 0} hoy · ${qrStats?.yesterday ?? 0} ayer` },
-    { icon: 'circle-x', iconTone: 'red', value: unavailable, label: 'No disponibles', tag: 'Revisar', tagTone: 'red', note: 'Ocultos en tus listas' },
-  ]
+  const goLists = () => navigate('/admin/lists')
+  const goClientes = () => navigate('/admin/clientes')
 
   return (
     <CrmLayout
@@ -133,35 +129,73 @@ export function DashboardScreen() {
 
         {/* KPI row */}
         <div className="grid grid-cols-4 gap-4">
-          {kpis.map((k) => (
-            <div key={k.label} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)]">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(k.iconTone)}>
-                <Icon name={k.icon} size={22} />
-              </span>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex items-end gap-2">
-                  <span className="text-[26px] font-black leading-none text-[var(--dash-text)]">{k.value}</span>
-                  <span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">{k.label}</span>
-                </div>
-                <div className="mt-1.5 flex items-center gap-2">
-                  <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone(k.tagTone)}>{k.tag}</span>
-                  <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{k.note}</span>
-                </div>
-              </div>
-            </div>
-          ))}
+          <ProductsCard total={total} available={available} unavailable={unavailable} onClick={goProducts} />
+          <KpiCard icon="list-checks" iconTone="violet" value={lists.length} label="Listas" tag={`${activeLists} activas`} tagTone="green" note="Compartibles por link y QR" onClick={goLists} />
+          <KpiCard icon="users" iconTone="violet" value={custStats?.total ?? 0} label="Clientes" tag={`${custStats?.active ?? 0} activos`} tagTone="green" note="En tu cartera" onClick={goClientes} />
         </div>
 
         {/* Bottom row */}
         <div className="flex gap-5">
-          <RecentProducts products={products} total={total} loading={loading} search={search} onNew={goProducts} onViewAll={goProducts} />
+          <RecentProducts products={products} total={total} loading={loading} search={search} onNew={() => navigate('/admin/items?new=1')} onViewAll={goProducts} />
           <div className="flex w-[380px] shrink-0 flex-col gap-5">
-            <QuickActions onNew={goProducts} onCreateList={() => navigate('/admin/lists')} onQr={goQr} />
+            <QuickActions
+              onProduct={() => navigate('/admin/items?new=1')}
+              onList={() => navigate('/admin/lists?new=1')}
+              onCustomer={() => navigate('/admin/clientes?new=1')}
+              onQr={goQr}
+            />
             <ActivityFeed />
           </div>
         </div>
       </div>
     </CrmLayout>
+  )
+}
+
+function KpiCard({ icon, iconTone, value, label, tag, tagTone, note, onClick }: { icon: IconName; iconTone: Tone; value: string | number; label: string; tag: string; tagTone: Tone; note: string; onClick?: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)]">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(iconTone)}>
+        <Icon name={icon} size={22} />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-end gap-2">
+          <span className="text-[26px] font-black leading-none text-[var(--dash-text)]">{value}</span>
+          <span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">{label}</span>
+        </div>
+        <div className="mt-1.5 flex items-center gap-2">
+          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone(tagTone)}>{tag}</span>
+          <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{note}</span>
+        </div>
+      </div>
+    </button>
+  )
+}
+
+/** Products KPI split in half: available vs unavailable. */
+function ProductsCard({ total, available, unavailable, onClick }: { total: number; available: number; unavailable: number; onClick?: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="col-span-2 flex items-center gap-4 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)]">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone('violet')}>
+        <Icon name="package" size={22} />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div className="flex items-end gap-2">
+          <span className="text-[26px] font-black leading-none text-[var(--dash-text)]">{total}</span>
+          <span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">Productos</span>
+        </div>
+        <div className="flex items-stretch divide-x divide-[var(--dash-border)] overflow-hidden rounded-xl border border-[var(--dash-border)]">
+          <div className="flex flex-1 flex-col items-center gap-0.5 py-1.5">
+            <span className="text-[20px] font-black leading-none" style={{ color: 'var(--tone-green-fg)' }}>{available}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">Disponibles</span>
+          </div>
+          <div className="flex flex-1 flex-col items-center gap-0.5 py-1.5">
+            <span className="text-[20px] font-black leading-none" style={{ color: 'var(--tone-red-fg)' }}>{unavailable}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">No disponibles</span>
+          </div>
+        </div>
+      </div>
+    </button>
   )
 }
 
@@ -265,10 +299,11 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll }: 
   )
 }
 
-function QuickActions({ onNew, onCreateList, onQr }: { onNew: () => void; onCreateList: () => void; onQr: () => void }) {
+function QuickActions({ onProduct, onList, onCustomer, onQr }: { onProduct: () => void; onList: () => void; onCustomer: () => void; onQr: () => void }) {
   const handlers: Record<string, () => void> = {
-    'Nuevo producto': onNew,
-    'Crear lista': onCreateList,
+    'Nuevo producto': onProduct,
+    'Crear lista': onList,
+    'Nuevo cliente': onCustomer,
     'Compartir QR': onQr,
   }
   return (

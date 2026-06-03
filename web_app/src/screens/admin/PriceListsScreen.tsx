@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
 import { fetchLists, createList, updateList, deleteList, createItem, deleteItem, selectLists, selectIsLoading } from '../../store/slices/menuSlice'
@@ -41,9 +42,10 @@ export function PriceListsScreen() {
   const loading = useAppSelector(selectIsLoading)
   const products = useAppSelector(selectProducts)
 
+  const [searchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<Tab>('all')
-  const [modal, setModal] = useState<{ open: boolean; list: PriceList | null }>({ open: false, list: null })
+  const [modal, setModal] = useState<{ open: boolean; list: PriceList | null }>(() => ({ open: searchParams.get('new') === '1', list: null }))
   const [qr, setQr] = useState<PriceList | null>(null)
 
   useEffect(() => {

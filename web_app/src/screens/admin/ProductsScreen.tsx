@@ -62,7 +62,7 @@ export function ProductsScreen() {
   const [status, setStatus] = useState<Status>('all')
   const [category, setCategory] = useState<string>(searchParams.get('cat') || 'all')
   const [page, setPage] = useState(1)
-  const [modal, setModal] = useState<{ open: boolean; product: Product | null }>({ open: false, product: null })
+  const [modal, setModal] = useState<{ open: boolean; product: Product | null }>(() => ({ open: searchParams.get('new') === '1', product: null }))
 
   useEffect(() => {
     if (tenant?.id) dispatch(fetchProducts(tenant.id))

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
 import type { Customer, CustomerStats, Order, Product } from '../../types'
@@ -63,7 +64,8 @@ export function CustomersScreen() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [showNew, setShowNew] = useState(false)
+  const [searchParams] = useSearchParams()
+  const [showNew, setShowNew] = useState(() => searchParams.get('new') === '1')
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
 
