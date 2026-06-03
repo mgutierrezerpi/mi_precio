@@ -11,6 +11,7 @@ from controllers import (
     categories_router,
     public_router,
     import_router,
+    customers_router,
 )
 
 
@@ -31,5 +32,6 @@ def register_routes(app):
     api.include_router(categories_router)
     api.include_router(public_router)
     api.include_router(import_router)
+    api.include_router(customers_router)
 
     app.include_router(api)

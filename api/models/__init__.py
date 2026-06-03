@@ -8,13 +8,16 @@ from models.item import Item as Item
 from models.product import Product as Product
 from models.category import Category as Category
 from models.page_view import PageView as PageView
+from models.customer import Customer as Customer
+from models.order import Order as Order
+from models.order_item import OrderItem as OrderItem
 
 # Resolve deferred foreign key
 Item.list_version.set_model(ListVersion)
 
 
 def create_tables():
-    db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item, Product, Category, PageView])
+    db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item, Product, Category, PageView, Customer, Order, OrderItem])
     ensure_columns()
 
 
@@ -33,3 +36,13 @@ def ensure_columns():
     page_view_columns = [column.name for column in db.get_columns("page_views")]
     if "source" not in page_view_columns:
         db.execute_sql("ALTER TABLE page_views ADD COLUMN source VARCHAR(16) NOT NULL DEFAULT 'link'")
+
+    if db.table_exists("customers"):
+        customer_columns = [column.name for column in db.get_columns("customers")]
+        if "rut" not in customer_columns:
+            db.execute_sql("ALTER TABLE customers ADD COLUMN rut VARCHAR(32)")
+
+    if db.table_exists("orders"):
+        order_columns = [column.name for column in db.get_columns("orders")]
+        if "reference" not in order_columns:
+            db.execute_sql("ALTER TABLE orders ADD COLUMN reference VARCHAR(64)")

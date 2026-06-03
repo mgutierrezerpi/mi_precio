@@ -75,6 +75,54 @@ export interface Category {
   updatedAt: string
 }
 
+export interface Customer {
+  id: string
+  tenantId: string
+  name: string
+  rut: string | null
+  email: string | null
+  phone: string | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+  ordersCount: number
+  totalSpent: string
+  lastOrderAt: string | null
+}
+
+export interface OrderItem {
+  id: string
+  name: string
+  quantity: number
+  unitPrice: string
+}
+
+export interface Order {
+  id: string
+  tenantId: string
+  customerId: string
+  reference: string | null
+  total: string
+  currency: string
+  status: string
+  note: string | null
+  createdAt: string
+  updatedAt: string
+  items: OrderItem[]
+}
+
+export interface CustomerStats {
+  total: number
+  active: number
+  new: number
+  recurring: number
+}
+
+export interface CustomerDetail {
+  customer: Customer
+  orders: Order[]
+}
+
 // Auth types
 export interface User {
   id: string

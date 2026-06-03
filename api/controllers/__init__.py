@@ -7,6 +7,7 @@ from controllers.products_controller import router as products_router
 from controllers.categories_controller import router as categories_router
 from controllers.public_controller import router as public_router
 from controllers.import_controller import router as import_router
+from controllers.customers_controller import router as customers_router
 
 # Explicit re-exports
 auth_router = auth_router
@@ -18,3 +19,4 @@ products_router = products_router
 categories_router = categories_router
 public_router = public_router
 import_router = import_router
+customers_router = customers_router

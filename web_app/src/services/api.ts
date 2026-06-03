@@ -1,4 +1,4 @@
-import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken } from '../types'
+import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
@@ -274,6 +274,48 @@ class ApiService {
 
   async deleteCategory(categoryId: string): Promise<ApiResponse<{ deleted: boolean }>> {
     return this.request(`/categories/${categoryId}`, { method: 'DELETE' })
+  }
+
+  // Customer endpoints (CRM)
+  async getCustomers(tenantId: string): Promise<ApiResponse<Customer[]>> {
+    return this.request(`/tenants/${tenantId}/customers`)
+  }
+
+  async getCustomerStats(tenantId: string): Promise<ApiResponse<CustomerStats>> {
+    return this.request(`/tenants/${tenantId}/customers/stats`)
+  }
+
+  async createCustomer(
+    tenantId: string,
+    data: { name: string; rut?: string | null; email?: string | null; phone?: string | null; notes?: string | null }
+  ): Promise<ApiResponse<Customer>> {
+    return this.request(`/tenants/${tenantId}/customers`, { method: 'POST', body: JSON.stringify(data) })
+  }
+
+  async getCustomerDetail(customerId: string): Promise<ApiResponse<CustomerDetail>> {
+    return this.request(`/customers/${customerId}`)
+  }
+
+  async updateCustomer(
+    customerId: string,
+    data: { name?: string; rut?: string | null; email?: string | null; phone?: string | null; notes?: string | null }
+  ): Promise<ApiResponse<Customer>> {
+    return this.request(`/customers/${customerId}`, { method: 'PATCH', body: JSON.stringify(data) })
+  }
+
+  async deleteCustomer(customerId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/customers/${customerId}`, { method: 'DELETE' })
+  }
+
+  async createOrder(
+    customerId: string,
+    data: { items: { name: string; quantity: number; unit_price: number }[]; status?: string; note?: string | null; currency?: string | null; reference?: string | null }
+  ): Promise<ApiResponse<Order>> {
+    return this.request(`/customers/${customerId}/orders`, { method: 'POST', body: JSON.stringify(data) })
+  }
+
+  async deleteOrder(orderId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/orders/${orderId}`, { method: 'DELETE' })
   }
 
   // Public endpoints

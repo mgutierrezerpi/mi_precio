@@ -11,3 +11,6 @@ from views.auth_token_view import AuthTokenView as AuthTokenView
 from views.code_sent_view import CodeSentView as CodeSentView
 from views.public_list_view import PublicListView as PublicListView
 from views.public_menu_view import PublicMenuView as PublicMenuView
+from views.customer_view import CustomerView as CustomerView
+from views.order_view import OrderView as OrderView
+from views.order_item_view import OrderItemView as OrderItemView
