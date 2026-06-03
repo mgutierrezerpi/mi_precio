@@ -101,6 +101,29 @@ def create_order(customer_id: str, items: list[dict], status: str = "paid",
     return order
 
 
+def update_order(order_id: str, items: list[dict] | None = None, **fields) -> Order | None:
+    """Update an order's fields and, if `items` is given, replace its lines + recompute total."""
+    order = Order.get_or_none(Order.id == order_id)
+    if not order:
+        return None
+
+    for key, value in fields.items():
+        setattr(order, key, value)
+
+    if items is not None:
+        OrderItem.delete().where(OrderItem.order == order.id).execute()
+        total = Decimal(0)
+        for i in items:
+            qty = int(i.get("quantity", 1))
+            price = Decimal(str(i["unit_price"]))
+            OrderItem.create(order=order, name=i["name"], quantity=qty, unit_price=price)
+            total += price * qty
+        order.total = total
+
+    order.save()
+    return order
+
+
 def delete_order(order_id: str) -> bool:
     order = Order.get_or_none(Order.id == order_id)
     if not order:

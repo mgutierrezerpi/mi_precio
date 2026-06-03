@@ -90,6 +90,31 @@ def test_customer_stats(tenant):
     assert stats["recurring"] == 1
 
 
+def test_update_order_replaces_items_and_recomputes_total(tenant):
+    c = customers.create_customer(tenant.id, name="Editar")
+    order = customers.create_order(c.id, items=[{"name": "A", "quantity": 1, "unit_price": 100}], reference="R-1")
+
+    updated = customers.update_order(
+        order.id,
+        items=[{"name": "B", "quantity": 2, "unit_price": 150}],
+        status="pending",
+        reference="R-2",
+    )
+    assert updated.total == Decimal("300.00")
+    assert updated.status == "pending"
+    assert updated.reference == "R-2"
+    items = list(OrderItem.select().where(OrderItem.order == order.id))
+    assert len(items) == 1 and items[0].name == "B"
+
+
+def test_update_order_keeps_items_when_not_provided(tenant):
+    c = customers.create_customer(tenant.id, name="Solo estado")
+    order = customers.create_order(c.id, items=[{"name": "A", "quantity": 1, "unit_price": 100}])
+    customers.update_order(order.id, status="cancelled")
+    assert OrderItem.select().where(OrderItem.order == order.id).count() == 1
+    assert customers.list_orders(c.id)[0].total == Decimal("100.00")
+
+
 def test_delete_customer_cascades_orders(tenant):
     c = customers.create_customer(tenant.id, name="Borrar")
     customers.create_order(c.id, items=[{"name": "x", "quantity": 1, "unit_price": 10}])

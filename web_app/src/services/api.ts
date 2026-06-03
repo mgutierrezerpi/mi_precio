@@ -314,6 +314,13 @@ class ApiService {
     return this.request(`/customers/${customerId}/orders`, { method: 'POST', body: JSON.stringify(data) })
   }
 
+  async updateOrder(
+    orderId: string,
+    data: { items?: { name: string; quantity: number; unit_price: number }[]; status?: string; note?: string | null; reference?: string | null }
+  ): Promise<ApiResponse<Order>> {
+    return this.request(`/orders/${orderId}`, { method: 'PATCH', body: JSON.stringify(data) })
+  }
+
   async deleteOrder(orderId: string): Promise<ApiResponse<{ deleted: boolean }>> {
     return this.request(`/orders/${orderId}`, { method: 'DELETE' })
   }

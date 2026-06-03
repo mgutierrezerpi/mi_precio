@@ -64,6 +64,7 @@ export function CustomersScreen() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showNew, setShowNew] = useState(false)
+  const [editCustomer, setEditCustomer] = useState<Customer | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
 
   const tenantId = tenant?.id
@@ -92,6 +93,13 @@ export function CustomersScreen() {
     const q = search.trim().toLowerCase()
     return q ? customers.filter((c) => [c.name, c.email, c.phone].some((v) => v?.toLowerCase().includes(q))) : customers
   }, [customers, search])
+
+  const removeCustomer = async (c: Customer) => {
+    if (!confirm(`¿Eliminar a ${c.name} y todo su historial?`)) return
+    await api.deleteCustomer(c.id)
+    if (openId === c.id) setOpenId(null)
+    await refresh()
+  }
 
   const kpis: { icon: IconName; iconTone: Tone; value: number; label: string; note: string }[] = [
     { icon: 'users', iconTone: 'violet', value: stats?.total ?? 0, label: 'Total clientes', note: 'En tu cartera' },
@@ -131,6 +139,7 @@ export function CustomersScreen() {
               <span className="w-[120px]">Última compra</span>
               <span className="w-[110px]">Total</span>
               <span className="w-[90px]">Estado</span>
+              <span className="w-[184px] text-right">Acciones</span>
             </div>
 
             {loading ? (
@@ -146,7 +155,7 @@ export function CustomersScreen() {
               filtered.map((c, i) => {
                 const st = statusOf(c)
                 return (
-                  <button key={c.id} type="button" onClick={() => setOpenId(c.id)} className={`flex w-full items-center gap-3 bg-[var(--dash-surface)] px-[18px] py-3 text-left hover:bg-[var(--dash-soft)] ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                  <div key={c.id} role="button" tabIndex={0} onClick={() => setOpenId(c.id)} onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(c.id) }} className={`flex w-full cursor-pointer items-center gap-3 bg-[var(--dash-surface)] px-[18px] py-3 text-left hover:bg-[var(--dash-soft)] ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
                     <div className="flex flex-1 items-center gap-3">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={tone(avatarTone(c.name))}>{initials(c.name)}</span>
                       <div className="flex min-w-0 flex-col">
@@ -158,7 +167,18 @@ export function CustomersScreen() {
                     <span className="w-[120px] text-xs font-medium text-[var(--dash-muted)]">{relativeTime(c.lastOrderAt)}</span>
                     <span className="w-[110px] text-[13px] font-extrabold text-[var(--dash-text)]">{money(c.totalSpent)}</span>
                     <span className="w-[90px]"><span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(statusTone[st])}>{st}</span></span>
-                  </button>
+                    <div className="flex w-[184px] items-center justify-end gap-2">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setOpenId(c.id) }} className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-bold" style={tone('violet')}>
+                        <Icon name="eye" size={14} /> Ver
+                      </button>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setEditCustomer(c) }} title="Editar cliente" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-link)]">
+                        <Icon name="pencil" size={15} />
+                      </button>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); void removeCustomer(c) }} title="Eliminar cliente" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--tone-red-bg)] hover:text-[var(--tone-red-fg)]">
+                        <Icon name="circle-x" size={16} />
+                      </button>
+                    </div>
+                  </div>
                 )
               })
             )}
@@ -167,7 +187,10 @@ export function CustomersScreen() {
       </div>
 
       {showNew && tenant?.id && (
-        <NewCustomerModal tenantId={tenant.id} onClose={() => setShowNew(false)} onCreated={(id) => { setShowNew(false); void refresh(); setOpenId(id) }} />
+        <CustomerModal tenantId={tenant.id} onClose={() => setShowNew(false)} onSaved={(id) => { setShowNew(false); void refresh(); setOpenId(id) }} />
+      )}
+      {editCustomer && (
+        <CustomerModal customer={editCustomer} onClose={() => setEditCustomer(null)} onSaved={() => { setEditCustomer(null); void refresh() }} />
       )}
       {openId && (
         <CustomerDrawer customerId={openId} products={products} money={money} onClose={() => setOpenId(null)} onChanged={refresh} />
@@ -177,12 +200,13 @@ export function CustomersScreen() {
 }
 
 /* ── New customer modal ─────────────────────────────────────────────── */
-function NewCustomerModal({ tenantId, onClose, onCreated }: { tenantId: string; onClose: () => void; onCreated: (id: string) => void }) {
-  const [name, setName] = useState('')
-  const [rut, setRut] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [notes, setNotes] = useState('')
+function CustomerModal({ tenantId, customer, onClose, onSaved }: { tenantId?: string; customer?: Customer; onClose: () => void; onSaved: (id: string) => void }) {
+  const isEdit = !!customer
+  const [name, setName] = useState(customer?.name ?? '')
+  const [rut, setRut] = useState(customer?.rut ?? '')
+  const [email, setEmail] = useState(customer?.email ?? '')
+  const [phone, setPhone] = useState(customer?.phone ?? '')
+  const [notes, setNotes] = useState(customer?.notes ?? '')
   const [saving, setSaving] = useState(false)
 
   const valid = name.trim() !== '' && email.trim() !== '' && phone.trim() !== ''
@@ -190,17 +214,16 @@ function NewCustomerModal({ tenantId, onClose, onCreated }: { tenantId: string; 
   const save = async () => {
     if (!valid || saving) return
     setSaving(true)
-    const res = await api.createCustomer(tenantId, {
-      name: name.trim(), rut: rut.trim() || null, email: email.trim(), phone: phone.trim(), notes: notes.trim() || null,
-    })
+    const body = { name: name.trim(), rut: rut.trim() || null, email: email.trim(), phone: phone.trim(), notes: notes.trim() || null }
+    const res = isEdit ? await api.updateCustomer(customer.id, body) : await api.createCustomer(tenantId!, body)
     setSaving(false)
-    if (res.data) onCreated(res.data.id)
+    if (res.data) onSaved(res.data.id)
   }
 
   return (
     <Overlay onClose={onClose}>
       <div className="w-[440px] rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-lg font-extrabold text-[var(--dash-text)]">Nuevo cliente</h3>
+        <h3 className="text-lg font-extrabold text-[var(--dash-text)]">{isEdit ? 'Editar cliente' : 'Nuevo cliente'}</h3>
         <div className="mt-4 flex flex-col gap-3">
           <Field label="Nombre cliente/empresa *"><input value={name} onChange={(e) => setName(e.target.value)} autoFocus className={inputCls} placeholder="Lucía Fernández" /></Field>
           <Field label="RUT (opcional)"><input value={rut} onChange={(e) => setRut(e.target.value)} className={inputCls} placeholder="21 123456 0017" /></Field>
@@ -210,7 +233,7 @@ function NewCustomerModal({ tenantId, onClose, onCreated }: { tenantId: string; 
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="h-10 rounded-xl px-4 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">Cancelar</button>
-          <button type="button" onClick={save} disabled={!valid || saving} className={`h-10 rounded-xl px-5 text-sm font-bold text-white disabled:opacity-50 ${gradient}`}>{saving ? 'Guardando…' : 'Crear cliente'}</button>
+          <button type="button" onClick={save} disabled={!valid || saving} className={`h-10 rounded-xl px-5 text-sm font-bold text-white disabled:opacity-50 ${gradient}`}>{saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear cliente'}</button>
         </div>
       </div>
     </Overlay>
@@ -223,6 +246,8 @@ function CustomerDrawer({ customerId, products, money, onClose, onChanged }: { c
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingCustomer, setEditingCustomer] = useState(false)
 
   const load = useCallback(async () => {
     const res = await api.getCustomerDetail(customerId)
@@ -294,7 +319,7 @@ function CustomerDrawer({ customerId, products, money, onClose, onChanged }: { c
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-extrabold text-[var(--dash-text)]">Historial de compras</h4>
-                  <button type="button" onClick={() => setAdding((v) => !v)} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold" style={tone('violet')}>
+                  <button type="button" onClick={() => { setEditingId(null); setAdding((v) => !v) }} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold" style={tone('violet')}>
                     <Icon name={adding ? 'circle-x' : 'plus'} size={14} /> {adding ? 'Cancelar' : 'Registrar compra'}
                   </button>
                 </div>
@@ -308,40 +333,54 @@ function CustomerDrawer({ customerId, products, money, onClose, onChanged }: { c
                     <p className="text-xs font-medium text-[var(--dash-muted)]">Registrá la primera compra de este cliente.</p>
                   </div>
                 ) : (
-                  orders.map((o) => <OrderCard key={o.id} order={o} money={money} onDelete={() => removeOrder(o.id)} />)
+                  orders.map((o) => editingId === o.id
+                    ? <OrderForm key={o.id} customerId={customerId} products={products} money={money} order={o} onCancel={() => setEditingId(null)} onSaved={async () => { setEditingId(null); await reloadAll() }} />
+                    : <OrderCard key={o.id} order={o} money={money} onEdit={() => { setAdding(false); setEditingId(o.id) }} onDelete={() => removeOrder(o.id)} />)
                 )}
               </div>
             </div>
 
-            <div className="border-t border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
-              <button type="button" onClick={removeCustomer} className="flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold" style={tone('red')}>
-                <Icon name="circle-x" size={16} /> Eliminar cliente
+            <div className="flex gap-2 border-t border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
+              <button type="button" onClick={() => setEditingCustomer(true)} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold" style={tone('violet')}>
+                <Icon name="pencil" size={16} /> Editar
+              </button>
+              <button type="button" onClick={removeCustomer} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold" style={tone('red')}>
+                <Icon name="circle-x" size={16} /> Eliminar
               </button>
             </div>
           </>
         )}
       </aside>
+
+      {editingCustomer && customer && (
+        <CustomerModal customer={customer} onClose={() => setEditingCustomer(false)} onSaved={async () => { setEditingCustomer(false); await reloadAll() }} />
+      )}
     </Overlay>
   )
 }
 
-function OrderCard({ order, money, onDelete }: { order: Order; money: (v: string | number) => string; onDelete: () => void }) {
+function OrderCard({ order, money, onEdit, onDelete }: { order: Order; money: (v: string | number) => string; onEdit: () => void; onDelete: () => void }) {
   const statusLabel: Record<string, { label: string; tone: Tone }> = {
     paid: { label: 'Pagada', tone: 'green' }, pending: { label: 'Pendiente', tone: 'amber' }, cancelled: { label: 'Cancelada', tone: 'slate' },
   }
   const s = statusLabel[order.status] || statusLabel.paid
   return (
     <div className="flex flex-col gap-2.5 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
+      <div className="flex items-start justify-between">
+        {order.reference
+          ? <div className="flex items-center gap-1.5 text-[var(--dash-link)]"><Icon name="file-spreadsheet" size={15} /><span className="text-[17px] font-black leading-none">#{order.reference}</span></div>
+          : <span />}
+        <div className="flex items-center gap-1.5">
+          <button type="button" onClick={onEdit} title="Editar compra" className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-link)]"><Icon name="pencil" size={14} /></button>
+          <button type="button" onClick={onDelete} title="Eliminar compra" className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--tone-red-fg)]"><Icon name="circle-x" size={15} /></button>
+        </div>
+      </div>
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2">
           <span className="shrink-0 text-[13px] font-bold text-[var(--dash-text)]">{fullDate(order.createdAt)}</span>
-          {order.reference && <span className="truncate rounded-md bg-[var(--dash-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--dash-text2)]">#{order.reference}</span>}
           <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone(s.tone)}>{s.label}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[15px] font-extrabold text-[var(--dash-text)]">{money(order.total)}</span>
-          <button type="button" onClick={onDelete} title="Eliminar compra" className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--tone-red-fg)]"><Icon name="circle-x" size={15} /></button>
-        </div>
+        <span className="text-[15px] font-extrabold text-[var(--dash-text)]">{money(order.total)}</span>
       </div>
       {order.items.length > 0 && (
         <div className="flex flex-col gap-1 border-t border-[var(--dash-divider)] pt-2">
@@ -360,13 +399,18 @@ function OrderCard({ order, money, onDelete }: { order: Order; money: (v: string
 
 type Line = { name: string; quantity: string; unitPrice: string; custom: boolean }
 const CUSTOM = '__custom__'
-function OrderForm({ customerId, products, money, onSaved }: { customerId: string; products: Product[]; money: (v: string | number) => string; onSaved: () => Promise<void> }) {
+function OrderForm({ customerId, products, money, order, onSaved, onCancel }: { customerId: string; products: Product[]; money: (v: string | number) => string; order?: Order; onSaved: () => Promise<void>; onCancel?: () => void }) {
   const newLine = (): Line => ({ name: '', quantity: '1', unitPrice: '', custom: false })
-  const [lines, setLines] = useState<Line[]>([newLine()])
-  const [reference, setReference] = useState('')
-  const [note, setNote] = useState('')
-  const [status, setStatus] = useState('paid')
+  const initialLines = (): Line[] =>
+    order && order.items.length
+      ? order.items.map((it) => ({ name: it.name, quantity: String(it.quantity), unitPrice: it.unitPrice, custom: !products.some((p) => p.name === it.name) }))
+      : [newLine()]
+  const [lines, setLines] = useState<Line[]>(initialLines)
+  const [reference, setReference] = useState(order?.reference ?? '')
+  const [note, setNote] = useState(order?.note ?? '')
+  const [status, setStatus] = useState(order?.status ?? 'paid')
   const [saving, setSaving] = useState(false)
+  const isEdit = !!order
 
   const setLine = (i: number, patch: Partial<Line>) => setLines((ls) => ls.map((l, j) => (j === i ? { ...l, ...patch } : l)))
   const addLine = () => setLines((ls) => [...ls, newLine()])
@@ -388,7 +432,9 @@ function OrderForm({ customerId, products, money, onSaved }: { customerId: strin
     const items = lines
       .filter((l) => l.name.trim() && parseFloat(l.unitPrice) > 0)
       .map((l) => ({ name: l.name.trim(), quantity: parseInt(l.quantity) || 1, unit_price: parseFloat(l.unitPrice) }))
-    await api.createOrder(customerId, { items, status, note: note.trim() || null, reference: reference.trim() || null })
+    const payload = { items, status, note: note.trim() || null, reference: reference.trim() || null }
+    if (order) await api.updateOrder(order.id, payload)
+    else await api.createOrder(customerId, payload)
     setSaving(false)
     await onSaved()
   }
@@ -430,7 +476,10 @@ function OrderForm({ customerId, products, money, onSaved }: { customerId: strin
       </div>
       <div className="flex items-center justify-between">
         <span className="text-sm font-bold text-[var(--dash-text)]">Total: {money(total)}</span>
-        <button type="button" onClick={save} disabled={!valid || saving} className={`h-9 rounded-xl px-4 text-sm font-bold text-white disabled:opacity-50 ${gradient}`}>{saving ? 'Guardando…' : 'Registrar'}</button>
+        <div className="flex items-center gap-2">
+          {onCancel && <button type="button" onClick={onCancel} className="h-9 rounded-xl px-3 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-surface)]">Cancelar</button>}
+          <button type="button" onClick={save} disabled={!valid || saving} className={`h-9 rounded-xl px-4 text-sm font-bold text-white disabled:opacity-50 ${gradient}`}>{saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Registrar'}</button>
+        </div>
       </div>
     </div>
   )
@@ -441,7 +490,7 @@ const inputCls = 'rounded-xl border border-[var(--dash-border)] bg-[var(--dash-s
 
 function Overlay({ children, onClose, align = 'center' }: { children: React.ReactNode; onClose: () => void; align?: 'center' | 'right' }) {
   return (
-    <div onClick={onClose} className={`fixed inset-0 z-50 flex bg-black/40 backdrop-blur-sm ${align === 'right' ? 'justify-end' : 'items-center justify-center'}`}>
+    <div onClick={(e) => { e.stopPropagation(); onClose() }} className={`fixed inset-0 z-50 flex bg-black/40 backdrop-blur-sm ${align === 'right' ? 'justify-end' : 'items-center justify-center'}`}>
       {children}
     </div>
   )

@@ -13,9 +13,10 @@ export type IconName =
   | 'trending-up' | 'alert-triangle' | 'wrench' | 'zap' | 'paintbrush' | 'list-plus'
   | 'file-spreadsheet' | 'upload' | 'log-out' | 'user' | 'box' | 'cable' | 'layers'
   | 'cog' | 'droplet' | 'droplets' | 'ellipsis' | 'sliders-horizontal' | 'arrow-up-down' | 'download'
-  | 'circle-check' | 'circle-x'
+  | 'circle-check' | 'circle-x' | 'pencil'
 
 const ICONS: Record<IconName, React.ReactNode> = {
+  pencil: <><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></>,
   'layout-dashboard': <><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></>,
   package: <><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /><path d="M12 22V12" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="m7.5 4.27 9 5.15" /></>,
   box: <><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></>,

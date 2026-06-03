@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from lib.ctx import customers
 from controllers.deps import get_current_user
-from controllers.input_types import CreateCustomer, UpdateCustomer, CreateOrder
+from controllers.input_types import CreateCustomer, UpdateCustomer, CreateOrder, UpdateOrder
 from views import DeletedView, CustomerView, OrderView
 
 router = APIRouter(tags=["customers"])
@@ -62,6 +62,16 @@ def create_order_endpoint(customer_id: str, data: CreateOrder, current_user: dic
     )
     if not order:
         raise HTTPException(status_code=404, detail="Customer not found")
+    return OrderView.render(order)
+
+
+@router.patch("/orders/{order_id}")
+def update_order_endpoint(order_id: str, data: UpdateOrder, current_user: dict = Depends(get_current_user)):
+    payload = data.model_dump(exclude_unset=True)
+    items = payload.pop("items", None)
+    order = customers.update_order(order_id, items=items, **payload)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
     return OrderView.render(order)
 
 

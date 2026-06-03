@@ -13,3 +13,10 @@ class CreateOrder(BaseModel):
     note: str | None = None
     currency: str | None = None
     reference: str | None = None
+
+
+class UpdateOrder(BaseModel):
+    items: list[OrderItemInput] | None = None
+    status: str | None = None
+    note: str | None = None
+    reference: str | None = None
