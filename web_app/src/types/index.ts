@@ -5,6 +5,14 @@ export interface Tenant {
   name: string
   subdomain: string
   currency: string
+  logoUrl: string | null
+  brandColor: string | null
+  description: string | null
+  language: string
+  timezone: string
+  legalName: string | null
+  taxId: string | null
+  address: string | null
   createdAt: string
   updatedAt: string
 }
@@ -133,11 +141,41 @@ export interface Activity {
   createdAt: string
 }
 
+// Team types
+export type Role = 'owner' | 'admin' | 'editor' | 'viewer'
+
+export interface TeamMember {
+  id: string
+  email: string
+  tenantId: string
+  role: Role
+  name: string
+  createdAt: string
+  lastSeenAt: string | null
+}
+
+export interface Invitation {
+  id: string
+  email: string
+  role: Role
+  status: string
+  createdAt: string
+}
+
+export interface MemberStats {
+  members: number
+  active: number
+  pending: number
+  roles: number
+}
+
 // Auth types
 export interface User {
   id: string
   email: string
   tenantId: string
+  role: Role
+  name: string
   createdAt: string
   updatedAt: string
 }

@@ -1,11 +1,17 @@
-from peewee import CharField, ForeignKeyField
+from peewee import CharField, ForeignKeyField, DateTimeField
 from models.base import BaseModel
 from models.tenant import Tenant
+
+# Team roles, from most to least privileged. "owner" is the tenant creator.
+ROLES = ("owner", "admin", "editor", "viewer")
 
 
 class User(BaseModel):
     email = CharField(max_length=255, unique=True, index=True)
     tenant = ForeignKeyField(Tenant, backref="users", on_delete="CASCADE")
+    name = CharField(max_length=255, null=True)
+    role = CharField(max_length=20, default="owner")
+    last_seen_at = DateTimeField(null=True)
 
     class Meta:
         table_name = "users"

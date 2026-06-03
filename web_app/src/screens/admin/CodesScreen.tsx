@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectTenant } from '../../store/slices/authSlice'
+import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
 import type { PriceList } from '../../types'
 import { CrmLayout } from './crm/CrmLayout'
@@ -27,6 +27,7 @@ export function CodesScreen() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const tenant = useAppSelector(selectTenant)
+  const canEdit = useAppSelector(selectCanEdit)
   const lists = useAppSelector(selectLists)
 
   const [search, setSearch] = useState('')
@@ -72,9 +73,11 @@ export function CodesScreen() {
               <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Mis QR</h3>
               <p className="text-xs font-medium text-[var(--dash-muted)]">Un código por cada lista publicada. Descargalos o compartilos.</p>
             </div>
-            <button type="button" onClick={() => navigate('/admin/lists')} className={`flex h-9 items-center gap-2 rounded-full px-4 text-xs font-bold text-white shadow-[0_8px_18px_-6px_rgba(124,58,237,0.5)] ${gradient}`}>
-              <Icon name="plus" size={15} /> Nueva lista
-            </button>
+            {canEdit && (
+              <button type="button" onClick={() => navigate('/admin/lists')} className={`flex h-9 items-center gap-2 rounded-full px-4 text-xs font-bold text-white shadow-[0_8px_18px_-6px_rgba(124,58,237,0.5)] ${gradient}`}>
+                <Icon name="plus" size={15} /> Nueva lista
+              </button>
+            )}
           </div>
 
           {filtered.length === 0 ? (

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from lib.ctx import customers, activity
-from controllers.deps import get_current_user
+from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateCustomer, UpdateCustomer, CreateOrder, UpdateOrder
 from views import DeletedView, CustomerView, OrderView
 
@@ -18,7 +18,7 @@ def customer_stats_endpoint(tenant_id: str, current_user: dict = Depends(get_cur
 
 
 @router.post("/tenants/{tenant_id}/customers", status_code=201)
-def create_customer_endpoint(tenant_id: str, data: CreateCustomer, current_user: dict = Depends(get_current_user)):
+def create_customer_endpoint(tenant_id: str, data: CreateCustomer, current_user: dict = Depends(require_editor)):
     customer = customers.create_customer(tenant_id, **data.model_dump())
     if not customer:
         raise HTTPException(status_code=404, detail="Tenant not found")
@@ -39,7 +39,7 @@ def get_customer_endpoint(customer_id: str, current_user: dict = Depends(get_cur
 
 
 @router.patch("/customers/{customer_id}")
-def update_customer_endpoint(customer_id: str, data: UpdateCustomer, current_user: dict = Depends(get_current_user)):
+def update_customer_endpoint(customer_id: str, data: UpdateCustomer, current_user: dict = Depends(require_editor)):
     customer = customers.update_customer(customer_id, **data.model_dump(exclude_unset=True))
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
@@ -47,14 +47,14 @@ def update_customer_endpoint(customer_id: str, data: UpdateCustomer, current_use
 
 
 @router.delete("/customers/{customer_id}")
-def delete_customer_endpoint(customer_id: str, current_user: dict = Depends(get_current_user)):
+def delete_customer_endpoint(customer_id: str, current_user: dict = Depends(require_editor)):
     if not customers.delete_customer(customer_id):
         raise HTTPException(status_code=404, detail="Customer not found")
     return DeletedView()
 
 
 @router.post("/customers/{customer_id}/orders", status_code=201)
-def create_order_endpoint(customer_id: str, data: CreateOrder, current_user: dict = Depends(get_current_user)):
+def create_order_endpoint(customer_id: str, data: CreateOrder, current_user: dict = Depends(require_editor)):
     order = customers.create_order(
         customer_id,
         items=[i.model_dump() for i in data.items],
@@ -73,7 +73,7 @@ def create_order_endpoint(customer_id: str, data: CreateOrder, current_user: dic
 
 
 @router.patch("/orders/{order_id}")
-def update_order_endpoint(order_id: str, data: UpdateOrder, current_user: dict = Depends(get_current_user)):
+def update_order_endpoint(order_id: str, data: UpdateOrder, current_user: dict = Depends(require_editor)):
     payload = data.model_dump(exclude_unset=True)
     items = payload.pop("items", None)
     order = customers.update_order(order_id, items=items, **payload)
@@ -83,7 +83,7 @@ def update_order_endpoint(order_id: str, data: UpdateOrder, current_user: dict =
 
 
 @router.delete("/orders/{order_id}")
-def delete_order_endpoint(order_id: str, current_user: dict = Depends(get_current_user)):
+def delete_order_endpoint(order_id: str, current_user: dict = Depends(require_editor)):
     if not customers.delete_order(order_id):
         raise HTTPException(status_code=404, detail="Order not found")
     return DeletedView()

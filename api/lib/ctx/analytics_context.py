@@ -1,7 +1,11 @@
 """Analytics context - public page-view tracking and visit stats."""
 
 from datetime import datetime, timedelta
-from models import Tenant, PageView
+from decimal import Decimal
+
+from peewee import fn
+
+from models import Tenant, PageView, Customer, Order, OrderItem
 
 # Accepted traffic sources; anything else is normalized to "link".
 VALID_SOURCES = {"qr", "link"}
@@ -43,3 +47,76 @@ def visit_stats(tenant_id: str) -> dict:
     overall = bucket()
     # Top-level keys keep the overall visits (backwards compatible); "qr" holds the QR-only split.
     return {**overall, "qr": bucket(PageView.source == "qr")}
+
+
+def reports(tenant_id: str, days: int = 30) -> dict:
+    """Aggregated analytics for the Reports screen: KPIs, a daily visit series,
+    the channel split (QR vs link) and the best-selling products."""
+    days = max(1, min(days, 365))
+    now = datetime.utcnow()
+    start_today = datetime(now.year, now.month, now.day)
+    # Inclusive window of `days` days ending today (e.g. 30 → 29 days ago … today).
+    window_start = start_today - timedelta(days=days - 1)
+
+    # ── Page views in the window, bucketed per day and per channel ──────────
+    views = list(
+        PageView.select(PageView.source, PageView.created_at)
+        .where(PageView.tenant == tenant_id, PageView.created_at >= window_start)
+    )
+
+    # One bucket per day so the series has no gaps even on days with no traffic.
+    series = [
+        {"date": (window_start + timedelta(days=i)).strftime("%Y-%m-%d"), "link": 0, "qr": 0}
+        for i in range(days)
+    ]
+    index = {row["date"]: row for row in series}
+    channels = {"link": 0, "qr": 0}
+    for v in views:
+        created = v.created_at if isinstance(v.created_at, datetime) else datetime.fromisoformat(str(v.created_at))
+        key = "qr" if v.source == "qr" else "link"
+        channels[key] += 1
+        day = index.get(created.strftime("%Y-%m-%d"))
+        if day is not None:
+            day[key] += 1
+
+    # ── KPIs ────────────────────────────────────────────────────────────────
+    visits_total = PageView.select().where(PageView.tenant == tenant_id).count()
+    qr_total = PageView.select().where(PageView.tenant == tenant_id, PageView.source == "qr").count()
+    customers_total = Customer.select().where(Customer.tenant == tenant_id).count()
+    revenue = (
+        Order.select(fn.COALESCE(fn.SUM(Order.total), 0))
+        .where(Order.tenant == tenant_id, Order.status == "paid")
+        .scalar()
+    ) or Decimal(0)
+
+    # ── Best-selling products (paid orders, by units sold) ──────────────────
+    rows = (
+        OrderItem.select(
+            OrderItem.name,
+            fn.SUM(OrderItem.quantity).alias("units"),
+            fn.SUM(OrderItem.quantity * OrderItem.unit_price).alias("revenue"),
+        )
+        .join(Order)
+        .where(Order.tenant == tenant_id, Order.status == "paid")
+        .group_by(OrderItem.name)
+        .order_by(fn.SUM(OrderItem.quantity).desc())
+        .limit(5)
+        .dicts()
+    )
+    top_products = [
+        {"name": r["name"], "units": int(r["units"] or 0), "revenue": str(r["revenue"] or 0)}
+        for r in rows
+    ]
+
+    return {
+        "days": days,
+        "kpis": {
+            "visits": visits_total,
+            "qr_scans": qr_total,
+            "customers": customers_total,
+            "revenue": str(revenue),
+        },
+        "series": series,
+        "channels": channels,
+        "top_products": top_products,
+    }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectTenant } from '../../store/slices/authSlice'
+import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import { fetchProducts, selectProducts } from '../../store/slices/productsSlice'
 import {
   fetchCategories,
@@ -29,6 +29,7 @@ export function CategoriesScreen() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const tenant = useAppSelector(selectTenant)
+  const canEdit = useAppSelector(selectCanEdit)
   const categories = useAppSelector(selectCategories)
   const loading = useAppSelector(selectCategoriesLoading)
   const products = useAppSelector(selectProducts)
@@ -122,13 +123,15 @@ export function CategoriesScreen() {
             <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Mis categorías</h3>
             <p className="text-xs font-medium text-[var(--dash-muted)]">Organizá los productos en grupos para que tus clientes los encuentren más rápido.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setModal({ open: true, category: null })}
-            className={`flex h-9 items-center gap-2 rounded-full px-4 text-xs font-bold text-white shadow-[0_8px_18px_-6px_rgba(124,58,237,0.5)] ${gradient}`}
-          >
-            <Icon name="plus" size={15} /> Nueva categoría
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => setModal({ open: true, category: null })}
+              className={`flex h-9 items-center gap-2 rounded-full px-4 text-xs font-bold text-white shadow-[0_8px_18px_-6px_rgba(124,58,237,0.5)] ${gradient}`}
+            >
+              <Icon name="plus" size={15} /> Nueva categoría
+            </button>
+          )}
         </div>
 
         {/* Grid */}
@@ -138,7 +141,7 @@ export function CategoriesScreen() {
           <div className="flex h-56 flex-col items-center justify-center gap-3 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl" style={tone('violet')}><Icon name="tags" size={24} /></span>
             <p className="text-sm font-semibold text-[var(--dash-text)]">{categories.length > 0 ? 'Sin resultados' : 'Todavía no tenés categorías'}</p>
-            {categories.length === 0 && (
+            {categories.length === 0 && canEdit && (
               <button type="button" onClick={() => setModal({ open: true, category: null })} className={`flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}>
                 <Icon name="plus" size={16} /> Crear la primera
               </button>
@@ -153,7 +156,7 @@ export function CategoriesScreen() {
                 <div key={c.id} className="flex flex-col gap-3.5 rounded-[20px] border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.2)]">
                   <div className="flex items-start justify-between">
                     <span className="flex h-11 w-11 items-center justify-center rounded-xl" style={tone(t)}><Icon name={catIcon(c.name)} size={22} /></span>
-                    <CardMenu onEdit={() => setModal({ open: true, category: c })} onDelete={() => handleDelete(c)} />
+                    {canEdit && <CardMenu onEdit={() => setModal({ open: true, category: c })} onDelete={() => handleDelete(c)} />}
                   </div>
                   <div className="flex flex-col gap-1">
                     <h4 className="text-[18px] font-extrabold text-[var(--dash-text)]">{c.name}</h4>

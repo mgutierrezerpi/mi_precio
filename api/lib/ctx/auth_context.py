@@ -43,6 +43,11 @@ def authenticate(email: str, code: str) -> AuthResult | None:
     result = get_or_create_user(email)
     user = result.user
     tenant = user.tenant
-    token = encode_token(str(user.id), user.email, tenant.id)
+
+    # Track sign-in so the team screen can show who's active.
+    user.last_seen_at = datetime.utcnow()
+    user.save()
+
+    token = encode_token(str(user.id), user.email, tenant.id, user.role)
 
     return AuthResult(token, user, tenant)

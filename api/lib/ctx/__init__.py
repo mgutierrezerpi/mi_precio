@@ -11,6 +11,7 @@ from lib.ctx import analytics_context as analytics
 from lib.ctx import public_context as public
 from lib.ctx import customers_context as customers
 from lib.ctx import activity_context as activity
+from lib.ctx import team_context as team
 
 # Explicit re-exports
 identity = identity
@@ -24,3 +25,4 @@ analytics = analytics
 public = public
 customers = customers
 activity = activity
+team = team

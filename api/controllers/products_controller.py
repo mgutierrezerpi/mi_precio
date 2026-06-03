@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from lib.ctx import products, activity
-from controllers.deps import get_current_user
+from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateProduct, UpdateProduct
 from views import DeletedView, ProductView
 
@@ -13,7 +13,7 @@ def list_products_endpoint(tenant_id: str, current_user: dict = Depends(get_curr
 
 
 @router.post("/tenants/{tenant_id}/products", status_code=201)
-def create_product_endpoint(tenant_id: str, data: CreateProduct, current_user: dict = Depends(get_current_user)):
+def create_product_endpoint(tenant_id: str, data: CreateProduct, current_user: dict = Depends(require_editor)):
     product = products.create_product(tenant_id, **data.model_dump())
     if not product:
         raise HTTPException(status_code=404, detail="Tenant not found")
@@ -32,7 +32,7 @@ def get_product_endpoint(product_id: str, current_user: dict = Depends(get_curre
 
 
 @router.patch("/products/{product_id}")
-def update_product_endpoint(product_id: str, data: UpdateProduct, current_user: dict = Depends(get_current_user)):
+def update_product_endpoint(product_id: str, data: UpdateProduct, current_user: dict = Depends(require_editor)):
     product = products.update_product(product_id, **data.model_dump(exclude_unset=True))
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -40,7 +40,7 @@ def update_product_endpoint(product_id: str, data: UpdateProduct, current_user: 
 
 
 @router.delete("/products/{product_id}")
-def delete_product_endpoint(product_id: str, current_user: dict = Depends(get_current_user)):
+def delete_product_endpoint(product_id: str, current_user: dict = Depends(require_editor)):
     product = products.get_product(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")

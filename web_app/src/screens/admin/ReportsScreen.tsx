@@ -1,42 +1,70 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useAppSelector } from '../../store/hooks'
+import { selectTenant } from '../../store/slices/authSlice'
+import api, { type ReportData } from '../../services/api'
+import { formatPrice } from './crm/productFormat'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
-import { tone, type Tone } from './crm/theme'
+import { tone, gradient, type Tone } from './crm/theme'
 
-const kpis: { icon: IconName; iconTone: Tone; value: string; label: string; note: string }[] = [
-  { icon: 'eye', iconTone: 'violet', value: '12.480', label: 'Visitas', note: 'Últimos 30 días' },
-  { icon: 'qr-code', iconTone: 'sky', value: '3.860', label: 'Escaneos QR', note: 'Últimos 30 días' },
-  { icon: 'users', iconTone: 'green', value: '248', label: 'Clientes', note: 'Total' },
-  { icon: 'trending-up', iconTone: 'rose', value: 'Tornillo 8mm', label: 'Más visto', note: 'Top del mes' },
+const RANGES: { days: number; label: string }[] = [
+  { days: 7, label: '7 días' },
+  { days: 30, label: '30 días' },
+  { days: 90, label: '90 días' },
 ]
 
-// Deterministic 14-day series.
-const bars = Array.from({ length: 14 }, (_, i) => 30 + ((i * 37 + 17) % 70))
+const fmtInt = (n: number) => new Intl.NumberFormat('es-AR').format(n)
 
-const topProducts: { name: string; views: number; pct: number; t: Tone }[] = [
-  { name: 'Tornillo hex. 8mm', views: 482, pct: 100, t: 'violet' },
-  { name: 'Cable eléctrico 2.5', views: 344, pct: 71, t: 'sky' },
-  { name: 'Pintura látex 4L', views: 298, pct: 62, t: 'rose' },
-  { name: 'Cemento 50kg', views: 251, pct: 52, t: 'amber' },
-  { name: 'Llave inglesa 12"', views: 188, pct: 39, t: 'purple' },
-]
-
-const channels: { name: string; pct: number; color: string }[] = [
-  { name: 'Link directo', pct: 52, color: '#7C3AED' },
-  { name: 'Código QR', pct: 26, color: '#0EA5E9' },
-  { name: 'WhatsApp', pct: 15, color: '#10B981' },
-  { name: 'Email', pct: 7, color: '#F59E0B' },
-]
-
-function donutGradient() {
-  let acc = 0
-  const stops = channels.map((c) => { const from = acc; acc += c.pct; return `${c.color} ${from}% ${acc}%` })
-  return `conic-gradient(${stops.join(', ')})`
+// Short axis label for a YYYY-MM-DD bucket, e.g. "5 jun".
+const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+function dayLabel(iso: string): string {
+  const [, m, d] = iso.split('-')
+  return `${parseInt(d, 10)} ${MONTHS[parseInt(m, 10) - 1]}`
 }
 
+const CHANNEL_META: { key: 'link' | 'qr'; name: string; color: string }[] = [
+  { key: 'link', name: 'Link directo', color: '#7C3AED' },
+  { key: 'qr', name: 'Código QR', color: '#0EA5E9' },
+]
+const PRODUCT_TONES: Tone[] = ['violet', 'sky', 'rose', 'amber', 'purple']
+
 export function ReportsScreen() {
+  const tenant = useAppSelector(selectTenant)
+  const [days, setDays] = useState(30)
+  const [data, setData] = useState<ReportData | null>(null)
+
+  useEffect(() => {
+    if (!tenant?.id) return
+    let cancelled = false
+    api.getReports(tenant.id, days).then((res) => {
+      if (!cancelled && res.data) setData(res.data)
+    })
+    return () => { cancelled = true }
+  }, [tenant?.id, days])
+
+  // Derived: we're loading until the data we hold matches the requested range
+  // (avoids a synchronous setState in the effect, and shows the spinner on range switch).
+  const loading = data?.days !== days
+
+  const kpis = useMemo(() => {
+    const k = data?.kpis
+    return [
+      { icon: 'eye' as IconName, iconTone: 'violet' as Tone, value: fmtInt(k?.visits ?? 0), label: 'Visitas', note: 'Total acumulado' },
+      { icon: 'qr-code' as IconName, iconTone: 'sky' as Tone, value: fmtInt(k?.qrScans ?? 0), label: 'Escaneos QR', note: 'Total acumulado' },
+      { icon: 'users' as IconName, iconTone: 'green' as Tone, value: fmtInt(k?.customers ?? 0), label: 'Clientes', note: 'En tu cartera' },
+      { icon: 'trending-up' as IconName, iconTone: 'rose' as Tone, value: k ? formatPrice(k.revenue) : '$ 0', label: 'Ingresos', note: 'Ventas cobradas' },
+    ]
+  }, [data])
+
+  const periodVisits = useMemo(
+    () => (data?.series ?? []).reduce((acc, d) => acc + d.link + d.qr, 0),
+    [data],
+  )
+
   return (
     <CrmLayout active="Reportes" title="Reportes" subtitle="Medí el rendimiento de tu catálogo." searchPlaceholder="Buscar…">
       <div className="flex min-w-[980px] flex-col gap-5 p-8">
+        {/* KPI row */}
         <div className="grid grid-cols-4 gap-4">
           {kpis.map((k) => (
             <div key={k.label} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)]">
@@ -52,52 +80,163 @@ export function ReportsScreen() {
         <div className="flex gap-5">
           {/* Bar chart */}
           <div className="flex flex-1 flex-col gap-5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
-            <div className="flex flex-col gap-1">
-              <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Visitas y escaneos · Últimos 30 días</h3>
-              <p className="text-xs font-medium text-[var(--dash-muted)]">Tendencia de aperturas de tus listas públicas.</p>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Visitas y escaneos · Últimos {days} días</h3>
+                <p className="text-xs font-medium text-[var(--dash-muted)]">{fmtInt(periodVisits)} aperturas de tus listas públicas en el período.</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5 rounded-xl bg-[var(--dash-soft)] p-1">
+                {RANGES.map((r) => (
+                  <button
+                    key={r.days}
+                    type="button"
+                    onClick={() => setDays(r.days)}
+                    className={`flex h-8 items-center rounded-lg px-3 text-xs font-bold ${days === r.days ? `text-white ${gradient}` : 'text-[var(--dash-text2)]'}`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex h-56 items-end gap-2">
-              {bars.map((h, i) => (
-                <div key={i} className="flex flex-1 items-end justify-center rounded-t-md bg-gradient-to-t from-[#7C3AED] to-[#A855F7]" style={{ height: `${h}%`, opacity: 0.55 + (i / bars.length) * 0.45 }} />
-              ))}
+
+            <VisitChart data={data} loading={loading} />
+
+            <div className="flex items-center gap-5 text-[11px] font-semibold text-[var(--dash-text2)]">
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#7C3AED]" /> Link directo</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#0EA5E9]" /> Código QR</span>
             </div>
           </div>
 
           {/* Right column */}
           <div className="flex w-[320px] shrink-0 flex-col gap-5">
-            <div className="flex flex-col gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
-              <h3 className="text-[16px] font-extrabold text-[var(--dash-text)]">Productos más vistos</h3>
-              <div className="flex flex-col gap-3">
-                {topProducts.map((p) => (
-                  <div key={p.name} className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between text-[12px]"><span className="font-semibold text-[var(--dash-text2)]">{p.name}</span><span className="font-bold text-[var(--dash-muted)]">{p.views}</span></div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--dash-soft)]"><div className="h-full rounded-full" style={{ width: `${p.pct}%`, backgroundColor: `var(--tone-${p.t}-fg)` }} /></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
-              <h3 className="text-[16px] font-extrabold text-[var(--dash-text)]">Por canal</h3>
-              <div className="flex items-center gap-4">
-                <div className="relative h-28 w-28 shrink-0 rounded-full" style={{ background: donutGradient() }}>
-                  <div className="absolute inset-[14px] rounded-full bg-[var(--dash-surface)]" />
-                </div>
-                <div className="flex flex-1 flex-col gap-2">
-                  {channels.map((c) => (
-                    <div key={c.name} className="flex items-center gap-2 text-[12px]">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c.color }} />
-                      <span className="flex-1 font-semibold text-[var(--dash-text2)]">{c.name}</span>
-                      <span className="font-bold text-[var(--dash-muted)]">{c.pct}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <TopProducts data={data} loading={loading} />
+            <Channels data={data} loading={loading} />
           </div>
         </div>
       </div>
     </CrmLayout>
+  )
+}
+
+/** Stacked daily bars (link + qr), heights relative to the busiest day. */
+function VisitChart({ data, loading }: { data: ReportData | null; loading: boolean }) {
+  const series = data?.series ?? []
+  const max = Math.max(1, ...series.map((d) => d.link + d.qr))
+  const hasData = series.some((d) => d.link + d.qr > 0)
+  // With long ranges, only label a handful of evenly spaced days to avoid clutter.
+  const labelEvery = Math.ceil(series.length / 8)
+
+  if (loading) {
+    return <div className="flex h-56 items-center justify-center text-sm font-medium text-[var(--dash-muted)]">Cargando…</div>
+  }
+  if (!hasData) {
+    return (
+      <div className="flex h-56 flex-col items-center justify-center gap-2 text-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-2xl" style={tone('violet')}><Icon name="bar-chart" size={22} /></span>
+        <p className="text-sm font-semibold text-[var(--dash-text)]">Todavía no hay visitas en este período</p>
+        <p className="text-xs font-medium text-[var(--dash-muted)]">Compartí tu lista por link o QR para empezar a medir.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex h-56 items-end gap-1">
+        {series.map((d) => {
+          const total = d.link + d.qr
+          const h = (total / max) * 100
+          return (
+            <div key={d.date} className="group relative flex flex-1 items-end" style={{ height: '100%' }} title={`${dayLabel(d.date)}: ${total} (link ${d.link} · qr ${d.qr})`}>
+              <div className="flex w-full flex-col justify-end overflow-hidden rounded-t-md" style={{ height: `${h}%` }}>
+                {d.qr > 0 && <div className="w-full bg-[#0EA5E9]" style={{ height: `${(d.qr / total) * 100}%` }} />}
+                {d.link > 0 && <div className="w-full bg-[#7C3AED]" style={{ height: `${(d.link / total) * 100}%` }} />}
+              </div>
+              {total === 0 && <div className="w-full rounded-t-md bg-[var(--dash-soft)]" style={{ height: '4%' }} />}
+              <span className="pointer-events-none absolute -top-6 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--dash-text)] px-2 py-1 text-[10px] font-bold text-[var(--dash-surface)] opacity-0 group-hover:opacity-100">{total}</span>
+            </div>
+          )
+        })}
+      </div>
+      <div className="flex gap-1">
+        {series.map((d, i) => (
+          <span key={d.date} className="flex-1 truncate text-center text-[9px] font-medium text-[var(--dash-muted)]">
+            {i % labelEvery === 0 ? dayLabel(d.date) : ''}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Best-selling products from paid orders. */
+function TopProducts({ data, loading }: { data: ReportData | null; loading: boolean }) {
+  const items = data?.topProducts ?? []
+  const max = Math.max(1, ...items.map((p) => p.units))
+
+  return (
+    <div className="flex flex-col gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+      <h3 className="text-[16px] font-extrabold text-[var(--dash-text)]">Productos más vendidos</h3>
+      {loading ? (
+        <p className="py-6 text-center text-xs font-medium text-[var(--dash-muted)]">Cargando…</p>
+      ) : items.length === 0 ? (
+        <p className="py-6 text-center text-xs font-medium text-[var(--dash-muted)]">Todavía no registraste ventas.</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {items.map((p, i) => (
+            <div key={p.name} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-2 text-[12px]">
+                <span className="truncate font-semibold text-[var(--dash-text2)]">{p.name}</span>
+                <span className="shrink-0 font-bold text-[var(--dash-muted)]">{fmtInt(p.units)} u · {formatPrice(p.revenue)}</span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--dash-soft)]"><div className="h-full rounded-full" style={{ width: `${(p.units / max) * 100}%`, backgroundColor: `var(--tone-${PRODUCT_TONES[i % PRODUCT_TONES.length]}-fg)` }} /></div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** QR vs link traffic split over the selected period. */
+function Channels({ data, loading }: { data: ReportData | null; loading: boolean }) {
+  const channels = data?.channels ?? { link: 0, qr: 0 }
+  const total = channels.link + channels.qr
+  const rows = CHANNEL_META.map((c) => ({ ...c, count: channels[c.key], pct: total ? Math.round((channels[c.key] / total) * 100) : 0 }))
+
+  const gradientCss = useMemo(() => {
+    if (!total) return 'var(--dash-soft)'
+    let acc = 0
+    const stops = rows.map((c) => { const from = acc; acc += (c.count / total) * 100; return `${c.color} ${from}% ${acc}%` })
+    return `conic-gradient(${stops.join(', ')})`
+  }, [rows, total])
+
+  return (
+    <div className="flex flex-col gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+      <h3 className="text-[16px] font-extrabold text-[var(--dash-text)]">Por canal</h3>
+      {loading ? (
+        <p className="py-6 text-center text-xs font-medium text-[var(--dash-muted)]">Cargando…</p>
+      ) : total === 0 ? (
+        <p className="py-6 text-center text-xs font-medium text-[var(--dash-muted)]">Sin tráfico en este período.</p>
+      ) : (
+        <div className="flex items-center gap-4">
+          <div className="relative h-28 w-28 shrink-0 rounded-full" style={{ background: gradientCss }}>
+            <div className="absolute inset-[14px] flex flex-col items-center justify-center rounded-full bg-[var(--dash-surface)]">
+              <span className="text-[18px] font-black leading-none text-[var(--dash-text)]">{fmtInt(total)}</span>
+              <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">visitas</span>
+            </div>
+          </div>
+          <div className="flex flex-1 flex-col gap-2">
+            {rows.map((c) => (
+              <div key={c.name} className="flex items-center gap-2 text-[12px]">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                <span className="flex-1 font-semibold text-[var(--dash-text2)]">{c.name}</span>
+                <span className="font-bold text-[var(--dash-muted)]">{c.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
-import { selectTenant } from '../../store/slices/authSlice'
+import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import type { Customer, CustomerStats, Order, Product } from '../../types'
 import api from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
@@ -53,6 +53,7 @@ function statusOf(c: Customer): Status {
 
 export function CustomersScreen() {
   const tenant = useAppSelector(selectTenant)
+  const canEdit = useAppSelector(selectCanEdit)
   const currency = tenant?.currency || 'UYU'
   const money = useCallback(
     (v: string | number) => `${currency} ${new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : parseFloat(v) || 0)}`,
@@ -65,7 +66,7 @@ export function CustomersScreen() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [searchParams] = useSearchParams()
-  const [showNew, setShowNew] = useState(() => searchParams.get('new') === '1')
+  const [showNew, setShowNew] = useState(() => searchParams.get('new') === '1' && canEdit)
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
 
@@ -131,7 +132,7 @@ export function CustomersScreen() {
               <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Clientes</h3>
               <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={tone('violet')}>{customers.length} totales</span>
             </div>
-            <button type="button" onClick={() => setShowNew(true)} className={`flex h-[38px] items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] ${gradient}`}><Icon name="plus" size={16} /> Nuevo cliente</button>
+            {canEdit && <button type="button" onClick={() => setShowNew(true)} className={`flex h-[38px] items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] ${gradient}`}><Icon name="plus" size={16} /> Nuevo cliente</button>}
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-[var(--dash-border)]">
@@ -149,7 +150,7 @@ export function CustomersScreen() {
             ) : filtered.length === 0 ? (
               <div className="flex h-40 flex-col items-center justify-center gap-3 text-center">
                 <p className="text-sm font-semibold text-[var(--dash-text)]">{customers.length === 0 ? 'Todavía no tenés clientes' : 'Sin resultados'}</p>
-                {customers.length === 0 && (
+                {customers.length === 0 && canEdit && (
                   <button type="button" onClick={() => setShowNew(true)} className={`flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}><Icon name="plus" size={16} /> Agregar el primero</button>
                 )}
               </div>
@@ -173,12 +174,16 @@ export function CustomersScreen() {
                       <button type="button" onClick={(e) => { e.stopPropagation(); setOpenId(c.id) }} className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-bold" style={tone('violet')}>
                         <Icon name="eye" size={14} /> Ver
                       </button>
-                      <button type="button" onClick={(e) => { e.stopPropagation(); setEditCustomer(c) }} title="Editar cliente" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-link)]">
-                        <Icon name="pencil" size={15} />
-                      </button>
-                      <button type="button" onClick={(e) => { e.stopPropagation(); void removeCustomer(c) }} title="Eliminar cliente" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--tone-red-bg)] hover:text-[var(--tone-red-fg)]">
-                        <Icon name="circle-x" size={16} />
-                      </button>
+                      {canEdit && (
+                        <>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setEditCustomer(c) }} title="Editar cliente" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-link)]">
+                            <Icon name="pencil" size={15} />
+                          </button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); void removeCustomer(c) }} title="Eliminar cliente" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--tone-red-bg)] hover:text-[var(--tone-red-fg)]">
+                            <Icon name="circle-x" size={16} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )
@@ -195,7 +200,7 @@ export function CustomersScreen() {
         <CustomerModal customer={editCustomer} onClose={() => setEditCustomer(null)} onSaved={() => { setEditCustomer(null); void refresh() }} />
       )}
       {openId && (
-        <CustomerDrawer customerId={openId} products={products} money={money} onClose={() => setOpenId(null)} onChanged={refresh} />
+        <CustomerDrawer customerId={openId} products={products} money={money} canEdit={canEdit} onClose={() => setOpenId(null)} onChanged={refresh} />
       )}
     </CrmLayout>
   )
@@ -243,7 +248,7 @@ function CustomerModal({ tenantId, customer, onClose, onSaved }: { tenantId?: st
 }
 
 /* ── Customer ficha (drawer with purchase history) ──────────────────── */
-function CustomerDrawer({ customerId, products, money, onClose, onChanged }: { customerId: string; products: Product[]; money: (v: string | number) => string; onClose: () => void; onChanged: () => Promise<void> }) {
+function CustomerDrawer({ customerId, products, money, canEdit, onClose, onChanged }: { customerId: string; products: Product[]; money: (v: string | number) => string; canEdit: boolean; onClose: () => void; onChanged: () => Promise<void> }) {
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -321,12 +326,14 @@ function CustomerDrawer({ customerId, products, money, onClose, onChanged }: { c
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-extrabold text-[var(--dash-text)]">Historial de compras</h4>
-                  <button type="button" onClick={() => { setEditingId(null); setAdding((v) => !v) }} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold" style={tone('violet')}>
-                    <Icon name={adding ? 'circle-x' : 'plus'} size={14} /> {adding ? 'Cancelar' : 'Registrar compra'}
-                  </button>
+                  {canEdit && (
+                    <button type="button" onClick={() => { setEditingId(null); setAdding((v) => !v) }} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold" style={tone('violet')}>
+                      <Icon name={adding ? 'circle-x' : 'plus'} size={14} /> {adding ? 'Cancelar' : 'Registrar compra'}
+                    </button>
+                  )}
                 </div>
 
-                {adding && <OrderForm customerId={customerId} products={products} money={money} onSaved={async () => { setAdding(false); await reloadAll() }} />}
+                {adding && canEdit && <OrderForm customerId={customerId} products={products} money={money} onSaved={async () => { setAdding(false); await reloadAll() }} />}
 
                 {orders.length === 0 && !adding ? (
                   <div className="flex flex-col items-center gap-1 rounded-2xl border border-dashed border-[var(--dash-border)] py-10 text-center">
@@ -337,19 +344,21 @@ function CustomerDrawer({ customerId, products, money, onClose, onChanged }: { c
                 ) : (
                   orders.map((o) => editingId === o.id
                     ? <OrderForm key={o.id} customerId={customerId} products={products} money={money} order={o} onCancel={() => setEditingId(null)} onSaved={async () => { setEditingId(null); await reloadAll() }} />
-                    : <OrderCard key={o.id} order={o} money={money} onEdit={() => { setAdding(false); setEditingId(o.id) }} onDelete={() => removeOrder(o.id)} />)
+                    : <OrderCard key={o.id} order={o} money={money} canEdit={canEdit} onEdit={() => { setAdding(false); setEditingId(o.id) }} onDelete={() => removeOrder(o.id)} />)
                 )}
               </div>
             </div>
 
-            <div className="flex gap-2 border-t border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
-              <button type="button" onClick={() => setEditingCustomer(true)} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold" style={tone('violet')}>
-                <Icon name="pencil" size={16} /> Editar
-              </button>
-              <button type="button" onClick={removeCustomer} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold" style={tone('red')}>
-                <Icon name="circle-x" size={16} /> Eliminar
-              </button>
-            </div>
+            {canEdit && (
+              <div className="flex gap-2 border-t border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
+                <button type="button" onClick={() => setEditingCustomer(true)} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold" style={tone('violet')}>
+                  <Icon name="pencil" size={16} /> Editar
+                </button>
+                <button type="button" onClick={removeCustomer} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold" style={tone('red')}>
+                  <Icon name="circle-x" size={16} /> Eliminar
+                </button>
+              </div>
+            )}
           </>
         )}
       </aside>
@@ -361,7 +370,7 @@ function CustomerDrawer({ customerId, products, money, onClose, onChanged }: { c
   )
 }
 
-function OrderCard({ order, money, onEdit, onDelete }: { order: Order; money: (v: string | number) => string; onEdit: () => void; onDelete: () => void }) {
+function OrderCard({ order, money, canEdit, onEdit, onDelete }: { order: Order; money: (v: string | number) => string; canEdit: boolean; onEdit: () => void; onDelete: () => void }) {
   const statusLabel: Record<string, { label: string; tone: Tone }> = {
     paid: { label: 'Pagada', tone: 'green' }, pending: { label: 'Pendiente', tone: 'amber' }, cancelled: { label: 'Cancelada', tone: 'slate' },
   }
@@ -372,10 +381,12 @@ function OrderCard({ order, money, onEdit, onDelete }: { order: Order; money: (v
         {order.reference
           ? <div className="flex items-center gap-1.5 text-[var(--dash-link)]"><Icon name="file-spreadsheet" size={15} /><span className="text-[17px] font-black leading-none">#{order.reference}</span></div>
           : <span />}
-        <div className="flex items-center gap-1.5">
-          <button type="button" onClick={onEdit} title="Editar compra" className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-link)]"><Icon name="pencil" size={14} /></button>
-          <button type="button" onClick={onDelete} title="Eliminar compra" className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--tone-red-fg)]"><Icon name="circle-x" size={15} /></button>
-        </div>
+        {canEdit && (
+          <div className="flex items-center gap-1.5">
+            <button type="button" onClick={onEdit} title="Editar compra" className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-link)]"><Icon name="pencil" size={14} /></button>
+            <button type="button" onClick={onDelete} title="Eliminar compra" className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--tone-red-fg)]"><Icon name="circle-x" size={15} /></button>
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2">

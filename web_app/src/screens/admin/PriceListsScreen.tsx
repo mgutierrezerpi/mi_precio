@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectTenant } from '../../store/slices/authSlice'
+import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import { fetchLists, createList, updateList, deleteList, createItem, deleteItem, selectLists, selectIsLoading } from '../../store/slices/menuSlice'
 import { fetchProducts, selectProducts } from '../../store/slices/productsSlice'
 import type { PriceList, Product } from '../../types'
@@ -38,6 +38,7 @@ const publicUrl = (sub: string | undefined, l: PriceList) => `${window.location.
 export function PriceListsScreen() {
   const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
+  const canEdit = useAppSelector(selectCanEdit)
   const lists = useAppSelector(selectLists)
   const loading = useAppSelector(selectIsLoading)
   const products = useAppSelector(selectProducts)
@@ -45,7 +46,7 @@ export function PriceListsScreen() {
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<Tab>('all')
-  const [modal, setModal] = useState<{ open: boolean; list: PriceList | null }>(() => ({ open: searchParams.get('new') === '1', list: null }))
+  const [modal, setModal] = useState<{ open: boolean; list: PriceList | null }>(() => ({ open: searchParams.get('new') === '1' && canEdit, list: null }))
   const [qr, setQr] = useState<PriceList | null>(null)
 
   useEffect(() => {
@@ -101,9 +102,11 @@ export function PriceListsScreen() {
           <div className="flex flex-1 flex-col gap-3">
             <h2 className="text-3xl font-extrabold leading-tight">Compartí tu catálogo en un escaneo.</h2>
             <p className="text-sm font-medium leading-relaxed text-white/80">Generá un link o un QR para cada lista y mantenelos siempre actualizados sin reimprimir.</p>
-            <button type="button" onClick={() => setModal({ open: true, list: null })} className="mt-1 flex h-11 w-fit items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#7C3AED] hover:bg-violet-50">
-              <Icon name="plus" size={16} /> Nueva lista
-            </button>
+            {canEdit && (
+              <button type="button" onClick={() => setModal({ open: true, list: null })} className="mt-1 flex h-11 w-fit items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#7C3AED] hover:bg-violet-50">
+                <Icon name="plus" size={16} /> Nueva lista
+              </button>
+            )}
           </div>
           <div className="flex h-[140px] w-[140px] shrink-0 items-center justify-center rounded-2xl bg-white p-2.5">
             <QrGraphic className="h-full w-full" />
@@ -138,7 +141,7 @@ export function PriceListsScreen() {
           <div className="flex h-56 flex-col items-center justify-center gap-3 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl" style={tone('violet')}><Icon name="list-checks" size={24} /></span>
             <p className="text-sm font-semibold text-[var(--dash-text)]">{lists.length > 0 ? 'Sin resultados' : 'Todavía no tenés listas'}</p>
-            {lists.length === 0 && (
+            {lists.length === 0 && canEdit && (
               <button type="button" onClick={() => setModal({ open: true, list: null })} className={`flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}>
                 <Icon name="plus" size={16} /> Crear la primera
               </button>
@@ -151,6 +154,7 @@ export function PriceListsScreen() {
                 key={l.id}
                 list={l}
                 subdomain={tenant?.subdomain}
+                canEdit={canEdit}
                 onEdit={() => setModal({ open: true, list: l })}
                 onTogglePublished={() => togglePublished(l)}
                 onTogglePrincipal={() => togglePrincipal(l)}
@@ -171,8 +175,8 @@ export function PriceListsScreen() {
 }
 
 /* ── Row ─────────────────────────────────────────────────────────── */
-function ListRow({ list, subdomain, onEdit, onTogglePublished, onTogglePrincipal, onDelete, onCopy, onQr, onOpen }: {
-  list: PriceList; subdomain?: string
+function ListRow({ list, subdomain, canEdit, onEdit, onTogglePublished, onTogglePrincipal, onDelete, onCopy, onQr, onOpen }: {
+  list: PriceList; subdomain?: string; canEdit: boolean
   onEdit: () => void; onTogglePublished: () => void; onTogglePrincipal: () => void; onDelete: () => void; onCopy: () => void; onQr: () => void; onOpen: () => void
 }) {
   const [copied, setCopied] = useState(false)
@@ -211,7 +215,7 @@ function ListRow({ list, subdomain, onEdit, onTogglePublished, onTogglePrincipal
       <div className="flex shrink-0 items-center gap-2">
         <button type="button" onClick={onQr} title="Código QR" className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="qr-code" size={16} /></button>
         <button type="button" onClick={onOpen} title="Abrir lista pública" className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="share-2" size={16} /></button>
-        <RowMenu list={list} onEdit={onEdit} onTogglePublished={onTogglePublished} onTogglePrincipal={onTogglePrincipal} onDelete={onDelete} />
+        {canEdit && <RowMenu list={list} onEdit={onEdit} onTogglePublished={onTogglePublished} onTogglePrincipal={onTogglePrincipal} onDelete={onDelete} />}
       </div>
     </div>
   )

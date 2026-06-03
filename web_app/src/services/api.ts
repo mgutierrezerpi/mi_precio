@@ -1,4 +1,4 @@
-import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity } from '../types'
+import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
@@ -6,6 +6,14 @@ type ApiResponse<T> = { data: T; error?: never } | { data?: never; error: string
 
 type VisitBucket = { today: number; yesterday: number; total: number; changePct: number }
 export type VisitStats = VisitBucket & { qr: VisitBucket }
+
+export type ReportData = {
+  days: number
+  kpis: { visits: number; qrScans: number; customers: number; revenue: string }
+  series: { date: string; link: number; qr: number }[]
+  channels: { link: number; qr: number }
+  topProducts: { name: string; units: number; revenue: string }[]
+}
 
 type AuthErrorCallback = () => void
 let onAuthError: AuthErrorCallback | null = null
@@ -112,11 +120,24 @@ class ApiService {
     return this.request(`/tenants/${id}`)
   }
 
-  async updateTenant(id: string, data: { name?: string; subdomain?: string; currency?: string }): Promise<ApiResponse<Tenant>> {
-    return this.request(`/tenants/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    })
+  async updateTenant(
+    id: string,
+    data: {
+      name?: string; subdomain?: string; currency?: string
+      logoUrl?: string | null; brandColor?: string | null; description?: string | null
+      language?: string; timezone?: string
+      legalName?: string | null; taxId?: string | null; address?: string | null
+    }
+  ): Promise<ApiResponse<Tenant>> {
+    // Map the camelCase brand/tax fields to the API's snake_case keys.
+    const map: Record<string, string> = { logoUrl: 'logo_url', brandColor: 'brand_color', legalName: 'legal_name', taxId: 'tax_id' }
+    const body: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(data)) body[map[k] ?? k] = v
+    return this.request(`/tenants/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
+  }
+
+  async deleteTenant(id: string): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/tenants/${id}`, { method: 'DELETE' })
   }
 
   // Lists endpoints
@@ -220,6 +241,45 @@ class ApiService {
 
   async getActivity(tenantId: string): Promise<ApiResponse<Activity[]>> {
     return this.request(`/tenants/${tenantId}/activity`)
+  }
+
+  async getReports(tenantId: string, days = 30): Promise<ApiResponse<ReportData>> {
+    return this.request(`/tenants/${tenantId}/stats/reports?days=${days}`)
+  }
+
+  // Team endpoints
+  async getMembers(tenantId: string): Promise<ApiResponse<TeamMember[]>> {
+    return this.request(`/tenants/${tenantId}/members`)
+  }
+
+  async getMemberStats(tenantId: string): Promise<ApiResponse<MemberStats>> {
+    return this.request(`/tenants/${tenantId}/members/stats`)
+  }
+
+  async getInvitations(tenantId: string): Promise<ApiResponse<Invitation[]>> {
+    return this.request(`/tenants/${tenantId}/invitations`)
+  }
+
+  async inviteMember(tenantId: string, email: string, role: Role): Promise<ApiResponse<Invitation>> {
+    return this.request(`/tenants/${tenantId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ email, role }),
+    })
+  }
+
+  async updateMemberRole(tenantId: string, userId: string, role: Role): Promise<ApiResponse<TeamMember>> {
+    return this.request(`/tenants/${tenantId}/members/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    })
+  }
+
+  async removeMember(tenantId: string, userId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/tenants/${tenantId}/members/${userId}`, { method: 'DELETE' })
+  }
+
+  async cancelInvitation(tenantId: string, invitationId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/tenants/${tenantId}/invitations/${invitationId}`, { method: 'DELETE' })
   }
 
   // Product endpoints (tenant-level catalog)

@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from peewee import SqliteDatabase
 
 from app import create_app
-from models import Tenant, User, AuthCode, PriceList, ListVersion, Item
+from models import Tenant, User, AuthCode, PriceList, ListVersion, Item, Invitation
 
 
 test_db = SqliteDatabase(":memory:")
@@ -13,7 +13,7 @@ test_db = SqliteDatabase(":memory:")
 
 @pytest.fixture(scope="function")
 def db():
-    models = [Tenant, User, AuthCode, PriceList, ListVersion, Item]
+    models = [Tenant, User, AuthCode, PriceList, ListVersion, Item, Invitation]
     test_db.bind(models)
     test_db.connect()
     test_db.create_tables(models)

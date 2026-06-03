@@ -18,7 +18,7 @@ import {
 } from '../../store/slices/menuSlice'
 import { toast } from '../../components/Toast'
 import api from '../../services/api'
-import { selectTenant } from '../../store/slices/authSlice'
+import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 
 interface ExtractedItem {
   name: string
@@ -32,6 +32,7 @@ export function ListEditScreen() {
   const dispatch = useAppDispatch()
   const list = useAppSelector(selectCurrentList)
   const tenant = useAppSelector(selectTenant)
+  const canEdit = useAppSelector(selectCanEdit)
   const currentVersion = useAppSelector(selectCurrentVersion)
   const items = useAppSelector(selectItems)
   const isLoading = useAppSelector(selectIsLoading)
@@ -411,7 +412,7 @@ export function ListEditScreen() {
                   <XIcon className="w-5 h-5" />
                 </button>
               </div>
-            ) : (
+            ) : canEdit ? (
               <button
                 onClick={() => setIsEditingName(true)}
                 className="group flex items-center gap-3 text-left"
@@ -421,16 +422,19 @@ export function ListEditScreen() {
                 </h1>
                 <PencilIcon className="w-4 h-4 text-[var(--color-text-subtle)] opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
+            ) : (
+              <h1 className="text-2xl font-medium text-[var(--color-text-primary)]">{list.name}</h1>
             )}
 
             <div className="flex items-center gap-3 mt-4">
               {/* Published toggle */}
               <button
-                onClick={handleTogglePublished}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+                onClick={canEdit ? handleTogglePublished : undefined}
+                disabled={!canEdit}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${!canEdit ? 'cursor-default' : ''} ${
                   list.published
-                    ? 'bg-[var(--color-success-soft)] text-[var(--color-success)] hover:bg-[var(--color-success)]/20'
-                    : 'bg-[var(--color-warning-soft)] text-[var(--color-warning)] hover:bg-[var(--color-warning)]/20'
+                    ? `bg-[var(--color-success-soft)] text-[var(--color-success)] ${canEdit ? 'hover:bg-[var(--color-success)]/20' : ''}`
+                    : `bg-[var(--color-warning-soft)] text-[var(--color-warning)] ${canEdit ? 'hover:bg-[var(--color-warning)]/20' : ''}`
                 }`}
               >
                 <span className={`w-2 h-2 rounded-full ${list.published ? 'bg-[var(--color-success)]' : 'bg-[var(--color-warning)]'}`} />
@@ -439,11 +443,12 @@ export function ListEditScreen() {
 
               {/* Show on index toggle */}
               <button
-                onClick={handleToggleShowOnIndex}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+                onClick={canEdit ? handleToggleShowOnIndex : undefined}
+                disabled={!canEdit}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${!canEdit ? 'cursor-default' : ''} ${
                   list.showOnIndex
                     ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-                    : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-subtle)] hover:bg-[var(--color-bg-hover)]'
+                    : `bg-[var(--color-bg-elevated)] text-[var(--color-text-subtle)] ${canEdit ? 'hover:bg-[var(--color-bg-hover)]' : ''}`
                 }`}
               >
                 <StarIcon className={`w-4 h-4 ${list.showOnIndex ? 'fill-current' : ''}`} />
@@ -492,24 +497,28 @@ export function ListEditScreen() {
                   >
                     {publicListUrl}
                   </Link>
-                  <button
-                    onClick={() => setIsEditingSlug(true)}
-                    className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors whitespace-nowrap"
-                  >
-                    Editar link
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => setIsEditingSlug(true)}
+                      className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors whitespace-nowrap"
+                    >
+                      Editar link
+                    </button>
+                  )}
                 </div>
               )}
             </div>
           </div>
 
-          <button
-            onClick={handleDelete}
-            className="p-2 text-[var(--color-text-subtle)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] rounded-xl transition-all"
-            title="Eliminar lista"
-          >
-            <TrashIcon className="w-5 h-5" />
-          </button>
+          {canEdit && (
+            <button
+              onClick={handleDelete}
+              className="p-2 text-[var(--color-text-subtle)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] rounded-xl transition-all"
+              title="Eliminar lista"
+            >
+              <TrashIcon className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -522,22 +531,24 @@ export function ListEditScreen() {
               {items.length} producto{items.length !== 1 ? 's' : ''} en esta lista
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="soft-button flex items-center gap-2"
-            >
-              <ImportIcon className="w-4 h-4" />
-              Importar
-            </button>
-            <button
-              onClick={() => setShowAddItem(true)}
-              className="soft-button-primary flex items-center gap-2"
-            >
-              <PlusIcon className="w-4 h-4" />
-              Agregar
-            </button>
-          </div>
+          {canEdit && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="soft-button flex items-center gap-2"
+              >
+                <ImportIcon className="w-4 h-4" />
+                Importar
+              </button>
+              <button
+                onClick={() => setShowAddItem(true)}
+                className="soft-button-primary flex items-center gap-2"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Agregar
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Add item form */}
@@ -597,12 +608,14 @@ export function ListEditScreen() {
             <p className="text-[var(--color-text-subtle)] mb-4">
               No hay productos en esta lista
             </p>
-            <button
-              onClick={() => setShowAddItem(true)}
-              className="text-[var(--color-accent)] hover:underline"
-            >
-              Agregar el primero
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => setShowAddItem(true)}
+                className="text-[var(--color-accent)] hover:underline"
+              >
+                Agregar el primero
+              </button>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
@@ -682,20 +695,22 @@ export function ListEditScreen() {
                       <span className="text-[var(--color-accent)] font-medium whitespace-nowrap">
                         {formatPrice(item.price)}
                       </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleStartEditItem(item)}
-                          className="p-2 text-[var(--color-text-subtle)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-soft)] rounded-xl transition-all"
-                        >
-                          <PencilIcon className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
-                          className="p-2 text-[var(--color-text-subtle)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] rounded-xl transition-all"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
-                      </div>
+                      {canEdit && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleStartEditItem(item)}
+                            className="p-2 text-[var(--color-text-subtle)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-soft)] rounded-xl transition-all"
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="p-2 text-[var(--color-text-subtle)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] rounded-xl transition-all"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

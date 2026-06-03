@@ -18,7 +18,7 @@ interface PublicMenuData {
 // Dedupe view records within a short window (survives StrictMode remounts).
 const recentViews = new Map<string, number>()
 
-const C = {
+const BASE = {
   bg: '#FAFAF7', ink: '#0F0D1A', body: '#44424E', muted: '#84818E',
   accent: '#7C3AED', accent2: '#6D28D9', line: '#E5E2DC',
 }
@@ -58,6 +58,10 @@ export function MenuScreen() {
     recentViews.set(key, now)
     api.recordPublicView(subdomain, listId, viewSource)
   }, [subdomain, listId, viewSource])
+
+  // Palette tinted by the tenant's brand color (falls back to the default purple).
+  const accent = tenant?.brandColor || BASE.accent
+  const C = { ...BASE, accent, accent2: accent }
 
   const currency = tenant?.currency || 'UYU'
   const fmt = (price: string | number) => new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0 }).format(typeof price === 'number' ? price : parseFloat(price))
@@ -115,9 +119,20 @@ export function MenuScreen() {
 
   return (
     <div className="min-h-screen font-sans" style={{ background: C.bg, color: C.ink, fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+      {/* Tint the page scrollbar with the tenant's brand color while this public list is shown. */}
+      <style>{`
+        html { scrollbar-color: ${accent} transparent; }
+        html::-webkit-scrollbar { width: 12px; height: 12px; }
+        html::-webkit-scrollbar-track { background: transparent; }
+        html::-webkit-scrollbar-thumb { background: ${accent}; border-radius: 9999px; border: 3px solid ${C.bg}; }
+        html::-webkit-scrollbar-thumb:hover { background: ${C.accent2}; }
+      `}</style>
       <div className="mx-auto w-full max-w-[1160px] px-6 md:px-12">
         {/* Masthead */}
         <header className="pb-8 pt-10">
+          {tenant.logoUrl && (
+            <img src={tenant.logoUrl} alt={tenant.name} className="mb-5 h-14 w-auto max-w-[180px] object-contain" />
+          )}
           <div className="h-[3px] w-12" style={{ background: C.accent }} />
           {/* Meta strip */}
           <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3">
@@ -149,7 +164,9 @@ export function MenuScreen() {
           </div>
 
           <p className="mt-6 max-w-[720px] text-[16px] leading-relaxed" style={{ color: C.body }}>
-            {list?.name ? `${list.name}. ` : ''}Catálogo público de {tenant.name}. Escaneá el QR o compartí el link para ver siempre la última versión, con precios actualizados al instante.
+            {tenant.description
+              ? tenant.description
+              : `${list?.name ? `${list.name}. ` : ''}Catálogo público de ${tenant.name}. Escaneá el QR o compartí el link para ver siempre la última versión, con precios actualizados al instante.`}
           </p>
 
           <div className="my-5 h-px w-full" style={{ background: C.line }} />
@@ -157,6 +174,7 @@ export function MenuScreen() {
           {/* Context strip */}
           <div className="flex flex-wrap gap-x-12 gap-y-4 pt-1">
             <Meta label="EMITIDO POR" value={tenant.name} />
+            {tenant.taxId && <Meta label="RUT" value={tenant.taxId} />}
             <Meta label="CATÁLOGO" value={list?.name ?? 'Todas las listas'} />
             <Meta label="ACTUALIZADO" value={updated} />
             <Meta label="MONEDA" value={currency} />
@@ -166,11 +184,11 @@ export function MenuScreen() {
         {/* Filter bar */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-3 py-4">
           <div className="flex flex-wrap items-center gap-3">
-            <FilterTab active={cat === 'all'} onClick={() => setCat('all')} name="Todos" count={base.length} />
+            <FilterTab active={cat === 'all'} onClick={() => setCat('all')} name="Todos" count={base.length} accent={C.accent} />
             {sections.map((s) => (
               <span key={s.key} className="flex items-center gap-3">
                 <span className="h-3 w-px" style={{ background: C.line }} />
-                <FilterTab active={cat === s.key} onClick={() => setCat(s.key)} name={s.name} count={s.items.length} />
+                <FilterTab active={cat === s.key} onClick={() => setCat(s.key)} name={s.name} count={s.items.length} accent={C.accent} />
               </span>
             ))}
           </div>
@@ -239,18 +257,18 @@ export function MenuScreen() {
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[10px] font-semibold tracking-[1.5px]" style={{ color: C.muted }}>{label}</span>
-      <span className="text-[13px] font-medium" style={{ color: C.ink }}>{value}</span>
+      <span className="text-[10px] font-semibold tracking-[1.5px]" style={{ color: BASE.muted }}>{label}</span>
+      <span className="text-[13px] font-medium" style={{ color: BASE.ink }}>{value}</span>
     </div>
   )
 }
 
-function FilterTab({ active, onClick, name, count }: { active: boolean; onClick: () => void; name: string; count: number }) {
+function FilterTab({ active, onClick, name, count, accent }: { active: boolean; onClick: () => void; name: string; count: number; accent: string }) {
   return (
     <button type="button" onClick={onClick} className="flex items-center gap-1.5 py-0.5">
-      {active && <span className="h-[5px] w-[5px] rounded-full" style={{ background: C.accent }} />}
-      <span className="text-[12px]" style={{ color: active ? C.accent2 : C.body, fontWeight: active ? 700 : 500 }}>{name}</span>
-      <span className="text-[10px] font-mono-jb" style={{ color: C.muted }}>({count})</span>
+      {active && <span className="h-[5px] w-[5px] rounded-full" style={{ background: accent }} />}
+      <span className="text-[12px]" style={{ color: active ? accent : BASE.body, fontWeight: active ? 700 : 500 }}>{name}</span>
+      <span className="text-[10px] font-mono-jb" style={{ color: BASE.muted }}>({count})</span>
     </button>
   )
 }

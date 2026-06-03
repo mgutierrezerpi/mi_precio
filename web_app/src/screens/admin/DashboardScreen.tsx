@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectTenant } from '../../store/slices/authSlice'
+import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import { fetchProducts, selectProducts, selectProductsLoading } from '../../store/slices/productsSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
 import type { Product, CustomerStats, Activity } from '../../types'
@@ -49,6 +49,7 @@ export function DashboardScreen() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const tenant = useAppSelector(selectTenant)
+  const canEdit = useAppSelector(selectCanEdit)
   const products = useAppSelector(selectProducts)
   const loading = useAppSelector(selectProductsLoading)
   const lists = useAppSelector(selectLists)
@@ -152,14 +153,16 @@ export function DashboardScreen() {
 
         {/* Bottom row */}
         <div className="flex gap-5">
-          <RecentProducts products={products} total={total} loading={loading} search={search} onNew={() => navigate('/admin/items?new=1')} onViewAll={goProducts} />
+          <RecentProducts products={products} total={total} loading={loading} search={search} onNew={canEdit ? () => navigate('/admin/items?new=1') : undefined} onViewAll={goProducts} />
           <div className="flex w-[380px] shrink-0 flex-col gap-5">
-            <QuickActions
-              onProduct={() => navigate('/admin/items?new=1')}
-              onList={() => navigate('/admin/lists?new=1')}
-              onCustomer={() => navigate('/admin/clientes?new=1')}
-              onQr={goQr}
-            />
+            {canEdit && (
+              <QuickActions
+                onProduct={() => navigate('/admin/items?new=1')}
+                onList={() => navigate('/admin/lists?new=1')}
+                onCustomer={() => navigate('/admin/clientes?new=1')}
+                onQr={goQr}
+              />
+            )}
             <ActivityFeed tenantId={tenant?.id} />
           </div>
         </div>
@@ -217,7 +220,7 @@ function ProductsCard({ total, available, unavailable, onClick }: { total: numbe
 
 type Tab = 'all' | 'available' | 'unavailable'
 
-function RecentProducts({ products, total, loading, search, onNew, onViewAll }: { products: Product[]; total: number; loading: boolean; search: string; onNew: () => void; onViewAll: () => void }) {
+function RecentProducts({ products, total, loading, search, onNew, onViewAll }: { products: Product[]; total: number; loading: boolean; search: string; onNew?: () => void; onViewAll: () => void }) {
   const [tab, setTab] = useState<Tab>('all')
   const recent = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -269,7 +272,7 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll }: 
         ) : recent.length === 0 ? (
           <div className="flex h-40 flex-col items-center justify-center gap-3 text-center">
             <p className="text-sm font-semibold text-[var(--dash-text)]">{total > 0 ? 'Sin productos en este filtro' : 'Todavía no tenés productos'}</p>
-            {total === 0 && (
+            {total === 0 && onNew && (
               <button type="button" onClick={onNew} className={`flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}>
                 <Icon name="plus" size={16} /> Crear el primero
               </button>

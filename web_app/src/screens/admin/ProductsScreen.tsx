@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectTenant } from '../../store/slices/authSlice'
+import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import {
   fetchProducts,
   createProduct,
@@ -54,6 +54,7 @@ async function fileToDataUrl(file: File, max = 512): Promise<string> {
 export function ProductsScreen() {
   const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
+  const canEdit = useAppSelector(selectCanEdit)
   const products = useAppSelector(selectProducts)
   const loading = useAppSelector(selectProductsLoading)
 
@@ -62,7 +63,7 @@ export function ProductsScreen() {
   const [status, setStatus] = useState<Status>('all')
   const [category, setCategory] = useState<string>(searchParams.get('cat') || 'all')
   const [page, setPage] = useState(1)
-  const [modal, setModal] = useState<{ open: boolean; product: Product | null }>(() => ({ open: searchParams.get('new') === '1', product: null }))
+  const [modal, setModal] = useState<{ open: boolean; product: Product | null }>(() => ({ open: searchParams.get('new') === '1' && canEdit, product: null }))
 
   useEffect(() => {
     if (tenant?.id) dispatch(fetchProducts(tenant.id))
@@ -186,13 +187,15 @@ export function ProductsScreen() {
               <button type="button" className={outlineBtn}><Icon name="sliders-horizontal" size={16} /> Filtros</button>
               <button type="button" className={outlineBtn}><Icon name="arrow-up-down" size={16} /> Ordenar</button>
               <button type="button" className={outlineBtn}><Icon name="download" size={16} /> Exportar</button>
-              <button
-                type="button"
-                onClick={() => setModal({ open: true, product: null })}
-                className={`flex h-[38px] items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] ${gradient}`}
-              >
-                <Icon name="plus" size={16} /> Nuevo producto
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => setModal({ open: true, product: null })}
+                  className={`flex h-[38px] items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] ${gradient}`}
+                >
+                  <Icon name="plus" size={16} /> Nuevo producto
+                </button>
+              )}
             </div>
           </div>
 
@@ -232,7 +235,7 @@ export function ProductsScreen() {
             {loading ? (
               <div className="flex h-40 items-center justify-center text-sm font-medium text-[var(--dash-muted)]">Cargando productos…</div>
             ) : pageItems.length === 0 ? (
-              <EmptyState hasProducts={products.length > 0} onCreate={() => setModal({ open: true, product: null })} />
+              <EmptyState hasProducts={products.length > 0} onCreate={canEdit ? () => setModal({ open: true, product: null }) : undefined} />
             ) : (
               pageItems.map((p, i) => {
                 return (
@@ -255,10 +258,12 @@ export function ProductsScreen() {
                     </span>
                     <span className="w-[110px] text-[13px] font-extrabold text-[var(--dash-text)]">{formatPrice(p.price)}</span>
                     <span className="w-[160px]">
-                      <AvailabilitySwitch value={p.available} onToggle={() => dispatch(updateProduct({ productId: p.id, data: { available: !p.available } }))} />
+                      {canEdit
+                        ? <AvailabilitySwitch value={p.available} onToggle={() => dispatch(updateProduct({ productId: p.id, data: { available: !p.available } }))} />
+                        : <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(p.available ? 'green' : 'red')}>{p.available ? 'Disponible' : 'No disponible'}</span>}
                     </span>
                     <span className="w-[120px] text-xs font-medium text-[var(--dash-muted)]">{timeAgo(p.updatedAt)}</span>
-                    <RowMenu onEdit={() => setModal({ open: true, product: p })} onDelete={() => handleDelete(p)} />
+                    {canEdit ? <RowMenu onEdit={() => setModal({ open: true, product: p })} onDelete={() => handleDelete(p)} /> : <span className="w-8" />}
                   </div>
                 )
               })
@@ -313,12 +318,12 @@ function AvailabilitySwitch({ value, onToggle }: { value: boolean; onToggle: () 
   )
 }
 
-function EmptyState({ hasProducts, onCreate }: { hasProducts: boolean; onCreate: () => void }) {
+function EmptyState({ hasProducts, onCreate }: { hasProducts: boolean; onCreate?: () => void }) {
   return (
     <div className="flex h-48 flex-col items-center justify-center gap-3 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-2xl" style={tone('violet')}><Icon name="package" size={24} /></span>
       <p className="text-sm font-semibold text-[var(--dash-text)]">{hasProducts ? 'Sin resultados para este filtro' : 'Todavía no tenés productos'}</p>
-      {!hasProducts && (
+      {!hasProducts && onCreate && (
         <button type="button" onClick={onCreate} className={`flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}>
           <Icon name="plus" size={16} /> Crear el primero
         </button>
