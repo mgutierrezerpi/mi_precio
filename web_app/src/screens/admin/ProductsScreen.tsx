@@ -692,6 +692,7 @@ function ProductModal({ product, tenantId, onClose }: { product: Product | null;
   const [description, setDescription] = useState(product?.description ?? '')
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? '')
   const [imgLoading, setImgLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -717,6 +718,7 @@ function ProductModal({ product, tenantId, onClose }: { product: Product | null;
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
+    setError(null)
     const data: ProductInput = {
       name: name.trim(),
       price: parseFloat(price) || 0,
@@ -732,6 +734,9 @@ function ProductModal({ product, tenantId, onClose }: { product: Product | null;
         ? await dispatch(createProduct({ tenantId, data }))
         : null
     if (result && (createProduct.fulfilled.match(result) || updateProduct.fulfilled.match(result))) onClose()
+    else if (result && (createProduct.rejected.match(result) || updateProduct.rejected.match(result))) {
+      setError((result.payload as string) || 'No se pudo guardar el producto.')
+    }
   }
 
   return (
@@ -778,6 +783,12 @@ function ProductModal({ product, tenantId, onClose }: { product: Product | null;
             <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Detalle opcional" className={inputCls} />
           </Field>
         </div>
+
+        {error && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-3.5 py-2.5 text-[13px] font-semibold text-[#B91C1C]">
+            <Icon name="alert-triangle" size={15} className="mt-0.5 shrink-0" /> {error}
+          </div>
+        )}
 
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="flex h-11 items-center rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">Cancelar</button>

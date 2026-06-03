@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from lib.ctx import identity, analytics, activity
+from lib.ctx import identity, analytics, activity, plans
 from controllers.deps import get_current_user, require_admin, require_owner
-from controllers.input_types import CreateTenant, UpdateTenant
+from controllers.input_types import CreateTenant, UpdateTenant, UpdatePlan
 from views import TenantView, ActivityView, DeletedView
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
@@ -10,6 +10,27 @@ router = APIRouter(prefix="/tenants", tags=["tenants"])
 @router.get("/{tenant_id}/stats/visits")
 def visit_stats_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
     return analytics.visit_stats(tenant_id)
+
+
+@router.get("/{tenant_id}/plan")
+def plan_info_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
+    return plans.plan_info(tenant_id)
+
+
+@router.patch("/{tenant_id}/plan")
+def update_plan_endpoint(tenant_id: str, data: UpdatePlan, current_user: dict = Depends(require_owner)):
+    if current_user.get("tenant_id") != tenant_id:
+        raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+    try:
+        tenant = plans.set_plan(tenant_id, data.plan)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Plan inválido")
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    activity.record(tenant_id, "plan.changed", f"Cambió el plan a {data.plan}",
+                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                    entity_type="tenant", entity_id=tenant_id)
+    return TenantView.render(tenant)
 
 
 @router.get("/{tenant_id}/stats/reports")

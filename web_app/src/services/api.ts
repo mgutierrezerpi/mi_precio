@@ -1,4 +1,4 @@
-import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role, NotificationsData, NotifPrefs } from '../types'
+import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role, NotificationsData, NotifPrefs, PlanInfo, PlanId } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
@@ -138,6 +138,15 @@ class ApiService {
 
   async deleteTenant(id: string): Promise<ApiResponse<{ deleted: boolean }>> {
     return this.request(`/tenants/${id}`, { method: 'DELETE' })
+  }
+
+  // Plan & billing
+  async getPlan(tenantId: string): Promise<ApiResponse<PlanInfo>> {
+    return this.request(`/tenants/${tenantId}/plan`)
+  }
+
+  async updatePlan(tenantId: string, plan: PlanId): Promise<ApiResponse<Tenant>> {
+    return this.request(`/tenants/${tenantId}/plan`, { method: 'PATCH', body: JSON.stringify({ plan }) })
   }
 
   // Lists endpoints

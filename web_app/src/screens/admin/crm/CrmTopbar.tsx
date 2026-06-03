@@ -1,4 +1,5 @@
 import { useTheme } from '../../../hooks/useTheme'
+import { useT } from '../../../lib/i18n'
 import { Icon, UserMenu } from './ui'
 import { NotificationsBell } from './NotificationsBell'
 
@@ -18,6 +19,7 @@ interface CrmTopbarProps {
 /** Shared CRM topbar: title + search + theme toggle + notifications + user menu. */
 export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions }: CrmTopbarProps) {
   const { isDark, toggleTheme } = useTheme()
+  const t = useT()
 
   return (
     <header className="flex h-[72px] shrink-0 items-center gap-4 border-b border-[var(--dash-border)] bg-[var(--dash-surface)] px-8">
@@ -41,7 +43,7 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
         type="button"
         onClick={toggleTheme}
         className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] hover:opacity-80"
-        title={isDark ? 'Modo claro' : 'Modo oscuro'}
+        title={isDark ? t('top.lightMode') : t('top.darkMode')}
       >
         <Icon name={isDark ? 'sun' : 'moon'} className={isDark ? 'text-[#FBBF24]' : 'text-[var(--dash-text2)]'} />
       </button>

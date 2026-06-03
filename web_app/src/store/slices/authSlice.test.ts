@@ -62,6 +62,7 @@ describe('authSlice', () => {
       name: 'Test Restaurant',
       subdomain: 'test',
       currency: 'ARS',
+      plan: 'free',
       logoUrl: null,
       brandColor: null,
       description: null,

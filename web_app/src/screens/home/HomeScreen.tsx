@@ -21,6 +21,7 @@ const DollarSign = ({ className, size = 22 }: IcoProps) => line(size, className,
 const RefreshCw = ({ className, size = 22 }: IcoProps) => line(size, className, <><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></>)
 const CircleCheck = ({ className, size = 20 }: IcoProps) => line(size, className, <><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></>)
 const Check = ({ className, size = 18 }: IcoProps) => line(size, className, <path d="M20 6 9 17l-5-5" />)
+const Sparkles = ({ className, size = 14 }: IcoProps) => line(size, className, <><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z" /><path d="M20 3v4" /><path d="M22 5h-4" /><path d="M4 17v2" /><path d="M5 18H3" /></>)
 const ArrowRight = ({ className, size = 18 }: IcoProps) => line(size, className, <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>)
 const Plus = ({ className, size = 20 }: IcoProps) => line(size, className, <><path d="M5 12h14" /><path d="M12 5v14" /></>)
 const Instagram = ({ className, size = 16 }: IcoProps) => line(size, className, <><rect width="20" height="20" x="2" y="2" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" x2="17.51" y1="6.5" y2="6.5" /></>)
@@ -68,9 +69,9 @@ const testimonials = [
 ]
 
 const plans = [
-  { name: 'Inicial', description: 'Para empezar a tener tu lista online.', price: 'Gratis', cadence: 'Por siempre', features: ['Hasta 10 productos', '1 lista pública', 'QR personalizado', 'Soporte por email'], highlighted: false, cta: 'Empezar gratis' },
-  { name: 'Pyme', description: 'Para negocios que ya están creciendo.', price: '$ 19', cadence: 'USD por mes', features: ['Productos ilimitados', 'Listas por cliente', 'Control de stock + alertas', 'Multiusuario (5)', 'Soporte prioritario'], highlighted: true, cta: 'Probar 14 días' },
-  { name: 'Negocio', description: 'Para equipos comerciales y mayoristas.', price: '$ 49', cadence: 'USD por mes', features: ['Todo lo de Pyme', 'Multimoneda', 'Importación masiva', 'Usuarios ilimitados', 'Integración con WhatsApp'], highlighted: false, cta: 'Hablar con ventas' },
+  { name: 'Inicial', description: 'Para empezar a tener tu lista online.', price: '$ 5', cadence: 'USD por mes', features: ['Hasta 10 productos', '1 lista pública', 'QR personalizado', 'Soporte por email'], highlighted: false, cta: 'Probar 14 días' },
+  { name: 'Pyme', description: 'Para negocios que ya están creciendo.', price: '$ 20', cadence: 'USD por mes', features: ['Productos ilimitados', 'Listas por cliente', 'Control de stock + alertas', 'Multiusuario (5)', 'Soporte prioritario'], highlighted: true, cta: 'Probar 14 días' },
+  { name: 'Negocio Pro', description: 'Para equipos comerciales y mayoristas.', price: '$ 35', cadence: 'USD por mes', features: ['Todo lo de Pyme', 'Multimoneda', 'Importación masiva', 'Usuarios ilimitados', 'Integración con WhatsApp'], highlighted: false, cta: 'Probar 14 días' },
 ]
 
 const faqs = [
@@ -340,31 +341,30 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
     <section id="precios" className="bg-[#EDE9FE] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead eyebrow="Precios" title="Planes simples, pensados para pymes." subtitle="Probá MiPrecio gratis 14 días. Sin tarjeta de crédito." />
-        <div className="grid items-start gap-6 lg:grid-cols-3">
+        <div className="grid items-stretch gap-6 lg:grid-cols-3">
           {plans.map((plan) => {
             const dark = plan.highlighted
             return (
-              <article key={plan.name} className={`flex flex-col gap-5 rounded-3xl px-7 py-8 ${dark ? 'bg-[#0F172A] shadow-[0_24px_60px_-12px_rgba(15,23,42,0.4)]' : 'border border-[#E2E8F0] bg-white'}`}>
-                {dark && <span className="w-fit rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-3 py-1.5 text-[11px] font-bold tracking-wide text-white">MÁS POPULAR</span>}
-                <div className="flex flex-col gap-1.5">
-                  <h3 className={`text-[22px] font-extrabold ${dark ? 'text-white' : 'text-[#0F172A]'}`}>{plan.name}</h3>
-                  <p className={`text-[13px] ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{plan.description}</p>
-                </div>
-                <div className="flex items-end gap-2">
-                  <p className={`text-[44px] font-black leading-none ${dark ? 'text-white' : 'text-[#0F172A]'}`}>{plan.price}</p>
-                  <p className={`pb-1 text-[13px] font-medium ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{plan.cadence}</p>
-                </div>
-                <ul className="flex flex-col gap-3 py-2">
+              <article key={plan.name} className={`relative flex flex-col gap-[14px] rounded-[24px] px-7 py-8 ${dark ? 'bg-[#0F172A] text-white shadow-[0_30px_60px_rgba(15,23,42,0.2)]' : 'border border-[#E2E8F0] bg-white'}`}>
+                {dark && <em className="absolute right-6 top-6 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-3 py-1.5 text-[0.64rem] font-bold not-italic uppercase tracking-[0.05em] text-white">Más popular</em>}
+                <h3 className={`text-[1.4rem] font-extrabold ${dark ? 'text-white' : 'text-[#0F172A]'}`}>{plan.name}</h3>
+                <p className={`text-[0.84rem] ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{plan.description}</p>
+                <strong className={`mt-2 text-[2.75rem] font-black leading-none ${dark ? 'text-white' : 'text-[#0F172A]'}`}>{plan.price}</strong>
+                <small className={`-mt-1.5 text-[0.82rem] font-medium ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{plan.cadence}</small>
+                <span className={`flex w-fit items-center gap-1.5 rounded-full px-[11px] py-[5px] text-[0.74rem] font-semibold ${dark ? 'bg-white/[0.12] text-[#C4B5FD]' : 'bg-[#EDE9FE] text-[#7C3AED]'}`}>
+                  <Sparkles size={14} /> 14 días de prueba gratis
+                </span>
+                <ul className="my-2 flex flex-col gap-3">
                   {plan.features.map((f) => (
-                    <li key={f} className={`flex items-center gap-2.5 text-sm font-medium ${dark ? 'text-[#E2E8F0]' : 'text-[#334155]'}`}>
-                      <Check size={18} className={dark ? 'text-[#C4B5FD]' : 'text-[#7C3AED]'} /> {f}
+                    <li key={f} className={`flex items-center gap-2.5 text-[0.88rem] font-medium ${dark ? 'text-[#E2E8F0]' : 'text-[#334155]'}`}>
+                      <Check size={18} className={`flex-none ${dark ? 'text-[#C4B5FD]' : 'text-[#7C3AED]'}`} /> {f}
                     </li>
                   ))}
                 </ul>
                 <button
                   type="button"
                   onClick={onAuth}
-                  className={`flex h-12 items-center justify-center rounded-xl text-sm font-bold ${dark ? 'bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] text-white hover:brightness-105' : 'border border-[#0F172A] bg-white text-[#0F172A] hover:bg-slate-50'}`}
+                  className={`mt-auto flex h-12 items-center justify-center rounded-xl text-[0.88rem] font-bold ${dark ? 'bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] text-white hover:brightness-110' : 'border border-[#0F172A] bg-white text-[#0F172A] hover:bg-[#0F172A] hover:text-white'}`}
                 >
                   {plan.cta}
                 </button>

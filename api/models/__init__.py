@@ -51,6 +51,7 @@ def ensure_columns():
 
     tenant_columns = [column.name for column in db.get_columns("tenants")]
     for col, ddl in [
+        ("plan", "plan VARCHAR(16) NOT NULL DEFAULT 'free'"),
         ("logo_url", "logo_url TEXT"),
         ("brand_color", "brand_color VARCHAR(9)"),
         ("description", "description TEXT"),

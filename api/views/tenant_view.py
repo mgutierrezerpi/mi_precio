@@ -7,6 +7,7 @@ class TenantView(BaseView):
     name: str
     subdomain: str
     currency: str = "UYU"
+    plan: str = "free"
     logo_url: str | None = None
     brand_color: str | None = None
     description: str | None = None
@@ -26,6 +27,7 @@ class TenantView(BaseView):
             name=tenant.name,
             subdomain=tenant.subdomain,
             currency=g("currency", "UYU") or "UYU",
+            plan=g("plan", "free") or "free",
             logo_url=g("logo_url"),
             brand_color=g("brand_color"),
             description=g("description"),

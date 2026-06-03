@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
-from lib.ctx import lists, activity
+from lib.ctx import lists, activity, plans
+from lib.ctx.plans_context import PlanLimitError
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateList, UpdateList
 from views import DeletedView, PriceListView
@@ -14,6 +15,10 @@ def list_lists_endpoint(tenant_id: str, current_user: dict = Depends(get_current
 
 @router.post("/tenants/{tenant_id}/lists", status_code=201)
 def create_list_endpoint(tenant_id: str, data: CreateList, current_user: dict = Depends(require_editor)):
+    try:
+        plans.assert_can_add(tenant_id, "lists")
+    except PlanLimitError as e:
+        raise HTTPException(status_code=402, detail=str(e))
     result = lists.create_list(tenant_id, data.name)
     if not result:
         raise HTTPException(status_code=404, detail="Tenant not found")

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
+import { getT, localeOf } from '../../lib/i18n'
 import type { Tenant, ListVersion, Item } from '../../types'
 
 interface PublicList {
@@ -63,6 +64,10 @@ export function MenuScreen() {
   const accent = tenant?.brandColor || BASE.accent
   const C = { ...BASE, accent, accent2: accent }
 
+  // Translations + locale follow the tenant's configured language.
+  const t = getT(tenant?.language)
+  const locale = localeOf(tenant?.language)
+
   const currency = tenant?.currency || 'UYU'
   const fmt = (price: string | number) => new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0 }).format(typeof price === 'number' ? price : parseFloat(price))
   const money = (price: string | number) => `${currency} ${fmt(price)}`
@@ -102,8 +107,8 @@ export function MenuScreen() {
     return Number.isNaN(d.getTime()) ? null : d
   }
   const vDate = parseUtc(list?.version?.updatedAt || list?.version?.createdAt)
-  const updated = (vDate ?? new Date()).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })
-  const monthYear = new Date().toLocaleDateString('es-AR', { month: 'short', year: 'numeric' })
+  const updated = (vDate ?? new Date()).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })
+  const monthYear = new Date().toLocaleDateString(locale, { month: 'short', year: 'numeric' })
 
   const shareLink = () => { navigator.clipboard?.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 1500) }
 
@@ -111,8 +116,8 @@ export function MenuScreen() {
   if (error || !tenant) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 font-sans" style={{ background: C.bg }}>
-        <p className="text-sm font-medium" style={{ color: C.muted }}>{error || 'Lista no encontrada'}</p>
-        <Link to="/" className="text-sm font-bold hover:underline" style={{ color: C.accent }}>Volver al inicio</Link>
+        <p className="text-sm font-medium" style={{ color: C.muted }}>{error || t('pub.notFound')}</p>
+        <Link to="/" className="text-sm font-bold hover:underline" style={{ color: C.accent }}>{t('pub.backHome')}</Link>
       </div>
     )
   }
@@ -138,15 +143,15 @@ export function MenuScreen() {
           <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3">
             <span className="flex items-center gap-2 rounded-full border bg-white px-2.5 py-1.5" style={{ borderColor: C.line }}>
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: C.accent }} />
-              <span className="text-[11px] font-semibold tracking-[2px]" style={{ color: C.muted }}>EDICIÓN Nº {String(list?.version?.versionNumber ?? 1).padStart(3, '0')}</span>
+              <span className="text-[11px] font-semibold tracking-[2px]" style={{ color: C.muted }}>{t('pub.edition', { n: String(list?.version?.versionNumber ?? 1).padStart(3, '0') })}</span>
             </span>
             <div className="flex-1" />
             <div className="flex flex-wrap items-center gap-4">
-              {list && <span className="rounded-full border px-3 py-1 text-[11px] font-bold tracking-[2px]" style={{ borderColor: C.accent, color: C.accent }}>PÚBLICA</span>}
-              <span className="text-[12px] font-medium" style={{ color: C.muted }}>Actualizada {updated}</span>
+              {list && <span className="rounded-full border px-3 py-1 text-[11px] font-bold tracking-[2px]" style={{ borderColor: C.accent, color: C.accent }}>{t('pub.public')}</span>}
+              <span className="text-[12px] font-medium" style={{ color: C.muted }}>{t('pub.updated', { date: updated })}</span>
               <span className="h-3 w-px" style={{ background: C.line }} />
-              <button type="button" onClick={() => window.print()} className="text-[12px] font-semibold hover:opacity-70" style={{ color: C.ink }}>Imprimir</button>
-              <button type="button" onClick={shareLink} className="text-[12px] font-semibold hover:opacity-70" style={{ color: C.ink }}>{copied ? 'Copiado ✓' : 'Compartir'}</button>
+              <button type="button" onClick={() => window.print()} className="text-[12px] font-semibold hover:opacity-70" style={{ color: C.ink }}>{t('pub.print')}</button>
+              <button type="button" onClick={shareLink} className="text-[12px] font-semibold hover:opacity-70" style={{ color: C.ink }}>{copied ? t('pub.copied') : t('pub.share')}</button>
             </div>
           </div>
 
@@ -156,35 +161,33 @@ export function MenuScreen() {
           <div className="flex items-end gap-5">
             <span className="hidden h-[72px] w-1.5 sm:block" style={{ background: C.accent }} />
             <h1 className="flex flex-wrap items-end gap-x-4 text-5xl font-black leading-[0.95] tracking-tight md:text-8xl">
-              <span style={{ color: C.ink }}>Lista de</span>
-              <span style={{ color: C.accent }}>precios.</span>
+              <span style={{ color: C.ink }}>{t('pub.titleA')}</span>
+              <span style={{ color: C.accent }}>{t('pub.titleB')}</span>
             </h1>
             <div className="flex-1" />
             <span className="hidden rounded border bg-white px-3 py-2 text-[12px] font-medium font-mono-jb sm:block" style={{ borderColor: C.line, color: C.ink }}>{currency} · {monthYear}</span>
           </div>
 
           <p className="mt-6 max-w-[720px] text-[16px] leading-relaxed" style={{ color: C.body }}>
-            {tenant.description
-              ? tenant.description
-              : `${list?.name ? `${list.name}. ` : ''}Catálogo público de ${tenant.name}. Escaneá el QR o compartí el link para ver siempre la última versión, con precios actualizados al instante.`}
+            {tenant.description || t('pub.intro', { listPrefix: list?.name ? `${list.name}. ` : '', name: tenant.name })}
           </p>
 
           <div className="my-5 h-px w-full" style={{ background: C.line }} />
 
           {/* Context strip */}
           <div className="flex flex-wrap gap-x-12 gap-y-4 pt-1">
-            <Meta label="EMITIDO POR" value={tenant.name} />
-            {tenant.taxId && <Meta label="RUT" value={tenant.taxId} />}
-            <Meta label="CATÁLOGO" value={list?.name ?? 'Todas las listas'} />
-            <Meta label="ACTUALIZADO" value={updated} />
-            <Meta label="MONEDA" value={currency} />
+            <Meta label={t('pub.issuedBy')} value={tenant.name} />
+            {tenant.taxId && <Meta label={t('pub.taxId')} value={tenant.taxId} />}
+            <Meta label={t('pub.catalog')} value={list?.name ?? t('pub.allLists')} />
+            <Meta label={t('pub.updatedLabel')} value={updated} />
+            <Meta label={t('pub.currency')} value={currency} />
           </div>
         </header>
 
         {/* Filter bar */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-3 py-4">
           <div className="flex flex-wrap items-center gap-3">
-            <FilterTab active={cat === 'all'} onClick={() => setCat('all')} name="Todos" count={base.length} accent={C.accent} />
+            <FilterTab active={cat === 'all'} onClick={() => setCat('all')} name={t('pub.all')} count={base.length} accent={C.accent} />
             {sections.map((s) => (
               <span key={s.key} className="flex items-center gap-3">
                 <span className="h-3 w-px" style={{ background: C.line }} />
@@ -195,17 +198,17 @@ export function MenuScreen() {
           <div className="flex-1" />
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 rounded border bg-white px-2.5 py-1.5" style={{ borderColor: C.line }}>
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" className="w-28 border-0 bg-transparent text-[12px] outline-none placeholder:text-[#84818E] focus:ring-0" style={{ color: C.ink }} />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('pub.search')} className="w-28 border-0 bg-transparent text-[12px] outline-none placeholder:text-[#84818E] focus:ring-0" style={{ color: C.ink }} />
               <span className="text-[11px] font-mono-jb" style={{ color: C.muted }}>⌘K</span>
             </label>
-            <button type="button" onClick={() => window.print()} className="flex items-center gap-1.5 rounded px-3 py-1.5 text-[12px] font-semibold" style={{ background: C.ink, color: C.bg }}>Imprimir ↗</button>
+            <button type="button" onClick={() => window.print()} className="flex items-center gap-1.5 rounded px-3 py-1.5 text-[12px] font-semibold" style={{ background: C.ink, color: C.bg }}>{t('pub.printBtn')}</button>
           </div>
         </div>
 
         {/* Main list */}
         <main className="flex flex-col gap-14 pb-24 pt-4">
           {visibleSections.length === 0 ? (
-            <p className="py-16 text-center text-sm font-medium" style={{ color: C.muted }}>No hay productos publicados.</p>
+            <p className="py-16 text-center text-sm font-medium" style={{ color: C.muted }}>{t('pub.empty')}</p>
           ) : (
             visibleSections.map((s, si) => (
               <section key={s.key}>
@@ -215,12 +218,12 @@ export function MenuScreen() {
                     <span className="font-mono-jb text-[28px] font-medium leading-none" style={{ color: C.accent }}>{String(si + 1).padStart(2, '0')}.</span>
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[28px] font-extrabold leading-none md:text-[36px]" style={{ color: C.ink }}>{s.name}</span>
-                      <span className="font-mono-jb text-[11px]" style={{ color: C.muted }}>{s.items.length} {s.items.length === 1 ? 'producto' : 'productos'}</span>
+                      <span className="font-mono-jb text-[11px]" style={{ color: C.muted }}>{s.items.length} {s.items.length === 1 ? t('pub.product') : t('pub.products')}</span>
                     </div>
                   </div>
                   <div className="hidden items-end gap-6 sm:flex">
-                    <div className="flex flex-col items-end gap-0.5"><span className="text-[10px] font-semibold tracking-[1.5px]" style={{ color: C.muted }}>DESDE</span><span className="font-mono-jb text-[13px] font-semibold" style={{ color: C.ink }}>{money(s.min)}</span></div>
-                    <div className="flex flex-col items-end gap-0.5"><span className="text-[10px] font-semibold tracking-[1.5px]" style={{ color: C.muted }}>HASTA</span><span className="font-mono-jb text-[13px] font-semibold" style={{ color: C.ink }}>{money(s.max)}</span></div>
+                    <div className="flex flex-col items-end gap-0.5"><span className="text-[10px] font-semibold tracking-[1.5px]" style={{ color: C.muted }}>{t('pub.from')}</span><span className="font-mono-jb text-[13px] font-semibold" style={{ color: C.ink }}>{money(s.min)}</span></div>
+                    <div className="flex flex-col items-end gap-0.5"><span className="text-[10px] font-semibold tracking-[1.5px]" style={{ color: C.muted }}>{t('pub.to')}</span><span className="font-mono-jb text-[13px] font-semibold" style={{ color: C.ink }}>{money(s.max)}</span></div>
                   </div>
                 </div>
 
@@ -247,7 +250,7 @@ export function MenuScreen() {
         {/* Footer */}
         <footer className="flex flex-col items-center gap-2 border-t py-10 text-center" style={{ borderColor: C.line }}>
           <span className="text-sm font-bold uppercase tracking-[0.2em]" style={{ color: C.accent }}>{tenant.name}</span>
-          <p className="text-xs font-medium" style={{ color: C.muted }}>Precios en {currency} · Generado con MiPrecio</p>
+          <p className="text-xs font-medium" style={{ color: C.muted }}>{t('pub.footer', { currency })}</p>
         </footer>
       </div>
     </div>

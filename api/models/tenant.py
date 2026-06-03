@@ -7,6 +7,9 @@ class Tenant(BaseModel):
     subdomain = CharField(max_length=63, unique=True, index=True)
     currency = CharField(max_length=3, default="UYU")
 
+    # Subscription plan: free | pyme | pro (limits enforced in plans_context).
+    plan = CharField(max_length=16, default="free")
+
     # Brand & appearance (shown on the public price-list page)
     logo_url = TextField(null=True)        # data URL or hosted URL
     brand_color = CharField(max_length=9, null=True)  # hex, e.g. #7C3AED

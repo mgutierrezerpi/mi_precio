@@ -1,29 +1,29 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectTenant, setTenant, selectUser, selectIsAdmin, logout } from '../../store/slices/authSlice'
-import type { Tenant, Role, NotifPrefs } from '../../types'
+import { selectTenant, setTenant, selectUser, selectIsAdmin, selectIsOwner, logout } from '../../store/slices/authSlice'
+import type { Tenant, Role, NotifPrefs, PlanId, PlanInfo } from '../../types'
 import api from '../../services/api'
+import { useT, type TFn } from '../../lib/i18n'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { gradient, tone } from './crm/theme'
 
-const sections: { key: string; label: string; icon: IconName; danger?: boolean }[] = [
-  { key: 'info', label: 'Información de la empresa', icon: 'package' },
-  { key: 'brand', label: 'Marca y apariencia', icon: 'paintbrush' },
-  { key: 'notifications', label: 'Notificaciones', icon: 'bell' },
-  { key: 'region', label: 'Idioma y región', icon: 'settings' },
-  { key: 'security', label: 'Seguridad', icon: 'user' },
-  { key: 'billing', label: 'Plan y facturación', icon: 'tags' },
+const sections: { key: string; tKey: string; icon: IconName; danger?: boolean }[] = [
+  { key: 'info', tKey: 'set.sec.info', icon: 'package' },
+  { key: 'brand', tKey: 'set.sec.brand', icon: 'paintbrush' },
+  { key: 'notifications', tKey: 'set.sec.notifications', icon: 'bell' },
+  { key: 'region', tKey: 'set.sec.region', icon: 'settings' },
+  { key: 'security', tKey: 'set.sec.security', icon: 'user' },
+  { key: 'billing', tKey: 'set.sec.billing', icon: 'tags' },
   // Datos fiscales: oculta por ahora. Para reactivar, descomentá esta línea y el
   // bloque `{active === 'tax' && <TaxSection .../>}` más abajo.
-  // { key: 'tax', label: 'Datos fiscales', icon: 'file-spreadsheet' },
-  { key: 'delete', label: 'Eliminar cuenta', icon: 'circle-x', danger: true },
+  // { key: 'tax', tKey: 'set.sec.tax', icon: 'file-spreadsheet' },
+  { key: 'delete', tKey: 'set.sec.delete', icon: 'circle-x', danger: true },
 ]
 
 const inputCls = 'h-11 w-full rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3.5 text-sm font-medium text-[var(--dash-text)] outline-none transition focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/15 placeholder:text-[var(--dash-muted)] disabled:opacity-60'
 
-const ROLE_LABEL: Record<Role, string> = { owner: 'Dueño', admin: 'Admin', editor: 'Editor', viewer: 'Lector' }
 const BRAND_SWATCHES = ['#7C3AED', '#2563EB', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#DB2777', '#475569']
 const CURRENCIES = ['UYU', 'ARS', 'USD', 'BRL', 'CLP', 'PYG', 'PEN', 'MXN']
 const LANGUAGES: { code: string; label: string }[] = [
@@ -55,9 +55,11 @@ async function fileToDataUrl(file: File, max = 256): Promise<string> {
 
 export function SettingsCrmScreen() {
   const dispatch = useAppDispatch()
+  const t = useT()
   const tenant = useAppSelector(selectTenant)
   const user = useAppSelector(selectUser)
   const canManage = useAppSelector(selectIsAdmin)
+  const isOwner = useAppSelector(selectIsOwner)
   const [active, setActive] = useState(sections[0].key)
   const [savingKey, setSavingKey] = useState<string | null>(null)
   const [savedKey, setSavedKey] = useState<string | null>(null)
@@ -72,10 +74,10 @@ export function SettingsCrmScreen() {
     else if (res.data) { dispatch(setTenant(res.data)); setSavedKey(key); setTimeout(() => setSavedKey((k) => (k === key ? null : k)), 2000) }
   }
 
-  const ctx = { tenant, canManage, save, savingKey, savedKey }
+  const ctx = { tenant, canManage, save, savingKey, savedKey, t }
 
   return (
-    <CrmLayout active="Configuración" title="Configuración" subtitle="Administrá los datos y preferencias de tu cuenta." searchPlaceholder="Buscar…">
+    <CrmLayout active="Configuración" title={t('nav.settings')} subtitle={t('set.subtitle')} searchPlaceholder={t('common.search')}>
       <div className="flex min-w-[900px] gap-6 p-8">
         {/* Sub-nav */}
         <div className="flex w-[240px] shrink-0 flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)]">
@@ -86,7 +88,7 @@ export function SettingsCrmScreen() {
               onClick={() => setActive(s.key)}
               className={`flex h-10 items-center gap-2.5 whitespace-nowrap rounded-xl px-3.5 text-left text-[13px] font-semibold ${s.key === active ? `text-white ${gradient}` : s.danger ? 'text-[#EF4444] hover:bg-[var(--dash-soft)]' : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`}
             >
-              <Icon name={s.icon} size={16} /> {s.label}
+              <Icon name={s.icon} size={16} /> {t(s.tKey)}
             </button>
           ))}
         </div>
@@ -100,19 +102,19 @@ export function SettingsCrmScreen() {
           )}
           {!canManage && active !== 'security' && active !== 'delete' && active !== 'notifications' && (
             <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
-              <Icon name="alert-triangle" size={15} /> Solo los administradores pueden editar la configuración de la cuenta.
+              <Icon name="alert-triangle" size={15} /> {t('set.onlyAdmins')}
             </div>
           )}
 
           {active === 'info' && <InfoSection {...ctx} />}
           {active === 'brand' && <BrandSection {...ctx} />}
-          {active === 'notifications' && <NotificationsSection tenantId={tenant?.id} />}
+          {active === 'notifications' && <NotificationsSection t={t} tenantId={tenant?.id} />}
           {active === 'region' && <RegionSection {...ctx} />}
-          {active === 'security' && <SecuritySection user={user} onLogout={() => dispatch(logout())} />}
-          {active === 'billing' && <BillingSection tenant={tenant} />}
+          {active === 'security' && <SecuritySection t={t} user={user} onLogout={() => dispatch(logout())} />}
+          {active === 'billing' && <BillingSection t={t} tenant={tenant} isOwner={isOwner} onPlanChange={(tn) => dispatch(setTenant(tn))} />}
           {/* Datos fiscales: oculta por ahora (ver array `sections`). Para reactivar, descomentá: */}
           {/* {active === 'tax' && <TaxSection {...ctx} />} */}
-          {active === 'delete' && <DeleteSection tenant={tenant} isOwner={user?.role === 'owner'} />}
+          {active === 'delete' && <DeleteSection t={t} tenant={tenant} isOwner={isOwner} />}
         </div>
       </div>
     </CrmLayout>
@@ -126,9 +128,10 @@ type Ctx = {
   save: (patch: Parameters<typeof api.updateTenant>[1], key: string) => Promise<void>
   savingKey: string | null
   savedKey: string | null
+  t: TFn
 }
 
-function SectionHeader({ title, subtitle, onSave, saving, saved, canManage }: { title: string; subtitle: string; onSave?: () => void; saving?: boolean; saved?: boolean; canManage: boolean }) {
+function SectionHeader({ t, title, subtitle, onSave, saving, saved, canManage }: { t: TFn; title: string; subtitle: string; onSave?: () => void; saving?: boolean; saved?: boolean; canManage: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-col gap-1">
@@ -137,7 +140,7 @@ function SectionHeader({ title, subtitle, onSave, saving, saved, canManage }: { 
       </div>
       {onSave && canManage && (
         <button type="button" onClick={onSave} disabled={saving} className={`flex h-10 items-center rounded-xl px-5 text-sm font-bold text-white disabled:opacity-60 ${gradient}`}>
-          {saving ? 'Guardando…' : saved ? 'Guardado ✓' : 'Guardar cambios'}
+          {saving ? t('common.saving') : saved ? t('common.saved') : t('common.save')}
         </button>
       )}
     </div>
@@ -154,7 +157,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 /* ── 0. Info ─────────────────────────────────────────────────────────── */
-function InfoSection({ tenant, canManage, save, savingKey, savedKey }: Ctx) {
+function InfoSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) {
   const [name, setName] = useState(tenant?.name ?? '')
   const [subdomain, setSubdomain] = useState(tenant?.subdomain ?? '')
   const [taxId, setTaxId] = useState(tenant?.taxId ?? '')
@@ -168,10 +171,10 @@ function InfoSection({ tenant, canManage, save, savingKey, savedKey }: Ctx) {
 
   return (
     <>
-      <SectionHeader title="Información de la empresa" subtitle="El nombre, el logo y la dirección pública de tu catálogo." canManage={canManage}
+      <SectionHeader t={t} title={t('set.sec.info')} subtitle={t('set.info.subtitle')} canManage={canManage}
         onSave={() => save({ name: name.trim(), subdomain: subdomain.trim(), taxId: taxId.trim() || null, logoUrl: logo }, 'info')} saving={savingKey === 'info'} saved={savedKey === 'info'} />
 
-      <Field label="Logo">
+      <Field label={t('set.info.logo')}>
         <div className="flex items-center gap-4">
           <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--dash-border)]" style={logo ? undefined : tone('violet')}>
             {logo ? <img src={logo} alt="logo" className="h-full w-full object-contain" /> : <Icon name="package" size={28} />}
@@ -179,20 +182,20 @@ function InfoSection({ tenant, canManage, save, savingKey, savedKey }: Ctx) {
           {canManage && (
             <div className="flex items-center gap-2">
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => pickLogo(e.target.files?.[0])} />
-              <button type="button" onClick={() => fileRef.current?.click()} className="flex h-9 items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="upload" size={15} /> {logo ? 'Cambiar logo' : 'Subir logo'}</button>
-              {logo && <button type="button" onClick={() => setLogo(null)} className="text-[13px] font-bold text-[#EF4444] hover:underline">Quitar</button>}
+              <button type="button" onClick={() => fileRef.current?.click()} className="flex h-9 items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="upload" size={15} /> {logo ? t('set.info.changeLogo') : t('set.info.uploadLogo')}</button>
+              {logo && <button type="button" onClick={() => setLogo(null)} className="text-[13px] font-bold text-[#EF4444] hover:underline">{t('common.remove')}</button>}
             </div>
           )}
         </div>
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Nombre del negocio"><input value={name} onChange={(e) => setName(e.target.value)} disabled={!canManage} className={inputCls} /></Field>
-        <Field label="Subdominio"><input value={subdomain} onChange={(e) => setSubdomain(e.target.value)} disabled={!canManage} className={inputCls} /></Field>
-        <Field label="RUT / Identificación fiscal"><input value={taxId} onChange={(e) => setTaxId(e.target.value)} disabled={!canManage} placeholder="21 123456 0017" className={inputCls} /></Field>
+        <Field label={t('set.info.name')}><input value={name} onChange={(e) => setName(e.target.value)} disabled={!canManage} className={inputCls} /></Field>
+        <Field label={t('set.info.subdomain')}><input value={subdomain} onChange={(e) => setSubdomain(e.target.value)} disabled={!canManage} className={inputCls} /></Field>
+        <Field label={t('set.info.taxId')}><input value={taxId} onChange={(e) => setTaxId(e.target.value)} disabled={!canManage} placeholder="21 123456 0017" className={inputCls} /></Field>
       </div>
 
-      <Field label="Dirección pública">
+      <Field label={t('set.info.publicUrl')}>
         <button type="button" onClick={copyUrl} title="Copiar enlace" className="flex items-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3.5 py-2.5 text-left transition hover:border-[var(--dash-link)]">
           <Icon name="link-2" size={15} className="text-[var(--dash-link)]" />
           <span className="flex-1 truncate text-sm font-semibold text-[var(--dash-link)]">{publicUrl}</span>
@@ -204,16 +207,16 @@ function InfoSection({ tenant, canManage, save, savingKey, savedKey }: Ctx) {
 }
 
 /* ── 1. Brand ────────────────────────────────────────────────────────── */
-function BrandSection({ tenant, canManage, save, savingKey, savedKey }: Ctx) {
+function BrandSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) {
   const [color, setColor] = useState(tenant?.brandColor ?? '#7C3AED')
   const [description, setDescription] = useState(tenant?.description ?? '')
 
   return (
     <>
-      <SectionHeader title="Marca y apariencia" subtitle="Estos elementos aparecen en tu lista pública. El logo se configura en «Información de la empresa»." canManage={canManage}
+      <SectionHeader t={t} title={t('set.sec.brand')} subtitle={t('set.brand.subtitle')} canManage={canManage}
         onSave={() => save({ brandColor: color, description: description.trim() || null }, 'brand')} saving={savingKey === 'brand'} saved={savedKey === 'brand'} />
 
-      <Field label="Color de marca">
+      <Field label={t('set.brand.color')}>
         <div className="flex items-center gap-2.5">
           {BRAND_SWATCHES.map((c) => (
             <button key={c} type="button" disabled={!canManage} onClick={() => setColor(c)} title={c}
@@ -226,16 +229,16 @@ function BrandSection({ tenant, canManage, save, savingKey, savedKey }: Ctx) {
         </div>
       </Field>
 
-      <Field label="Descripción del negocio"><textarea value={description} onChange={(e) => setDescription(e.target.value)} disabled={!canManage} rows={3} placeholder="Contale a tus clientes qué vendés…" className={`${inputCls} h-auto py-2.5`} /></Field>
+      <Field label={t('set.brand.desc')}><textarea value={description} onChange={(e) => setDescription(e.target.value)} disabled={!canManage} rows={3} placeholder={t('set.brand.descPlaceholder')} className={`${inputCls} h-auto py-2.5`} /></Field>
 
       {/* Live preview */}
       <div className="rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-4">
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">Vista previa</p>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('set.brand.preview')}</p>
         <div className="flex items-center gap-3">
           {tenant?.logoUrl ? <img src={tenant.logoUrl} alt="" className="h-10 w-10 rounded-lg object-contain" /> : <span className="h-10 w-10 rounded-lg" style={{ backgroundColor: color }} />}
           <div className="flex flex-col">
-            <span className="text-sm font-extrabold text-[var(--dash-text)]">{tenant?.name || 'Tu negocio'}</span>
-            <span className="text-xs font-medium" style={{ color }}>{description || 'Catálogo público'}</span>
+            <span className="text-sm font-extrabold text-[var(--dash-text)]">{tenant?.name || t('set.brand.previewBiz')}</span>
+            <span className="text-xs font-medium" style={{ color }}>{description || t('set.brand.previewCat')}</span>
           </div>
         </div>
       </div>
@@ -244,14 +247,14 @@ function BrandSection({ tenant, canManage, save, savingKey, savedKey }: Ctx) {
 }
 
 /* ── 2. Notifications (in-app, per-user preferences) ─────────────────── */
-const NOTIF_ROWS: { key: keyof NotifPrefs; label: string; desc: string }[] = [
-  { key: 'sales', label: 'Ventas', desc: 'Cuando se registra una compra.' },
-  { key: 'catalog', label: 'Catálogo', desc: 'Altas, bajas y publicaciones de productos y listas.' },
-  { key: 'customers', label: 'Clientes', desc: 'Cuando se agrega un cliente nuevo.' },
-  { key: 'team', label: 'Equipo', desc: 'Invitaciones y cambios de rol.' },
+const NOTIF_ROWS: { key: keyof NotifPrefs; tKey: string; descKey: string }[] = [
+  { key: 'sales', tKey: 'set.notif.sales', descKey: 'set.notif.salesDesc' },
+  { key: 'catalog', tKey: 'set.notif.catalog', descKey: 'set.notif.catalogDesc' },
+  { key: 'customers', tKey: 'set.notif.customers', descKey: 'set.notif.customersDesc' },
+  { key: 'team', tKey: 'set.notif.team', descKey: 'set.notif.teamDesc' },
 ]
 
-function NotificationsSection({ tenantId }: { tenantId?: string }) {
+function NotificationsSection({ t, tenantId }: { t: TFn; tenantId?: string }) {
   const [prefs, setPrefs] = useState<NotifPrefs | null>(null)
 
   useEffect(() => {
@@ -270,14 +273,14 @@ function NotificationsSection({ tenantId }: { tenantId?: string }) {
 
   return (
     <>
-      <SectionHeader title="Notificaciones" subtitle="Elegí qué te avisa la campana de la barra superior." canManage={false} />
+      <SectionHeader t={t} title={t('set.sec.notifications')} subtitle={t('set.notif.subtitle')} canManage={false} />
       <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
-        <Icon name="bell" size={15} /> Las notificaciones aparecen dentro de la app (campana arriba a la derecha). El envío por email llegará más adelante.
+        <Icon name="bell" size={15} /> {t('set.notif.banner')}
       </div>
       <div className="flex flex-col divide-y divide-[var(--dash-divider)] rounded-2xl border border-[var(--dash-border)]">
         {NOTIF_ROWS.map((r) => (
           <div key={r.key} className="flex items-center justify-between gap-4 px-4 py-3.5">
-            <div className="flex flex-col"><span className="text-[13px] font-bold text-[var(--dash-text)]">{r.label}</span><span className="text-[11px] font-medium text-[var(--dash-muted)]">{r.desc}</span></div>
+            <div className="flex flex-col"><span className="text-[13px] font-bold text-[var(--dash-text)]">{t(r.tKey)}</span><span className="text-[11px] font-medium text-[var(--dash-muted)]">{t(r.descKey)}</span></div>
             <Toggle on={prefs?.[r.key] ?? true} disabled={!prefs} onClick={() => toggle(r.key)} />
           </div>
         ))}
@@ -302,29 +305,29 @@ function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; d
 }
 
 /* ── 3. Region ───────────────────────────────────────────────────────── */
-function RegionSection({ tenant, canManage, save, savingKey, savedKey }: Ctx) {
+function RegionSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) {
   const [currency, setCurrency] = useState(tenant?.currency ?? 'UYU')
   const [language, setLanguage] = useState(tenant?.language ?? 'es')
   const [timezone, setTimezone] = useState(tenant?.timezone ?? 'America/Montevideo')
 
   return (
     <>
-      <SectionHeader title="Idioma y región" subtitle="Moneda, idioma y zona horaria de tu cuenta." canManage={canManage}
+      <SectionHeader t={t} title={t('set.sec.region')} subtitle={t('set.region.subtitle')} canManage={canManage}
         onSave={() => save({ currency, language, timezone }, 'region')} saving={savingKey === 'region'} saved={savedKey === 'region'} />
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Moneda">
+        <Field label={t('set.region.currency')}>
           <select value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={!canManage} className={inputCls}>
             {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </Field>
-        <Field label="Idioma">
+        <Field label={t('set.region.language')}>
           <select value={language} onChange={(e) => setLanguage(e.target.value)} disabled={!canManage} className={inputCls}>
             {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
           </select>
         </Field>
-        <Field label="Zona horaria">
+        <Field label={t('set.region.timezone')}>
           <select value={timezone} onChange={(e) => setTimezone(e.target.value)} disabled={!canManage} className={inputCls}>
-            {TIMEZONES.map((t) => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+            {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>)}
           </select>
         </Field>
       </div>
@@ -333,20 +336,20 @@ function RegionSection({ tenant, canManage, save, savingKey, savedKey }: Ctx) {
 }
 
 /* ── 4. Security ─────────────────────────────────────────────────────── */
-function SecuritySection({ user, onLogout }: { user: { email: string; role: Role; name: string } | null; onLogout: () => void }) {
+function SecuritySection({ t, user, onLogout }: { t: TFn; user: { email: string; role: Role; name: string } | null; onLogout: () => void }) {
   return (
     <>
-      <SectionHeader title="Seguridad" subtitle="Tu acceso a la cuenta." canManage={false} />
+      <SectionHeader t={t} title={t('set.sec.security')} subtitle={t('set.security.subtitle')} canManage={false} />
       <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
-        <Icon name="circle-check" size={15} className="text-[var(--tone-green-fg)]" /> Tu cuenta usa acceso sin contraseña: ingresás con un código que enviamos a tu email.
+        <Icon name="circle-check" size={15} className="text-[var(--tone-green-fg)]" /> {t('set.security.passwordless')}
       </div>
       <div className="flex flex-col gap-3 rounded-2xl border border-[var(--dash-border)] p-4">
-        <Row label="Email de acceso" value={user?.email ?? '—'} />
-        <Row label="Rol" value={user ? ROLE_LABEL[user.role] : '—'} />
+        <Row label={t('set.security.email')} value={user?.email ?? '—'} />
+        <Row label={t('set.security.role')} value={user ? t(`role.${user.role}`) : '—'} />
       </div>
       <div>
         <button type="button" onClick={onLogout} className="flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold" style={tone('red')}>
-          <Icon name="log-out" size={16} /> Cerrar sesión
+          <Icon name="log-out" size={16} /> {t('set.security.logout')}
         </button>
       </div>
     </>
@@ -362,31 +365,133 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
-/* ── 5. Billing (honest shell) ───────────────────────────────────────── */
-function BillingSection({ tenant }: { tenant: Tenant | null }) {
-  const features = ['Productos y listas ilimitadas', 'Códigos QR y links públicos', 'Clientes y reportes', 'Equipo con roles y permisos']
+/* ── 5. Billing — plans, usage and limit enforcement (no card payments yet) ── */
+const PLAN_IDS: PlanId[] = ['free', 'pyme', 'pro']
+
+function BillingSection({ t, tenant, isOwner, onPlanChange }: { t: TFn; tenant: Tenant | null; isOwner: boolean; onPlanChange: (tenant: Tenant) => void }) {
+  const [info, setInfo] = useState<PlanInfo | null>(null)
+  const [changing, setChanging] = useState<PlanId | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const tenantId = tenant?.id
+
+  const load = useCallback(async () => {
+    if (!tenantId) return
+    const res = await api.getPlan(tenantId)
+    if (res.data) setInfo(res.data)
+  }, [tenantId])
+
+  useEffect(() => {
+    if (!tenantId) return
+    let cancelled = false
+    api.getPlan(tenantId).then((res) => { if (!cancelled && res.data) setInfo(res.data) })
+    return () => { cancelled = true }
+  }, [tenantId])
+
+  const current = info?.plan ?? tenant?.plan ?? 'free'
+
+  const changePlan = async (plan: PlanId) => {
+    if (!tenant?.id || plan === current) return
+    setChanging(plan); setError(null)
+    const res = await api.updatePlan(tenant.id, plan)
+    setChanging(null)
+    if (res.data) { onPlanChange(res.data); void load() }
+    else setError(res.error || 'No se pudo cambiar el plan.')
+  }
+
+  const limitLabel = (n: number | null) => (n === null ? t('bill.unlimited') : String(n))
+
   return (
     <>
-      <SectionHeader title="Plan y facturación" subtitle="Tu plan actual y facturación." canManage={false} />
-      <div className={`flex items-center justify-between gap-4 rounded-2xl p-5 text-white ${gradient}`}>
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">Plan actual</span>
-          <span className="text-2xl font-extrabold">Gratis</span>
-          <span className="text-sm font-medium text-white/80">{tenant?.name || 'Tu cuenta'}</span>
+      <SectionHeader t={t} title={t('set.sec.billing')} subtitle={t('set.billing.subtitle')} canManage={false} />
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-2xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm font-semibold text-[#B91C1C]">
+          <Icon name="alert-triangle" size={16} /> {error}
         </div>
-        <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold">Activo</span>
+      )}
+
+      {/* Usage of the current plan */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-[var(--dash-border)] p-4">
+        <span className="text-[13px] font-extrabold text-[var(--dash-text)]">{t('bill.usageTitle')}</span>
+        {info && ([['products', 'bill.products'], ['lists', 'bill.lists'], ['members', 'bill.members']] as const).map(([key, lbl]) => {
+          const used = info.usage[key]
+          const limit = info.limits[key]
+          const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0
+          const full = limit !== null && used >= limit
+          return (
+            <div key={key} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between text-[12px]">
+                <span className="font-semibold text-[var(--dash-text2)]">{t(lbl)}</span>
+                <span className={`font-bold ${full ? 'text-[#EF4444]' : 'text-[var(--dash-muted)]'}`}>{used} / {limitLabel(limit)}</span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--dash-soft)]">
+                <div className="h-full rounded-full" style={{ width: limit ? `${pct}%` : '100%', background: full ? '#EF4444' : 'var(--tone-violet-fg)', opacity: limit ? 1 : 0.35 }} />
+              </div>
+            </div>
+          )
+        })}
       </div>
-      <div className="grid grid-cols-2 gap-2.5">
-        {features.map((f) => (
-          <div key={f} className="flex items-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3.5 py-2.5 text-[13px] font-semibold text-[var(--dash-text2)]">
-            <Icon name="circle-check" size={15} className="text-[var(--tone-green-fg)]" /> {f}
-          </div>
-        ))}
+
+      {/* Plan cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {PLAN_IDS.map((id) => {
+          const isCurrent = id === current
+          const limits = PLAN_LIMITS[id]
+          return (
+            <div key={id} className={`flex flex-col gap-3 rounded-2xl border p-4 ${isCurrent ? 'border-[var(--dash-link)] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)]'}`}>
+              <div className="flex items-center justify-between">
+                <span className="text-[15px] font-extrabold text-[var(--dash-text)]">{t(`bill.plan.${id}`)}</span>
+                {id === 'pyme' && <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone('violet')}>{t('bill.recommended')}</span>}
+              </div>
+              <div className="flex items-end gap-1">
+                <span className="text-2xl font-black text-[var(--dash-text)]">{t(`bill.price.${id}`)}</span>
+                <span className="pb-1 text-[11px] font-semibold text-[var(--dash-muted)]">{t('bill.perMonth')}</span>
+              </div>
+              <p className="text-[11px] font-medium text-[var(--dash-muted)]">{t(`bill.tagline.${id}`)}</p>
+              <div className="flex flex-col gap-1.5 border-t border-[var(--dash-divider)] pt-3">
+                <Limit label={t('bill.products')} value={limitLabel(limits.products)} />
+                <Limit label={t('bill.lists')} value={limitLabel(limits.lists)} />
+                <Limit label={t('bill.members')} value={limitLabel(limits.members)} />
+              </div>
+              {isCurrent ? (
+                <span className="mt-1 flex h-9 items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold" style={tone('violet')}><Icon name="circle-check" size={15} /> {t('bill.current')}</span>
+              ) : (
+                <button type="button" disabled={!isOwner || changing !== null} onClick={() => changePlan(id)}
+                  className={`mt-1 flex h-9 items-center justify-center rounded-xl text-[13px] font-bold text-white disabled:opacity-50 ${gradient}`}>
+                  {changing === id ? t('bill.changing') : t('bill.choose')}
+                </button>
+              )}
+            </div>
+          )
+        })}
       </div>
+
+      {!isOwner && (
+        <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
+          <Icon name="alert-triangle" size={15} /> {t('bill.ownerOnly')}
+        </div>
+      )}
       <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
-        <Icon name="tags" size={15} /> Los planes pagos y la facturación llegarán pronto.
+        <Icon name="tags" size={15} /> {t('bill.paymentNote')}
       </div>
     </>
+  )
+}
+
+// Mirror of the backend plan limits (display only; enforcement is server-side).
+const PLAN_LIMITS: Record<PlanId, { products: number | null; lists: number | null; members: number | null }> = {
+  free: { products: 25, lists: 3, members: 1 },
+  pyme: { products: 300, lists: 15, members: 5 },
+  pro: { products: null, lists: null, members: null },
+}
+
+function Limit({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-1.5 text-[12px]">
+      <Icon name="circle-check" size={13} className="text-[var(--tone-green-fg)]" />
+      <span className="font-semibold text-[var(--dash-text2)]">{value}</span>
+      <span className="text-[var(--dash-muted)]">{label.toLowerCase()}</span>
+    </div>
   )
 }
 
@@ -417,7 +522,7 @@ function TaxSection({ tenant, canManage, save, savingKey, savedKey }: Ctx) {
 */
 
 /* ── 7. Delete account ───────────────────────────────────────────────── */
-function DeleteSection({ tenant, isOwner }: { tenant: Tenant | null; isOwner: boolean }) {
+function DeleteSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null; isOwner: boolean }) {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const [confirmText, setConfirmText] = useState('')
@@ -437,9 +542,9 @@ function DeleteSection({ tenant, isOwner }: { tenant: Tenant | null; isOwner: bo
   if (!isOwner) {
     return (
       <>
-        <SectionHeader title="Eliminar cuenta" subtitle="Acción permanente." canManage={false} />
+        <SectionHeader t={t} title={t('set.sec.delete')} subtitle={t('set.delete.subtitle')} canManage={false} />
         <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
-          <Icon name="alert-triangle" size={15} /> Solo el dueño de la cuenta puede eliminarla.
+          <Icon name="alert-triangle" size={15} /> {t('set.delete.ownerOnly')}
         </div>
       </>
     )
@@ -447,14 +552,14 @@ function DeleteSection({ tenant, isOwner }: { tenant: Tenant | null; isOwner: bo
 
   return (
     <>
-      <SectionHeader title="Eliminar cuenta" subtitle="Acción permanente e irreversible." canManage={false} />
+      <SectionHeader t={t} title={t('set.sec.delete')} subtitle={t('set.delete.subtitle')} canManage={false} />
       <div className="flex flex-col gap-4 rounded-2xl border border-[#FCA5A5] bg-[#FEF2F2] p-5">
         <div className="flex items-start gap-3">
           <Icon name="alert-triangle" size={20} className="mt-0.5 shrink-0 text-[#B91C1C]" />
-          <p className="text-sm font-semibold text-[#B91C1C]">Se eliminará tu cuenta «{tenant?.name}» con todos sus productos, listas, clientes, ventas y miembros del equipo. Esta acción no se puede deshacer.</p>
+          <p className="text-sm font-semibold text-[#B91C1C]">{t('set.delete.warning', { name: tenant?.name || '' })}</p>
         </div>
         {error && <p className="text-xs font-bold text-[#B91C1C]">{error}</p>}
-        <Field label={`Escribí «${keyword}» para confirmar`}>
+        <Field label={t('set.delete.confirm', { keyword })}>
           <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} className={inputCls} placeholder={keyword} />
         </Field>
         <button
@@ -463,7 +568,7 @@ function DeleteSection({ tenant, isOwner }: { tenant: Tenant | null; isOwner: bo
           disabled={deleting || confirmText.trim().toLowerCase() !== keyword.toLowerCase()}
           className="flex h-11 w-fit items-center gap-2 rounded-xl bg-[#EF4444] px-5 text-sm font-bold text-white hover:bg-[#DC2626] disabled:opacity-50"
         >
-          <Icon name="circle-x" size={16} /> {deleting ? 'Eliminando…' : 'Eliminar mi cuenta'}
+          <Icon name="circle-x" size={16} /> {deleting ? t('set.delete.deleting') : t('set.delete.button')}
         </button>
       </div>
     </>

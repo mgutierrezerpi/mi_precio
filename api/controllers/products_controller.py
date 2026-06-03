@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
-from lib.ctx import products, activity
+from lib.ctx import products, activity, plans
+from lib.ctx.plans_context import PlanLimitError
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateProduct, UpdateProduct
 from views import DeletedView, ProductView
@@ -14,6 +15,10 @@ def list_products_endpoint(tenant_id: str, current_user: dict = Depends(get_curr
 
 @router.post("/tenants/{tenant_id}/products", status_code=201)
 def create_product_endpoint(tenant_id: str, data: CreateProduct, current_user: dict = Depends(require_editor)):
+    try:
+        plans.assert_can_add(tenant_id, "products")
+    except PlanLimitError as e:
+        raise HTTPException(status_code=402, detail=str(e))
     product = products.create_product(tenant_id, **data.model_dump())
     if not product:
         raise HTTPException(status_code=404, detail="Tenant not found")

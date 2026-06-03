@@ -4,6 +4,7 @@ import { useAppSelector } from '../../../store/hooks'
 import { selectTenant } from '../../../store/slices/authSlice'
 import api from '../../../services/api'
 import type { Activity } from '../../../types'
+import { useT } from '../../../lib/i18n'
 import { Icon, type IconName } from './ui'
 import { tone, type Tone } from './theme'
 
@@ -36,6 +37,7 @@ const actorShort = (a: string | null) => (a ? a.split('@')[0] : null)
 /** Topbar bell: polls in-app notifications, shows an unread badge, opens a feed. */
 export function NotificationsBell() {
   const navigate = useNavigate()
+  const t = useT()
   const tenant = useAppSelector(selectTenant)
   const tenantId = tenant?.id
   const [items, setItems] = useState<Activity[]>([])
@@ -77,7 +79,7 @@ export function NotificationsBell() {
       <button
         type="button"
         onClick={toggle}
-        title="Notificaciones"
+        title={t('notif.title')}
         className="relative flex h-10 w-10 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] hover:opacity-80"
       >
         <Icon name="bell" className="text-[var(--dash-text2)]" />
@@ -91,14 +93,14 @@ export function NotificationsBell() {
       {open && (
         <div className="absolute right-0 top-12 z-50 w-[360px] overflow-hidden rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_18px_50px_-12px_rgba(30,27,75,0.3)]">
           <div className="flex items-center justify-between border-b border-[var(--dash-divider)] px-4 py-3">
-            <span className="text-sm font-extrabold text-[var(--dash-text)]">Notificaciones</span>
+            <span className="text-sm font-extrabold text-[var(--dash-text)]">{t('notif.title')}</span>
             <span className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--dash-muted)]">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-[#10B981]" /> En vivo
+              <span className="h-2 w-2 animate-pulse rounded-full bg-[#10B981]" /> {t('notif.live')}
             </span>
           </div>
           <div className="max-h-[400px] overflow-y-auto">
             {items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-xs font-medium text-[var(--dash-muted)]">No hay notificaciones todavía.</p>
+              <p className="px-4 py-8 text-center text-xs font-medium text-[var(--dash-muted)]">{t('notif.empty')}</p>
             ) : items.map((a) => {
               const st = styleFor(a.action)
               const who = actorShort(a.actor)
@@ -118,7 +120,7 @@ export function NotificationsBell() {
             onClick={() => { setOpen(false); navigate('/admin/settings') }}
             className="flex w-full items-center justify-center gap-1.5 border-t border-[var(--dash-divider)] py-2.5 text-[12px] font-bold text-[var(--dash-link)] hover:bg-[var(--dash-soft)]"
           >
-            <Icon name="settings" size={14} /> Preferencias de notificaciones
+            <Icon name="settings" size={14} /> {t('notif.prefs')}
           </button>
         </div>
       )}

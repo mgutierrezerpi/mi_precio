@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from lib.ctx import team, activity
+from lib.ctx import team, activity, plans
 from lib.ctx.team_context import TeamError
+from lib.ctx.plans_context import PlanLimitError
 from controllers.deps import get_current_user, require_admin
 from controllers.input_types import InviteMember, UpdateMember
 from views import DeletedView, UserView, InvitationView
@@ -25,6 +26,10 @@ def list_invitations_endpoint(tenant_id: str, current_user: dict = Depends(get_c
 
 @router.post("/tenants/{tenant_id}/members", status_code=201)
 def invite_member_endpoint(tenant_id: str, data: InviteMember, current_user: dict = Depends(require_admin)):
+    try:
+        plans.assert_can_add(tenant_id, "members")
+    except PlanLimitError as e:
+        raise HTTPException(status_code=402, detail=str(e))
     try:
         invite = team.invite_member(tenant_id, data.email, data.role)
     except TeamError as e:

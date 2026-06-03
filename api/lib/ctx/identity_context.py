@@ -50,6 +50,18 @@ def find_tenant_by_subdomain(subdomain: str) -> Tenant | None:
     return Tenant.get_or_none(Tenant.subdomain == subdomain.lower())
 
 
+def touch_last_seen(user_id: str, min_interval_seconds: int = 60) -> None:
+    """Mark a user as recently active (presence heartbeat), throttled so we don't
+    write on every request. Called from polled endpoints while the app is open."""
+    user = User.get_or_none(User.id == user_id)
+    if not user:
+        return
+    now = datetime.utcnow()
+    if user.last_seen_at is None or (now - user.last_seen_at).total_seconds() >= min_interval_seconds:
+        user.last_seen_at = now
+        user.save()
+
+
 def delete_tenant(tenant_id: str) -> bool:
     """Permanently delete a tenant and everything under it (users, lists, products,
     customers, orders, page views, etc.) via cascading FK deletes."""

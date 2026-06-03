@@ -164,3 +164,5 @@ const roleOf = (state: { auth: AuthState }) => state.auth.user?.role ?? 'owner'
 export const selectCanEdit = (state: { auth: AuthState }) => ['owner', 'admin', 'editor'].includes(roleOf(state))
 // Can manage the team and tenant settings (owners, admins).
 export const selectIsAdmin = (state: { auth: AuthState }) => ['owner', 'admin'].includes(roleOf(state))
+// Owner-only actions (change plan, delete account).
+export const selectIsOwner = (state: { auth: AuthState }) => roleOf(state) === 'owner'
