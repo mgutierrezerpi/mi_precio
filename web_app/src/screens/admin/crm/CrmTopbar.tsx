@@ -1,5 +1,6 @@
 import { useTheme } from '../../../hooks/useTheme'
 import { Icon, UserMenu } from './ui'
+import { NotificationsBell } from './NotificationsBell'
 
 interface CrmTopbarProps {
   title: string
@@ -44,6 +45,7 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
       >
         <Icon name={isDark ? 'sun' : 'moon'} className={isDark ? 'text-[#FBBF24]' : 'text-[var(--dash-text2)]'} />
       </button>
+      <NotificationsBell />
       {actions}
       <UserMenu />
     </header>

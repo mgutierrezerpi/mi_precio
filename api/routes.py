@@ -13,6 +13,7 @@ from controllers import (
     import_router,
     customers_router,
     team_router,
+    notifications_router,
 )
 
 
@@ -35,5 +36,6 @@ def register_routes(app):
     api.include_router(import_router)
     api.include_router(customers_router)
     api.include_router(team_router)
+    api.include_router(notifications_router)
 
     app.include_router(api)

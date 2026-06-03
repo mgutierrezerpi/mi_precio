@@ -71,3 +71,7 @@ def ensure_columns():
         db.execute_sql("ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'owner'")
     if "last_seen_at" not in user_columns:
         db.execute_sql("ALTER TABLE users ADD COLUMN last_seen_at DATETIME")
+    if "notif_prefs" not in user_columns:
+        db.execute_sql("ALTER TABLE users ADD COLUMN notif_prefs TEXT")
+    if "notifications_seen_at" not in user_columns:
+        db.execute_sql("ALTER TABLE users ADD COLUMN notifications_seen_at DATETIME")

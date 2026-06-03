@@ -141,6 +141,19 @@ export interface Activity {
   createdAt: string
 }
 
+export interface NotifPrefs {
+  sales: boolean
+  catalog: boolean
+  customers: boolean
+  team: boolean
+}
+
+export interface NotificationsData {
+  items: Activity[]
+  unread: number
+  prefs: NotifPrefs
+}
+
 // Team types
 export type Role = 'owner' | 'admin' | 'editor' | 'viewer'
 

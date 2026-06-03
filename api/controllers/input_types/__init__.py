@@ -21,3 +21,4 @@ from controllers.input_types.import_from_url import ImportFromUrl as ImportFromU
 from controllers.input_types.import_from_images import ImportFromImages as ImportFromImages
 from controllers.input_types.invite_member import InviteMember as InviteMember
 from controllers.input_types.update_member import UpdateMember as UpdateMember
+from controllers.input_types.update_notif_prefs import UpdateNotifPrefs as UpdateNotifPrefs

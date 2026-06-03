@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant, setTenant, selectUser, selectIsAdmin, logout } from '../../store/slices/authSlice'
-import type { Tenant, Role } from '../../types'
+import type { Tenant, Role, NotifPrefs } from '../../types'
 import api from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
@@ -98,7 +98,7 @@ export function SettingsCrmScreen() {
               <Icon name="alert-triangle" size={16} /> {error}
             </div>
           )}
-          {!canManage && active !== 'security' && active !== 'delete' && (
+          {!canManage && active !== 'security' && active !== 'delete' && active !== 'notifications' && (
             <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
               <Icon name="alert-triangle" size={15} /> Solo los administradores pueden editar la configuración de la cuenta.
             </div>
@@ -106,7 +106,7 @@ export function SettingsCrmScreen() {
 
           {active === 'info' && <InfoSection {...ctx} />}
           {active === 'brand' && <BrandSection {...ctx} />}
-          {active === 'notifications' && <NotificationsSection />}
+          {active === 'notifications' && <NotificationsSection tenantId={tenant?.id} />}
           {active === 'region' && <RegionSection {...ctx} />}
           {active === 'security' && <SecuritySection user={user} onLogout={() => dispatch(logout())} />}
           {active === 'billing' && <BillingSection tenant={tenant} />}
@@ -243,28 +243,61 @@ function BrandSection({ tenant, canManage, save, savingKey, savedKey }: Ctx) {
   )
 }
 
-/* ── 2. Notifications (honest shell) ─────────────────────────────────── */
-function NotificationsSection() {
-  const rows = [
-    { label: 'Resumen semanal por email', desc: 'Visitas, escaneos y ventas de la semana.' },
-    { label: 'Nuevo escaneo de QR', desc: 'Avisos cuando alguien abre tu lista.' },
-    { label: 'Nuevos miembros del equipo', desc: 'Cuando alguien acepta una invitación.' },
-  ]
+/* ── 2. Notifications (in-app, per-user preferences) ─────────────────── */
+const NOTIF_ROWS: { key: keyof NotifPrefs; label: string; desc: string }[] = [
+  { key: 'sales', label: 'Ventas', desc: 'Cuando se registra una compra.' },
+  { key: 'catalog', label: 'Catálogo', desc: 'Altas, bajas y publicaciones de productos y listas.' },
+  { key: 'customers', label: 'Clientes', desc: 'Cuando se agrega un cliente nuevo.' },
+  { key: 'team', label: 'Equipo', desc: 'Invitaciones y cambios de rol.' },
+]
+
+function NotificationsSection({ tenantId }: { tenantId?: string }) {
+  const [prefs, setPrefs] = useState<NotifPrefs | null>(null)
+
+  useEffect(() => {
+    if (!tenantId) return
+    let cancelled = false
+    api.getNotifications(tenantId).then((res) => { if (!cancelled && res.data) setPrefs(res.data.prefs) })
+    return () => { cancelled = true }
+  }, [tenantId])
+
+  const toggle = (key: keyof NotifPrefs) => {
+    if (!prefs || !tenantId) return
+    const next = { ...prefs, [key]: !prefs[key] }
+    setPrefs(next)
+    void api.updateNotifPrefs(tenantId, { [key]: next[key] })
+  }
+
   return (
     <>
-      <SectionHeader title="Notificaciones" subtitle="Elegí qué avisos querés recibir." canManage={false} />
+      <SectionHeader title="Notificaciones" subtitle="Elegí qué te avisa la campana de la barra superior." canManage={false} />
       <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
-        <Icon name="bell" size={15} /> El envío de notificaciones por email todavía no está disponible. Próximamente.
+        <Icon name="bell" size={15} /> Las notificaciones aparecen dentro de la app (campana arriba a la derecha). El envío por email llegará más adelante.
       </div>
       <div className="flex flex-col divide-y divide-[var(--dash-divider)] rounded-2xl border border-[var(--dash-border)]">
-        {rows.map((r) => (
-          <div key={r.label} className="flex items-center justify-between gap-4 px-4 py-3.5 opacity-60">
+        {NOTIF_ROWS.map((r) => (
+          <div key={r.key} className="flex items-center justify-between gap-4 px-4 py-3.5">
             <div className="flex flex-col"><span className="text-[13px] font-bold text-[var(--dash-text)]">{r.label}</span><span className="text-[11px] font-medium text-[var(--dash-muted)]">{r.desc}</span></div>
-            <span className="flex h-6 w-11 items-center rounded-full bg-[var(--dash-border)] p-0.5"><span className="h-5 w-5 rounded-full bg-white shadow" /></span>
+            <Toggle on={prefs?.[r.key] ?? true} disabled={!prefs} onClick={() => toggle(r.key)} />
           </div>
         ))}
       </div>
     </>
+  )
+}
+
+function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      disabled={disabled}
+      onClick={onClick}
+      className={`flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition ${on ? gradient : 'bg-[var(--dash-border)]'} ${disabled ? 'opacity-50' : ''}`}
+    >
+      <span className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : ''}`} />
+    </button>
   )
 }
 

@@ -21,6 +21,15 @@ import { catTone, catIcon, formatPrice, timeAgo, displayCategory, normalizeCateg
 
 const PAGE_SIZE = 8
 type Status = 'all' | 'available' | 'unavailable' | 'nophoto' | 'recent'
+type SortKey = 'recent' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc'
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: 'recent', label: 'Más recientes' },
+  { key: 'name-asc', label: 'Nombre (A–Z)' },
+  { key: 'name-desc', label: 'Nombre (Z–A)' },
+  { key: 'price-asc', label: 'Precio (menor a mayor)' },
+  { key: 'price-desc', label: 'Precio (mayor a menor)' },
+]
 
 const outlineBtn = 'flex h-[38px] items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'
 
@@ -64,6 +73,10 @@ export function ProductsScreen() {
   const [category, setCategory] = useState<string>(searchParams.get('cat') || 'all')
   const [page, setPage] = useState(1)
   const [modal, setModal] = useState<{ open: boolean; product: Product | null }>(() => ({ open: searchParams.get('new') === '1' && canEdit, product: null }))
+  const [sort, setSort] = useState<SortKey>('recent')
+  const [priceMin, setPriceMin] = useState('')
+  const [priceMax, setPriceMax] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (tenant?.id) dispatch(fetchProducts(tenant.id))
@@ -85,16 +98,21 @@ export function ProductsScreen() {
     return { total: products.length, available, unavailable: products.length - available }
   }, [products])
 
-  // Base = search + category filters (drives chip counts).
+  // Base = search + category + price filters (drives chip counts).
   const base = useMemo(() => {
     const q = search.trim().toLowerCase()
     const cat = category.trim().toLowerCase()
+    const min = parseFloat(priceMin)
+    const max = parseFloat(priceMax)
     return products.filter((p) => {
       if (category !== 'all' && (p.category?.trim().toLowerCase() ?? '') !== cat) return false
+      const price = parseFloat(p.price)
+      if (!Number.isNaN(min) && (Number.isNaN(price) || price < min)) return false
+      if (!Number.isNaN(max) && (Number.isNaN(price) || price > max)) return false
       if (!q) return true
       return [p.name, p.sku, p.category].some((v) => v?.toLowerCase().includes(q))
     })
-  }, [products, search, category])
+  }, [products, search, category, priceMin, priceMax])
 
   const chipCounts = useMemo(() => ({
     all: base.length,
@@ -105,17 +123,25 @@ export function ProductsScreen() {
   }), [base])
 
   const visible = useMemo(() => {
-    if (status === 'recent') {
-      return [...base].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt)).slice(0, 12)
+    const arr = status === 'recent'
+      ? [...base].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt)).slice(0, 12)
+      : base.filter((p) => {
+          if (status === 'all') return true
+          if (status === 'nophoto') return !p.imageUrl
+          if (status === 'available') return p.available
+          if (status === 'unavailable') return !p.available
+          return true
+        })
+    const price = (p: Product) => parseFloat(p.price) || 0
+    const cmp: Record<SortKey, (a: Product, b: Product) => number> = {
+      recent: (a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt),
+      'name-asc': (a, b) => a.name.localeCompare(b.name),
+      'name-desc': (a, b) => b.name.localeCompare(a.name),
+      'price-asc': (a, b) => price(a) - price(b),
+      'price-desc': (a, b) => price(b) - price(a),
     }
-    return base.filter((p) => {
-      if (status === 'all') return true
-      if (status === 'nophoto') return !p.imageUrl
-      if (status === 'available') return p.available
-      if (status === 'unavailable') return !p.available
-      return true
-    })
-  }, [base, status])
+    return [...arr].sort(cmp[sort])
+  }, [base, status, sort])
 
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
@@ -136,6 +162,39 @@ export function ProductsScreen() {
       dispatch(deleteProduct(p.id))
     }
   }
+
+  // ── Multi-select ──────────────────────────────────────────────────
+  const visibleIds = useMemo(() => visible.map((p) => p.id), [visible])
+  const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
+  const someSelected = selected.size > 0
+  const selectedProducts = useMemo(() => products.filter((p) => selected.has(p.id)), [products, selected])
+
+  const toggleSelect = (id: string) => setSelected((prev) => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
+  const toggleSelectAll = () => setSelected((prev) => {
+    if (visibleIds.every((id) => prev.has(id))) {
+      const next = new Set(prev); visibleIds.forEach((id) => next.delete(id)); return next
+    }
+    return new Set([...prev, ...visibleIds])
+  })
+  const clearSelection = () => setSelected(new Set())
+
+  const bulkDelete = () => {
+    if (!someSelected) return
+    if (!window.confirm(`¿Eliminar ${selected.size} producto${selected.size === 1 ? '' : 's'}? Esta acción no se puede deshacer.`)) return
+    selectedProducts.forEach((p) => dispatch(deleteProduct(p.id)))
+    clearSelection()
+  }
+
+  const clearFilters = () => resetTo(() => { setStatus('all'); setCategory('all'); setPriceMin(''); setPriceMax(''); setSearch('') })
+
+  // ── Export (scope: selection if any, else the filtered list) ──────
+  const exportScope = () => (someSelected ? selectedProducts : visible)
+  const exportExcel = () => downloadExcel(exportScope(), tenant?.currency || 'UYU')
+  const exportPdf = () => printPdf(exportScope(), tenant?.name || 'Catálogo', tenant?.currency || 'UYU')
 
   const kpis: { icon: IconName; iconTone: Tone; value: number; label: string; note: string }[] = [
     { icon: 'package', iconTone: 'violet', value: kpiCounts.total, label: 'Total productos', note: 'En tu catálogo' },
@@ -184,9 +243,14 @@ export function ProductsScreen() {
               <p className="text-xs font-medium text-[var(--dash-muted)]">Editá precios y disponibilidad al instante. Los cambios se reflejan en tus listas públicas.</p>
             </div>
             <div className="flex items-center gap-2">
-              <button type="button" className={outlineBtn}><Icon name="sliders-horizontal" size={16} /> Filtros</button>
-              <button type="button" className={outlineBtn}><Icon name="arrow-up-down" size={16} /> Ordenar</button>
-              <button type="button" className={outlineBtn}><Icon name="download" size={16} /> Exportar</button>
+              <FilterMenu
+                status={status} onStatus={(s) => resetTo(() => setStatus(s))}
+                priceMin={priceMin} priceMax={priceMax}
+                onPriceMin={(v) => resetTo(() => setPriceMin(v))} onPriceMax={(v) => resetTo(() => setPriceMax(v))}
+                onClear={clearFilters}
+              />
+              <SortMenu sort={sort} onSort={setSort} />
+              <ExportMenu count={someSelected ? selected.size : visible.length} scoped={someSelected} onExcel={exportExcel} onPdf={exportPdf} />
               {canEdit && (
                 <button
                   type="button"
@@ -219,10 +283,27 @@ export function ProductsScreen() {
             <CategoryDropdown value={category} options={categories} onChange={(v) => resetTo(() => setCategory(v))} />
           </div>
 
+          {/* Bulk action bar */}
+          {someSelected && (
+            <div className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 ${gradient} text-white`}>
+              <Icon name="circle-check" size={18} />
+              <span className="text-[13px] font-bold">{selected.size} seleccionado{selected.size === 1 ? '' : 's'}</span>
+              <div className="flex-1" />
+              {canEdit && (
+                <button type="button" onClick={bulkDelete} className="flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-3 text-[13px] font-bold hover:bg-white/25">
+                  <Icon name="circle-x" size={15} /> Eliminar
+                </button>
+              )}
+              <button type="button" onClick={clearSelection} className="flex h-8 items-center rounded-lg px-3 text-[13px] font-bold text-white/90 hover:bg-white/15">
+                Limpiar
+              </button>
+            </div>
+          )}
+
           {/* Table */}
           <div className="overflow-hidden rounded-2xl border border-[var(--dash-border)]">
             <div className="flex items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
-              <span className="w-9"><Checkbox /></span>
+              <span className="w-9"><Checkbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={toggleSelectAll} /></span>
               <span className="flex-1">Producto</span>
               <span className="w-[110px]">SKU</span>
               <span className="w-[130px]">Categoría</span>
@@ -239,8 +320,8 @@ export function ProductsScreen() {
             ) : (
               pageItems.map((p, i) => {
                 return (
-                  <div key={p.id} className={`flex items-center gap-3 bg-[var(--dash-surface)] px-[18px] py-3.5 ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
-                    <span className="w-9"><Checkbox /></span>
+                  <div key={p.id} className={`flex items-center gap-3 px-[18px] py-3.5 ${selected.has(p.id) ? 'bg-[var(--dash-soft)]' : 'bg-[var(--dash-surface)]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                    <span className="w-9"><Checkbox checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} /></span>
                     <div className="flex flex-1 items-center gap-3">
                       {p.imageUrl
                         ? <img src={p.imageUrl} alt={p.name} className="h-10 w-10 shrink-0 rounded-[10px] object-cover" />
@@ -303,8 +384,23 @@ export function ProductsScreen() {
 }
 
 /* ── Pieces ──────────────────────────────────────────────────────── */
-function Checkbox() {
-  return <span className="block h-[18px] w-[18px] rounded-[5px] border-[1.5px] border-[#CBD5E1] bg-[var(--dash-surface)]" />
+function Checkbox({ checked, indeterminate, onChange }: { checked?: boolean; indeterminate?: boolean; onChange?: () => void }) {
+  const on = checked || indeterminate
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={indeterminate ? 'mixed' : !!checked}
+      onClick={(e) => { e.stopPropagation(); onChange?.() }}
+      className={`flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border-[1.5px] text-white transition ${on ? `border-transparent ${gradient}` : 'border-[#CBD5E1] bg-[var(--dash-surface)] hover:border-[var(--dash-link)]'}`}
+    >
+      {indeterminate
+        ? <span className="h-[2px] w-2.5 rounded bg-white" />
+        : checked
+          ? <span className="text-[11px] font-black leading-none">✓</span>
+          : null}
+    </button>
+  )
 }
 
 function AvailabilitySwitch({ value, onToggle }: { value: boolean; onToggle: () => void }) {
@@ -364,6 +460,135 @@ function MenuRow({ children, active, onClick }: { children: React.ReactNode; act
       {children}
     </button>
   )
+}
+
+/* Generic toolbar dropdown using the outline-button trigger. */
+function Menu({ icon, label, width = 'w-56', children }: { icon: IconName; label: string; width?: string; children: (close: () => void) => React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" onClick={() => setOpen((o) => !o)} className={outlineBtn}>
+        <Icon name={icon} size={16} /> {label}
+        <Icon name="chevron-down" size={14} className={`text-[var(--dash-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <div className={`absolute right-0 top-[calc(100%+6px)] z-40 ${width} origin-top-right rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-2 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.3)] transition-all duration-150 ${open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'}`}>
+        {children(() => setOpen(false))}
+      </div>
+    </div>
+  )
+}
+
+function SortMenu({ sort, onSort }: { sort: SortKey; onSort: (s: SortKey) => void }) {
+  return (
+    <Menu icon="arrow-up-down" label="Ordenar" width="w-60">
+      {(close) => SORT_OPTIONS.map((o) => (
+        <MenuRow key={o.key} active={sort === o.key} onClick={() => { onSort(o.key); close() }}>{o.label}</MenuRow>
+      ))}
+    </Menu>
+  )
+}
+
+function ExportMenu({ count, scoped, onExcel, onPdf }: { count: number; scoped: boolean; onExcel: () => void; onPdf: () => void }) {
+  return (
+    <Menu icon="download" label="Exportar" width="w-60">
+      {(close) => (
+        <>
+          <p className="px-3 py-1.5 text-[11px] font-semibold text-[var(--dash-muted)]">{count} producto{count === 1 ? '' : 's'} · {scoped ? 'selección' : 'filtro actual'}</p>
+          <MenuRow active={false} onClick={() => { if (count) onExcel(); close() }}>
+            <span className="flex items-center gap-2"><Icon name="file-spreadsheet" size={15} className="text-[#16A34A]" /> Excel (.xls)</span>
+          </MenuRow>
+          <MenuRow active={false} onClick={() => { if (count) onPdf(); close() }}>
+            <span className="flex items-center gap-2"><Icon name="file-spreadsheet" size={15} className="text-[#DC2626]" /> PDF</span>
+          </MenuRow>
+        </>
+      )}
+    </Menu>
+  )
+}
+
+const filterInput = 'h-9 w-full rounded-lg border border-[var(--dash-border)] bg-[var(--dash-soft)] px-2.5 text-[13px] font-medium text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]'
+
+function FilterMenu({ status, onStatus, priceMin, priceMax, onPriceMin, onPriceMax, onClear }: {
+  status: Status; onStatus: (s: Status) => void
+  priceMin: string; priceMax: string; onPriceMin: (v: string) => void; onPriceMax: (v: string) => void
+  onClear: () => void
+}) {
+  const avail: { key: Status; label: string }[] = [
+    { key: 'all', label: 'Todos' }, { key: 'available', label: 'Disponibles' }, { key: 'unavailable', label: 'No disponibles' },
+  ]
+  const onlyDigits = (v: string) => v.replace(/[^\d]/g, '')
+  return (
+    <Menu icon="sliders-horizontal" label="Filtros" width="w-64">
+      {() => (
+        <div className="flex flex-col gap-3">
+          <div>
+            <p className="mb-1 px-1 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">Disponibilidad</p>
+            {avail.map((a) => <MenuRow key={a.key} active={status === a.key} onClick={() => onStatus(a.key)}>{a.label}</MenuRow>)}
+          </div>
+          <div>
+            <p className="mb-1.5 px-1 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">Precio</p>
+            <div className="flex items-center gap-2 px-1">
+              <input value={priceMin} onChange={(e) => onPriceMin(onlyDigits(e.target.value))} inputMode="numeric" placeholder="Mín" className={filterInput} />
+              <span className="text-[var(--dash-muted)]">–</span>
+              <input value={priceMax} onChange={(e) => onPriceMax(onlyDigits(e.target.value))} inputMode="numeric" placeholder="Máx" className={filterInput} />
+            </div>
+          </div>
+          <button type="button" onClick={onClear} className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[var(--dash-border)] text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
+            <Icon name="circle-x" size={15} /> Limpiar filtros
+          </button>
+        </div>
+      )}
+    </Menu>
+  )
+}
+
+/* ── Export helpers ──────────────────────────────────────────────── */
+const EXPORT_COLS = ['Nombre', 'SKU', 'Categoría', 'Precio', 'Disponible']
+const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] || c))
+const exportCells = (p: Product, currency: string) => [p.name, p.sku || '', p.category || '', `${currency} ${parseFloat(p.price) || 0}`, p.available ? 'Sí' : 'No']
+
+function downloadExcel(products: Product[], currency: string) {
+  if (!products.length) return
+  const head = `<tr>${EXPORT_COLS.map((c) => `<th>${c}</th>`).join('')}</tr>`
+  const rows = products.map((p) => `<tr>${exportCells(p, currency).map((v) => `<td>${escapeHtml(String(v))}</td>`).join('')}</tr>`).join('')
+  const html = `<html><head><meta charset="utf-8"></head><body><table border="1">${head}${rows}</table></body></html>`
+  const blob = new Blob(['﻿' + html], { type: 'application/vnd.ms-excel;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = `productos-${new Date().toISOString().slice(0, 10)}.xls`
+  document.body.appendChild(a); a.click(); document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+function printPdf(products: Product[], title: string, currency: string) {
+  if (!products.length) return
+  const head = `<tr>${EXPORT_COLS.map((c) => `<th>${c}</th>`).join('')}</tr>`
+  const rows = products.map((p) => `<tr>${exportCells(p, currency).map((v, i) => `<td class="${i === 3 ? 'num' : ''}">${escapeHtml(String(v))}</td>`).join('')}</tr>`).join('')
+  const w = window.open('', '_blank', 'width=900,height=700')
+  if (!w) { alert('Permití las ventanas emergentes para exportar a PDF.'); return }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)} — Catálogo</title>
+    <style>
+      *{font-family:Inter,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      body{margin:32px;color:#0F172A} h1{font-size:22px;margin:0 0 4px}
+      .meta{color:#64748B;font-size:12px;margin-bottom:18px}
+      table{width:100%;border-collapse:collapse;font-size:12px}
+      th{text-align:left;background:#F1F5F9;padding:8px 10px;border-bottom:2px solid #E2E8F0;text-transform:uppercase;font-size:10px;letter-spacing:.04em;color:#475569}
+      td{padding:8px 10px;border-bottom:1px solid #E2E8F0} td.num{text-align:right;font-variant-numeric:tabular-nums}
+      @media print{body{margin:12mm}}
+    </style></head>
+    <body><h1>${escapeHtml(title)}</h1>
+    <div class="meta">Catálogo de productos · ${products.length} ítem${products.length === 1 ? '' : 's'} · ${new Date().toLocaleDateString('es-AR')}</div>
+    <table>${head}${rows}</table>
+    <script>window.onload=function(){setTimeout(function(){window.print()},200)}</script>
+    </body></html>`)
+  w.document.close()
 }
 
 const MENU_W = 160

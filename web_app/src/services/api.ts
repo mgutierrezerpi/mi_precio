@@ -1,4 +1,4 @@
-import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role } from '../types'
+import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role, NotificationsData, NotifPrefs } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
@@ -245,6 +245,22 @@ class ApiService {
 
   async getReports(tenantId: string, days = 30): Promise<ApiResponse<ReportData>> {
     return this.request(`/tenants/${tenantId}/stats/reports?days=${days}`)
+  }
+
+  // Notifications (in-app)
+  async getNotifications(tenantId: string): Promise<ApiResponse<NotificationsData>> {
+    return this.request(`/tenants/${tenantId}/notifications`)
+  }
+
+  async updateNotifPrefs(tenantId: string, prefs: Partial<NotifPrefs>): Promise<ApiResponse<{ prefs: NotifPrefs }>> {
+    return this.request(`/tenants/${tenantId}/notifications/prefs`, {
+      method: 'PATCH',
+      body: JSON.stringify(prefs),
+    })
+  }
+
+  async markNotificationsSeen(tenantId: string): Promise<ApiResponse<{ ok: boolean }>> {
+    return this.request(`/tenants/${tenantId}/notifications/seen`, { method: 'POST' })
   }
 
   // Team endpoints
