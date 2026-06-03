@@ -3,6 +3,8 @@ from views.reordered_view import ReorderedView as ReorderedView
 from views.user_view import UserView as UserView
 from views.tenant_view import TenantView as TenantView
 from views.item_view import ItemView as ItemView
+from views.product_view import ProductView as ProductView
+from views.category_view import CategoryView as CategoryView
 from views.list_version_view import ListVersionView as ListVersionView
 from views.price_list_view import PriceListView as PriceListView
 from views.auth_token_view import AuthTokenView as AuthTokenView

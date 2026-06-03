@@ -1,4 +1,4 @@
-import type { Tenant, PriceList, ListVersion, Item, AuthToken } from '../types'
+import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
@@ -25,6 +25,12 @@ function transformKeys<T>(obj: unknown): T {
     transformed[snakeToCamel(key)] = transformKeys(value)
   }
   return transformed as T
+}
+
+/** Map a product payload's camelCase `imageUrl` to the API's snake_case `image_url`. */
+function productBody<T extends { imageUrl?: string | null }>(data: T) {
+  const { imageUrl, ...rest } = data
+  return imageUrl !== undefined ? { ...rest, image_url: imageUrl } : rest
 }
 
 class ApiService {
@@ -202,6 +208,64 @@ class ApiService {
       method: 'PUT',
       body: JSON.stringify({ item_ids: itemIds }),
     })
+  }
+
+  // Product endpoints (tenant-level catalog)
+  async getProducts(tenantId: string): Promise<ApiResponse<Product[]>> {
+    return this.request(`/tenants/${tenantId}/products`)
+  }
+
+  async createProduct(
+    tenantId: string,
+    data: { name: string; price: number; sku?: string | null; currency?: string; available?: boolean; description?: string | null; category?: string | null; imageUrl?: string | null }
+  ): Promise<ApiResponse<Product>> {
+    return this.request(`/tenants/${tenantId}/products`, {
+      method: 'POST',
+      body: JSON.stringify(productBody(data)),
+    })
+  }
+
+  async updateProduct(
+    productId: string,
+    data: { name?: string; price?: number; sku?: string | null; currency?: string; available?: boolean; description?: string | null; category?: string | null; imageUrl?: string | null }
+  ): Promise<ApiResponse<Product>> {
+    return this.request(`/products/${productId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(productBody(data)),
+    })
+  }
+
+  async deleteProduct(productId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/products/${productId}`, { method: 'DELETE' })
+  }
+
+  // Category endpoints (tenant-level)
+  async getCategories(tenantId: string): Promise<ApiResponse<Category[]>> {
+    return this.request(`/tenants/${tenantId}/categories`)
+  }
+
+  async createCategory(
+    tenantId: string,
+    data: { name: string; description?: string | null; color?: string | null }
+  ): Promise<ApiResponse<Category>> {
+    return this.request(`/tenants/${tenantId}/categories`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateCategory(
+    categoryId: string,
+    data: { name?: string; description?: string | null; color?: string | null }
+  ): Promise<ApiResponse<Category>> {
+    return this.request(`/categories/${categoryId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteCategory(categoryId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/categories/${categoryId}`, { method: 'DELETE' })
   }
 
   // Public endpoints

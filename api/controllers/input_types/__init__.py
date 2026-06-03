@@ -8,6 +8,10 @@ from controllers.input_types.create_version import CreateVersion as CreateVersio
 from controllers.input_types.update_version import UpdateVersion as UpdateVersion
 from controllers.input_types.create_item import CreateItem as CreateItem
 from controllers.input_types.update_item import UpdateItem as UpdateItem
+from controllers.input_types.create_product import CreateProduct as CreateProduct
+from controllers.input_types.update_product import UpdateProduct as UpdateProduct
+from controllers.input_types.create_category import CreateCategory as CreateCategory
+from controllers.input_types.update_category import UpdateCategory as UpdateCategory
 from controllers.input_types.reorder_items import ReorderItems as ReorderItems
 from controllers.input_types.import_from_url import ImportFromUrl as ImportFromUrl
 from controllers.input_types.import_from_images import ImportFromImages as ImportFromImages

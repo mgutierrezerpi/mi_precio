@@ -7,6 +7,8 @@ from controllers import (
     lists_router,
     versions_router,
     items_router,
+    products_router,
+    categories_router,
     public_router,
     import_router,
 )
@@ -25,6 +27,8 @@ def register_routes(app):
     api.include_router(lists_router)
     api.include_router(versions_router)
     api.include_router(items_router)
+    api.include_router(products_router)
+    api.include_router(categories_router)
     api.include_router(public_router)
     api.include_router(import_router)
 

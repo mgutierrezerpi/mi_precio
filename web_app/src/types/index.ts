@@ -16,6 +16,7 @@ export interface PriceList {
   slug: string | null
   published: boolean
   showOnIndex: boolean
+  itemCount: number
   createdAt: string
   updatedAt: string
   versions?: ListVersion[]
@@ -43,6 +44,33 @@ export interface Item {
   position: number
   imageUrl: string | null
   category: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Product {
+  id: string
+  tenantId: string
+  name: string
+  sku: string | null
+  price: string
+  currency: string
+  available: boolean
+  description: string | null
+  imageUrl: string | null
+  category: string | null
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Category {
+  id: string
+  tenantId: string
+  name: string
+  description: string | null
+  color: string | null
+  position: number
   createdAt: string
   updatedAt: string
 }

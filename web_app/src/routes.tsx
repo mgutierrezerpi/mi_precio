@@ -5,9 +5,10 @@ import { OldLandingScreen } from './screens/home/OldLandingScreen'
 import { MenuScreen } from './screens/menu/MenuScreen'
 import { LoginScreen } from './screens/admin/LoginScreen'
 import { DashboardScreen } from './screens/admin/DashboardScreen'
-import { ListsScreen } from './screens/admin/ListsScreen'
+import { PriceListsScreen } from './screens/admin/PriceListsScreen'
 import { ListEditScreen } from './screens/admin/ListEditScreen'
-import { ItemsScreen } from './screens/admin/ItemsScreen'
+import { ProductsScreen } from './screens/admin/ProductsScreen'
+import { CategoriesScreen } from './screens/admin/CategoriesScreen'
 import { SettingsScreen } from './screens/admin/SettingsScreen'
 
 export const router = createBrowserRouter([
@@ -41,19 +42,23 @@ export const router = createBrowserRouter([
         element: <DashboardScreen />,
       },
       {
+        path: 'items',
+        element: <ProductsScreen />,
+      },
+      {
+        path: 'categories',
+        element: <CategoriesScreen />,
+      },
+      {
+        path: 'lists',
+        element: <PriceListsScreen />,
+      },
+      {
         element: <MinimalLayout />,
         children: [
           {
-            path: 'lists',
-            element: <ListsScreen />,
-          },
-          {
             path: 'lists/:id',
             element: <ListEditScreen />,
-          },
-          {
-            path: 'items',
-            element: <ItemsScreen />,
           },
           {
             path: 'settings',
