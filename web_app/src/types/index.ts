@@ -123,6 +123,16 @@ export interface CustomerDetail {
   orders: Order[]
 }
 
+export interface Activity {
+  id: string
+  action: string
+  summary: string
+  actor: string | null
+  entityType: string | null
+  entityId: string | null
+  createdAt: string
+}
+
 // Auth types
 export interface User {
   id: string

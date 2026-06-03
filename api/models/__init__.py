@@ -11,13 +11,14 @@ from models.page_view import PageView as PageView
 from models.customer import Customer as Customer
 from models.order import Order as Order
 from models.order_item import OrderItem as OrderItem
+from models.activity import Activity as Activity
 
 # Resolve deferred foreign key
 Item.list_version.set_model(ListVersion)
 
 
 def create_tables():
-    db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item, Product, Category, PageView, Customer, Order, OrderItem])
+    db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item, Product, Category, PageView, Customer, Order, OrderItem, Activity])
     ensure_columns()
 
 

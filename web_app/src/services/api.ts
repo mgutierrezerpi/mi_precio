@@ -1,4 +1,4 @@
-import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order } from '../types'
+import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
@@ -216,6 +216,10 @@ class ApiService {
   // Stats
   async getVisitStats(tenantId: string): Promise<ApiResponse<VisitStats>> {
     return this.request(`/tenants/${tenantId}/stats/visits`)
+  }
+
+  async getActivity(tenantId: string): Promise<ApiResponse<Activity[]>> {
+    return this.request(`/tenants/${tenantId}/activity`)
   }
 
   // Product endpoints (tenant-level catalog)

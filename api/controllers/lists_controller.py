@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from lib.ctx import lists
+from lib.ctx import lists, activity
 from controllers.deps import get_current_user
 from controllers.input_types import CreateList, UpdateList
 from views import DeletedView, PriceListView
@@ -17,6 +17,9 @@ def create_list_endpoint(tenant_id: str, data: CreateList, current_user: dict = 
     result = lists.create_list(tenant_id, data.name)
     if not result:
         raise HTTPException(status_code=404, detail="Tenant not found")
+    activity.record(tenant_id, "list.created", f"Creó la lista «{result.price_list.name}»",
+                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                    entity_type="list", entity_id=result.price_list.id)
     return PriceListView.render(result.price_list, include_versions=True)
 
 
@@ -33,6 +36,10 @@ def update_list_endpoint(list_id: str, data: UpdateList, current_user: dict = De
     price_list = lists.update_list(list_id, **data.model_dump(exclude_unset=True))
     if not price_list:
         raise HTTPException(status_code=404, detail="List not found")
+    if data.published is True:
+        activity.record(price_list.tenant_id, "list.published", f"Publicó la lista «{price_list.name}»",
+                        actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                        entity_type="list", entity_id=price_list.id)
     return PriceListView.render(price_list)
 
 

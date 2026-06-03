@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
-from lib.ctx import identity, analytics
+from lib.ctx import identity, analytics, activity
 from controllers.deps import get_current_user
 from controllers.input_types import CreateTenant, UpdateTenant
-from views import TenantView
+from views import TenantView, ActivityView
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
@@ -10,6 +10,11 @@ router = APIRouter(prefix="/tenants", tags=["tenants"])
 @router.get("/{tenant_id}/stats/visits")
 def visit_stats_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
     return analytics.visit_stats(tenant_id)
+
+
+@router.get("/{tenant_id}/activity")
+def list_activity_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
+    return ActivityView.render_many(activity.list_activity(tenant_id))
 
 
 @router.get("")

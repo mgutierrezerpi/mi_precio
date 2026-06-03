@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
 import { fetchProducts, selectProducts, selectProductsLoading } from '../../store/slices/productsSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
-import type { Product, CustomerStats } from '../../types'
+import type { Product, CustomerStats, Activity } from '../../types'
 import api, { type VisitStats } from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
@@ -21,12 +21,28 @@ const quickActions: { icon: IconName; title: string; desc: string }[] = [
   { icon: 'qr-code', title: 'Compartir QR', desc: 'Generá y descargá' },
 ]
 
-const activity: { icon: IconName; tone: Tone; text: string; time: string }[] = [
-  { icon: 'alert-triangle', tone: 'amber', text: '‘Pintura látex 4L’ entró en bajo stock', time: 'hace 12 min' },
-  { icon: 'share-2', tone: 'violet', text: 'María compartió la lista Mayoristas', time: 'hace 1 h' },
-  { icon: 'user-plus', tone: 'blue', text: 'Nuevo cliente: Distrimax', time: 'hace 2 h' },
-  { icon: 'upload', tone: 'green', text: '24 productos importados desde Excel', time: 'hace 3 h' },
-]
+// Maps an activity action key to its icon + color tone.
+const ACTIVITY_STYLE: Record<string, { icon: IconName; tone: Tone }> = {
+  'product.created': { icon: 'package', tone: 'green' },
+  'product.deleted': { icon: 'circle-x', tone: 'red' },
+  'list.created': { icon: 'list-checks', tone: 'violet' },
+  'list.published': { icon: 'share-2', tone: 'violet' },
+  'customer.created': { icon: 'user-plus', tone: 'blue' },
+  'order.created': { icon: 'trending-up', tone: 'green' },
+}
+const activityStyle = (action: string) => ACTIVITY_STYLE[action] || { icon: 'ellipsis' as IconName, tone: 'slate' as Tone }
+
+// Backend timestamps are naive UTC; tag as UTC so relative time is correct.
+function activityAgo(iso: string): string {
+  const hasTz = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(iso)
+  const s = (Date.now() - new Date(hasTz ? iso : `${iso}Z`).getTime()) / 1000
+  if (s < 60) return 'Recién'
+  if (s < 3600) return `hace ${Math.floor(s / 60)} min`
+  if (s < 86400) return `hace ${Math.floor(s / 3600)} h`
+  const d = Math.floor(s / 86400)
+  return d < 2 ? 'ayer' : `hace ${d} días`
+}
+const actorShort = (actor: string | null) => (actor ? actor.split('@')[0] : null)
 
 /* ── Screen ──────────────────────────────────────────────────────── */
 export function DashboardScreen() {
@@ -144,7 +160,7 @@ export function DashboardScreen() {
               onCustomer={() => navigate('/admin/clientes?new=1')}
               onQr={goQr}
             />
-            <ActivityFeed />
+            <ActivityFeed tenantId={tenant?.id} />
           </div>
         </div>
       </div>
@@ -322,19 +338,47 @@ function QuickActions({ onProduct, onList, onCustomer, onQr }: { onProduct: () =
   )
 }
 
-function ActivityFeed() {
+function ActivityFeed({ tenantId }: { tenantId?: string }) {
+  const [items, setItems] = useState<Activity[]>([])
+  const [loaded, setLoaded] = useState(false)
+
+  // Poll so a teammate's actions appear live (DB is the source of truth → multi-account ready).
+  useEffect(() => {
+    if (!tenantId) return
+    let cancelled = false
+    const load = () => api.getActivity(tenantId).then((res) => {
+      if (!cancelled && res.data) { setItems(res.data); setLoaded(true) }
+    })
+    load()
+    const id = setInterval(load, 7000)
+    return () => { cancelled = true; clearInterval(id) }
+  }, [tenantId])
+
   return (
     <div className="flex flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-[22px] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)]">
-      <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Actividad reciente</h3>
-      {activity.map((a, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]" style={tone(a.tone)}><Icon name={a.icon} /></span>
-          <div className="flex flex-col">
-            <span className="text-[13px] font-bold text-[var(--dash-text)]">{a.text}</span>
-            <span className="text-[11px] font-medium text-[var(--dash-muted)]">{a.time}</span>
-          </div>
-        </div>
-      ))}
+      <div className="flex items-center justify-between">
+        <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Actividad reciente</h3>
+        <span className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--dash-muted)]">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#10B981]" /> En vivo
+        </span>
+      </div>
+      {loaded && items.length === 0 ? (
+        <p className="py-6 text-center text-xs font-medium text-[var(--dash-muted)]">Todavía no hay actividad.</p>
+      ) : (
+        items.map((a) => {
+          const st = activityStyle(a.action)
+          const who = actorShort(a.actor)
+          return (
+            <div key={a.id} className="flex items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]" style={tone(st.tone)}><Icon name={st.icon} /></span>
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{a.summary}</span>
+                <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{who ? `${who} · ` : ''}{activityAgo(a.createdAt)}</span>
+              </div>
+            </div>
+          )
+        })
+      )}
     </div>
   )
 }

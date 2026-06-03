@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from lib.ctx import customers
+from lib.ctx import customers, activity
 from controllers.deps import get_current_user
 from controllers.input_types import CreateCustomer, UpdateCustomer, CreateOrder, UpdateOrder
 from views import DeletedView, CustomerView, OrderView
@@ -22,6 +22,9 @@ def create_customer_endpoint(tenant_id: str, data: CreateCustomer, current_user:
     customer = customers.create_customer(tenant_id, **data.model_dump())
     if not customer:
         raise HTTPException(status_code=404, detail="Tenant not found")
+    activity.record(tenant_id, "customer.created", f"Agregó el cliente «{customer.name}»",
+                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                    entity_type="customer", entity_id=customer.id)
     return CustomerView.render(customer)
 
 
@@ -62,6 +65,10 @@ def create_order_endpoint(customer_id: str, data: CreateOrder, current_user: dic
     )
     if not order:
         raise HTTPException(status_code=404, detail="Customer not found")
+    activity.record(order.tenant_id, "order.created",
+                    f"Registró una compra de «{order.customer.name}» por {order.currency} {order.total:.0f}",
+                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                    entity_type="order", entity_id=order.id)
     return OrderView.render(order)
 
 

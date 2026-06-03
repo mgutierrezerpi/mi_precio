@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from lib.ctx import products
+from lib.ctx import products, activity
 from controllers.deps import get_current_user
 from controllers.input_types import CreateProduct, UpdateProduct
 from views import DeletedView, ProductView
@@ -17,6 +17,9 @@ def create_product_endpoint(tenant_id: str, data: CreateProduct, current_user: d
     product = products.create_product(tenant_id, **data.model_dump())
     if not product:
         raise HTTPException(status_code=404, detail="Tenant not found")
+    activity.record(tenant_id, "product.created", f"Agregó el producto «{product.name}»",
+                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                    entity_type="product", entity_id=product.id)
     return ProductView.render(product)
 
 
@@ -38,6 +41,12 @@ def update_product_endpoint(product_id: str, data: UpdateProduct, current_user: 
 
 @router.delete("/products/{product_id}")
 def delete_product_endpoint(product_id: str, current_user: dict = Depends(get_current_user)):
-    if not products.delete_product(product_id):
+    product = products.get_product(product_id)
+    if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    name, tenant_id = product.name, product.tenant_id
+    products.delete_product(product_id)
+    activity.record(tenant_id, "product.deleted", f"Eliminó el producto «{name}»",
+                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                    entity_type="product", entity_id=product_id)
     return DeletedView()

@@ -14,3 +14,4 @@ from views.public_menu_view import PublicMenuView as PublicMenuView
 from views.customer_view import CustomerView as CustomerView
 from views.order_view import OrderView as OrderView
 from views.order_item_view import OrderItemView as OrderItemView
+from views.activity_view import ActivityView as ActivityView
