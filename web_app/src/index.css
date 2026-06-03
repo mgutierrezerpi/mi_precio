@@ -152,6 +152,11 @@ input, textarea, select, button, a {
   letter-spacing: -0.01em;
 }
 
+/* Monospace for codes, prices and meta (public price list) */
+.font-mono-jb {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 /* Improved custom scrollbar */
 ::-webkit-scrollbar {
   width: 10px;

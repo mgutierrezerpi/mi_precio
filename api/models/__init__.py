@@ -29,3 +29,7 @@ def ensure_columns():
     if "stock" in product_columns:
         # Stock-by-quantity was replaced by the `available` boolean.
         db.execute_sql("ALTER TABLE products DROP COLUMN stock")
+
+    page_view_columns = [column.name for column in db.get_columns("page_views")]
+    if "source" not in page_view_columns:
+        db.execute_sql("ALTER TABLE page_views ADD COLUMN source VARCHAR(16) NOT NULL DEFAULT 'link'")

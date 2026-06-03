@@ -8,6 +8,8 @@ class PageView(BaseModel):
 
     tenant = ForeignKeyField(Tenant, backref="page_views", on_delete="CASCADE")
     list_id = CharField(max_length=32, null=True)
+    # How the visitor arrived: "qr" (scanned a code) or "link" (direct/shared link).
+    source = CharField(max_length=16, default="link", index=True)
 
     class Meta:
         table_name = "page_views"

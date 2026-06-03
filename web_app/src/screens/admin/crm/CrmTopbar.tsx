@@ -45,10 +45,6 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
         <Icon name={isDark ? 'sun' : 'moon'} className={isDark ? 'text-[#FBBF24]' : 'text-[var(--dash-text2)]'} />
       </button>
       {actions}
-      <button type="button" className="relative flex h-10 w-10 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80" title="Notificaciones">
-        <Icon name="bell" />
-        <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full border-2 border-[var(--dash-surface)] bg-[#EF4444]" />
-      </button>
       <UserMenu />
     </header>
   )

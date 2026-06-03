@@ -15,10 +15,13 @@ def get_public_menu(subdomain: str):
 
 
 @router.post("/{subdomain}/view")
-def record_public_view(subdomain: str, list: str | None = None):
-    """Record a single visit to a tenant's public page (called once per open)."""
+def record_public_view(subdomain: str, list: str | None = None, source: str | None = None):
+    """Record a single visit to a tenant's public page (called once per open).
+
+    `source` distinguishes QR scans ("qr") from direct/shared link visits.
+    """
     tenant = public.get_tenant_by_subdomain(subdomain)
     if not tenant:
         raise HTTPException(status_code=404, detail="Not found")
-    analytics.record_view(tenant.id, list_id=list)
+    analytics.record_view(tenant.id, list_id=list, source=source)
     return {"ok": True}

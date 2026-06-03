@@ -4,6 +4,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
 type ApiResponse<T> = { data: T; error?: never } | { data?: never; error: string }
 
+type VisitBucket = { today: number; yesterday: number; total: number; changePct: number }
+export type VisitStats = VisitBucket & { qr: VisitBucket }
+
 type AuthErrorCallback = () => void
 let onAuthError: AuthErrorCallback | null = null
 
@@ -211,7 +214,7 @@ class ApiService {
   }
 
   // Stats
-  async getVisitStats(tenantId: string): Promise<ApiResponse<{ today: number; yesterday: number; total: number; changePct: number }>> {
+  async getVisitStats(tenantId: string): Promise<ApiResponse<VisitStats>> {
     return this.request(`/tenants/${tenantId}/stats/visits`)
   }
 
@@ -278,8 +281,11 @@ class ApiService {
     return this.request(`/public/${subdomain}`)
   }
 
-  async recordPublicView(subdomain: string, listId?: string): Promise<ApiResponse<{ ok: boolean }>> {
-    const q = listId ? `?list=${encodeURIComponent(listId)}` : ''
+  async recordPublicView(subdomain: string, listId?: string, source?: string): Promise<ApiResponse<{ ok: boolean }>> {
+    const params = new URLSearchParams()
+    if (listId) params.set('list', listId)
+    if (source) params.set('source', source)
+    const q = params.toString() ? `?${params.toString()}` : ''
     return this.request(`/public/${subdomain}/view${q}`, { method: 'POST' })
   }
 

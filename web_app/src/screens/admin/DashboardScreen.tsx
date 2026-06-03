@@ -5,11 +5,14 @@ import { selectTenant } from '../../store/slices/authSlice'
 import { fetchProducts, selectProducts, selectProductsLoading } from '../../store/slices/productsSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
 import type { Product } from '../../types'
-import api from '../../services/api'
+import api, { type VisitStats } from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
+import { QrCode } from './crm/QrCode'
 import { tone, gradient, type Tone } from './crm/theme'
 import { catTone, catIcon, formatPrice, availKey, STOCK_LABEL, STOCK_TONE, displayCategory } from './crm/productFormat'
+
+const FAVICON = '/miprecio-favicon.png'
 
 const quickActions: { icon: IconName; title: string; desc: string }[] = [
   { icon: 'plus', title: 'Nuevo producto', desc: 'Agregalo al catálogo' },
@@ -25,23 +28,6 @@ const activity: { icon: IconName; tone: Tone; text: string; time: string }[] = [
   { icon: 'upload', tone: 'green', text: '24 productos importados desde Excel', time: 'hace 3 h' },
 ]
 
-/* ── QR placeholder (deterministic checker pattern) ──────────────── */
-function QrGraphic({ className = '' }: { className?: string }) {
-  const cells = Array.from({ length: 13 * 13 }, (_, i) => {
-    const r = Math.floor(i / 13)
-    const c = i % 13
-    const finder = (r < 4 && c < 4) || (r < 4 && c > 8) || (r > 8 && c < 4)
-    return finder || (r * 7 + c * 13 + r * c) % 3 === 0
-  })
-  return (
-    <div className={`grid grid-cols-[repeat(13,minmax(0,1fr))] gap-px ${className}`}>
-      {cells.map((on, i) => (
-        <span key={i} className={on ? 'bg-[#0F172A]' : 'bg-white'} style={{ aspectRatio: '1' }} />
-      ))}
-    </div>
-  )
-}
-
 /* ── Screen ──────────────────────────────────────────────────────── */
 export function DashboardScreen() {
   const dispatch = useAppDispatch()
@@ -50,7 +36,7 @@ export function DashboardScreen() {
   const products = useAppSelector(selectProducts)
   const loading = useAppSelector(selectProductsLoading)
   const lists = useAppSelector(selectLists)
-  const [visits, setVisits] = useState<{ today: number; changePct: number } | null>(null)
+  const [visits, setVisits] = useState<VisitStats | null>(null)
   const [search, setSearch] = useState('')
 
   useEffect(() => {
@@ -64,7 +50,7 @@ export function DashboardScreen() {
     if (!tenant?.id) return
     let cancelled = false
     api.getVisitStats(tenant.id).then((res) => {
-      if (!cancelled && res.data) setVisits({ today: res.data.today, changePct: res.data.changePct })
+      if (!cancelled && res.data) setVisits(res.data)
     })
     return () => { cancelled = true }
   }, [tenant?.id])
@@ -81,23 +67,22 @@ export function DashboardScreen() {
   const listPath = `/p/${tenant?.subdomain || 'mi-negocio'}${principalList ? `/${principalList.slug || principalList.id}` : ''}`
   const publicUrlDisplay = `miprecio.app${listPath}`
   const publicUrlFull = `${window.location.origin}${listPath}`
+  const qrUrl = `${publicUrlFull}?src=qr` // tagged so scans are counted separately from link visits
   const [copied, setCopied] = useState(false)
   const copyUrl = () => { navigator.clipboard?.writeText(publicUrlFull); setCopied(true); setTimeout(() => setCopied(false), 1500) }
 
   const goProducts = () => navigate('/admin/items')
+  const goQr = () => navigate('/admin/qr')
 
+  const qrStats = visits?.qr
+  const scans = qrStats?.total ?? 0
+  const scanPct = qrStats?.changePct ?? 0
   const kpis: { icon: IconName; iconTone: Tone; value: string | number; label: string; tag: string; tagTone: Tone; note: string }[] = [
     { icon: 'package', iconTone: 'violet', value: total, label: 'Productos', tag: `${available} disp.`, tagTone: 'green', note: 'En tu catálogo' },
     { icon: 'list-checks', iconTone: 'violet', value: lists.length, label: 'Listas', tag: `${activeLists} activas`, tagTone: 'green', note: 'Compartibles por link y QR' },
-    { icon: 'qr-code', iconTone: 'sky', value: '1.284', label: 'Escaneos QR', tag: '+19%', tagTone: 'green', note: '+212 vs semana pasada' },
+    { icon: 'qr-code', iconTone: 'sky', value: new Intl.NumberFormat('es-AR').format(scans), label: 'Escaneos QR', tag: `${scanPct >= 0 ? '+' : ''}${scanPct}%`, tagTone: scanPct >= 0 ? 'green' : 'red', note: `${qrStats?.today ?? 0} hoy · ${qrStats?.yesterday ?? 0} ayer` },
     { icon: 'circle-x', iconTone: 'red', value: unavailable, label: 'No disponibles', tag: 'Revisar', tagTone: 'red', note: 'Ocultos en tus listas' },
   ]
-
-  const shareAction = (
-    <button type="button" className={`flex h-10 items-center gap-2 rounded-full px-4 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] ${gradient}`}>
-      <Icon name="share-2" size={16} /> Compartir lista
-    </button>
-  )
 
   return (
     <CrmLayout
@@ -108,7 +93,6 @@ export function DashboardScreen() {
       searchValue={search}
       onSearchChange={setSearch}
       onSearchSubmit={(q) => navigate(q.trim() ? `/admin/items?q=${encodeURIComponent(q.trim())}` : '/admin/items')}
-      actions={shareAction}
     >
       <div className="flex min-w-[900px] flex-col gap-6 p-8">
         {/* Welcome row */}
@@ -118,13 +102,13 @@ export function DashboardScreen() {
               <p className="text-xs font-bold tracking-[0.2em] text-white/70">NOVEDAD</p>
               <h2 className="text-3xl font-extrabold leading-tight">Compartí tu catálogo en un escaneo.</h2>
               <p className="text-sm font-medium leading-relaxed text-white/80">Generá códigos QR personalizados con tu logo y actualizalos sin reimprimir.</p>
-              <button type="button" className="mt-1 flex h-11 w-fit items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#7C3AED] hover:bg-violet-50">
-                <Icon name="plus" size={16} /> Crear QR
+              <button type="button" onClick={goQr} className="mt-1 flex h-11 w-fit items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#7C3AED] hover:bg-violet-50">
+                <Icon name="qr-code" size={16} /> Crear QR
               </button>
             </div>
-            <div className="flex h-[140px] w-[140px] shrink-0 items-center justify-center rounded-2xl bg-white p-3.5">
-              <QrGraphic className="h-full w-full" />
-            </div>
+            <button type="button" onClick={goQr} title="Ver códigos QR" className="flex h-[140px] w-[140px] shrink-0 items-center justify-center rounded-2xl bg-white p-3.5">
+              <QrCode value={qrUrl} size={120} fg="#0F172A" logoUrl={FAVICON} className="h-full w-full object-contain" />
+            </button>
           </div>
 
           <div className="flex w-[320px] shrink-0 flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)]">
@@ -172,7 +156,7 @@ export function DashboardScreen() {
         <div className="flex gap-5">
           <RecentProducts products={products} total={total} loading={loading} search={search} onNew={goProducts} onViewAll={goProducts} />
           <div className="flex w-[380px] shrink-0 flex-col gap-5">
-            <QuickActions onNew={goProducts} />
+            <QuickActions onNew={goProducts} onCreateList={() => navigate('/admin/lists')} onQr={goQr} />
             <ActivityFeed />
           </div>
         </div>
@@ -281,13 +265,18 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll }: 
   )
 }
 
-function QuickActions({ onNew }: { onNew: () => void }) {
+function QuickActions({ onNew, onCreateList, onQr }: { onNew: () => void; onCreateList: () => void; onQr: () => void }) {
+  const handlers: Record<string, () => void> = {
+    'Nuevo producto': onNew,
+    'Crear lista': onCreateList,
+    'Compartir QR': onQr,
+  }
   return (
     <div className="flex flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-[22px] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)]">
       <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Acciones rápidas</h3>
       <div className="grid grid-cols-2 gap-3">
         {quickActions.map((a) => (
-          <button key={a.title} type="button" onClick={a.title === 'Nuevo producto' ? onNew : undefined} className="flex flex-col gap-2.5 rounded-2xl border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] p-[18px] text-left hover:opacity-80">
+          <button key={a.title} type="button" onClick={handlers[a.title]} className="flex flex-col gap-2.5 rounded-2xl border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] p-[18px] text-left hover:opacity-80">
             <span className={`flex h-9 w-9 items-center justify-center rounded-[10px] text-white ${gradient}`}><Icon name={a.icon} /></span>
             <span className="text-[13px] font-bold text-[var(--dash-text)]">{a.title}</span>
             <span className="text-[11px] font-medium text-[var(--dash-muted)]">{a.desc}</span>

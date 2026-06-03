@@ -86,6 +86,21 @@ function useAccount() {
   return { name, initials, plan }
 }
 
+/* Deterministic QR-looking pattern (placeholder graphic). */
+export function QrGraphic({ className = '', seed = 0 }: { className?: string; seed?: number }) {
+  const cells = Array.from({ length: 13 * 13 }, (_, i) => {
+    const r = Math.floor(i / 13)
+    const c = i % 13
+    const finder = (r < 4 && c < 4) || (r < 4 && c > 8) || (r > 8 && c < 4)
+    return finder || (r * 7 + c * 13 + r * c + seed * 3) % 3 === 0
+  })
+  return (
+    <div className={`grid grid-cols-[repeat(13,minmax(0,1fr))] gap-px ${className}`}>
+      {cells.map((on, i) => <span key={i} className={on ? 'bg-[#0F172A]' : 'bg-white'} style={{ aspectRatio: '1' }} />)}
+    </div>
+  )
+}
+
 /* ── User menu with smooth dropdown ──────────────────────────────── */
 export function UserMenu() {
   const dispatch = useAppDispatch()

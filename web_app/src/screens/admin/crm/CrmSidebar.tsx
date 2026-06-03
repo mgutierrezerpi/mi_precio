@@ -1,17 +1,18 @@
 import { Link } from 'react-router-dom'
+import { useTheme } from '../../../hooks/useTheme'
 import { Icon, type IconName } from './ui'
 import { tone, gradient } from './theme'
 
 const navMain: { icon: IconName; label: string; to?: string; badge?: string }[] = [
   { icon: 'layout-dashboard', label: 'Inicio', to: '/admin' },
   { icon: 'package', label: 'Productos', to: '/admin/items' },
-  { icon: 'list-checks', label: 'Listas de precios', to: '/admin/lists', badge: '3' },
-  { icon: 'qr-code', label: 'Códigos QR' },
-  { icon: 'users', label: 'Clientes' },
-  { icon: 'bar-chart', label: 'Reportes' },
+  { icon: 'list-checks', label: 'Listas de precios', to: '/admin/lists' },
+  { icon: 'qr-code', label: 'Códigos QR', to: '/admin/qr' },
+  { icon: 'users', label: 'Clientes', to: '/admin/clientes' },
+  { icon: 'bar-chart', label: 'Reportes', to: '/admin/reportes' },
 ]
 const navSettings: { icon: IconName; label: string; to?: string }[] = [
-  { icon: 'user-plus', label: 'Equipo' },
+  { icon: 'user-plus', label: 'Equipo', to: '/admin/equipo' },
   { icon: 'settings', label: 'Configuración', to: '/admin/settings' },
 ]
 
@@ -33,10 +34,11 @@ function NavItem({ icon, label, to, badge, active }: { icon: IconName; label: st
 
 /** Shared CRM sidebar. `active` matches a nav item label. */
 export function CrmSidebar({ active }: { active: string }) {
+  const { isDark } = useTheme()
   return (
     <aside className="flex w-[260px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[var(--dash-surface)] p-5">
       <Link to="/" className="flex items-center">
-        <img src="/miprecio-logo-pencil.png" alt="MiPrecio" className="h-12 w-auto" />
+        <img src={isDark ? '/miprecio-logo-white-pencil.png' : '/miprecio-logo-pencil.png'} alt="MiPrecio" className="h-12 w-auto" />
       </Link>
       <p className="mt-5 text-xs font-medium text-[var(--dash-muted)]">CRM · Comercial</p>
 

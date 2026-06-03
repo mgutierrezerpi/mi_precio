@@ -9,7 +9,11 @@ import { PriceListsScreen } from './screens/admin/PriceListsScreen'
 import { ListEditScreen } from './screens/admin/ListEditScreen'
 import { ProductsScreen } from './screens/admin/ProductsScreen'
 import { CategoriesScreen } from './screens/admin/CategoriesScreen'
-import { SettingsScreen } from './screens/admin/SettingsScreen'
+import { CodesScreen } from './screens/admin/CodesScreen'
+import { CustomersScreen } from './screens/admin/CustomersScreen'
+import { ReportsScreen } from './screens/admin/ReportsScreen'
+import { TeamScreen } from './screens/admin/TeamScreen'
+import { SettingsCrmScreen } from './screens/admin/SettingsCrmScreen'
 
 export const router = createBrowserRouter([
   // Public routes
@@ -54,15 +58,31 @@ export const router = createBrowserRouter([
         element: <PriceListsScreen />,
       },
       {
+        path: 'qr',
+        element: <CodesScreen />,
+      },
+      {
+        path: 'clientes',
+        element: <CustomersScreen />,
+      },
+      {
+        path: 'reportes',
+        element: <ReportsScreen />,
+      },
+      {
+        path: 'equipo',
+        element: <TeamScreen />,
+      },
+      {
+        path: 'settings',
+        element: <SettingsCrmScreen />,
+      },
+      {
         element: <MinimalLayout />,
         children: [
           {
             path: 'lists/:id',
             element: <ListEditScreen />,
-          },
-          {
-            path: 'settings',
-            element: <SettingsScreen />,
           },
         ],
       },
