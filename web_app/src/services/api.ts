@@ -210,6 +210,11 @@ class ApiService {
     })
   }
 
+  // Stats
+  async getVisitStats(tenantId: string): Promise<ApiResponse<{ today: number; yesterday: number; total: number; changePct: number }>> {
+    return this.request(`/tenants/${tenantId}/stats/visits`)
+  }
+
   // Product endpoints (tenant-level catalog)
   async getProducts(tenantId: string): Promise<ApiResponse<Product[]>> {
     return this.request(`/tenants/${tenantId}/products`)
@@ -271,6 +276,11 @@ class ApiService {
   // Public endpoints
   async getPublicMenu(subdomain: string): Promise<ApiResponse<{ tenant: Tenant; lists: PriceList[] }>> {
     return this.request(`/public/${subdomain}`)
+  }
+
+  async recordPublicView(subdomain: string, listId?: string): Promise<ApiResponse<{ ok: boolean }>> {
+    const q = listId ? `?list=${encodeURIComponent(listId)}` : ''
+    return this.request(`/public/${subdomain}/view${q}`, { method: 'POST' })
   }
 
   // Import endpoints

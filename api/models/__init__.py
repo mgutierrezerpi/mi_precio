@@ -7,13 +7,14 @@ from models.list_version import ListVersion as ListVersion
 from models.item import Item as Item
 from models.product import Product as Product
 from models.category import Category as Category
+from models.page_view import PageView as PageView
 
 # Resolve deferred foreign key
 Item.list_version.set_model(ListVersion)
 
 
 def create_tables():
-    db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item, Product, Category])
+    db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item, Product, Category, PageView])
     ensure_columns()
 
 

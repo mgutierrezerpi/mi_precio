@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
 import { fetchProducts, selectProducts, selectProductsLoading } from '../../store/slices/productsSlice'
+import { fetchLists, selectLists } from '../../store/slices/menuSlice'
 import type { Product } from '../../types'
+import api from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { tone, gradient, type Tone } from './crm/theme'
@@ -47,21 +49,46 @@ export function DashboardScreen() {
   const tenant = useAppSelector(selectTenant)
   const products = useAppSelector(selectProducts)
   const loading = useAppSelector(selectProductsLoading)
+  const lists = useAppSelector(selectLists)
+  const [visits, setVisits] = useState<{ today: number; changePct: number } | null>(null)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
-    if (tenant?.id) dispatch(fetchProducts(tenant.id))
+    if (tenant?.id) {
+      dispatch(fetchProducts(tenant.id))
+      dispatch(fetchLists(tenant.id))
+    }
   }, [dispatch, tenant?.id])
+
+  useEffect(() => {
+    if (!tenant?.id) return
+    let cancelled = false
+    api.getVisitStats(tenant.id).then((res) => {
+      if (!cancelled && res.data) setVisits({ today: res.data.today, changePct: res.data.changePct })
+    })
+    return () => { cancelled = true }
+  }, [tenant?.id])
 
   const { total, available, unavailable } = useMemo(() => {
     const av = products.filter((p) => p.available).length
     return { total: products.length, available: av, unavailable: products.length - av }
   }, [products])
 
+  const activeLists = useMemo(() => lists.filter((l) => l.published).length, [lists])
+
+  // Public URL points to the list marked as principal (or the first published one).
+  const principalList = useMemo(() => lists.find((l) => l.showOnIndex) || lists.find((l) => l.published) || null, [lists])
+  const listPath = `/p/${tenant?.subdomain || 'mi-negocio'}${principalList ? `/${principalList.slug || principalList.id}` : ''}`
+  const publicUrlDisplay = `miprecio.app${listPath}`
+  const publicUrlFull = `${window.location.origin}${listPath}`
+  const [copied, setCopied] = useState(false)
+  const copyUrl = () => { navigator.clipboard?.writeText(publicUrlFull); setCopied(true); setTimeout(() => setCopied(false), 1500) }
+
   const goProducts = () => navigate('/admin/items')
 
   const kpis: { icon: IconName; iconTone: Tone; value: string | number; label: string; tag: string; tagTone: Tone; note: string }[] = [
     { icon: 'package', iconTone: 'violet', value: total, label: 'Productos', tag: `${available} disp.`, tagTone: 'green', note: 'En tu catálogo' },
-    { icon: 'list-checks', iconTone: 'violet', value: '18', label: 'Listas compartidas', tag: 'Nuevas 3', tagTone: 'violet', note: '3 activas hoy' },
+    { icon: 'list-checks', iconTone: 'violet', value: lists.length, label: 'Listas', tag: `${activeLists} activas`, tagTone: 'green', note: 'Compartibles por link y QR' },
     { icon: 'qr-code', iconTone: 'sky', value: '1.284', label: 'Escaneos QR', tag: '+19%', tagTone: 'green', note: '+212 vs semana pasada' },
     { icon: 'circle-x', iconTone: 'red', value: unavailable, label: 'No disponibles', tag: 'Revisar', tagTone: 'red', note: 'Ocultos en tus listas' },
   ]
@@ -77,7 +104,10 @@ export function DashboardScreen() {
       active="Inicio"
       title="Inicio"
       subtitle={`Buenos días — ${unavailable > 0 ? `${unavailable} producto${unavailable === 1 ? '' : 's'} no disponible${unavailable === 1 ? '' : 's'}.` : 'tu catálogo está al día.'}`}
-      searchPlaceholder="Buscar productos, listas, clientes…"
+      searchPlaceholder="Buscar productos…"
+      searchValue={search}
+      onSearchChange={setSearch}
+      onSearchSubmit={(q) => navigate(q.trim() ? `/admin/items?q=${encodeURIComponent(q.trim())}` : '/admin/items')}
       actions={shareAction}
     >
       <div className="flex min-w-[900px] flex-col gap-6 p-8">
@@ -99,19 +129,19 @@ export function DashboardScreen() {
 
           <div className="flex w-[320px] shrink-0 flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)]">
             <p className="text-lg font-extrabold text-[var(--dash-text)]">Tu lista pública</p>
-            <div className="flex h-[42px] items-center gap-2.5 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 text-[var(--dash-link)]">
+            <button type="button" onClick={copyUrl} title="Copiar enlace" className="flex h-[42px] items-center gap-2.5 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 text-left text-[var(--dash-link)] hover:opacity-90">
               <Icon name="link-2" size={16} />
-              <span className="flex-1 truncate text-[13px] font-semibold">miprecio.app/p/{tenant?.subdomain || 'mi-negocio'}</span>
-              <Icon name="copy" size={16} className="cursor-pointer" />
-            </div>
+              <span className="flex-1 truncate text-[13px] font-semibold">{publicUrlDisplay}</span>
+              <Icon name={copied ? 'circle-check' : 'copy'} size={16} />
+            </button>
             <div className="flex gap-2">
               <div className="flex flex-1 items-center gap-2 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 py-2 text-[var(--dash-text2)]">
                 <Icon name="eye" size={14} className="text-[var(--dash-link)]" />
-                <span className="text-xs font-bold">Hoy: 248</span>
+                <span className="text-xs font-bold">Hoy: {visits?.today ?? 0}</span>
               </div>
-              <div className="flex flex-1 items-center gap-2 rounded-[10px] px-3 py-2" style={tone('green')}>
-                <Icon name="trending-up" size={14} />
-                <span className="text-xs font-bold">+18% vs ayer</span>
+              <div className="flex flex-1 items-center gap-2 rounded-[10px] px-3 py-2" style={tone((visits?.changePct ?? 0) >= 0 ? 'green' : 'red')}>
+                <Icon name="trending-up" size={14} className={(visits?.changePct ?? 0) < 0 ? 'scale-y-[-1]' : ''} />
+                <span className="text-xs font-bold">{(visits?.changePct ?? 0) >= 0 ? '+' : ''}{visits?.changePct ?? 0}% vs ayer</span>
               </div>
             </div>
           </div>
@@ -140,7 +170,7 @@ export function DashboardScreen() {
 
         {/* Bottom row */}
         <div className="flex gap-5">
-          <RecentProducts products={products} total={total} loading={loading} onNew={goProducts} onViewAll={goProducts} />
+          <RecentProducts products={products} total={total} loading={loading} search={search} onNew={goProducts} onViewAll={goProducts} />
           <div className="flex w-[380px] shrink-0 flex-col gap-5">
             <QuickActions onNew={goProducts} />
             <ActivityFeed />
@@ -153,13 +183,16 @@ export function DashboardScreen() {
 
 type Tab = 'all' | 'available' | 'unavailable'
 
-function RecentProducts({ products, total, loading, onNew, onViewAll }: { products: Product[]; total: number; loading: boolean; onNew: () => void; onViewAll: () => void }) {
+function RecentProducts({ products, total, loading, search, onNew, onViewAll }: { products: Product[]; total: number; loading: boolean; search: string; onNew: () => void; onViewAll: () => void }) {
   const [tab, setTab] = useState<Tab>('all')
   const recent = useMemo(() => {
-    const sorted = [...products].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
+    const q = search.trim().toLowerCase()
+    const sorted = [...products]
+      .filter((p) => !q || [p.name, p.sku, p.category].some((v) => v?.toLowerCase().includes(q)))
+      .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
     const filtered = tab === 'all' ? sorted : sorted.filter((p) => (tab === 'available' ? p.available : !p.available))
     return filtered.slice(0, 5)
-  }, [products, tab])
+  }, [products, tab, search])
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'all', label: 'Todos' },

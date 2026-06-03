@@ -8,12 +8,14 @@ interface CrmTopbarProps {
   /** Controlled search value + handler. When omitted the input is decorative. */
   searchValue?: string
   onSearchChange?: (value: string) => void
+  /** Called when the user presses Enter in the search box (e.g. global search). */
+  onSearchSubmit?: (value: string) => void
   /** Optional action button(s) rendered before the theme toggle (e.g. "Compartir lista"). */
   actions?: React.ReactNode
 }
 
 /** Shared CRM topbar: title + search + theme toggle + notifications + user menu. */
-export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, actions }: CrmTopbarProps) {
+export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions }: CrmTopbarProps) {
   const { isDark, toggleTheme } = useTheme()
 
   return (
@@ -29,8 +31,9 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
           placeholder={searchPlaceholder}
           value={searchValue ?? ''}
           onChange={(e) => onSearchChange?.(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && onSearchSubmit) { e.preventDefault(); onSearchSubmit(searchValue ?? '') } }}
           readOnly={!onSearchChange}
-          className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-[var(--dash-text)] outline-none placeholder:text-[var(--dash-muted)]"
+          className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] font-medium text-[var(--dash-text)] outline-none placeholder:text-[var(--dash-muted)] focus:border-0 focus:outline-none focus:ring-0"
         />
       </label>
       <button

@@ -1,10 +1,15 @@
 from fastapi import APIRouter, HTTPException, Depends
-from lib.ctx import identity
+from lib.ctx import identity, analytics
 from controllers.deps import get_current_user
 from controllers.input_types import CreateTenant, UpdateTenant
 from views import TenantView
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
+
+
+@router.get("/{tenant_id}/stats/visits")
+def visit_stats_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
+    return analytics.visit_stats(tenant_id)
 
 
 @router.get("")

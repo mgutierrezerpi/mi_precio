@@ -58,7 +58,7 @@ export function ProductsScreen() {
   const loading = useAppSelector(selectProductsLoading)
 
   const [searchParams] = useSearchParams()
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(searchParams.get('q') || '')
   const [status, setStatus] = useState<Status>('all')
   const [category, setCategory] = useState<string>(searchParams.get('cat') || 'all')
   const [page, setPage] = useState(1)

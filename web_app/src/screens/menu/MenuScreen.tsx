@@ -16,6 +16,9 @@ interface PublicMenuData {
   lists: PublicList[]
 }
 
+// Dedupe view records within a short window (survives StrictMode remounts).
+const recentViews = new Map<string, number>()
+
 export function MenuScreen() {
   const { subdomain, listId } = useParams<{ subdomain: string; listId?: string }>()
   const navigate = useNavigate()
@@ -90,6 +93,18 @@ export function MenuScreen() {
 
     fetchPublicData()
   }, [subdomain])
+
+  // Record one visit per opened page. Module-level time-window guard survives
+  // StrictMode remounts (which reset refs) while still counting real re-opens.
+  useEffect(() => {
+    if (!subdomain) return
+    const key = `${subdomain}/${listId ?? ''}`
+    const now = Date.now()
+    const last = recentViews.get(key)
+    if (last && now - last < 3000) return
+    recentViews.set(key, now)
+    api.recordPublicView(subdomain, listId)
+  }, [subdomain, listId])
 
   const formatPrice = (price: string) => {
     const value = parseFloat(price)
