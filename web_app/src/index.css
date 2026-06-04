@@ -765,3 +765,21 @@ input, textarea, select, button, a {
   --color-border: #d5ddd2;
   --color-border-light: #c5cdc2;
 }
+
+/* ── Landing: smooth interactions ─────────────────────────────────── */
+.landing-page a,
+.landing-page button,
+.landing-page summary {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Respect users who prefer less motion. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  .landing-page *,
+  .landing-page *::before,
+  .landing-page *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

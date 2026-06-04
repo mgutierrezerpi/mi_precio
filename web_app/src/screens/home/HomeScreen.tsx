@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectIsAuthenticated } from '../../store/slices/authSlice'
@@ -104,8 +104,16 @@ export function HomeScreen() {
     setAuthOpen(true)
   }
 
+  // Smooth anchor scrolling while the landing is shown (scoped, restored on leave).
+  useEffect(() => {
+    const root = document.documentElement
+    const prev = root.style.scrollBehavior
+    root.style.scrollBehavior = 'smooth'
+    return () => { root.style.scrollBehavior = prev }
+  }, [])
+
   return (
-    <main className="min-h-screen bg-white font-sans text-slate-900">
+    <main className="landing-page min-h-screen bg-white font-sans text-slate-900">
       <Navbar onAuth={openAuth} isAuthenticated={isAuthenticated} />
       <Hero onAuth={openAuth} />
       <Features />
@@ -125,6 +133,30 @@ export function HomeScreen() {
         }}
       />
     </main>
+  )
+}
+
+/** Fades + slides its content up the first time it scrolls into view. */
+function Reveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setShown(true); io.disconnect() }
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  return (
+    <div
+      ref={ref}
+      style={{ transitionDelay: shown ? `${delay}ms` : '0ms' }}
+      className={`transition-all duration-700 ease-out ${shown ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'} ${className}`}
+    >
+      {children}
+    </div>
   )
 }
 
@@ -168,7 +200,7 @@ function Navbar({ onAuth, isAuthenticated }: { onAuth: OpenAuth; isAuthenticated
 
 function Hero({ onAuth }: { onAuth: OpenAuth }) {
   return (
-    <section id="producto" className="bg-[linear-gradient(135deg,#2E1065_0%,#5B21B6_45%,#7C3AED_85%,#A855F7_100%)] px-5 py-20 md:px-8 md:py-28">
+    <section id="producto" className="scroll-mt-24 bg-[linear-gradient(135deg,#2E1065_0%,#5B21B6_45%,#7C3AED_85%,#A855F7_100%)] px-5 py-20 md:px-8 md:py-28">
       <div className="mx-auto grid max-w-[1200px] items-center gap-16 lg:grid-cols-[560px_1fr]">
         <div className="flex flex-col gap-6">
           <span className="w-fit rounded-full border border-white/40 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-white">
@@ -218,10 +250,10 @@ function HeroMockup() {
 
 function Features() {
   return (
-    <section id="funciones" className="bg-[#F5F3FF] px-5 py-24 md:px-8">
+    <section id="funciones" className="scroll-mt-24 bg-[#F5F3FF] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead eyebrow="Funciones" title="Todo lo que tu negocio necesita para vender mejor." />
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Reveal className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {features.map(({ Icon, color, bg, title, desc }) => (
             <article key={title} className="flex flex-col gap-3.5 rounded-[20px] border border-[#E2E8F0] bg-white p-6 shadow-[0_4px_16px_-6px_rgba(15,23,42,0.08)]">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: bg, color }}>
@@ -231,7 +263,7 @@ function Features() {
               <p className="text-sm leading-relaxed text-[#475569]">{desc}</p>
             </article>
           ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   )
@@ -242,7 +274,7 @@ function HowItWorks() {
     <section className="bg-[#EDE9FE] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead eyebrow="Cómo funciona" title="Empezá en 3 pasos." eyebrowColor="text-[#6D28D9]" />
-        <div className="grid gap-6 md:grid-cols-3">
+        <Reveal className="grid gap-6 md:grid-cols-3">
           {steps.map(([number, title, desc]) => (
             <article key={number} className="flex flex-col gap-4 rounded-3xl border border-[#E2E8F0] bg-white p-8 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.08)]">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#A855F7] text-2xl font-extrabold text-white shadow-[0_8px_18px_-4px_rgba(124,58,237,0.4)]">{number}</div>
@@ -250,7 +282,7 @@ function HowItWorks() {
               <p className="leading-relaxed text-[#475569]">{desc}</p>
             </article>
           ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   )
@@ -260,7 +292,7 @@ function ProductPreview() {
   const checks = ['Sin necesidad de descargar apps.', 'Compatible con móvil y escritorio.', 'Personalizá colores y logo de tu marca.']
   return (
     <section className="bg-[linear-gradient(135deg,#FAF5FF_0%,#EDE9FE_100%)] px-5 py-24 md:px-8">
-      <div className="mx-auto grid max-w-[1200px] items-center gap-20 lg:grid-cols-[0.8fr_1fr]">
+      <Reveal className="mx-auto grid max-w-[1200px] items-center gap-20 lg:grid-cols-[0.8fr_1fr]">
         <PhoneMockup />
         <div className="flex flex-col gap-5">
           <span className="w-fit rounded-full bg-[#EDE9FE] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-[#7C3AED]">Para tus clientes</span>
@@ -276,7 +308,7 @@ function ProductPreview() {
             ))}
           </div>
         </div>
-      </div>
+      </Reveal>
     </section>
   )
 }
@@ -296,14 +328,14 @@ function Stats() {
     <section className="bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-5 py-20 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead eyebrow="Resultados" title="Negocios que ya tienen su lista de precios online." eyebrowColor="text-[#C7D2FE]" inverted />
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Reveal className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map(([value, label]) => (
             <div key={label} className="flex flex-col gap-2 rounded-[20px] border border-white/20 bg-white/10 p-6">
               <p className="text-[44px] font-black leading-none text-white">{value}</p>
               <p className="text-sm font-medium text-[#E0E7FF]">{label}</p>
             </div>
           ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   )
@@ -314,7 +346,7 @@ function Testimonials() {
     <section className="bg-[#FAF5FF] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead eyebrow="Testimonios" title="Lo que dicen quienes ya usan MiPrecio." />
-        <div className="grid gap-6 lg:grid-cols-3">
+        <Reveal className="grid gap-6 lg:grid-cols-3">
           {testimonials.map((t) => (
             <article key={t.name} className="flex flex-col gap-5 rounded-3xl border border-[#E2E8F0] bg-[#F8FAFC] px-7 py-8">
               <div className="flex gap-1 text-[#F59E0B]">
@@ -330,7 +362,7 @@ function Testimonials() {
               </div>
             </article>
           ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   )
@@ -338,10 +370,10 @@ function Testimonials() {
 
 function Pricing({ onAuth }: { onAuth: OpenAuth }) {
   return (
-    <section id="precios" className="bg-[#EDE9FE] px-5 py-24 md:px-8">
+    <section id="precios" className="scroll-mt-24 bg-[#EDE9FE] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead eyebrow="Precios" title="Planes simples, pensados para pymes." subtitle="Probá MiPrecio gratis 14 días. Sin tarjeta de crédito." />
-        <div className="grid items-stretch gap-6 lg:grid-cols-3">
+        <Reveal className="grid items-stretch gap-6 lg:grid-cols-3">
           {plans.map((plan) => {
             const dark = plan.highlighted
             return (
@@ -371,28 +403,36 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
               </article>
             )
           })}
-        </div>
+        </Reveal>
       </div>
     </section>
   )
 }
 
 function Faq() {
+  const [open, setOpen] = useState<number | null>(0)
   return (
-    <section id="faq" className="bg-[#F5F3FF] px-5 py-24 md:px-8">
+    <section id="faq" className="scroll-mt-24 bg-[#F5F3FF] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-10">
         <SectionHead eyebrow="Preguntas frecuentes" title="Todo lo que necesitás saber." />
-        <div className="mx-auto flex w-full max-w-[800px] flex-col gap-3.5">
-          {faqs.map(([q, a], i) => (
-            <details key={q} className="group rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] px-6 py-5" open={i === 0}>
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-bold text-[#0F172A]">
-                {q}
-                <Plus size={20} className="shrink-0 text-[#7C3AED] transition-transform group-open:rotate-45" />
-              </summary>
-              <p className="mt-3 leading-relaxed text-[#475569]">{a}</p>
-            </details>
-          ))}
-        </div>
+        <Reveal className="mx-auto flex w-full max-w-[800px] flex-col gap-3.5">
+          {faqs.map(([q, a], i) => {
+            const isOpen = open === i
+            return (
+              <div key={q} className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] px-6 py-5">
+                <button type="button" onClick={() => setOpen(isOpen ? null : i)} aria-expanded={isOpen} className="flex w-full items-center justify-between gap-3 text-left text-base font-bold text-[#0F172A]">
+                  {q}
+                  <Plus size={20} className={`shrink-0 text-[#7C3AED] transition-transform duration-300 ${isOpen ? 'rotate-45' : ''}`} />
+                </button>
+                <div className={`grid transition-all duration-300 ease-out ${isOpen ? 'mt-3 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                  <div className="overflow-hidden">
+                    <p className="leading-relaxed text-[#475569]">{a}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </Reveal>
       </div>
     </section>
   )
@@ -401,7 +441,7 @@ function Faq() {
 function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
   return (
     <section className="bg-[#EDE9FE] px-5 py-20 md:px-8">
-      <div className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 rounded-[32px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-8 py-16 text-center shadow-[0_32px_80px_-20px_rgba(124,58,237,0.5)] md:px-20">
+      <Reveal className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 rounded-[32px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-8 py-16 text-center shadow-[0_32px_80px_-20px_rgba(124,58,237,0.5)] md:px-20">
         <h2 className="text-4xl font-black leading-tight tracking-tight text-white md:text-[46px]">Tu lista de precios, lista en 5 minutos.</h2>
         <p className="max-w-2xl text-[17px] font-medium text-[#E0E7FF]">Creá tu cuenta gratis hoy y empezá a compartir tu catálogo con un link o un QR.</p>
         <div className="mt-3 flex flex-wrap justify-center gap-3.5">
@@ -410,7 +450,7 @@ function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
           </button>
           <a href="mailto:hola@miprecio.app" className="flex h-[52px] items-center rounded-[14px] border border-white/40 px-7 text-[15px] font-bold text-white hover:bg-white/10">Hablar con ventas</a>
         </div>
-      </div>
+      </Reveal>
     </section>
   )
 }
