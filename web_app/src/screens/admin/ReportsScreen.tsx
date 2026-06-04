@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
+import type { Activity } from '../../types'
 import api, { type ReportData } from '../../services/api'
 import { formatPrice } from './crm/productFormat'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
+import { ActivityRow } from './crm/activity'
 import { tone, gradient, type Tone } from './crm/theme'
 
 const RANGES: { days: number; label: string }[] = [
@@ -113,8 +115,46 @@ export function ReportsScreen() {
             <Channels data={data} loading={loading} />
           </div>
         </div>
+
+        <ActivityLog tenantId={tenant?.id} />
       </div>
     </CrmLayout>
+  )
+}
+
+/** Full activity feed for the tenant, in a fixed-height scrollable panel. */
+function ActivityLog({ tenantId }: { tenantId?: string }) {
+  const [items, setItems] = useState<Activity[]>([])
+  const [loaded, setLoaded] = useState(false)
+
+  // Poll so a teammate's actions appear live, same cadence as the dashboard feed.
+  useEffect(() => {
+    if (!tenantId) return
+    let cancelled = false
+    const load = () => api.getActivity(tenantId).then((res) => {
+      if (!cancelled && res.data) { setItems(res.data); setLoaded(true) }
+    })
+    load()
+    const id = setInterval(load, 7000)
+    return () => { cancelled = true; clearInterval(id) }
+  }, [tenantId])
+
+  return (
+    <div className="flex flex-col gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Actividad reciente</h3>
+        <span className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--dash-muted)]">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#10B981]" /> En vivo
+        </span>
+      </div>
+      {loaded && items.length === 0 ? (
+        <p className="py-6 text-center text-xs font-medium text-[var(--dash-muted)]">Todavía no hay actividad.</p>
+      ) : (
+        <div className="flex max-h-80 flex-col gap-3.5 overflow-y-auto pr-1">
+          {items.map((a) => <ActivityRow key={a.id} activity={a} />)}
+        </div>
+      )}
+    </div>
   )
 }
 
