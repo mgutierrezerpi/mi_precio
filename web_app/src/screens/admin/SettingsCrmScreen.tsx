@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant, setTenant, selectUser, selectIsAdmin, selectIsOwner, logout } from '../../store/slices/authSlice'
 import type { Tenant, Role, NotifPrefs, PlanId, PlanInfo } from '../../types'
 import api from '../../services/api'
 import { useT, type TFn } from '../../lib/i18n'
+import { PLANS, planById } from '../../lib/plans'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { gradient, tone } from './crm/theme'
@@ -60,7 +61,12 @@ export function SettingsCrmScreen() {
   const user = useAppSelector(selectUser)
   const canManage = useAppSelector(selectIsAdmin)
   const isOwner = useAppSelector(selectIsOwner)
-  const [active, setActive] = useState(sections[0].key)
+  const [searchParams] = useSearchParams()
+  // Allow deep-linking a section, e.g. the sidebar upsell opens billing (?section=billing).
+  const [active, setActive] = useState(() => {
+    const s = searchParams.get('section')
+    return sections.some((x) => x.key === s) ? s! : sections[0].key
+  })
   const [savingKey, setSavingKey] = useState<string | null>(null)
   const [savedKey, setSavedKey] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -96,7 +102,7 @@ export function SettingsCrmScreen() {
         {/* Panel */}
         <div className="flex flex-1 flex-col gap-5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-7 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
           {error && (
-            <div className="flex items-center gap-2 rounded-2xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm font-semibold text-[#B91C1C]">
+            <div className="flex items-center gap-2 rounded-2xl border border-[var(--tone-red-fg)]/40 bg-[var(--tone-red-bg)] px-4 py-3 text-sm font-semibold text-[var(--tone-red-fg)]">
               <Icon name="alert-triangle" size={16} /> {error}
             </div>
           )}
@@ -366,8 +372,6 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 /* ── 5. Billing — plans, usage and limit enforcement (no card payments yet) ── */
-const PLAN_IDS: PlanId[] = ['free', 'pyme', 'pro']
-
 function BillingSection({ t, tenant, isOwner, onPlanChange }: { t: TFn; tenant: Tenant | null; isOwner: boolean; onPlanChange: (tenant: Tenant) => void }) {
   const [info, setInfo] = useState<PlanInfo | null>(null)
   const [changing, setChanging] = useState<PlanId | null>(null)
@@ -405,7 +409,7 @@ function BillingSection({ t, tenant, isOwner, onPlanChange }: { t: TFn; tenant: 
       <SectionHeader t={t} title={t('set.sec.billing')} subtitle={t('set.billing.subtitle')} canManage={false} />
 
       {error && (
-        <div className="flex items-center gap-2 rounded-2xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm font-semibold text-[#B91C1C]">
+        <div className="flex items-center gap-2 rounded-2xl border border-[var(--tone-red-fg)]/40 bg-[var(--tone-red-bg)] px-4 py-3 text-sm font-semibold text-[var(--tone-red-fg)]">
           <Icon name="alert-triangle" size={16} /> {error}
         </div>
       )}
@@ -415,7 +419,8 @@ function BillingSection({ t, tenant, isOwner, onPlanChange }: { t: TFn; tenant: 
         <span className="text-[13px] font-extrabold text-[var(--dash-text)]">{t('bill.usageTitle')}</span>
         {info && ([['products', 'bill.products'], ['lists', 'bill.lists'], ['members', 'bill.members']] as const).map(([key, lbl]) => {
           const used = info.usage[key]
-          const limit = info.limits[key]
+          // Limit comes from the advertised plan content so the bars match the cards.
+          const limit = planById(current).limits[key]
           const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0
           const full = limit !== null && used >= limit
           return (
@@ -432,33 +437,35 @@ function BillingSection({ t, tenant, isOwner, onPlanChange }: { t: TFn; tenant: 
         })}
       </div>
 
-      {/* Plan cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {PLAN_IDS.map((id) => {
-          const isCurrent = id === current
-          const limits = PLAN_LIMITS[id]
+      {/* Plan cards — same copy as the public landing (lib/plans). */}
+      <div className="grid grid-cols-3 items-stretch gap-3">
+        {PLANS.map((plan) => {
+          const isCurrent = plan.id === current
           return (
-            <div key={id} className={`flex flex-col gap-3 rounded-2xl border p-4 ${isCurrent ? 'border-[var(--dash-link)] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)]'}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-[15px] font-extrabold text-[var(--dash-text)]">{t(`bill.plan.${id}`)}</span>
-                {id === 'pyme' && <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone('violet')}>{t('bill.recommended')}</span>}
+            <div key={plan.id} className={`flex flex-col gap-2.5 rounded-2xl border p-4 ${isCurrent ? 'border-[var(--dash-link)] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)]'}`}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[15px] font-extrabold text-[var(--dash-text)]">{plan.name}</span>
+                {plan.popular && <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide" style={tone('violet')}>{t('bill.recommended')}</span>}
               </div>
+              <p className="text-[11px] font-medium text-[var(--dash-muted)]">{plan.description}</p>
               <div className="flex items-end gap-1">
-                <span className="text-2xl font-black text-[var(--dash-text)]">{t(`bill.price.${id}`)}</span>
-                <span className="pb-1 text-[11px] font-semibold text-[var(--dash-muted)]">{t('bill.perMonth')}</span>
+                <span className="text-2xl font-black text-[var(--dash-text)]">{plan.price}</span>
+                <span className="pb-1 text-[11px] font-semibold text-[var(--dash-muted)]">{plan.cadence}</span>
               </div>
-              <p className="text-[11px] font-medium text-[var(--dash-muted)]">{t(`bill.tagline.${id}`)}</p>
-              <div className="flex flex-col gap-1.5 border-t border-[var(--dash-divider)] pt-3">
-                <Limit label={t('bill.products')} value={limitLabel(limits.products)} />
-                <Limit label={t('bill.lists')} value={limitLabel(limits.lists)} />
-                <Limit label={t('bill.members')} value={limitLabel(limits.members)} />
-              </div>
+              <ul className="flex flex-col gap-1.5 border-t border-[var(--dash-divider)] pt-3">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex items-center gap-1.5 text-[12px]">
+                    <Icon name="circle-check" size={13} className="shrink-0 text-[var(--tone-green-fg)]" />
+                    <span className="font-medium text-[var(--dash-text2)]">{f}</span>
+                  </li>
+                ))}
+              </ul>
               {isCurrent ? (
-                <span className="mt-1 flex h-9 items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold" style={tone('violet')}><Icon name="circle-check" size={15} /> {t('bill.current')}</span>
+                <span className="mt-auto flex h-9 items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold" style={tone('violet')}><Icon name="circle-check" size={15} /> {t('bill.current')}</span>
               ) : (
-                <button type="button" disabled={!isOwner || changing !== null} onClick={() => changePlan(id)}
-                  className={`mt-1 flex h-9 items-center justify-center rounded-xl text-[13px] font-bold text-white disabled:opacity-50 ${gradient}`}>
-                  {changing === id ? t('bill.changing') : t('bill.choose')}
+                <button type="button" disabled={!isOwner || changing !== null} onClick={() => changePlan(plan.id)}
+                  className={`mt-auto flex h-9 items-center justify-center rounded-xl text-[13px] font-bold text-white disabled:opacity-50 ${gradient}`}>
+                  {changing === plan.id ? t('bill.changing') : t('bill.choose')}
                 </button>
               )}
             </div>
@@ -475,23 +482,6 @@ function BillingSection({ t, tenant, isOwner, onPlanChange }: { t: TFn; tenant: 
         <Icon name="tags" size={15} /> {t('bill.paymentNote')}
       </div>
     </>
-  )
-}
-
-// Mirror of the backend plan limits (display only; enforcement is server-side).
-const PLAN_LIMITS: Record<PlanId, { products: number | null; lists: number | null; members: number | null }> = {
-  free: { products: 25, lists: 3, members: 1 },
-  pyme: { products: 300, lists: 15, members: 5 },
-  pro: { products: null, lists: null, members: null },
-}
-
-function Limit({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-1.5 text-[12px]">
-      <Icon name="circle-check" size={13} className="text-[var(--tone-green-fg)]" />
-      <span className="font-semibold text-[var(--dash-text2)]">{value}</span>
-      <span className="text-[var(--dash-muted)]">{label.toLowerCase()}</span>
-    </div>
   )
 }
 
@@ -553,12 +543,12 @@ function DeleteSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null; 
   return (
     <>
       <SectionHeader t={t} title={t('set.sec.delete')} subtitle={t('set.delete.subtitle')} canManage={false} />
-      <div className="flex flex-col gap-4 rounded-2xl border border-[#FCA5A5] bg-[#FEF2F2] p-5">
+      <div className="flex flex-col gap-4 rounded-2xl border border-[var(--tone-red-fg)]/40 bg-[var(--tone-red-bg)] p-5">
         <div className="flex items-start gap-3">
-          <Icon name="alert-triangle" size={20} className="mt-0.5 shrink-0 text-[#B91C1C]" />
-          <p className="text-sm font-semibold text-[#B91C1C]">{t('set.delete.warning', { name: tenant?.name || '' })}</p>
+          <Icon name="alert-triangle" size={20} className="mt-0.5 shrink-0 text-[var(--tone-red-fg)]" />
+          <p className="text-sm font-semibold text-[var(--tone-red-fg)]">{t('set.delete.warning', { name: tenant?.name || '' })}</p>
         </div>
-        {error && <p className="text-xs font-bold text-[#B91C1C]">{error}</p>}
+        {error && <p className="text-xs font-bold text-[var(--tone-red-fg)]">{error}</p>}
         <Field label={t('set.delete.confirm', { keyword })}>
           <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} className={inputCls} placeholder={keyword} />
         </Field>

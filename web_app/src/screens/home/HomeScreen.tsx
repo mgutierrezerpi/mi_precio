@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectIsAuthenticated } from '../../store/slices/authSlice'
 import { AuthModal } from '../../components/AuthModal'
+import { PLANS } from '../../lib/plans'
 
 type OpenAuth = () => void
 
@@ -68,11 +69,8 @@ const testimonials = [
   { stars: 5, quote: 'Tener una lista por cliente es oro para ventas mayoristas. Cada uno ve sus precios, sin confusiones ni descuentos a mano.', initials: 'CP', color: '#10B981', name: 'Carla Pérez', role: 'Comercial, AceroPlus' },
 ]
 
-const plans = [
-  { name: 'Inicial', description: 'Para empezar a tener tu lista online.', price: '$ 5', cadence: 'USD por mes', features: ['Hasta 10 productos', '1 lista pública', 'QR personalizado', 'Soporte por email'], highlighted: false, cta: 'Probar 14 días' },
-  { name: 'Pyme', description: 'Para negocios que ya están creciendo.', price: '$ 20', cadence: 'USD por mes', features: ['Productos ilimitados', 'Listas por cliente', 'Control de stock + alertas', 'Multiusuario (5)', 'Soporte prioritario'], highlighted: true, cta: 'Probar 14 días' },
-  { name: 'Negocio Pro', description: 'Para equipos comerciales y mayoristas.', price: '$ 35', cadence: 'USD por mes', features: ['Todo lo de Pyme', 'Multimoneda', 'Importación masiva', 'Usuarios ilimitados', 'Integración con WhatsApp'], highlighted: false, cta: 'Probar 14 días' },
-]
+// Plan content is shared with the in-app billing cards (see lib/plans).
+const PLAN_CTA = 'Probar 14 días'
 
 const faqs = [
   ['¿Necesito instalar algo en mi computadora?', 'No. MiPrecio funciona 100% en el navegador y en el celular. Solo creás tu cuenta y empezás a cargar productos.'],
@@ -374,8 +372,8 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead eyebrow="Precios" title="Planes simples, pensados para pymes." subtitle="Probá MiPrecio gratis 14 días. Sin tarjeta de crédito." />
         <Reveal className="grid items-stretch gap-6 lg:grid-cols-3">
-          {plans.map((plan) => {
-            const dark = plan.highlighted
+          {PLANS.map((plan) => {
+            const dark = plan.popular
             return (
               <article key={plan.name} className={`relative flex flex-col gap-[14px] rounded-[24px] px-7 py-8 ${dark ? 'bg-[#0F172A] text-white shadow-[0_30px_60px_rgba(15,23,42,0.2)]' : 'border border-[#E2E8F0] bg-white'}`}>
                 {dark && <em className="absolute right-6 top-6 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-3 py-1.5 text-[0.64rem] font-bold not-italic uppercase tracking-[0.05em] text-white">Más popular</em>}
@@ -398,7 +396,7 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
                   onClick={onAuth}
                   className={`mt-auto flex h-12 items-center justify-center rounded-xl text-[0.88rem] font-bold ${dark ? 'bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] text-white hover:brightness-110' : 'border border-[#0F172A] bg-white text-[#0F172A] hover:bg-[#0F172A] hover:text-white'}`}
                 >
-                  {plan.cta}
+                  {PLAN_CTA}
                 </button>
               </article>
             )

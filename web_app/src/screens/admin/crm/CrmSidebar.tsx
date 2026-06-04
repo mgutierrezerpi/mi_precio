@@ -1,8 +1,16 @@
 import { Link } from 'react-router-dom'
 import { useTheme } from '../../../hooks/useTheme'
+import { useAppSelector } from '../../../store/hooks'
+import { selectTenant } from '../../../store/slices/authSlice'
+import type { PlanId } from '../../../types'
+import { planById } from '../../../lib/plans'
 import { useT } from '../../../lib/i18n'
 import { Icon, type IconName } from './ui'
 import { tone, gradient } from './theme'
+
+// Plans cheapest → most expensive; the upsell card points to the next tier up.
+// 'pro' is the top plan, so it has no upgrade and the card is hidden.
+const NEXT_PLAN: Partial<Record<PlanId, PlanId>> = { free: 'pyme', pyme: 'pro' }
 
 // `id` is the stable (Spanish) key screens pass as CrmLayout `active`; `tKey` is the display label.
 const navMain: { icon: IconName; id: string; tKey: string; to?: string; badge?: string }[] = [
@@ -38,6 +46,8 @@ function NavItem({ icon, label, to, badge, active }: { icon: IconName; label: st
 export function CrmSidebar({ active }: { active: string }) {
   const { isDark } = useTheme()
   const t = useT()
+  const tenant = useAppSelector(selectTenant)
+  const nextPlan = tenant ? NEXT_PLAN[tenant.plan] : undefined
   return (
     <aside className="flex w-[260px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[var(--dash-surface)] p-5">
       <Link to="/" className="flex items-center">
@@ -53,14 +63,17 @@ export function CrmSidebar({ active }: { active: string }) {
 
       <div className="flex-1" />
 
-      <div className={`flex flex-col gap-2 rounded-2xl p-4 text-white shadow-[0_10px_24px_-6px_rgba(124,58,237,0.5)] ${gradient}`}>
-        <p className="text-[10px] font-bold tracking-[0.2em] text-white/80">{t('side.planTag')}</p>
-        <p className="text-base font-extrabold">{t('side.upgradeTitle')}</p>
-        <p className="text-xs font-medium leading-snug text-[#E0E7FF]">{t('side.upgradeDesc')}</p>
-        <button type="button" className="mt-1 flex h-9 items-center justify-center rounded-[10px] bg-white text-[13px] font-bold text-[#7C3AED] hover:bg-violet-50">
-          {t('side.viewPlans')}
-        </button>
-      </div>
+      {/* Upsell to the next plan up; hidden once the tenant is on the top plan (pro). */}
+      {nextPlan && tenant && (
+        <div className={`flex flex-col gap-2 rounded-2xl p-4 text-white shadow-[0_10px_24px_-6px_rgba(124,58,237,0.5)] ${gradient}`}>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">{t('side.planTag', { plan: planById(tenant.plan).name })}</p>
+          <p className="text-base font-extrabold">{t('side.upgradeTitle', { plan: planById(nextPlan).name })}</p>
+          <p className="text-xs font-medium leading-snug text-[#E0E7FF]">{t(`side.upgradeDesc.${nextPlan}`)}</p>
+          <Link to="/admin/settings?section=billing" className="mt-1 flex h-9 items-center justify-center rounded-[10px] bg-white text-[13px] font-bold text-[#7C3AED] hover:bg-violet-50">
+            {t('side.viewPlans')}
+          </Link>
+        </div>
+      )}
     </aside>
   )
 }
