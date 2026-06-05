@@ -23,6 +23,18 @@ class Settings(BaseSettings):
     # Outscraper settings (for Google Maps scraping)
     outscraper_api_key: str = ""
 
+    # Mailer settings
+    sendgrid_api_key: str = ""
+    mailer_enabled: bool = False
+    log_auth_codes: bool = True
+
+    # Storage settings
+    storage_endpoint_url: str = ""
+    storage_public_url: str = ""
+    storage_bucket: str = "product-pictures"
+    storage_access_key: str = ""
+    storage_secret_key: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
