@@ -1,14 +1,53 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectIsAuthenticated } from '../../store/slices/authSlice'
+import { AuthModal } from '../../components/AuthModal'
+import { PLANS } from '../../lib/plans'
 
+type OpenAuth = () => void
+
+/* ── Inline icons (lucide-style) ──────────────────────────────── */
+type IcoProps = { className?: string; size?: number }
+const line = (size: number, className: string | undefined, children: React.ReactNode) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    {children}
+  </svg>
+)
+const Package = ({ className, size = 22 }: IcoProps) => line(size, className, <><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /><path d="m7.5 4.27 9 5.15" /></>)
+const Boxes = ({ className, size = 22 }: IcoProps) => line(size, className, <><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" /><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" /><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" /></>)
+const Link2 = ({ className, size = 22 }: IcoProps) => line(size, className, <><path d="M9 17H7A5 5 0 0 1 7 7h2" /><path d="M15 7h2a5 5 0 1 1 0 10h-2" /><line x1="8" x2="16" y1="12" y2="12" /></>)
+const QrCode = ({ className, size = 22 }: IcoProps) => line(size, className, <><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><path d="M21 16h-3a2 2 0 0 0-2 2v3" /><path d="M21 21v.01" /><path d="M12 7v3a2 2 0 0 1-2 2H7" /><path d="M3 12h.01" /><path d="M12 3h.01" /><path d="M12 16v.01" /><path d="M16 12h1" /><path d="M21 12v.01" /><path d="M12 21v-1" /></>)
+const DollarSign = ({ className, size = 22 }: IcoProps) => line(size, className, <><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></>)
+const RefreshCw = ({ className, size = 22 }: IcoProps) => line(size, className, <><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></>)
+const CircleCheck = ({ className, size = 20 }: IcoProps) => line(size, className, <><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></>)
+const Check = ({ className, size = 18 }: IcoProps) => line(size, className, <path d="M20 6 9 17l-5-5" />)
+const Sparkles = ({ className, size = 14 }: IcoProps) => line(size, className, <><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z" /><path d="M20 3v4" /><path d="M22 5h-4" /><path d="M4 17v2" /><path d="M5 18H3" /></>)
+const ArrowRight = ({ className, size = 18 }: IcoProps) => line(size, className, <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>)
+const Plus = ({ className, size = 20 }: IcoProps) => line(size, className, <><path d="M5 12h14" /><path d="M12 5v14" /></>)
+const Instagram = ({ className, size = 16 }: IcoProps) => line(size, className, <><rect width="20" height="20" x="2" y="2" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" x2="17.51" y1="6.5" y2="6.5" /></>)
+const Linkedin = ({ className, size = 16 }: IcoProps) => line(size, className, <><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /><rect width="4" height="12" x="2" y="9" /><circle cx="4" cy="4" r="2" /></>)
+const Twitter = ({ className, size = 16 }: IcoProps) => line(size, className, <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />)
+const Youtube = ({ className, size = 16 }: IcoProps) => line(size, className, <><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17z" /><path d="m10 15 5-3-5-3z" /></>)
+const Star = ({ className, size = 16 }: IcoProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2Z" />
+  </svg>
+)
+const Play = ({ className, size = 16 }: IcoProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <polygon points="6 3 20 12 6 21 6 3" />
+  </svg>
+)
+
+/* ── Data ─────────────────────────────────────────────────────── */
 const features = [
-  ['Catálogo de productos', 'Cargá productos, variantes, fotos y precios. Organizalos por categorías en minutos.'],
-  ['Control de stock', 'Actualizá unidades en tiempo real y recibí alertas cuando un producto está por agotarse.'],
-  ['Lista de precios compartible', 'Generá un link público o un QR para que tus clientes vean siempre la última versión.'],
-  ['Códigos QR personalizados', 'Imprimí el QR para tu mostrador, catálogo impreso o redes sociales.'],
-  ['Multimoneda y listas por cliente', 'Mostrá precios en pesos, dólares o por canal de venta.'],
-  ['Actualizaciones masivas', 'Ajustá precios por porcentaje en toda una categoría sin rehacer planillas.'],
+  { Icon: Package, color: '#7C3AED', bg: '#EDE9FE', title: 'Catálogo de productos', desc: 'Cargá productos, variantes, fotos y precios. Organizalos por categorías en minutos.' },
+  { Icon: Boxes, color: '#10B981', bg: '#D1FAE5', title: 'Control de stock', desc: 'Actualizá unidades en tiempo real y recibí alertas cuando un producto está por agotarse.' },
+  { Icon: Link2, color: '#7C3AED', bg: '#EDE9FE', title: 'Lista de precios compartible', desc: 'Generá un link público o un QR para que tus clientes vean siempre la última versión.' },
+  { Icon: QrCode, color: '#0EA5E9', bg: '#BAE6FD', title: 'Códigos QR personalizados', desc: 'Imprimí el QR para tu mostrador, catálogo impreso o redes sociales. Sin apps adicionales.' },
+  { Icon: DollarSign, color: '#F59E0B', bg: '#FEF3C7', title: 'Multimoneda y listas por cliente', desc: 'Mostrá precios en pesos, dólares o por canal de venta. Una lista distinta por cliente.' },
+  { Icon: RefreshCw, color: '#F43F5E', bg: '#FFE4E6', title: 'Actualizaciones masivas', desc: 'Subí cambios desde un archivo o ajustá precios por porcentaje en toda una categoría.' },
 ]
 
 const steps = [
@@ -18,167 +57,190 @@ const steps = [
 ]
 
 const stats = [
-  ['2.500+', 'Negocios activos'],
+  ['2.500+', 'Negocios activos en MiPrecio'],
   ['180k', 'Productos cargados'],
-  ['1.2M', 'QR escaneados'],
+  ['1.2M', 'QR escaneados por clientes'],
   ['98%', 'Recomendarían MiPrecio'],
 ]
 
-const plans = [
-  {
-    name: 'Inicial',
-    description: 'Para empezar a tener tu lista online.',
-    price: 'Gratis',
-    cadence: 'Por siempre',
-    features: ['Hasta 10 productos', '1 lista pública', 'QR personalizado', 'Soporte por email'],
-    highlighted: false,
-    cta: 'Empezar gratis',
-  },
-  {
-    name: 'Pyme',
-    description: 'Para negocios que ya están creciendo.',
-    price: '$19',
-    cadence: 'USD por mes',
-    features: ['Productos ilimitados', 'Listas por cliente', 'Control de stock + alertas', 'Multiusuario (5)', 'Soporte prioritario'],
-    highlighted: true,
-    cta: 'Probar 14 días',
-  },
-  {
-    name: 'Negocio',
-    description: 'Para equipos comerciales y mayoristas.',
-    price: '$49',
-    cadence: 'USD por mes',
-    features: ['Todo lo de Pyme', 'Multimoneda', 'Importación masiva', 'Usuarios ilimitados', 'Integración con WhatsApp'],
-    highlighted: false,
-    cta: 'Hablar con ventas',
-  },
+const testimonials = [
+  { stars: 5, quote: 'Antes mandaba la lista por PDF cada vez que cambiaban los precios. Ahora mis clientes simplemente escanean el QR y siempre ven la versión correcta.', initials: 'LF', color: '#7C3AED', name: 'Lucía Fernández', role: 'Dueña, Almacén Norte' },
+  { stars: 5, quote: 'El control de stock cambió la forma en que reponemos mercadería. Las alertas nos avisan antes de quedar sin producto y ahorramos horas de planillas.', initials: 'MS', color: '#0EA5E9', name: 'Martín Sosa', role: 'Gerente, Distrimax' },
+  { stars: 5, quote: 'Tener una lista por cliente es oro para ventas mayoristas. Cada uno ve sus precios, sin confusiones ni descuentos a mano.', initials: 'CP', color: '#10B981', name: 'Carla Pérez', role: 'Comercial, AceroPlus' },
 ]
 
-const productRows = [
-  ['Tornillo hex. 8mm', 'FER-001', '$85', 'Disponible', 'text-emerald-600 bg-emerald-50'],
-  ['Cable eléctrico 2.5', 'ELE-220', '$1.250', 'Disponible', 'text-emerald-600 bg-emerald-50'],
-  ['Pintura látex 4L', 'PIN-104', '$9.800', 'Bajo stock', 'text-amber-600 bg-amber-50'],
-  ['Cemento 50kg', 'CON-050', '$6.300', 'Sin stock', 'text-red-600 bg-red-50'],
+// Plan content is shared with the in-app billing cards (see lib/plans).
+const PLAN_CTA = 'Probar 14 días'
+
+const faqs = [
+  ['¿Necesito instalar algo en mi computadora?', 'No. MiPrecio funciona 100% en el navegador y en el celular. Solo creás tu cuenta y empezás a cargar productos.'],
+  ['¿Mis clientes necesitan registrarse para ver la lista?', 'No. Tus clientes abren el link o escanean el QR y ven la lista pública sin crear cuenta.'],
+  ['¿Puedo tener listas distintas por cliente o canal?', 'Sí. Podés manejar listas por cliente, mayorista, minorista o canal de venta, cada una con sus precios.'],
+  ['¿Cómo se actualizan los precios y el stock?', 'Actualizás desde tu panel y el cambio se refleja inmediatamente en el link y el QR que ya compartiste.'],
+  ['¿Hay límite de productos o usuarios?', 'Depende de tu plan. El plan Inicial es gratis hasta 10 productos; los planes pagos ofrecen productos y usuarios ilimitados.'],
 ]
 
+const footerColumns = [
+  ['Producto', 'Funciones', 'Precios', 'Casos de uso', 'Novedades', 'Demo'],
+  ['Empresa', 'Sobre nosotros', 'Blog', 'Clientes', 'Contacto', 'Trabajá con nosotros'],
+  ['Recursos', 'Centro de ayuda', 'Documentación', 'Estado del servicio', 'Guías para pymes', 'Comunidad'],
+  ['Legal', 'Términos', 'Privacidad', 'Cookies', 'Seguridad'],
+]
+
+/* ── Page ─────────────────────────────────────────────────────── */
 export function HomeScreen() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
-  const appLink = isAuthenticated ? '/admin' : '/login'
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [authOpen, setAuthOpen] = useState(location.pathname === '/login' && !isAuthenticated)
+
+  const openAuth: OpenAuth = () => {
+    if (isAuthenticated) {
+      navigate('/admin')
+      return
+    }
+    setAuthOpen(true)
+  }
+
+  // Smooth anchor scrolling while the landing is shown (scoped, restored on leave).
+  useEffect(() => {
+    const root = document.documentElement
+    const prev = root.style.scrollBehavior
+    root.style.scrollBehavior = 'smooth'
+    return () => { root.style.scrollBehavior = prev }
+  }, [])
 
   return (
-    <main className="min-h-screen bg-white font-sans text-slate-900">
-      <Nav appLink={appLink} isAuthenticated={isAuthenticated} />
-      <Hero appLink={appLink} />
+    <main className="landing-page min-h-screen bg-white font-sans text-slate-900">
+      <Navbar onAuth={openAuth} isAuthenticated={isAuthenticated} />
+      <Hero onAuth={openAuth} />
       <Features />
       <HowItWorks />
-      <ClientPreview />
+      <ProductPreview />
       <Stats />
       <Testimonials />
-      <Pricing appLink={appLink} />
+      <Pricing onAuth={openAuth} />
       <Faq />
-      <FinalCta appLink={appLink} />
+      <FinalCta onAuth={openAuth} />
       <Footer />
+      <AuthModal
+        open={authOpen}
+        onClose={() => {
+          setAuthOpen(false)
+          if (location.pathname === '/login') navigate('/', { replace: true })
+        }}
+      />
     </main>
   )
 }
 
-function Nav({ appLink, isAuthenticated }: { appLink: string; isAuthenticated: boolean }) {
+/** Fades + slides its content up the first time it scrolls into view. */
+function Reveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setShown(true); io.disconnect() }
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
+    <div
+      ref={ref}
+      style={{ transitionDelay: shown ? `${delay}ms` : '0ms' }}
+      className={`transition-all duration-700 ease-out ${shown ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'} ${className}`}
+    >
+      {children}
+    </div>
+  )
+}
+
+function SectionHead({ eyebrow, title, subtitle, eyebrowColor = 'text-[#7C3AED]', inverted = false }: { eyebrow: string; title: string; subtitle?: string; eyebrowColor?: string; inverted?: boolean }) {
+  return (
+    <div className="mx-auto flex max-w-3xl flex-col items-center gap-3.5 text-center">
+      <p className={`text-[13px] font-bold uppercase tracking-[0.15em] ${eyebrowColor}`}>{eyebrow}</p>
+      <h2 className={`text-3xl font-extrabold leading-tight tracking-tight md:text-[42px] ${inverted ? 'text-white' : 'text-[#0F172A]'}`}>{title}</h2>
+      {subtitle && <p className={`text-base ${inverted ? 'text-indigo-100' : 'text-[#64748B]'}`}>{subtitle}</p>}
+    </div>
+  )
+}
+
+function Navbar({ onAuth, isAuthenticated }: { onAuth: OpenAuth; isAuthenticated: boolean }) {
+  return (
+    <header className="sticky top-0 z-50 border-b border-[#E2E8F0] bg-white/90 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-5 py-4 md:px-8">
         <a href="#" className="flex items-center">
           <img src="/miprecio-logo-pencil.png" alt="MiPrecio" className="h-11 w-auto" />
         </a>
-        <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
-          <a href="#producto" className="hover:text-violet-700">Producto</a>
-          <a href="#funciones" className="hover:text-violet-700">Funciones</a>
-          <a href="#precios" className="hover:text-violet-700">Precios</a>
-          <a href="#faq" className="hover:text-violet-700">Recursos</a>
-        </nav>
-        <div className="flex items-center gap-3">
-          <Link to={appLink} className="hidden text-sm font-bold text-violet-700 sm:inline-flex">
-            {isAuthenticated ? 'Mi panel' : 'Iniciar sesión'}
-          </Link>
-          <Link to={appLink} className="rounded-full bg-violet-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-700/20 hover:bg-violet-800">
-            Probar gratis
-          </Link>
+        <div className="flex items-center gap-7">
+          <nav className="hidden items-center gap-6 text-sm font-medium text-[#475569] lg:flex">
+            <a href="#funciones" className="hover:text-[#7C3AED]">Producto</a>
+            <a href="#funciones" className="hover:text-[#7C3AED]">Funciones</a>
+            <a href="#precios" className="hover:text-[#7C3AED]">Precios</a>
+            <a href="#faq" className="hover:text-[#7C3AED]">Recursos</a>
+          </nav>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={onAuth} className="rounded-[10px] border-[1.5px] border-[#7C3AED] px-[18px] py-2.5 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]">
+              {isAuthenticated ? 'Mi panel' : 'Iniciar sesión'}
+            </button>
+            <button type="button" onClick={onAuth} className="rounded-[10px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-[18px] py-2.5 text-sm font-semibold text-white hover:brightness-105">
+              Probar gratis
+            </button>
+          </div>
         </div>
       </div>
     </header>
   )
 }
 
-function Hero({ appLink }: { appLink: string }) {
+function Hero({ onAuth }: { onAuth: OpenAuth }) {
   return (
-    <section id="producto" className="relative overflow-hidden bg-[#24105f]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(168,85,247,0.55),transparent_32%),radial-gradient(circle_at_88%_15%,rgba(236,72,153,0.35),transparent_28%),linear-gradient(135deg,#351279_0%,#14082f_100%)]" />
-      <div className="absolute left-1/2 top-24 h-96 w-96 -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-20 md:grid-cols-[1fr_0.95fr] md:px-8 md:py-28">
-        <div>
-          <div className="mb-6 inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-            Nuevo · Compartí tu lista con un QR
-          </div>
-          <h1 className="max-w-3xl text-5xl font-extrabold leading-[0.98] tracking-[-0.05em] text-white md:text-7xl">
+    <section id="producto" className="scroll-mt-24 bg-[linear-gradient(135deg,#2E1065_0%,#5B21B6_45%,#7C3AED_85%,#A855F7_100%)] px-5 py-20 md:px-8 md:py-28">
+      <div className="mx-auto grid max-w-[1200px] items-center gap-16 lg:grid-cols-[560px_1fr]">
+        <div className="flex flex-col gap-6">
+          <span className="w-fit rounded-full border border-white/40 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-white">
+            NUEVO · Compartí tu lista con un QR
+          </span>
+          <h1 className="text-5xl font-extrabold leading-[1.05] tracking-tight text-white md:text-[58px]">
             Tu catálogo online. Tus precios al día.
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-violet-100">
-            Cargá tus productos, controlá tu stock y compartí tu lista de precios con un link o un código QR. Sin planillas, sin PDFs desactualizados.
+          <p className="max-w-xl text-lg leading-relaxed text-[#DDD6FE]">
+            Cargá tus productos, controlá tu stock y compartí tu lista de precios con un link o un código QR. Sin planillas, sin PDFs desactualizados, sin complicarte.
           </p>
-          <div className="mt-9 flex flex-col gap-4 sm:flex-row">
-            <Link to={appLink} className="rounded-full bg-white px-6 py-3.5 text-center text-sm font-bold text-slate-950 shadow-xl shadow-black/20 hover:bg-violet-50">
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={onAuth} className="rounded-xl bg-white px-[22px] py-3.5 text-[15px] font-semibold text-slate-950 shadow-[0_10px_24px_-6px_rgba(124,58,237,0.4)] hover:bg-violet-50">
               Crear cuenta gratis
-            </Link>
-            <Link to="/p/demo" className="rounded-full border border-white/25 px-6 py-3.5 text-center text-sm font-bold text-white hover:bg-white/10">
-              Ver demo
+            </button>
+            <Link to="/p/demo" className="flex items-center gap-2 rounded-xl border border-white/40 px-5 py-3.5 text-[15px] font-semibold text-white hover:bg-white/10">
+              <Play size={16} /> Ver demo
             </Link>
           </div>
-          <p className="mt-7 text-sm font-medium text-violet-200">Más de 2.500 negocios ya usan MiPrecio</p>
+          <div className="flex items-center gap-2.5">
+            <div className="flex gap-0.5 text-white">
+              {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={16} />)}
+            </div>
+            <span className="text-[13px] font-medium text-[#C4B5FD]">Más de 2.500 negocios ya usan MiPrecio</span>
+          </div>
         </div>
-        <ProductCard />
+        <HeroMockup />
       </div>
     </section>
   )
 }
 
-function ProductCard() {
+function HeroMockup() {
   return (
-    <div className="relative">
-      <div className="absolute -inset-6 rounded-[2rem] bg-white/10 blur-2xl" />
-      <div className="relative rounded-[2rem] border border-white/20 bg-white p-5 shadow-2xl shadow-black/30">
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-base font-bold text-slate-900">Lista de precios</h2>
-            <p className="mt-1 text-xs text-slate-400">Distribuidora ACME · Actualizada hoy</p>
-          </div>
-          <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700">miprecio.app/p/acme</span>
-        </div>
-        <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-400">Buscar producto...</div>
-        <div className="overflow-hidden rounded-2xl border border-slate-200">
-          <div className="grid grid-cols-[1.4fr_0.75fr_0.65fr_0.85fr] bg-slate-50 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500">
-            <span>Producto</span>
-            <span>SKU</span>
-            <span>Precio</span>
-            <span>Stock</span>
-          </div>
-          {productRows.map(([name, sku, price, stock, badge]) => (
-            <div key={sku} className="grid grid-cols-[1.4fr_0.75fr_0.65fr_0.85fr] items-center border-t border-slate-100 px-4 py-3 text-xs">
-              <span className="font-bold text-slate-900">{name}</span>
-              <span className="text-slate-500">{sku}</span>
-              <span className="font-extrabold text-slate-900">{price}</span>
-              <span className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-bold ${badge}`}>{stock}</span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-violet-100 bg-violet-50 p-4">
-            <p className="text-xs font-bold text-violet-700">Link público</p>
-            <p className="mt-1 text-sm font-bold text-slate-900">miprecio.app/p/acme</p>
-          </div>
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-            <p className="text-xs font-bold text-emerald-700">Stock actualizado</p>
-            <p className="mt-1 text-sm font-bold text-slate-900">Hace 2 min</p>
-          </div>
-        </div>
+    <div className="relative mx-auto w-full max-w-[580px]">
+      <img
+        src="/hero-img.png"
+        alt="Ejemplo de lista de precios de MiPrecio"
+        className="w-full"
+      />
+      <div className="absolute -left-4 -top-4 flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] shadow-[0_8px_24px_-4px_rgba(15,23,42,0.15)]">
+        <QrCode size={16} className="text-[#0F172A]" /> miprecio.app/p/acme
       </div>
     </div>
   )
@@ -186,18 +248,20 @@ function ProductCard() {
 
 function Features() {
   return (
-    <section id="funciones" className="px-5 py-24 md:px-8">
-      <div className="mx-auto max-w-7xl">
-        <SectionIntro eyebrow="Funciones" title="Todo lo que tu negocio necesita para vender mejor." />
-        <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {features.map(([title, description]) => (
-            <article key={title} className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-100">
-              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-lg font-black text-violet-700">✓</div>
-              <h3 className="text-lg font-extrabold text-slate-900">{title}</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
+    <section id="funciones" className="scroll-mt-24 bg-[#F5F3FF] px-5 py-24 md:px-8">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
+        <SectionHead eyebrow="Funciones" title="Todo lo que tu negocio necesita para vender mejor." />
+        <Reveal className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {features.map(({ Icon, color, bg, title, desc }) => (
+            <article key={title} className="flex flex-col gap-3.5 rounded-[20px] border border-[#E2E8F0] bg-white p-6 shadow-[0_4px_16px_-6px_rgba(15,23,42,0.08)]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: bg, color }}>
+                <Icon size={22} />
+              </div>
+              <h3 className="text-lg font-bold text-[#0F172A]">{title}</h3>
+              <p className="text-sm leading-relaxed text-[#475569]">{desc}</p>
             </article>
           ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   )
@@ -205,83 +269,53 @@ function Features() {
 
 function HowItWorks() {
   return (
-    <section className="bg-violet-50/70 px-5 py-24 md:px-8">
-      <div className="mx-auto max-w-7xl">
-        <SectionIntro eyebrow="Cómo funciona" title="Empezá en 3 pasos." />
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {steps.map(([number, title, description]) => (
-            <article key={number} className="rounded-[1.75rem] border border-violet-100 bg-white p-7 shadow-sm">
-              <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-full bg-violet-700 text-2xl font-black text-white">{number}</div>
-              <h3 className="text-xl font-extrabold">{title}</h3>
-              <p className="mt-3 leading-7 text-slate-600">{description}</p>
+    <section className="bg-[#EDE9FE] px-5 py-24 md:px-8">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
+        <SectionHead eyebrow="Cómo funciona" title="Empezá en 3 pasos." eyebrowColor="text-[#6D28D9]" />
+        <Reveal className="grid gap-6 md:grid-cols-3">
+          {steps.map(([number, title, desc]) => (
+            <article key={number} className="flex flex-col gap-4 rounded-3xl border border-[#E2E8F0] bg-white p-8 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.08)]">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#A855F7] text-2xl font-extrabold text-white shadow-[0_8px_18px_-4px_rgba(124,58,237,0.4)]">{number}</div>
+              <h3 className="text-xl font-bold text-[#0F172A]">{title}</h3>
+              <p className="leading-relaxed text-[#475569]">{desc}</p>
             </article>
           ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   )
 }
 
-function ClientPreview() {
+function ProductPreview() {
+  const checks = ['Sin necesidad de descargar apps.', 'Compatible con móvil y escritorio.', 'Personalizá colores y logo de tu marca.']
   return (
-    <section className="px-5 py-24 md:px-8">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.9fr_1fr]">
+    <section className="bg-[linear-gradient(135deg,#FAF5FF_0%,#EDE9FE_100%)] px-5 py-24 md:px-8">
+      <Reveal className="mx-auto grid max-w-[1200px] items-center gap-20 lg:grid-cols-[0.8fr_1fr]">
         <PhoneMockup />
-        <div>
-          <SectionIntro eyebrow="Para tus clientes" title="Tus clientes ven una lista profesional, siempre actualizada." align="left" />
-          <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600">
+        <div className="flex flex-col gap-5">
+          <span className="w-fit rounded-full bg-[#EDE9FE] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-[#7C3AED]">Para tus clientes</span>
+          <h2 className="text-3xl font-extrabold leading-tight text-[#0F172A] md:text-4xl">Tus clientes ven una lista profesional, siempre actualizada.</h2>
+          <p className="text-base leading-relaxed text-[#475569]">
             Compartí tu catálogo con un link o un QR y olvidate de mandar PDFs desactualizados por WhatsApp. Tus precios y tu stock siempre al día, vean de donde te vean.
           </p>
-          <div className="mt-8 space-y-4">
-            {['Sin necesidad de descargar apps.', 'Compatible con móvil y escritorio.', 'Personalizá colores y logo de tu marca.'].map((item) => (
-              <div key={item} className="flex items-center gap-3 font-semibold text-slate-900">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-sm text-violet-700">✓</span>
-                {item}
+          <div className="mt-2 flex flex-col gap-3">
+            {checks.map((item) => (
+              <div key={item} className="flex items-center gap-2.5 text-[15px] font-medium text-[#0F172A]">
+                <CircleCheck size={20} className="text-[#10B981]" /> {item}
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </Reveal>
     </section>
   )
 }
 
 function PhoneMockup() {
-  const items = [
-    ['Taladro Bosch', 'Bosch · 13mm', 'UYU 8.990'],
-    ['Pintura látex 4L', 'Alba · Blanco', 'UYU 1.430'],
-    ['Cemento 50kg', 'Bolsa', 'UYU 985'],
-    ['Lámpara LED 9W', 'Philips · E27', 'UYU 145'],
-  ]
-
   return (
-    <div className="mx-auto w-full max-w-sm rounded-[2.5rem] bg-slate-950 p-3 shadow-2xl shadow-violet-200">
-      <div className="overflow-hidden rounded-[2rem] bg-white">
-        <div className="bg-gradient-to-br from-violet-700 to-fuchsia-600 p-6 text-white">
-          <p className="text-xs font-extrabold uppercase tracking-widest text-white/70">Actualizado</p>
-          <h3 className="mt-5 text-2xl font-black">Ferretería y pintura</h3>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-white/15 p-3"><strong>142</strong><p className="text-xs text-white/70">prods</p></div>
-            <div className="rounded-2xl bg-white/15 p-3"><strong>24h</strong><p className="text-xs text-white/70">envíos</p></div>
-          </div>
-        </div>
-        <div className="p-5">
-          <div className="mb-4 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-400">Buscar...</div>
-          <div className="mb-4 flex gap-2 text-xs font-bold">
-            <span className="rounded-full bg-violet-700 px-3 py-2 text-white">Todos</span>
-            <span className="rounded-full bg-slate-100 px-3 py-2 text-slate-600">Ferretería</span>
-            <span className="rounded-full bg-slate-100 px-3 py-2 text-slate-600">Pinturas</span>
-          </div>
-          <div className="space-y-3">
-            {items.map(([name, detail, price]) => (
-              <div key={name} className="rounded-2xl border border-slate-100 p-4">
-                <p className="text-sm font-extrabold">{name}</p>
-                <p className="mt-1 text-xs text-slate-400">{detail}</p>
-                <p className="mt-3 text-sm font-black">{price}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+    <div className="mx-auto h-[560px] w-[280px] rounded-[32px] bg-[#2E1065] p-2 shadow-[0_30px_60px_-10px_rgba(30,41,59,0.4)]">
+      <div className="h-full overflow-hidden rounded-[26px] bg-white">
+        <img src="/mockup-img.png" alt="Vista del catálogo de MiPrecio en el celular" className="block w-full" />
       </div>
     </div>
   )
@@ -289,173 +323,168 @@ function PhoneMockup() {
 
 function Stats() {
   return (
-    <section className="bg-[#14082f] px-5 py-20 text-white md:px-8">
-      <div className="mx-auto max-w-7xl">
-        <SectionIntro eyebrow="Resultados" title="Negocios que ya tienen su lista de precios online." inverted />
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    <section className="bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-5 py-20 md:px-8">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
+        <SectionHead eyebrow="Resultados" title="Negocios que ya tienen su lista de precios online." eyebrowColor="text-[#C7D2FE]" inverted />
+        <Reveal className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map(([value, label]) => (
-            <div key={label} className="rounded-[1.5rem] border border-white/10 bg-white/10 p-7">
-              <p className="text-4xl font-black">{value}</p>
-              <p className="mt-3 text-sm text-indigo-100">{label}</p>
+            <div key={label} className="flex flex-col gap-2 rounded-[20px] border border-white/20 bg-white/10 p-6">
+              <p className="text-[44px] font-black leading-none text-white">{value}</p>
+              <p className="text-sm font-medium text-[#E0E7FF]">{label}</p>
             </div>
           ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   )
 }
 
 function Testimonials() {
-  const quotes = [
-    ['Antes mandaba la lista por PDF cada vez que cambiaban los precios. Ahora mis clientes escanean el QR y siempre ven la versión correcta.', 'LF', 'Lucía Fernández', 'Dueña, Almacén Norte'],
-    ['El control de stock cambió la forma en que reponemos mercadería. Las alertas nos avisan antes de quedar sin producto.', 'MS', 'Martín Sosa', 'Gerente, Distrimax'],
-    ['Tener una lista por cliente es oro para ventas mayoristas. Cada uno ve sus precios, sin confusiones ni descuentos a mano.', 'CP', 'Carla Pérez', 'Comercial, AceroPlus'],
-  ]
-
   return (
-    <section className="px-5 py-24 md:px-8">
-      <div className="mx-auto max-w-7xl">
-        <SectionIntro eyebrow="Testimonios" title="Lo que dicen quienes ya usan MiPrecio." />
-        <div className="mt-12 grid gap-5 lg:grid-cols-3">
-          {quotes.map(([quote, initials, name, role]) => (
-            <article key={name} className="rounded-[1.5rem] border border-slate-200 p-7 shadow-sm">
-              <p className="leading-7 text-slate-700">"{quote}"</p>
-              <div className="mt-7 flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-violet-700 text-sm font-bold text-white">{initials}</span>
+    <section className="bg-[#FAF5FF] px-5 py-24 md:px-8">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
+        <SectionHead eyebrow="Testimonios" title="Lo que dicen quienes ya usan MiPrecio." />
+        <Reveal className="grid gap-6 lg:grid-cols-3">
+          {testimonials.map((t) => (
+            <article key={t.name} className="flex flex-col gap-5 rounded-3xl border border-[#E2E8F0] bg-[#F8FAFC] px-7 py-8">
+              <div className="flex gap-1 text-[#F59E0B]">
+                {Array.from({ length: t.stars }).map((_, i) => <Star key={i} size={16} />)}
+              </div>
+              <p className="leading-relaxed text-[#334155]">"{t.quote}"</p>
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-white" style={{ backgroundColor: t.color }}>{t.initials}</span>
                 <div>
-                  <p className="font-bold">{name}</p>
-                  <p className="text-sm text-slate-500">{role}</p>
+                  <p className="text-sm font-bold text-[#0F172A]">{t.name}</p>
+                  <p className="text-xs font-medium text-[#64748B]">{t.role}</p>
                 </div>
               </div>
             </article>
           ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   )
 }
 
-function Pricing({ appLink }: { appLink: string }) {
+function Pricing({ onAuth }: { onAuth: OpenAuth }) {
   return (
-    <section id="precios" className="bg-slate-50 px-5 py-24 md:px-8">
-      <div className="mx-auto max-w-7xl">
-        <SectionIntro eyebrow="Precios" title="Planes simples, pensados para pymes." subtitle="Probá MiPrecio gratis 14 días. Sin tarjeta de crédito." />
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <article key={plan.name} className={`relative rounded-[2rem] border p-8 ${plan.highlighted ? 'border-slate-950 bg-slate-950 text-white shadow-2xl shadow-slate-300' : 'border-slate-200 bg-white text-slate-950 shadow-sm'}`}>
-              {plan.highlighted && <span className="absolute right-6 top-6 rounded-full bg-violet-700 px-3 py-1 text-xs font-bold text-white">Más popular</span>}
-              <h3 className="text-2xl font-black">{plan.name}</h3>
-              <p className={`mt-2 text-sm ${plan.highlighted ? 'text-slate-400' : 'text-slate-500'}`}>{plan.description}</p>
-              <div className="mt-8 flex items-end gap-2">
-                <p className="text-5xl font-black tracking-tight">{plan.price}</p>
-                <p className={`pb-2 text-sm ${plan.highlighted ? 'text-slate-400' : 'text-slate-500'}`}>{plan.cadence}</p>
-              </div>
-              <ul className="mt-8 space-y-4">
-                {plan.features.map((feature) => (
-                  <li key={feature} className={`flex items-center gap-3 text-sm ${plan.highlighted ? 'text-slate-200' : 'text-slate-700'}`}>
-                    <span className="text-violet-500">✓</span>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Link to={appLink} className={`mt-8 flex rounded-full px-5 py-3 text-center text-sm font-bold ${plan.highlighted ? 'bg-violet-700 text-white hover:bg-violet-600' : 'bg-slate-100 text-slate-950 hover:bg-slate-200'}`}>
-                <span className="w-full">{plan.cta}</span>
-              </Link>
-            </article>
-          ))}
-        </div>
+    <section id="precios" className="scroll-mt-24 bg-[#EDE9FE] px-5 py-24 md:px-8">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
+        <SectionHead eyebrow="Precios" title="Planes simples, pensados para pymes." subtitle="Probá MiPrecio gratis 14 días. Sin tarjeta de crédito." />
+        <Reveal className="grid items-stretch gap-6 lg:grid-cols-3">
+          {PLANS.map((plan) => {
+            const dark = plan.popular
+            return (
+              <article key={plan.name} className={`relative flex flex-col gap-[14px] rounded-[24px] px-7 py-8 ${dark ? 'bg-[#0F172A] text-white shadow-[0_30px_60px_rgba(15,23,42,0.2)]' : 'border border-[#E2E8F0] bg-white'}`}>
+                {dark && <em className="absolute right-6 top-6 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-3 py-1.5 text-[0.64rem] font-bold not-italic uppercase tracking-[0.05em] text-white">Más popular</em>}
+                <h3 className={`text-[1.4rem] font-extrabold ${dark ? 'text-white' : 'text-[#0F172A]'}`}>{plan.name}</h3>
+                <p className={`text-[0.84rem] ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{plan.description}</p>
+                <strong className={`mt-2 text-[2.75rem] font-black leading-none ${dark ? 'text-white' : 'text-[#0F172A]'}`}>{plan.price}</strong>
+                <small className={`-mt-1.5 text-[0.82rem] font-medium ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{plan.cadence}</small>
+                <span className={`flex w-fit items-center gap-1.5 rounded-full px-[11px] py-[5px] text-[0.74rem] font-semibold ${dark ? 'bg-white/[0.12] text-[#C4B5FD]' : 'bg-[#EDE9FE] text-[#7C3AED]'}`}>
+                  <Sparkles size={14} /> 14 días de prueba gratis
+                </span>
+                <ul className="my-2 flex flex-col gap-3">
+                  {plan.features.map((f) => (
+                    <li key={f} className={`flex items-center gap-2.5 text-[0.88rem] font-medium ${dark ? 'text-[#E2E8F0]' : 'text-[#334155]'}`}>
+                      <Check size={18} className={`flex-none ${dark ? 'text-[#C4B5FD]' : 'text-[#7C3AED]'}`} /> {f}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  onClick={onAuth}
+                  className={`mt-auto flex h-12 items-center justify-center rounded-xl text-[0.88rem] font-bold ${dark ? 'bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] text-white hover:brightness-110' : 'border border-[#0F172A] bg-white text-[#0F172A] hover:bg-[#0F172A] hover:text-white'}`}
+                >
+                  {PLAN_CTA}
+                </button>
+              </article>
+            )
+          })}
+        </Reveal>
       </div>
     </section>
   )
 }
 
 function Faq() {
-  const questions = [
-    ['¿Necesito instalar algo en mi computadora?', 'No. MiPrecio funciona 100% en el navegador y en el celular. Solo creás tu cuenta y empezás a cargar productos.'],
-    ['¿Mis clientes necesitan registrarse para ver la lista?', 'No. Tus clientes abren el link o escanean el QR y ven la lista pública sin crear cuenta.'],
-    ['¿Puedo tener listas distintas por cliente o canal?', 'Sí. Podés manejar listas por cliente, mayorista, minorista o canal de venta.'],
-    ['¿Cómo se actualizan los precios y el stock?', 'Actualizás desde tu panel y el cambio se refleja inmediatamente en el link compartido.'],
-  ]
-
+  const [open, setOpen] = useState<number | null>(0)
   return (
-    <section id="faq" className="px-5 py-24 md:px-8">
-      <div className="mx-auto max-w-4xl">
-        <SectionIntro eyebrow="Preguntas frecuentes" title="Todo lo que necesitás saber." />
-        <div className="mt-10 divide-y divide-slate-200 rounded-[1.5rem] border border-slate-200 bg-white">
-          {questions.map(([question, answer]) => (
-            <details key={question} className="group p-6" open={question.startsWith('¿Necesito')}>
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-extrabold">
-                {question}
-                <span className="text-violet-700 group-open:rotate-45">+</span>
-              </summary>
-              <p className="mt-4 leading-7 text-slate-600">{answer}</p>
-            </details>
-          ))}
-        </div>
+    <section id="faq" className="scroll-mt-24 bg-[#F5F3FF] px-5 py-24 md:px-8">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-10">
+        <SectionHead eyebrow="Preguntas frecuentes" title="Todo lo que necesitás saber." />
+        <Reveal className="mx-auto flex w-full max-w-[800px] flex-col gap-3.5">
+          {faqs.map(([q, a], i) => {
+            const isOpen = open === i
+            return (
+              <div key={q} className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] px-6 py-5">
+                <button type="button" onClick={() => setOpen(isOpen ? null : i)} aria-expanded={isOpen} className="flex w-full items-center justify-between gap-3 text-left text-base font-bold text-[#0F172A]">
+                  {q}
+                  <Plus size={20} className={`shrink-0 text-[#7C3AED] transition-transform duration-300 ${isOpen ? 'rotate-45' : ''}`} />
+                </button>
+                <div className={`grid transition-all duration-300 ease-out ${isOpen ? 'mt-3 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                  <div className="overflow-hidden">
+                    <p className="leading-relaxed text-[#475569]">{a}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </Reveal>
       </div>
     </section>
   )
 }
 
-function FinalCta({ appLink }: { appLink: string }) {
+function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
   return (
-    <section className="px-5 pb-24 md:px-8">
-      <div className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-violet-700 to-slate-950 p-10 text-center text-white shadow-2xl shadow-violet-200 md:p-16">
-        <h2 className="text-4xl font-black tracking-tight md:text-6xl">Tu lista de precios, lista en 5 minutos.</h2>
-        <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-indigo-100">Creá tu cuenta gratis hoy y empezá a compartir tu catálogo con un link o un QR.</p>
-        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-          <Link to={appLink} className="rounded-full bg-white px-6 py-3.5 text-sm font-bold text-violet-700">Crear cuenta gratis</Link>
-          <a href="mailto:hola@miprecio.app" className="rounded-full border border-white/25 px-6 py-3.5 text-sm font-bold text-white hover:bg-white/10">Hablar con ventas</a>
+    <section className="bg-[#EDE9FE] px-5 py-20 md:px-8">
+      <Reveal className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 rounded-[32px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-8 py-16 text-center shadow-[0_32px_80px_-20px_rgba(124,58,237,0.5)] md:px-20">
+        <h2 className="text-4xl font-black leading-tight tracking-tight text-white md:text-[46px]">Tu lista de precios, lista en 5 minutos.</h2>
+        <p className="max-w-2xl text-[17px] font-medium text-[#E0E7FF]">Creá tu cuenta gratis hoy y empezá a compartir tu catálogo con un link o un QR.</p>
+        <div className="mt-3 flex flex-wrap justify-center gap-3.5">
+          <button type="button" onClick={onAuth} className="flex h-[52px] items-center gap-2 rounded-[14px] bg-white px-7 text-[15px] font-bold text-[#7C3AED] hover:bg-violet-50">
+            Crear cuenta gratis <ArrowRight size={18} />
+          </button>
+          <a href="mailto:hola@miprecio.app" className="flex h-[52px] items-center rounded-[14px] border border-white/40 px-7 text-[15px] font-bold text-white hover:bg-white/10">Hablar con ventas</a>
         </div>
-      </div>
+      </Reveal>
     </section>
   )
 }
 
 function Footer() {
-  const columns = [
-    ['Producto', 'Funciones', 'Precios', 'Casos de uso', 'Demo'],
-    ['Empresa', 'Sobre nosotros', 'Blog', 'Clientes', 'Contacto'],
-    ['Recursos', 'Centro de ayuda', 'Documentación', 'Estado del servicio', 'Guías para pymes'],
-    ['Legal', 'Términos', 'Privacidad', 'Cookies', 'Seguridad'],
-  ]
-
+  const socials = [Instagram, Linkedin, Twitter, Youtube]
   return (
-    <footer className="bg-slate-950 px-5 py-14 text-white md:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="grid gap-10 lg:grid-cols-[1.1fr_2fr]">
-          <div>
-            <img src="/miprecio-logo-white-pencil.png" alt="MiPrecio" className="h-12 w-auto" />
-            <p className="mt-5 max-w-sm text-sm leading-6 text-slate-400">
+    <footer className="bg-[#2E1065] px-5 pb-8 pt-16 text-white md:px-[120px]">
+      <div className="mx-auto max-w-[1200px]">
+        <div className="grid gap-16 lg:grid-cols-[320px_repeat(4,1fr)]">
+          <div className="flex flex-col gap-4">
+            <img src="/miprecio-logo-white-pencil.png" alt="MiPrecio" className="h-12 w-auto self-start" />
+            <p className="text-[13px] leading-relaxed text-[#94A3B8]">
               La plataforma simple para que tu negocio cargue productos, controle stock y comparta su lista de precios con un link o un QR.
             </p>
+            <div className="mt-2 flex gap-2.5">
+              {socials.map((Ico, i) => (
+                <a key={i} href="#" className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-white/10 text-white hover:bg-white/20">
+                  <Ico size={16} />
+                </a>
+              ))}
+            </div>
           </div>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {columns.map(([title, ...links]) => (
-              <div key={title}>
-                <h3 className="mb-4 text-sm font-bold">{title}</h3>
-                <ul className="space-y-3">
-                  {links.map((link) => (
-                    <li key={link}><a href="#" className="text-sm text-slate-400 hover:text-white">{link}</a></li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+          {footerColumns.map(([title, ...links]) => (
+            <div key={title} className="flex flex-col gap-3.5">
+              <h3 className="text-[13px] font-bold tracking-wide text-white">{title}</h3>
+              {links.map((link) => (
+                <a key={link} href="#" className="text-[13px] font-medium text-[#94A3B8] hover:text-white">{link}</a>
+              ))}
+            </div>
+          ))}
         </div>
-        <div className="mt-12 border-t border-white/10 pt-8 text-sm text-slate-500">© 2026 MiPrecio. Todos los derechos reservados.</div>
+        <div className="my-10 h-px bg-white/10" />
+        <p className="text-center text-xs font-medium text-[#64748B]">© 2026 MiPrecio. Todos los derechos reservados.</p>
       </div>
     </footer>
-  )
-}
-
-function SectionIntro({ eyebrow, title, subtitle, align = 'center', inverted = false }: { eyebrow: string; title: string; subtitle?: string; align?: 'left' | 'center'; inverted?: boolean }) {
-  return (
-    <div className={align === 'center' ? 'mx-auto max-w-3xl text-center' : 'max-w-3xl'}>
-      <p className={`text-sm font-black uppercase tracking-[0.18em] ${inverted ? 'text-indigo-200' : 'text-violet-700'}`}>{eyebrow}</p>
-      <h2 className={`mt-4 text-4xl font-black leading-tight tracking-[-0.04em] md:text-5xl ${inverted ? 'text-white' : 'text-slate-950'}`}>{title}</h2>
-      {subtitle && <p className={`mt-4 text-base ${inverted ? 'text-indigo-100' : 'text-slate-500'}`}>{subtitle}</p>}
-    </div>
   )
 }
 

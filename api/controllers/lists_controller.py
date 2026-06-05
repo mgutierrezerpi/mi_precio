@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from lib.ctx import lists
-from controllers.deps import get_current_user
+from lib.ctx import lists, activity, plans
+from lib.ctx.plans_context import PlanLimitError
+from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateList, UpdateList
 from views import DeletedView, PriceListView
 
@@ -13,10 +14,17 @@ def list_lists_endpoint(tenant_id: str, current_user: dict = Depends(get_current
 
 
 @router.post("/tenants/{tenant_id}/lists", status_code=201)
-def create_list_endpoint(tenant_id: str, data: CreateList, current_user: dict = Depends(get_current_user)):
-    result = lists.create_list(tenant_id, data.name)
+def create_list_endpoint(tenant_id: str, data: CreateList, current_user: dict = Depends(require_editor)):
+    try:
+        plans.assert_can_add(tenant_id, "lists")
+    except PlanLimitError as e:
+        raise HTTPException(status_code=402, detail=str(e))
+    result = lists.create_list(tenant_id, data.name, data.kind)
     if not result:
         raise HTTPException(status_code=404, detail="Tenant not found")
+    activity.record(tenant_id, "list.created", f"Creó la lista «{result.price_list.name}»",
+                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                    entity_type="list", entity_id=result.price_list.id)
     return PriceListView.render(result.price_list, include_versions=True)
 
 
@@ -29,15 +37,19 @@ def get_list_endpoint(list_id: str, current_user: dict = Depends(get_current_use
 
 
 @router.patch("/lists/{list_id}")
-def update_list_endpoint(list_id: str, data: UpdateList, current_user: dict = Depends(get_current_user)):
+def update_list_endpoint(list_id: str, data: UpdateList, current_user: dict = Depends(require_editor)):
     price_list = lists.update_list(list_id, **data.model_dump(exclude_unset=True))
     if not price_list:
         raise HTTPException(status_code=404, detail="List not found")
+    if data.published is True:
+        activity.record(price_list.tenant_id, "list.published", f"Publicó la lista «{price_list.name}»",
+                        actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                        entity_type="list", entity_id=price_list.id)
     return PriceListView.render(price_list)
 
 
 @router.delete("/lists/{list_id}")
-def delete_list_endpoint(list_id: str, current_user: dict = Depends(get_current_user)):
+def delete_list_endpoint(list_id: str, current_user: dict = Depends(require_editor)):
     if not lists.delete_list(list_id):
         raise HTTPException(status_code=404, detail="List not found")
     return DeletedView()

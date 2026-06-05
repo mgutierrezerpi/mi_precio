@@ -157,3 +157,12 @@ export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.isLo
 export const selectAuthError = (state: { auth: AuthState }) => state.auth.error
 export const selectCodeSent = (state: { auth: AuthState }) => state.auth.codeSent
 export const selectPendingEmail = (state: { auth: AuthState }) => state.auth.pendingEmail
+
+// Role-based permissions. Sessions stored before roles existed default to "owner".
+const roleOf = (state: { auth: AuthState }) => state.auth.user?.role ?? 'owner'
+// Can create/edit/delete catalog & CRM data (owners, admins, editors). Viewers are read-only.
+export const selectCanEdit = (state: { auth: AuthState }) => ['owner', 'admin', 'editor'].includes(roleOf(state))
+// Can manage the team and tenant settings (owners, admins).
+export const selectIsAdmin = (state: { auth: AuthState }) => ['owner', 'admin'].includes(roleOf(state))
+// Owner-only actions (change plan, delete account).
+export const selectIsOwner = (state: { auth: AuthState }) => roleOf(state) === 'owner'

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from controllers.deps import get_current_user
+from controllers.deps import require_editor
 from controllers.input_types.import_from_url import ImportFromUrl
 from controllers.input_types.import_from_images import ImportFromImages
 from views.extracted_items_view import ExtractedItemsView
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/import", tags=["import"])
 @router.post("/from-url")
 def import_from_url_endpoint(
     data: ImportFromUrl,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_editor),
 ) -> ExtractedItemsView:
     """
     Extract menu items from a business URL (Google Maps, website, etc).
@@ -31,7 +31,7 @@ def import_from_url_endpoint(
 @router.post("/from-images")
 def import_from_images_endpoint(
     data: ImportFromImages,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_editor),
 ) -> ExtractedItemsView:
     """
     Extract menu items directly from image URLs.

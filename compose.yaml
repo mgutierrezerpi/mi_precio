@@ -75,6 +75,15 @@ services:
       args:
         VITE_API_URL: "${VITE_API_URL:-http://localhost:${API_PORT:-8000}/api/v1}"
     image: mi_precio/web_app:dev
+    environment:
+      VITE_API_URL: "http://localhost:${API_PORT:-8000}/api/v1"
+      # Reliable file watching for Vite HMR inside Docker on Windows/macOS.
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      # Live-mount the source so edits hot-reload without rebuilding the image.
+      - ./web_app:/app
+      # Keep the container's Linux node_modules (don't let the host shadow it).
+      - /app/node_modules
     ports:
       - "${WEB_APP_PORT:-3000}:3000"
     depends_on:

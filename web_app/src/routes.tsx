@@ -5,10 +5,15 @@ import { OldLandingScreen } from './screens/home/OldLandingScreen'
 import { MenuScreen } from './screens/menu/MenuScreen'
 import { LoginScreen } from './screens/admin/LoginScreen'
 import { DashboardScreen } from './screens/admin/DashboardScreen'
-import { ListsScreen } from './screens/admin/ListsScreen'
+import { PriceListsScreen } from './screens/admin/PriceListsScreen'
 import { ListEditScreen } from './screens/admin/ListEditScreen'
-import { ItemsScreen } from './screens/admin/ItemsScreen'
-import { SettingsScreen } from './screens/admin/SettingsScreen'
+import { ProductsScreen } from './screens/admin/ProductsScreen'
+import { CategoriesScreen } from './screens/admin/CategoriesScreen'
+import { CodesScreen } from './screens/admin/CodesScreen'
+import { CustomersScreen } from './screens/admin/CustomersScreen'
+import { ReportsScreen } from './screens/admin/ReportsScreen'
+import { TeamScreen } from './screens/admin/TeamScreen'
+import { SettingsCrmScreen } from './screens/admin/SettingsCrmScreen'
 
 export const router = createBrowserRouter([
   // Public routes
@@ -41,23 +46,43 @@ export const router = createBrowserRouter([
         element: <DashboardScreen />,
       },
       {
+        path: 'items',
+        element: <ProductsScreen />,
+      },
+      {
+        path: 'categories',
+        element: <CategoriesScreen />,
+      },
+      {
+        path: 'lists',
+        element: <PriceListsScreen />,
+      },
+      {
+        path: 'qr',
+        element: <CodesScreen />,
+      },
+      {
+        path: 'clientes',
+        element: <CustomersScreen />,
+      },
+      {
+        path: 'reportes',
+        element: <ReportsScreen />,
+      },
+      {
+        path: 'equipo',
+        element: <TeamScreen />,
+      },
+      {
+        path: 'settings',
+        element: <SettingsCrmScreen />,
+      },
+      {
         element: <MinimalLayout />,
         children: [
           {
-            path: 'lists',
-            element: <ListsScreen />,
-          },
-          {
             path: 'lists/:id',
             element: <ListEditScreen />,
-          },
-          {
-            path: 'items',
-            element: <ItemsScreen />,
-          },
-          {
-            path: 'settings',
-            element: <SettingsScreen />,
           },
         ],
       },

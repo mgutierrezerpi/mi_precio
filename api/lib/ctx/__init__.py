@@ -5,7 +5,15 @@ from lib.ctx import auth_context as auth
 from lib.ctx import lists_context as lists
 from lib.ctx import versions_context as versions
 from lib.ctx import items_context as items
+from lib.ctx import products_context as products
+from lib.ctx import categories_context as categories
+from lib.ctx import analytics_context as analytics
 from lib.ctx import public_context as public
+from lib.ctx import customers_context as customers
+from lib.ctx import activity_context as activity
+from lib.ctx import team_context as team
+from lib.ctx import notifications_context as notifications
+from lib.ctx import plans_context as plans
 
 # Explicit re-exports
 identity = identity
@@ -13,4 +21,12 @@ auth = auth
 lists = lists
 versions = versions
 items = items
+products = products
+categories = categories
+analytics = analytics
 public = public
+customers = customers
+activity = activity
+team = team
+notifications = notifications
+plans = plans

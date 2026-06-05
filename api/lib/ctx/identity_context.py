@@ -1,6 +1,8 @@
 """Identity context - interface for tenant and user operations."""
 
-from models import Tenant, User
+from datetime import datetime
+
+from models import Tenant, User, Invitation
 from lib.value_objects import UserResult
 
 
@@ -33,9 +35,13 @@ def update_tenant(tenant_id: str, **updates) -> Tenant | None:
         if existing:
             raise ValueError("Subdomain already in use")
 
+    # These have NOT NULL / defaults — never blank them out. Other (nullable)
+    # fields may be set to None to clear them (e.g. removing a logo).
+    protected = {"name", "subdomain", "currency", "language", "timezone"}
     for key, value in updates.items():
-        if value is not None:
-            setattr(tenant, key, value)
+        if value is None and key in protected:
+            continue
+        setattr(tenant, key, value)
     tenant.save()
     return tenant
 
@@ -44,10 +50,48 @@ def find_tenant_by_subdomain(subdomain: str) -> Tenant | None:
     return Tenant.get_or_none(Tenant.subdomain == subdomain.lower())
 
 
+def touch_last_seen(user_id: str, min_interval_seconds: int = 60) -> None:
+    """Mark a user as recently active (presence heartbeat), throttled so we don't
+    write on every request. Called from polled endpoints while the app is open."""
+    user = User.get_or_none(User.id == user_id)
+    if not user:
+        return
+    now = datetime.utcnow()
+    if user.last_seen_at is None or (now - user.last_seen_at).total_seconds() >= min_interval_seconds:
+        user.last_seen_at = now
+        user.save()
+
+
+def delete_tenant(tenant_id: str) -> bool:
+    """Permanently delete a tenant and everything under it (users, lists, products,
+    customers, orders, page views, etc.) via cascading FK deletes."""
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant:
+        return False
+    tenant.delete_instance(recursive=True)
+    return True
+
+
 def get_or_create_user(email: str) -> UserResult:
-    user = User.get_or_none(User.email == email.lower())
+    email = email.lower()
+    user = User.get_or_none(User.email == email)
     if user:
         return UserResult(user, False)
+
+    # If someone invited this email, join their team instead of creating a new tenant.
+    invite = Invitation.get_or_none(
+        (Invitation.email == email) & (Invitation.status == "pending")
+    )
+    if invite:
+        user = User.create(
+            email=email,
+            tenant=invite.tenant,
+            name=email.split("@")[0].title(),
+            role=invite.role,
+        )
+        invite.status = "accepted"
+        invite.save()
+        return UserResult(user, True)
 
     name = email.split("@")[0].title()
     subdomain = email.split("@")[0].lower().replace(".", "-")[:63]
@@ -59,5 +103,6 @@ def get_or_create_user(email: str) -> UserResult:
         counter += 1
 
     tenant = Tenant.create(name=name, subdomain=subdomain)
-    user = User.create(email=email, tenant=tenant)
+    # First user of a brand-new tenant owns it.
+    user = User.create(email=email, tenant=tenant, name=name, role="owner")
     return UserResult(user, True)

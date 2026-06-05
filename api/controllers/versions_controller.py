@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from lib.ctx import versions
-from controllers.deps import get_current_user
+from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateVersion, UpdateVersion
 from views import ListVersionView
 
@@ -13,7 +13,7 @@ def list_versions_endpoint(list_id: str, current_user: dict = Depends(get_curren
 
 
 @router.post("/lists/{list_id}/versions", status_code=201)
-def create_version_endpoint(list_id: str, data: CreateVersion, current_user: dict = Depends(get_current_user)):
+def create_version_endpoint(list_id: str, data: CreateVersion, current_user: dict = Depends(require_editor)):
     version = versions.create_version(list_id, data.name)
     if not version:
         raise HTTPException(status_code=404, detail="List not found")
@@ -29,7 +29,7 @@ def get_version_endpoint(version_id: str, current_user: dict = Depends(get_curre
 
 
 @router.patch("/versions/{version_id}")
-def update_version_endpoint(version_id: str, data: UpdateVersion, current_user: dict = Depends(get_current_user)):
+def update_version_endpoint(version_id: str, data: UpdateVersion, current_user: dict = Depends(require_editor)):
     version = versions.update_version(version_id, **data.model_dump(exclude_unset=True))
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
@@ -37,7 +37,7 @@ def update_version_endpoint(version_id: str, data: UpdateVersion, current_user: 
 
 
 @router.post("/versions/{version_id}/duplicate", status_code=201)
-def duplicate_version_endpoint(version_id: str, name: str | None = None, current_user: dict = Depends(get_current_user)):
+def duplicate_version_endpoint(version_id: str, name: str | None = None, current_user: dict = Depends(require_editor)):
     version = versions.duplicate_version(version_id, name)
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")

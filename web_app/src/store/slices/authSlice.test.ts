@@ -26,6 +26,8 @@ describe('authSlice', () => {
       id: '1',
       email: 'test@test.com',
       tenantId: '1',
+      role: 'owner',
+      name: 'test',
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     }
@@ -39,6 +41,8 @@ describe('authSlice', () => {
       id: '1',
       email: 'test@test.com',
       tenantId: '1',
+      role: 'owner',
+      name: 'test',
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     }
@@ -58,6 +62,15 @@ describe('authSlice', () => {
       name: 'Test Restaurant',
       subdomain: 'test',
       currency: 'ARS',
+      plan: 'free',
+      logoUrl: null,
+      brandColor: null,
+      description: null,
+      language: 'es',
+      timezone: 'America/Montevideo',
+      legalName: null,
+      taxId: null,
+      address: null,
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     }

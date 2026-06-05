@@ -1,13 +1,32 @@
 // Core domain types for Mi Precio
 
+export type PlanId = 'free' | 'pyme' | 'pro'
+
+export interface PlanInfo {
+  plan: PlanId
+  limits: { products: number | null; lists: number | null; members: number | null }
+  usage: { products: number; lists: number; members: number }
+}
+
 export interface Tenant {
   id: string
   name: string
   subdomain: string
   currency: string
+  plan: PlanId
+  logoUrl: string | null
+  brandColor: string | null
+  description: string | null
+  language: string
+  timezone: string
+  legalName: string | null
+  taxId: string | null
+  address: string | null
   createdAt: string
   updatedAt: string
 }
+
+export type ListKind = 'product' | 'service'
 
 export interface PriceList {
   id: string
@@ -16,6 +35,8 @@ export interface PriceList {
   slug: string | null
   published: boolean
   showOnIndex: boolean
+  kind: ListKind
+  itemCount: number
   createdAt: string
   updatedAt: string
   versions?: ListVersion[]
@@ -47,11 +68,139 @@ export interface Item {
   updatedAt: string
 }
 
+export interface Product {
+  id: string
+  tenantId: string
+  name: string
+  sku: string | null
+  price: string
+  currency: string
+  available: boolean
+  description: string | null
+  imageUrl: string | null
+  category: string | null
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Category {
+  id: string
+  tenantId: string
+  name: string
+  description: string | null
+  color: string | null
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Customer {
+  id: string
+  tenantId: string
+  name: string
+  rut: string | null
+  email: string | null
+  phone: string | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+  ordersCount: number
+  totalSpent: string
+  lastOrderAt: string | null
+}
+
+export interface OrderItem {
+  id: string
+  name: string
+  quantity: number
+  unitPrice: string
+}
+
+export interface Order {
+  id: string
+  tenantId: string
+  customerId: string
+  reference: string | null
+  total: string
+  currency: string
+  status: string
+  note: string | null
+  createdAt: string
+  updatedAt: string
+  items: OrderItem[]
+}
+
+export interface CustomerStats {
+  total: number
+  active: number
+  new: number
+  recurring: number
+}
+
+export interface CustomerDetail {
+  customer: Customer
+  orders: Order[]
+}
+
+export interface Activity {
+  id: string
+  action: string
+  summary: string
+  actor: string | null
+  entityType: string | null
+  entityId: string | null
+  createdAt: string
+}
+
+export interface NotifPrefs {
+  sales: boolean
+  catalog: boolean
+  customers: boolean
+  team: boolean
+}
+
+export interface NotificationsData {
+  items: Activity[]
+  unread: number
+  prefs: NotifPrefs
+}
+
+// Team types
+export type Role = 'owner' | 'admin' | 'editor' | 'viewer'
+
+export interface TeamMember {
+  id: string
+  email: string
+  tenantId: string
+  role: Role
+  name: string
+  createdAt: string
+  lastSeenAt: string | null
+}
+
+export interface Invitation {
+  id: string
+  email: string
+  role: Role
+  status: string
+  createdAt: string
+}
+
+export interface MemberStats {
+  members: number
+  active: number
+  pending: number
+  roles: number
+}
+
 // Auth types
 export interface User {
   id: string
   email: string
   tenantId: string
+  role: Role
+  name: string
   createdAt: string
   updatedAt: string
 }

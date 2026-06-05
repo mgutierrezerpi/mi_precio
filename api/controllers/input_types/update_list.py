@@ -6,3 +6,4 @@ class UpdateList(BaseModel):
     slug: str | None = None
     published: bool | None = None
     show_on_index: bool | None = None
+    kind: str | None = None

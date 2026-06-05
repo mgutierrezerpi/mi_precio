@@ -1,226 +1,387 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAppSelector, useAppDispatch } from '../../store/hooks'
-import { selectTenant, logout } from '../../store/slices/authSlice'
-import { fetchLists, selectLists, selectIsLoading } from '../../store/slices/menuSlice'
-import { ThemeToggle } from '../../components/ThemeToggle'
-import { useTheme } from '../../hooks/useTheme'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
+import { fetchProducts, selectProducts, selectProductsLoading } from '../../store/slices/productsSlice'
+import { fetchLists, selectLists } from '../../store/slices/menuSlice'
+import { selectDensity } from '../../store/slices/uiSlice'
+import type { Product, CustomerStats, Activity } from '../../types'
+import api, { type VisitStats } from '../../services/api'
+import { CrmLayout } from './crm/CrmLayout'
+import { Icon, type IconName } from './crm/ui'
+import { QrCode } from './crm/QrCode'
+import { tone, gradient, type Tone } from './crm/theme'
+import { ActivityRow } from './crm/activity'
+import { catTone, catIcon, formatPrice, availKey, STOCK_LABEL, STOCK_TONE, displayCategory } from './crm/productFormat'
 
+const FAVICON = '/miprecio-favicon.png'
+
+const quickActions: { icon: IconName; title: string; desc: string }[] = [
+  { icon: 'plus', title: 'Nuevo producto', desc: 'Agregalo al catálogo' },
+  { icon: 'list-plus', title: 'Crear lista', desc: 'Selecciona productos' },
+  { icon: 'user-plus', title: 'Nuevo cliente', desc: 'Agregá un contacto' },
+  { icon: 'qr-code', title: 'Compartir QR', desc: 'Generá y descargá' },
+]
+
+/* ── Screen ──────────────────────────────────────────────────────── */
 export function DashboardScreen() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const tenant = useAppSelector(selectTenant)
+  const canEdit = useAppSelector(selectCanEdit)
+  const products = useAppSelector(selectProducts)
+  const loading = useAppSelector(selectProductsLoading)
   const lists = useAppSelector(selectLists)
-  const isLoading = useAppSelector(selectIsLoading)
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
-
-  useTheme()
+  const compact = useAppSelector(selectDensity) === 'compact'
+  const [visits, setVisits] = useState<VisitStats | null>(null)
+  const [custStats, setCustStats] = useState<CustomerStats | null>(null)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     if (tenant?.id) {
+      dispatch(fetchProducts(tenant.id))
       dispatch(fetchLists(tenant.id))
     }
   }, [dispatch, tenant?.id])
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true)
-    await dispatch(logout())
-    navigate('/')
-  }
+  useEffect(() => {
+    if (!tenant?.id) return
+    let cancelled = false
+    api.getVisitStats(tenant.id).then((res) => {
+      if (!cancelled && res.data) setVisits(res.data)
+    })
+    api.getCustomerStats(tenant.id).then((res) => {
+      if (!cancelled && res.data) setCustStats(res.data)
+    })
+    return () => { cancelled = true }
+  }, [tenant?.id])
+
+  const { total, available, unavailable } = useMemo(() => {
+    const av = products.filter((p) => p.available).length
+    return { total: products.length, available: av, unavailable: products.length - av }
+  }, [products])
+
+  const activeLists = useMemo(() => lists.filter((l) => l.published).length, [lists])
+
+  // Public URL points to the list marked as principal (or the first published one).
+  const principalList = useMemo(() => lists.find((l) => l.showOnIndex) || lists.find((l) => l.published) || null, [lists])
+  const listPath = `/p/${tenant?.subdomain || 'mi-negocio'}${principalList ? `/${principalList.slug || principalList.id}` : ''}`
+  const publicUrlDisplay = `miprecio.app${listPath}`
+  const publicUrlFull = `${window.location.origin}${listPath}`
+  const qrUrl = `${publicUrlFull}?src=qr` // tagged so scans are counted separately from link visits
+  const [copied, setCopied] = useState(false)
+  const copyUrl = () => { navigator.clipboard?.writeText(publicUrlFull); setCopied(true); setTimeout(() => setCopied(false), 1500) }
+
+  const goProducts = () => navigate('/admin/items')
+  const goQr = () => navigate('/admin/qr')
+  const goLists = () => navigate('/admin/lists')
+  const goClientes = () => navigate('/admin/clientes')
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-primary)] flex flex-col">
-      {/* Minimal top bar */}
-      <header className="flex items-center justify-between p-6 relative z-50 animate-fade-in-down">
-        <Link
-          to="/"
-          className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all text-sm hover:-translate-x-1"
-        >
-          ← Inicio
-        </Link>
-        <div className="flex items-center gap-4">
-          <ThemeToggle />
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors text-sm disabled:opacity-50"
-          >
-            {isLoggingOut ? 'Saliendo...' : 'Salir'}
-          </button>
-        </div>
-      </header>
-
-      {/* Main content - centered */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 -mt-16 relative z-0">
-        {/* Greeting */}
-        <div className="text-center mb-16 animate-fade-in-up">
-          <p className="text-[var(--color-text-muted)] text-sm tracking-widest uppercase mb-3">
-            Bienvenido a
-          </p>
-          <h1 className="text-4xl md:text-6xl font-light text-[var(--color-text-primary)] tracking-wide">
-            {tenant?.name || 'Mi Precio'}
-          </h1>
-        </div>
-
-        {/* Navigation bubbles */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
-          {/* Lists bubble */}
-          <Link
-            to="/admin/lists"
-            className="group relative animate-fade-in-up stagger-2"
-          >
-            <div className="w-36 h-36 md:w-44 md:h-44 rounded-full border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-bg-card)] to-[var(--color-bg-secondary)] flex flex-col items-center justify-center gap-3 transition-all duration-500 group-hover:border-[var(--color-border-accent)] group-hover:scale-105 group-hover:shadow-[var(--shadow-elevated)] group-active:scale-100">
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-[var(--color-bg-elevated)] flex items-center justify-center transition-all duration-300 group-hover:bg-[var(--color-accent-soft)] group-hover:scale-110">
-                <ListIcon className="w-6 h-6 md:w-7 md:h-7 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" />
+    <CrmLayout
+      active="Inicio"
+      title="Inicio"
+      subtitle={`Buenos días — ${unavailable > 0 ? `${unavailable} producto${unavailable === 1 ? '' : 's'} no disponible${unavailable === 1 ? '' : 's'}.` : 'tu catálogo está al día.'}`}
+      searchPlaceholder="Buscar productos…"
+      searchValue={search}
+      onSearchChange={setSearch}
+      onSearchSubmit={(q) => navigate(q.trim() ? `/admin/items?q=${encodeURIComponent(q.trim())}` : '/admin/items')}
+      showDensityToggle
+    >
+      <div className={`flex min-w-[900px] flex-col ${compact ? 'gap-4 p-5' : 'gap-6 p-8'}`}>
+        {/* Welcome row — promo hero + public list. Full view only; in compact the
+            public list moves into the KPI row so everything sits on one line. */}
+        {!compact && (
+          <div className="flex gap-6">
+            <div className={`flex flex-1 items-center gap-6 rounded-3xl p-7 text-white shadow-[0_16px_32px_-8px_rgba(124,58,237,0.4)] ${gradient}`}>
+              <div className="flex flex-1 flex-col gap-3">
+                <p className="text-xs font-bold tracking-[0.2em] text-white/70">NOVEDAD</p>
+                <h2 className="text-3xl font-extrabold leading-tight">Compartí tu catálogo en un escaneo.</h2>
+                <p className="text-sm font-medium leading-relaxed text-white/80">Generá códigos QR personalizados con tu logo y actualizalos sin reimprimir.</p>
+                <button type="button" onClick={goQr} className="mt-1 flex h-11 w-fit items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#7C3AED] hover:bg-violet-50">
+                  <Icon name="qr-code" size={16} /> Crear QR
+                </button>
               </div>
-              <span className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors text-sm md:text-base font-medium">
-                Listas
-              </span>
+              <button type="button" onClick={goQr} title="Ver códigos QR" className="flex h-[140px] w-[140px] shrink-0 items-center justify-center rounded-2xl bg-white p-3.5">
+                <QrCode value={qrUrl} size={120} fg="#0F172A" logoUrl={FAVICON} className="h-full w-full object-contain" />
+              </button>
             </div>
-            {/* Decorative ring */}
-            <div className="absolute inset-0 rounded-full border border-[var(--color-border-light)] opacity-0 group-hover:opacity-40 scale-115 transition-all duration-500 pointer-events-none" />
-          </Link>
-
-          {/* Menu bubble - center, larger */}
-          <Link
-            to={`/p/${tenant?.subdomain || ''}`}
-            className="group relative order-first md:order-none animate-fade-in-up stagger-1"
-          >
-            <div className="w-44 h-44 md:w-52 md:h-52 rounded-full border border-[var(--color-border-accent)] bg-gradient-to-br from-[var(--color-bg-card)] via-[var(--color-bg-elevated)] to-[var(--color-accent-soft)] flex flex-col items-center justify-center gap-3 transition-all duration-500 group-hover:border-[var(--color-accent)] group-hover:scale-105 group-hover:shadow-[var(--shadow-glow)_rgba(var(--color-accent-rgb),0.2)] group-active:scale-100">
-              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-[var(--color-accent-soft)] flex items-center justify-center transition-all duration-300 group-hover:bg-[var(--color-accent)]/20 group-hover:scale-110">
-                <MenuIcon className="w-7 h-7 md:w-8 md:h-8 text-[var(--color-accent)] transition-colors" />
-              </div>
-              <span className="text-[var(--color-text-primary)] transition-colors text-base md:text-lg font-medium">
-                Ver Lista
-              </span>
-              <span className="text-[var(--color-text-subtle)] text-xs">
-                Vista pública
-              </span>
-            </div>
-            {/* Decorative rings */}
-            <div className="absolute inset-0 rounded-full border border-[var(--color-accent)]/15 opacity-0 group-hover:opacity-100 scale-110 transition-all duration-500 pointer-events-none" />
-            <div className="absolute inset-0 rounded-full border border-[var(--color-accent)]/8 opacity-0 group-hover:opacity-100 scale-125 transition-all duration-700 pointer-events-none" />
-          </Link>
-
-          {/* Settings bubble */}
-          <Link
-            to="/admin/settings"
-            className="group relative animate-fade-in-up stagger-3"
-          >
-            <div className="w-36 h-36 md:w-44 md:h-44 rounded-full border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-bg-card)] to-[var(--color-bg-secondary)] flex flex-col items-center justify-center gap-3 transition-all duration-500 group-hover:border-[var(--color-border-accent)] group-hover:scale-105 group-hover:shadow-[var(--shadow-elevated)] group-active:scale-100">
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-[var(--color-bg-elevated)] flex items-center justify-center transition-all duration-300 group-hover:bg-[var(--color-accent-soft)] group-hover:scale-110 group-hover:rotate-45">
-                <SettingsIcon className="w-6 h-6 md:w-7 md:h-7 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" />
-              </div>
-              <span className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors text-sm md:text-base font-medium">
-                Ajustes
-              </span>
-            </div>
-            {/* Decorative ring */}
-            <div className="absolute inset-0 rounded-full border border-[var(--color-border-light)] opacity-0 group-hover:opacity-40 scale-115 transition-all duration-500 pointer-events-none" />
-          </Link>
-        </div>
-
-        {/* Lists section */}
-        {isLoading ? (
-          <div className="mt-16 w-full max-w-md animate-fade-in">
-            <div className="skeleton skeleton-text w-20 mx-auto mb-4" />
-            <div className="space-y-3">
-              {[1, 2].map((i) => (
-                <div key={i} className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)]">
-                  <div className="flex items-center justify-between">
-                    <div className="skeleton skeleton-text w-32" />
-                    <div className="skeleton skeleton-text w-16" />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} className="w-[320px] shrink-0" />
           </div>
-        ) : lists.length > 0 ? (
-          <div className="mt-16 w-full max-w-md animate-fade-in-up stagger-4">
-            <p className="text-[var(--color-text-subtle)] text-xs tracking-widest uppercase mb-4 text-center">
-              Tus listas
-            </p>
-            <div className="space-y-3">
-              {lists.map((list, index) => (
-                <Link
-                  key={list.id}
-                  to={`/p/${tenant?.subdomain}/${list.slug || list.id}`}
-                  className={`flex items-center justify-between p-4 rounded-xl border border-[var(--color-border)] bg-gradient-to-r from-[var(--color-bg-card)] to-[var(--color-bg-secondary)] hover:border-[var(--color-border-accent)] hover:shadow-[var(--shadow-soft)] transition-all duration-300 group hover:-translate-y-0.5 animate-fade-in-up`}
-                  style={{ animationDelay: `${0.3 + index * 0.05}s` }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[var(--color-bg-elevated)] flex items-center justify-center group-hover:bg-[var(--color-accent-soft)] transition-colors">
-                      <MenuIcon className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors font-medium">
-                        {list.name}
-                      </span>
-                      {list.showOnIndex && (
-                        <span className="soft-badge text-[10px]">
-                          Principal
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {list.published ? (
-                      <span className="soft-badge-success text-xs flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] animate-pulse" />
-                        Publicada
-                      </span>
-                    ) : (
-                      <span className="soft-badge-warning text-xs flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-warning)]" />
-                        Borrador
-                      </span>
-                    )}
-                    <svg className="w-4 h-4 text-[var(--color-text-subtle)] group-hover:text-[var(--color-accent)] group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        )}
 
-      </main>
-
-      {/* Bottom decoration */}
-      <footer className="p-6 text-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
-        <div className="flex items-center justify-center gap-4">
-          <span className="h-px w-12 bg-gradient-to-r from-transparent to-[var(--color-border)]" />
-          <span className="text-[var(--color-accent-muted)] text-xs">✦</span>
-          <span className="h-px w-12 bg-gradient-to-l from-transparent to-[var(--color-border)]" />
+        {/* KPI row — in compact the public list card joins this row (grid widens to 6 cols). */}
+        <div className={compact ? 'grid grid-cols-6 gap-3' : 'grid grid-cols-4 gap-4'}>
+          {compact && <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} compact className="col-span-2" />}
+          <ProductsCard total={total} available={available} unavailable={unavailable} onClick={goProducts} compact={compact} />
+          <KpiCard icon="list-checks" iconTone="violet" value={lists.length} label="Listas" tag={`${activeLists} activas`} tagTone="green" note="Compartibles por link y QR" onClick={goLists} compact={compact} />
+          <KpiCard icon="users" iconTone="violet" value={custStats?.total ?? 0} label="Clientes" tag={`${custStats?.active ?? 0} activos`} tagTone="green" note="En tu cartera" onClick={goClientes} compact={compact} />
         </div>
-      </footer>
+
+        {/* Bottom row */}
+        <div className={`flex ${compact ? 'gap-4' : 'gap-5'}`}>
+          <RecentProducts products={products} total={total} loading={loading} search={search} onNew={canEdit ? () => navigate('/admin/items?new=1') : undefined} onViewAll={goProducts} compact={compact} />
+          <div className={`flex w-[380px] shrink-0 flex-col ${compact ? 'gap-4' : 'gap-5'}`}>
+            {canEdit && (
+              <QuickActions
+                onProduct={() => navigate('/admin/items?new=1')}
+                onList={() => navigate('/admin/lists?new=1')}
+                onCustomer={() => navigate('/admin/clientes?new=1')}
+                onQr={goQr}
+                compact={compact}
+              />
+            )}
+            {!compact && <ActivityFeed tenantId={tenant?.id} onSeeAll={() => navigate('/admin/reportes')} />}
+          </div>
+        </div>
+      </div>
+    </CrmLayout>
+  )
+}
+
+/** Public list URL + today's visits. Shown in the welcome row (full) or inline with the KPIs (compact). */
+function PublicListCard({ urlDisplay, onCopy, copied, visits, compact, className = '' }: { urlDisplay: string; onCopy: () => void; copied: boolean; visits: VisitStats | null; compact?: boolean; className?: string }) {
+  return (
+    <div className={`flex flex-col rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)] ${compact ? 'gap-2.5 p-4' : 'gap-3.5 p-6'} ${className}`}>
+      {!compact && <p className="text-lg font-extrabold text-[var(--dash-text)]">Tu lista pública</p>}
+      <button type="button" onClick={onCopy} title="Copiar enlace" className={`flex items-center gap-2.5 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 text-left text-[var(--dash-link)] hover:opacity-90 ${compact ? 'h-9' : 'h-[42px]'}`}>
+        <Icon name="link-2" size={16} />
+        <span className="flex-1 truncate text-[13px] font-semibold">{urlDisplay}</span>
+        <Icon name={copied ? 'circle-check' : 'copy'} size={16} />
+      </button>
+      <div className="flex gap-2">
+        <div className="flex flex-1 items-center gap-2 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 py-2 text-[var(--dash-text2)]">
+          <Icon name="eye" size={14} className="text-[var(--dash-link)]" />
+          <span className="text-xs font-bold">Hoy: {visits?.today ?? 0}</span>
+        </div>
+        <div className="flex flex-1 items-center gap-2 rounded-[10px] px-3 py-2" style={tone((visits?.changePct ?? 0) >= 0 ? 'green' : 'red')}>
+          <Icon name="trending-up" size={14} className={(visits?.changePct ?? 0) < 0 ? 'scale-y-[-1]' : ''} />
+          <span className="text-xs font-bold">{(visits?.changePct ?? 0) >= 0 ? '+' : ''}{visits?.changePct ?? 0}% vs ayer</span>
+        </div>
+      </div>
     </div>
   )
 }
 
-function ListIcon({ className }: { className?: string }) {
+function KpiCard({ icon, iconTone, value, label, tag, tagTone, note, onClick, compact }: { icon: IconName; iconTone: Tone; value: string | number; label: string; tag: string; tagTone: Tone; note: string; onClick?: () => void; compact?: boolean }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-    </svg>
+    <button type="button" onClick={onClick} className={`flex items-center rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)] ${compact ? 'gap-3 px-4 py-3' : 'gap-3.5 px-5 py-[18px]'}`}>
+      <span className={`flex shrink-0 items-center justify-center rounded-[14px] ${compact ? 'h-10 w-10' : 'h-12 w-12'}`} style={tone(iconTone)}>
+        <Icon name={icon} size={compact ? 18 : 22} />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-end gap-2">
+          <span className={`font-black leading-none text-[var(--dash-text)] ${compact ? 'text-[22px]' : 'text-[26px]'}`}>{value}</span>
+          <span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">{label}</span>
+        </div>
+        <div className={`flex items-center gap-2 ${compact ? 'mt-1' : 'mt-1.5'}`}>
+          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone(tagTone)}>{tag}</span>
+          <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{note}</span>
+        </div>
+      </div>
+    </button>
   )
 }
 
-function MenuIcon({ className }: { className?: string }) {
+/** Products KPI split in half: available vs unavailable. */
+function ProductsCard({ total, available, unavailable, onClick, compact }: { total: number; available: number; unavailable: number; onClick?: () => void; compact?: boolean }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-    </svg>
+    <button type="button" onClick={onClick} className={`col-span-2 flex items-center rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)] ${compact ? 'gap-3 px-4 py-3' : 'gap-4 px-5 py-[18px]'}`}>
+      <span className={`flex shrink-0 items-center justify-center rounded-[14px] ${compact ? 'h-10 w-10' : 'h-12 w-12'}`} style={tone('violet')}>
+        <Icon name="package" size={compact ? 18 : 22} />
+      </span>
+      <div className={`flex min-w-0 flex-1 flex-col ${compact ? 'gap-1.5' : 'gap-2'}`}>
+        <div className="flex items-end gap-2">
+          <span className={`font-black leading-none text-[var(--dash-text)] ${compact ? 'text-[22px]' : 'text-[26px]'}`}>{total}</span>
+          <span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">Productos</span>
+        </div>
+        <div className="flex items-stretch divide-x divide-[var(--dash-border)] overflow-hidden rounded-xl border border-[var(--dash-border)]">
+          <div className={`flex flex-1 flex-col items-center gap-0.5 ${compact ? 'py-1' : 'py-1.5'}`}>
+            <span className={`font-black leading-none ${compact ? 'text-[17px]' : 'text-[20px]'}`} style={{ color: 'var(--tone-green-fg)' }}>{available}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">Disponibles</span>
+          </div>
+          <div className={`flex flex-1 flex-col items-center gap-0.5 ${compact ? 'py-1' : 'py-1.5'}`}>
+            <span className={`font-black leading-none ${compact ? 'text-[17px]' : 'text-[20px]'}`} style={{ color: 'var(--tone-red-fg)' }}>{unavailable}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">No disponibles</span>
+          </div>
+        </div>
+      </div>
+    </button>
   )
 }
 
-function SettingsIcon({ className }: { className?: string }) {
+type Tab = 'all' | 'available' | 'unavailable'
+
+function RecentProducts({ products, total, loading, search, onNew, onViewAll, compact }: { products: Product[]; total: number; loading: boolean; search: string; onNew?: () => void; onViewAll: () => void; compact?: boolean }) {
+  const [tab, setTab] = useState<Tab>('all')
+  const recent = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const sorted = [...products]
+      .filter((p) => !q || [p.name, p.sku, p.category].some((v) => v?.toLowerCase().includes(q)))
+      .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
+    const filtered = tab === 'all' ? sorted : sorted.filter((p) => (tab === 'available' ? p.available : !p.available))
+    return filtered.slice(0, 5)
+  }, [products, tab, search])
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'all', label: 'Todos' },
+    { key: 'available', label: 'Disponibles' },
+    { key: 'unavailable', label: 'No disponibles' },
+  ]
+
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
+    <div className={`flex flex-1 flex-col rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)] ${compact ? 'gap-3 p-4' : 'gap-[18px] p-6'}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h3 className={`font-extrabold text-[var(--dash-text)] ${compact ? 'text-lg' : 'text-[22px]'}`}>Productos recientes</h3>
+          {!compact && <p className="text-xs font-medium text-[var(--dash-muted)]">Actualizá precios y disponibilidad al instante.</p>}
+        </div>
+        <div className="flex items-center gap-2">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              className={`flex h-9 items-center rounded-[10px] px-3.5 text-[13px] font-bold ${tab === t.key ? `text-white ${gradient}` : 'bg-[var(--dash-soft)] text-[var(--dash-text2)]'}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-[var(--dash-border)]">
+        <div className={`flex items-center gap-3 bg-[var(--dash-table-head)] px-[18px] text-[11px] font-bold tracking-wide text-[var(--dash-muted)] ${compact ? 'h-9' : 'h-[42px]'}`}>
+          <span className="flex-1">PRODUCTO</span>
+          {!compact && <span className="w-[110px]">SKU</span>}
+          {!compact && <span className="w-[130px]">CATEGORÍA</span>}
+          <span className="w-[90px]">PRECIO</span>
+          <span className="w-[110px]">DISPONIBLE</span>
+        </div>
+
+        {loading ? (
+          <div className="flex h-40 items-center justify-center text-sm font-medium text-[var(--dash-muted)]">Cargando…</div>
+        ) : recent.length === 0 ? (
+          <div className="flex h-40 flex-col items-center justify-center gap-3 text-center">
+            <p className="text-sm font-semibold text-[var(--dash-text)]">{total > 0 ? 'Sin productos en este filtro' : 'Todavía no tenés productos'}</p>
+            {total === 0 && onNew && (
+              <button type="button" onClick={onNew} className={`flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}>
+                <Icon name="plus" size={16} /> Crear el primero
+              </button>
+            )}
+          </div>
+        ) : (
+          recent.map((p, i) => {
+            const st = availKey(p)
+            return (
+              <div key={p.id} className={`flex items-center gap-3 bg-[var(--dash-surface)] px-[18px] ${compact ? 'h-[52px]' : 'h-[68px]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                <div className="flex flex-1 items-center gap-3">
+                  {p.imageUrl
+                    ? <img src={p.imageUrl} alt={p.name} className="h-9 w-9 shrink-0 rounded-[10px] object-cover" />
+                    : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]" style={tone(catTone(p.category))}><Icon name={catIcon(p.category)} /></span>}
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{p.name}</span>
+                    {!compact && <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{p.description || '—'}</span>}
+                  </div>
+                </div>
+                {!compact && <span className="w-[110px] text-xs font-semibold text-[var(--dash-text2)]">{p.sku || '—'}</span>}
+                {!compact && (
+                  <span className="w-[130px]">
+                    {p.category
+                      ? <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(catTone(p.category))}>{displayCategory(p.category)}</span>
+                      : <span className="text-[11px] font-medium text-[var(--dash-muted)]">—</span>}
+                  </span>
+                )}
+                <span className="w-[90px] text-[13px] font-bold text-[var(--dash-text)]">{formatPrice(p.price)}</span>
+                <span className="w-[110px]">
+                  <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(STOCK_TONE[st])}>{STOCK_LABEL[st]}</span>
+                </span>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-[var(--dash-muted)]">Mostrando {recent.length} de {total} productos</span>
+        <button type="button" onClick={onViewAll} className="flex h-8 items-center gap-1 rounded-lg px-3 text-xs font-bold" style={tone('violet')}>
+          Ver todos <Icon name="chevron-right" size={13} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function QuickActions({ onProduct, onList, onCustomer, onQr, compact }: { onProduct: () => void; onList: () => void; onCustomer: () => void; onQr: () => void; compact?: boolean }) {
+  const handlers: Record<string, () => void> = {
+    'Nuevo producto': onProduct,
+    'Crear lista': onList,
+    'Nuevo cliente': onCustomer,
+    'Compartir QR': onQr,
+  }
+  return (
+    <div className={`flex flex-col rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)] ${compact ? 'gap-3 p-4' : 'gap-3.5 p-[22px]'}`}>
+      <h3 className={`font-extrabold text-[var(--dash-text)] ${compact ? 'text-lg' : 'text-[22px]'}`}>Acciones rápidas</h3>
+      <div className={compact ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-3'}>
+        {quickActions.map((a) => (
+          <button
+            key={a.title}
+            type="button"
+            onClick={handlers[a.title]}
+            className={`rounded-2xl border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] text-left hover:opacity-80 ${compact ? 'flex items-center gap-3 p-2.5' : 'flex flex-col gap-2.5 p-[18px]'}`}
+          >
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-white ${gradient}`}><Icon name={a.icon} /></span>
+            <span className="text-[13px] font-bold text-[var(--dash-text)]">{a.title}</span>
+            {!compact && <span className="text-[11px] font-medium text-[var(--dash-muted)]">{a.desc}</span>}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Most recent items shown on the dashboard; the rest live in Reportes.
+const ACTIVITY_PREVIEW = 5
+
+function ActivityFeed({ tenantId, onSeeAll }: { tenantId?: string; onSeeAll: () => void }) {
+  const [items, setItems] = useState<Activity[]>([])
+  const [loaded, setLoaded] = useState(false)
+
+  // Poll so a teammate's actions appear live (DB is the source of truth → multi-account ready).
+  useEffect(() => {
+    if (!tenantId) return
+    let cancelled = false
+    const load = () => api.getActivity(tenantId).then((res) => {
+      if (!cancelled && res.data) { setItems(res.data); setLoaded(true) }
+    })
+    load()
+    const id = setInterval(load, 7000)
+    return () => { cancelled = true; clearInterval(id) }
+  }, [tenantId])
+
+  return (
+    <div className="flex flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-[22px] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)]">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Actividad reciente</h3>
+        <span className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--dash-muted)]">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#10B981]" /> En vivo
+        </span>
+      </div>
+      {loaded && items.length === 0 ? (
+        <p className="py-6 text-center text-xs font-medium text-[var(--dash-muted)]">Todavía no hay actividad.</p>
+      ) : (
+        items.slice(0, ACTIVITY_PREVIEW).map((a) => <ActivityRow key={a.id} activity={a} />)
+      )}
+      {items.length > ACTIVITY_PREVIEW && (
+        <button
+          type="button"
+          onClick={onSeeAll}
+          className="mt-1 flex items-center justify-center gap-1.5 rounded-xl border border-[var(--dash-border)] py-2.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
+        >
+          Ver todas <Icon name="chevron-right" size={16} />
+        </button>
+      )}
+    </div>
   )
 }
 

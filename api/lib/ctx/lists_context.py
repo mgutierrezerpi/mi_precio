@@ -16,12 +16,13 @@ def get_list(list_id: str) -> PriceList | None:
     return PriceList.get_or_none(PriceList.id == list_id)
 
 
-def create_list(tenant_id: str, name: str) -> CreatedList | None:
+def create_list(tenant_id: str, name: str, kind: str = "product") -> CreatedList | None:
     """Create a new price list with an initial version."""
     tenant = get_tenant(tenant_id)
     if not tenant:
         return None
-    price_list = PriceList.create(tenant=tenant, name=name)
+    kind = kind if kind in ("product", "service") else "product"
+    price_list = PriceList.create(tenant=tenant, name=name, kind=kind)
     version = ListVersion.create(list=price_list, name="v1", version_number=1)
     return CreatedList(price_list, version)
 
