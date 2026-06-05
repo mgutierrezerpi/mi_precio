@@ -6,6 +6,11 @@ from lib.ctx import auth
 from lib import decode_token
 
 
+def setup_function():
+    auth.settings.mailer_enabled = False
+    auth.settings.log_auth_codes = False
+
+
 def test_send_code_creates_auth_code(db):
     code = auth.send_code("test@example.com")
 

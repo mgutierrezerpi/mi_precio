@@ -6,6 +6,9 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    assetsDir: 'app_assets',
+  },
   test: {
     environment: 'happy-dom',
     setupFiles: ['./vitest.setup.ts'],

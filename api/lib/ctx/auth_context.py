@@ -1,10 +1,16 @@
 """Auth context - authentication business logic."""
 
+import logging
+
 from datetime import datetime, timedelta
+from config import settings
+from infra.mailer import MailerError, mailer
 from models import AuthCode
 from lib.ctx.identity_context import get_or_create_user
 from lib import generate_verification_code, encode_token
 from lib.value_objects import AuthResult
+
+logger = logging.getLogger(__name__)
 
 
 def send_code(email: str) -> str:
@@ -17,7 +23,19 @@ def send_code(email: str) -> str:
         code=code,
         expires_at=datetime.utcnow() + timedelta(minutes=10),
     )
-    print(f"[AUTH] Code for {email}: {code}")
+
+    try:
+        mailer.send(
+            to=email,
+            subject="Your Mi Precio verification code",
+            body=f"Your verification code is: {code}\n\nThis code expires in 10 minutes.",
+        )
+    except MailerError as e:
+        raise RuntimeError(f"Failed to send code to {email}") from e
+
+    if settings.log_auth_codes:
+        logger.info(f"[AUTH] Code for {email}: {code}")
+
     return code
 
 

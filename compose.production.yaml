@@ -1,0 +1,7 @@
+services:
+  web_app:
+    build: null
+    image: nginx:1.27-alpine
+    volumes:
+      - ./web_app/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./web_app/dist:/usr/share/nginx/html:ro
