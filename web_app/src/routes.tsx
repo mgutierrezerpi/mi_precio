@@ -3,7 +3,6 @@ import { MinimalLayout } from './components/MinimalLayout'
 import { HomeScreen } from './screens/home/HomeScreen'
 import { OldLandingScreen } from './screens/home/OldLandingScreen'
 import { MenuScreen } from './screens/menu/MenuScreen'
-import { LoginScreen } from './screens/admin/LoginScreen'
 import { DashboardScreen } from './screens/admin/DashboardScreen'
 import { PriceListsScreen } from './screens/admin/PriceListsScreen'
 import { ListEditScreen } from './screens/admin/ListEditScreen'
@@ -35,7 +34,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/login',
-    element: <LoginScreen />,
+    element: <HomeScreen />,
   },
   // Admin routes
   {
