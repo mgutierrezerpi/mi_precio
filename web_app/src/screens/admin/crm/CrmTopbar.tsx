@@ -1,4 +1,5 @@
 import { useTheme } from '../../../hooks/useTheme'
+import { useDensity } from '../../../hooks/useDensity'
 import { useT } from '../../../lib/i18n'
 import { Icon, UserMenu } from './ui'
 import { NotificationsBell } from './NotificationsBell'
@@ -14,11 +15,14 @@ interface CrmTopbarProps {
   onSearchSubmit?: (value: string) => void
   /** Optional action button(s) rendered before the theme toggle (e.g. "Compartir lista"). */
   actions?: React.ReactNode
+  /** Show the compact/full density toggle. Enabled per-screen while we roll it out. */
+  showDensityToggle?: boolean
 }
 
-/** Shared CRM topbar: title + search + theme toggle + notifications + user menu. */
-export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions }: CrmTopbarProps) {
+/** Shared CRM topbar: title + search + density/theme toggles + notifications + user menu. */
+export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions, showDensityToggle }: CrmTopbarProps) {
   const { isDark, toggleTheme } = useTheme()
+  const { compact, toggleDensity } = useDensity()
   const t = useT()
 
   return (
@@ -47,6 +51,16 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
       >
         <Icon name={isDark ? 'sun' : 'moon'} className={isDark ? 'text-[#FBBF24]' : 'text-[var(--dash-text2)]'} />
       </button>
+      {showDensityToggle && (
+        <button
+          type="button"
+          onClick={toggleDensity}
+          className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] hover:opacity-80"
+          title={compact ? t('top.fullView') : t('top.compactView')}
+        >
+          <Icon name={compact ? 'layout-dashboard' : 'rows-2'} className={compact ? 'text-[var(--dash-link)]' : 'text-[var(--dash-text2)]'} />
+        </button>
+      )}
       <NotificationsBell />
       {actions}
       <UserMenu />

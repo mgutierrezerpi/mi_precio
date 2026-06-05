@@ -5,6 +5,7 @@ import uiReducer, {
   toggleMobileMenu,
   setTheme,
   setViewMode,
+  setDensity,
 } from './uiSlice'
 
 describe('uiSlice', () => {
@@ -13,6 +14,7 @@ describe('uiSlice', () => {
     mobileMenuOpen: false,
     theme: 'system' as const,
     viewMode: 'grid' as const,
+    density: 'full' as const,
   }
 
   it('should return the initial state', () => {
@@ -45,5 +47,10 @@ describe('uiSlice', () => {
   it('should handle setViewMode', () => {
     const actual = uiReducer(initialState, setViewMode('list'))
     expect(actual.viewMode).toBe('list')
+  })
+
+  it('should handle setDensity', () => {
+    const actual = uiReducer(initialState, setDensity('compact'))
+    expect(actual.density).toBe('compact')
   })
 })

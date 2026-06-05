@@ -295,6 +295,7 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
   const [step, setStep] = useState(1)
   const [name, setName] = useState(list?.name ?? '')
   const [slug, setSlug] = useState(list?.slug ?? '')
+  const [kind, setKind] = useState<'product' | 'service'>(list?.kind ?? 'product')
   const [published, setPublished] = useState(list?.published ?? false)
   const [principal, setPrincipal] = useState(list?.showOnIndex ?? false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -366,10 +367,10 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
     setSaving(true)
     try {
       if (editing) {
-        await dispatch(updateList({ listId: list!.id, data: { name: name.trim(), slug: slug.trim() || undefined, published, showOnIndex: principal } }))
+        await dispatch(updateList({ listId: list!.id, data: { name: name.trim(), slug: slug.trim() || undefined, published, showOnIndex: principal, kind } }))
         if (versionId.current) await syncItems(versionId.current)
       } else if (tenantId) {
-        const res = await dispatch(createList({ tenantId, name: name.trim() }))
+        const res = await dispatch(createList({ tenantId, name: name.trim(), kind }))
         if (createList.fulfilled.match(res) && res.payload) {
           const vid = res.payload.versions?.[0]?.id
           await dispatch(updateList({ listId: res.payload.id, data: { slug: slug.trim() || undefined, published, showOnIndex: principal } }))
@@ -401,6 +402,26 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
                 <span className="text-xs font-bold text-[var(--dash-text2)]">Nombre</span>
                 <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Lista principal" className={inputCls} required />
               </label>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-bold text-[var(--dash-text2)]">Tipo de lista</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { k: 'product' as const, icon: 'package' as const, title: 'Productos', desc: 'Con carrito y pedidos' },
+                    { k: 'service' as const, icon: 'sliders-horizontal' as const, title: 'Servicios', desc: 'Solo lista de precios' },
+                  ]).map((o) => {
+                    const on = kind === o.k
+                    return (
+                      <button key={o.k} type="button" onClick={() => setKind(o.k)} className={`flex flex-col gap-1 rounded-xl border p-3 text-left ${on ? 'border-[var(--dash-link)] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)] hover:bg-[var(--dash-soft)]'}`}>
+                        <span className="flex items-center gap-2 text-[13px] font-bold text-[var(--dash-text)]">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={tone(on ? 'violet' : 'slate')}><Icon name={o.icon} size={15} /></span>
+                          {o.title}
+                        </span>
+                        <span className="text-[11px] font-medium text-[var(--dash-muted)]">{o.desc}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-bold text-[var(--dash-text2)]">Slug del link (opcional)</span>
                 <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="mayoristas" className={inputCls} />

@@ -40,8 +40,8 @@ export const fetchList = createAsyncThunk(
 
 export const createList = createAsyncThunk(
   'menu/createList',
-  async ({ tenantId, name }: { tenantId: string; name: string }, { rejectWithValue }) => {
-    const response = await api.createList(tenantId, name)
+  async ({ tenantId, name, kind }: { tenantId: string; name: string; kind?: 'product' | 'service' }, { rejectWithValue }) => {
+    const response = await api.createList(tenantId, name, kind)
     if (response.error) return rejectWithValue(response.error)
     return response.data
   }
@@ -49,7 +49,7 @@ export const createList = createAsyncThunk(
 
 export const updateList = createAsyncThunk(
   'menu/updateList',
-  async ({ listId, data }: { listId: string; data: { name?: string; slug?: string; published?: boolean; showOnIndex?: boolean } }, { rejectWithValue }) => {
+  async ({ listId, data }: { listId: string; data: { name?: string; slug?: string; published?: boolean; showOnIndex?: boolean; kind?: 'product' | 'service' } }, { rejectWithValue }) => {
     const response = await api.updateList(listId, data)
     if (response.error) return rejectWithValue(response.error)
     return response.data

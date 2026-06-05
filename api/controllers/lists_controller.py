@@ -19,7 +19,7 @@ def create_list_endpoint(tenant_id: str, data: CreateList, current_user: dict = 
         plans.assert_can_add(tenant_id, "lists")
     except PlanLimitError as e:
         raise HTTPException(status_code=402, detail=str(e))
-    result = lists.create_list(tenant_id, data.name)
+    result = lists.create_list(tenant_id, data.name, data.kind)
     if not result:
         raise HTTPException(status_code=404, detail="Tenant not found")
     activity.record(tenant_id, "list.created", f"Creó la lista «{result.price_list.name}»",

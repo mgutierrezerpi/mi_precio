@@ -27,6 +27,8 @@ def ensure_columns():
     list_columns = [column.name for column in db.get_columns("lists")]
     if "slug" not in list_columns:
         db.execute_sql("ALTER TABLE lists ADD COLUMN slug VARCHAR(255)")
+    if "kind" not in list_columns:
+        db.execute_sql("ALTER TABLE lists ADD COLUMN kind VARCHAR(20) NOT NULL DEFAULT 'product'")
 
     product_columns = [column.name for column in db.get_columns("products")]
     if "available" not in product_columns:

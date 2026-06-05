@@ -26,6 +26,8 @@ export interface Tenant {
   updatedAt: string
 }
 
+export type ListKind = 'product' | 'service'
+
 export interface PriceList {
   id: string
   tenantId: string
@@ -33,6 +35,7 @@ export interface PriceList {
   slug: string | null
   published: boolean
   showOnIndex: boolean
+  kind: ListKind
   itemCount: number
   createdAt: string
   updatedAt: string

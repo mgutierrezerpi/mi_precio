@@ -158,14 +158,14 @@ class ApiService {
     return this.request(`/lists/${listId}`)
   }
 
-  async createList(tenantId: string, name: string): Promise<ApiResponse<PriceList>> {
+  async createList(tenantId: string, name: string, kind: 'product' | 'service' = 'product'): Promise<ApiResponse<PriceList>> {
     return this.request(`/tenants/${tenantId}/lists`, {
       method: 'POST',
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, kind }),
     })
   }
 
-  async updateList(listId: string, data: { name?: string; slug?: string; published?: boolean; showOnIndex?: boolean }): Promise<ApiResponse<PriceList>> {
+  async updateList(listId: string, data: { name?: string; slug?: string; published?: boolean; showOnIndex?: boolean; kind?: 'product' | 'service' }): Promise<ApiResponse<PriceList>> {
     return this.request(`/lists/${listId}`, {
       method: 'PATCH',
       body: JSON.stringify({
@@ -173,6 +173,7 @@ class ApiService {
         slug: data.slug,
         published: data.published,
         show_on_index: data.showOnIndex,
+        kind: data.kind,
       }),
     })
   }

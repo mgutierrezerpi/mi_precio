@@ -7,6 +7,7 @@ class PublicListView(BaseView):
     id: str
     name: str
     slug: str | None = None
+    kind: str = "product"
     version: ListVersionView
 
     @classmethod
@@ -15,5 +16,6 @@ class PublicListView(BaseView):
             id=published.price_list.id,
             name=published.price_list.name,
             slug=published.price_list.slug,
+            kind=getattr(published.price_list, "kind", "product") or "product",
             version=ListVersionView.render(published.version, include_items=True),
         )

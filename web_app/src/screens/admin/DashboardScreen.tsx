@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import { fetchProducts, selectProducts, selectProductsLoading } from '../../store/slices/productsSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
+import { selectDensity } from '../../store/slices/uiSlice'
 import type { Product, CustomerStats, Activity } from '../../types'
 import api, { type VisitStats } from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
@@ -31,6 +32,7 @@ export function DashboardScreen() {
   const products = useAppSelector(selectProducts)
   const loading = useAppSelector(selectProductsLoading)
   const lists = useAppSelector(selectLists)
+  const compact = useAppSelector(selectDensity) === 'compact'
   const [visits, setVisits] = useState<VisitStats | null>(null)
   const [custStats, setCustStats] = useState<CustomerStats | null>(null)
   const [search, setSearch] = useState('')
@@ -84,64 +86,52 @@ export function DashboardScreen() {
       searchValue={search}
       onSearchChange={setSearch}
       onSearchSubmit={(q) => navigate(q.trim() ? `/admin/items?q=${encodeURIComponent(q.trim())}` : '/admin/items')}
+      showDensityToggle
     >
-      <div className="flex min-w-[900px] flex-col gap-6 p-8">
-        {/* Welcome row */}
-        <div className="flex gap-6">
-          <div className={`flex flex-1 items-center gap-6 rounded-3xl p-7 text-white shadow-[0_16px_32px_-8px_rgba(124,58,237,0.4)] ${gradient}`}>
-            <div className="flex flex-1 flex-col gap-3">
-              <p className="text-xs font-bold tracking-[0.2em] text-white/70">NOVEDAD</p>
-              <h2 className="text-3xl font-extrabold leading-tight">Compartí tu catálogo en un escaneo.</h2>
-              <p className="text-sm font-medium leading-relaxed text-white/80">Generá códigos QR personalizados con tu logo y actualizalos sin reimprimir.</p>
-              <button type="button" onClick={goQr} className="mt-1 flex h-11 w-fit items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#7C3AED] hover:bg-violet-50">
-                <Icon name="qr-code" size={16} /> Crear QR
+      <div className={`flex min-w-[900px] flex-col ${compact ? 'gap-4 p-5' : 'gap-6 p-8'}`}>
+        {/* Welcome row — promo hero + public list. Full view only; in compact the
+            public list moves into the KPI row so everything sits on one line. */}
+        {!compact && (
+          <div className="flex gap-6">
+            <div className={`flex flex-1 items-center gap-6 rounded-3xl p-7 text-white shadow-[0_16px_32px_-8px_rgba(124,58,237,0.4)] ${gradient}`}>
+              <div className="flex flex-1 flex-col gap-3">
+                <p className="text-xs font-bold tracking-[0.2em] text-white/70">NOVEDAD</p>
+                <h2 className="text-3xl font-extrabold leading-tight">Compartí tu catálogo en un escaneo.</h2>
+                <p className="text-sm font-medium leading-relaxed text-white/80">Generá códigos QR personalizados con tu logo y actualizalos sin reimprimir.</p>
+                <button type="button" onClick={goQr} className="mt-1 flex h-11 w-fit items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#7C3AED] hover:bg-violet-50">
+                  <Icon name="qr-code" size={16} /> Crear QR
+                </button>
+              </div>
+              <button type="button" onClick={goQr} title="Ver códigos QR" className="flex h-[140px] w-[140px] shrink-0 items-center justify-center rounded-2xl bg-white p-3.5">
+                <QrCode value={qrUrl} size={120} fg="#0F172A" logoUrl={FAVICON} className="h-full w-full object-contain" />
               </button>
             </div>
-            <button type="button" onClick={goQr} title="Ver códigos QR" className="flex h-[140px] w-[140px] shrink-0 items-center justify-center rounded-2xl bg-white p-3.5">
-              <QrCode value={qrUrl} size={120} fg="#0F172A" logoUrl={FAVICON} className="h-full w-full object-contain" />
-            </button>
+            <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} className="w-[320px] shrink-0" />
           </div>
+        )}
 
-          <div className="flex w-[320px] shrink-0 flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)]">
-            <p className="text-lg font-extrabold text-[var(--dash-text)]">Tu lista pública</p>
-            <button type="button" onClick={copyUrl} title="Copiar enlace" className="flex h-[42px] items-center gap-2.5 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 text-left text-[var(--dash-link)] hover:opacity-90">
-              <Icon name="link-2" size={16} />
-              <span className="flex-1 truncate text-[13px] font-semibold">{publicUrlDisplay}</span>
-              <Icon name={copied ? 'circle-check' : 'copy'} size={16} />
-            </button>
-            <div className="flex gap-2">
-              <div className="flex flex-1 items-center gap-2 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 py-2 text-[var(--dash-text2)]">
-                <Icon name="eye" size={14} className="text-[var(--dash-link)]" />
-                <span className="text-xs font-bold">Hoy: {visits?.today ?? 0}</span>
-              </div>
-              <div className="flex flex-1 items-center gap-2 rounded-[10px] px-3 py-2" style={tone((visits?.changePct ?? 0) >= 0 ? 'green' : 'red')}>
-                <Icon name="trending-up" size={14} className={(visits?.changePct ?? 0) < 0 ? 'scale-y-[-1]' : ''} />
-                <span className="text-xs font-bold">{(visits?.changePct ?? 0) >= 0 ? '+' : ''}{visits?.changePct ?? 0}% vs ayer</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* KPI row */}
-        <div className="grid grid-cols-4 gap-4">
-          <ProductsCard total={total} available={available} unavailable={unavailable} onClick={goProducts} />
-          <KpiCard icon="list-checks" iconTone="violet" value={lists.length} label="Listas" tag={`${activeLists} activas`} tagTone="green" note="Compartibles por link y QR" onClick={goLists} />
-          <KpiCard icon="users" iconTone="violet" value={custStats?.total ?? 0} label="Clientes" tag={`${custStats?.active ?? 0} activos`} tagTone="green" note="En tu cartera" onClick={goClientes} />
+        {/* KPI row — in compact the public list card joins this row (grid widens to 6 cols). */}
+        <div className={compact ? 'grid grid-cols-6 gap-3' : 'grid grid-cols-4 gap-4'}>
+          {compact && <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} compact className="col-span-2" />}
+          <ProductsCard total={total} available={available} unavailable={unavailable} onClick={goProducts} compact={compact} />
+          <KpiCard icon="list-checks" iconTone="violet" value={lists.length} label="Listas" tag={`${activeLists} activas`} tagTone="green" note="Compartibles por link y QR" onClick={goLists} compact={compact} />
+          <KpiCard icon="users" iconTone="violet" value={custStats?.total ?? 0} label="Clientes" tag={`${custStats?.active ?? 0} activos`} tagTone="green" note="En tu cartera" onClick={goClientes} compact={compact} />
         </div>
 
         {/* Bottom row */}
-        <div className="flex gap-5">
-          <RecentProducts products={products} total={total} loading={loading} search={search} onNew={canEdit ? () => navigate('/admin/items?new=1') : undefined} onViewAll={goProducts} />
-          <div className="flex w-[380px] shrink-0 flex-col gap-5">
+        <div className={`flex ${compact ? 'gap-4' : 'gap-5'}`}>
+          <RecentProducts products={products} total={total} loading={loading} search={search} onNew={canEdit ? () => navigate('/admin/items?new=1') : undefined} onViewAll={goProducts} compact={compact} />
+          <div className={`flex w-[380px] shrink-0 flex-col ${compact ? 'gap-4' : 'gap-5'}`}>
             {canEdit && (
               <QuickActions
                 onProduct={() => navigate('/admin/items?new=1')}
                 onList={() => navigate('/admin/lists?new=1')}
                 onCustomer={() => navigate('/admin/clientes?new=1')}
                 onQr={goQr}
+                compact={compact}
               />
             )}
-            <ActivityFeed tenantId={tenant?.id} onSeeAll={() => navigate('/admin/reportes')} />
+            {!compact && <ActivityFeed tenantId={tenant?.id} onSeeAll={() => navigate('/admin/reportes')} />}
           </div>
         </div>
       </div>
@@ -149,18 +139,42 @@ export function DashboardScreen() {
   )
 }
 
-function KpiCard({ icon, iconTone, value, label, tag, tagTone, note, onClick }: { icon: IconName; iconTone: Tone; value: string | number; label: string; tag: string; tagTone: Tone; note: string; onClick?: () => void }) {
+/** Public list URL + today's visits. Shown in the welcome row (full) or inline with the KPIs (compact). */
+function PublicListCard({ urlDisplay, onCopy, copied, visits, compact, className = '' }: { urlDisplay: string; onCopy: () => void; copied: boolean; visits: VisitStats | null; compact?: boolean; className?: string }) {
   return (
-    <button type="button" onClick={onClick} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)]">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(iconTone)}>
-        <Icon name={icon} size={22} />
+    <div className={`flex flex-col rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)] ${compact ? 'gap-2.5 p-4' : 'gap-3.5 p-6'} ${className}`}>
+      {!compact && <p className="text-lg font-extrabold text-[var(--dash-text)]">Tu lista pública</p>}
+      <button type="button" onClick={onCopy} title="Copiar enlace" className={`flex items-center gap-2.5 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 text-left text-[var(--dash-link)] hover:opacity-90 ${compact ? 'h-9' : 'h-[42px]'}`}>
+        <Icon name="link-2" size={16} />
+        <span className="flex-1 truncate text-[13px] font-semibold">{urlDisplay}</span>
+        <Icon name={copied ? 'circle-check' : 'copy'} size={16} />
+      </button>
+      <div className="flex gap-2">
+        <div className="flex flex-1 items-center gap-2 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 py-2 text-[var(--dash-text2)]">
+          <Icon name="eye" size={14} className="text-[var(--dash-link)]" />
+          <span className="text-xs font-bold">Hoy: {visits?.today ?? 0}</span>
+        </div>
+        <div className="flex flex-1 items-center gap-2 rounded-[10px] px-3 py-2" style={tone((visits?.changePct ?? 0) >= 0 ? 'green' : 'red')}>
+          <Icon name="trending-up" size={14} className={(visits?.changePct ?? 0) < 0 ? 'scale-y-[-1]' : ''} />
+          <span className="text-xs font-bold">{(visits?.changePct ?? 0) >= 0 ? '+' : ''}{visits?.changePct ?? 0}% vs ayer</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function KpiCard({ icon, iconTone, value, label, tag, tagTone, note, onClick, compact }: { icon: IconName; iconTone: Tone; value: string | number; label: string; tag: string; tagTone: Tone; note: string; onClick?: () => void; compact?: boolean }) {
+  return (
+    <button type="button" onClick={onClick} className={`flex items-center rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)] ${compact ? 'gap-3 px-4 py-3' : 'gap-3.5 px-5 py-[18px]'}`}>
+      <span className={`flex shrink-0 items-center justify-center rounded-[14px] ${compact ? 'h-10 w-10' : 'h-12 w-12'}`} style={tone(iconTone)}>
+        <Icon name={icon} size={compact ? 18 : 22} />
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-end gap-2">
-          <span className="text-[26px] font-black leading-none text-[var(--dash-text)]">{value}</span>
+          <span className={`font-black leading-none text-[var(--dash-text)] ${compact ? 'text-[22px]' : 'text-[26px]'}`}>{value}</span>
           <span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">{label}</span>
         </div>
-        <div className="mt-1.5 flex items-center gap-2">
+        <div className={`flex items-center gap-2 ${compact ? 'mt-1' : 'mt-1.5'}`}>
           <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone(tagTone)}>{tag}</span>
           <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{note}</span>
         </div>
@@ -170,24 +184,24 @@ function KpiCard({ icon, iconTone, value, label, tag, tagTone, note, onClick }: 
 }
 
 /** Products KPI split in half: available vs unavailable. */
-function ProductsCard({ total, available, unavailable, onClick }: { total: number; available: number; unavailable: number; onClick?: () => void }) {
+function ProductsCard({ total, available, unavailable, onClick, compact }: { total: number; available: number; unavailable: number; onClick?: () => void; compact?: boolean }) {
   return (
-    <button type="button" onClick={onClick} className="col-span-2 flex items-center gap-4 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)]">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone('violet')}>
-        <Icon name="package" size={22} />
+    <button type="button" onClick={onClick} className={`col-span-2 flex items-center rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)] ${compact ? 'gap-3 px-4 py-3' : 'gap-4 px-5 py-[18px]'}`}>
+      <span className={`flex shrink-0 items-center justify-center rounded-[14px] ${compact ? 'h-10 w-10' : 'h-12 w-12'}`} style={tone('violet')}>
+        <Icon name="package" size={compact ? 18 : 22} />
       </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className={`flex min-w-0 flex-1 flex-col ${compact ? 'gap-1.5' : 'gap-2'}`}>
         <div className="flex items-end gap-2">
-          <span className="text-[26px] font-black leading-none text-[var(--dash-text)]">{total}</span>
+          <span className={`font-black leading-none text-[var(--dash-text)] ${compact ? 'text-[22px]' : 'text-[26px]'}`}>{total}</span>
           <span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">Productos</span>
         </div>
         <div className="flex items-stretch divide-x divide-[var(--dash-border)] overflow-hidden rounded-xl border border-[var(--dash-border)]">
-          <div className="flex flex-1 flex-col items-center gap-0.5 py-1.5">
-            <span className="text-[20px] font-black leading-none" style={{ color: 'var(--tone-green-fg)' }}>{available}</span>
+          <div className={`flex flex-1 flex-col items-center gap-0.5 ${compact ? 'py-1' : 'py-1.5'}`}>
+            <span className={`font-black leading-none ${compact ? 'text-[17px]' : 'text-[20px]'}`} style={{ color: 'var(--tone-green-fg)' }}>{available}</span>
             <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">Disponibles</span>
           </div>
-          <div className="flex flex-1 flex-col items-center gap-0.5 py-1.5">
-            <span className="text-[20px] font-black leading-none" style={{ color: 'var(--tone-red-fg)' }}>{unavailable}</span>
+          <div className={`flex flex-1 flex-col items-center gap-0.5 ${compact ? 'py-1' : 'py-1.5'}`}>
+            <span className={`font-black leading-none ${compact ? 'text-[17px]' : 'text-[20px]'}`} style={{ color: 'var(--tone-red-fg)' }}>{unavailable}</span>
             <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">No disponibles</span>
           </div>
         </div>
@@ -198,7 +212,7 @@ function ProductsCard({ total, available, unavailable, onClick }: { total: numbe
 
 type Tab = 'all' | 'available' | 'unavailable'
 
-function RecentProducts({ products, total, loading, search, onNew, onViewAll }: { products: Product[]; total: number; loading: boolean; search: string; onNew?: () => void; onViewAll: () => void }) {
+function RecentProducts({ products, total, loading, search, onNew, onViewAll, compact }: { products: Product[]; total: number; loading: boolean; search: string; onNew?: () => void; onViewAll: () => void; compact?: boolean }) {
   const [tab, setTab] = useState<Tab>('all')
   const recent = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -216,11 +230,11 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll }: 
   ]
 
   return (
-    <div className="flex flex-1 flex-col gap-[18px] rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)]">
+    <div className={`flex flex-1 flex-col rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)] ${compact ? 'gap-3 p-4' : 'gap-[18px] p-6'}`}>
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Productos recientes</h3>
-          <p className="text-xs font-medium text-[var(--dash-muted)]">Actualizá precios y disponibilidad al instante.</p>
+          <h3 className={`font-extrabold text-[var(--dash-text)] ${compact ? 'text-lg' : 'text-[22px]'}`}>Productos recientes</h3>
+          {!compact && <p className="text-xs font-medium text-[var(--dash-muted)]">Actualizá precios y disponibilidad al instante.</p>}
         </div>
         <div className="flex items-center gap-2">
           {tabs.map((t) => (
@@ -237,10 +251,10 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll }: 
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-[var(--dash-border)]">
-        <div className="flex h-[42px] items-center gap-3 bg-[var(--dash-table-head)] px-[18px] text-[11px] font-bold tracking-wide text-[var(--dash-muted)]">
+        <div className={`flex items-center gap-3 bg-[var(--dash-table-head)] px-[18px] text-[11px] font-bold tracking-wide text-[var(--dash-muted)] ${compact ? 'h-9' : 'h-[42px]'}`}>
           <span className="flex-1">PRODUCTO</span>
-          <span className="w-[110px]">SKU</span>
-          <span className="w-[130px]">CATEGORÍA</span>
+          {!compact && <span className="w-[110px]">SKU</span>}
+          {!compact && <span className="w-[130px]">CATEGORÍA</span>}
           <span className="w-[90px]">PRECIO</span>
           <span className="w-[110px]">DISPONIBLE</span>
         </div>
@@ -260,22 +274,24 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll }: 
           recent.map((p, i) => {
             const st = availKey(p)
             return (
-              <div key={p.id} className={`flex h-[68px] items-center gap-3 bg-[var(--dash-surface)] px-[18px] ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+              <div key={p.id} className={`flex items-center gap-3 bg-[var(--dash-surface)] px-[18px] ${compact ? 'h-[52px]' : 'h-[68px]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
                 <div className="flex flex-1 items-center gap-3">
                   {p.imageUrl
                     ? <img src={p.imageUrl} alt={p.name} className="h-9 w-9 shrink-0 rounded-[10px] object-cover" />
                     : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]" style={tone(catTone(p.category))}><Icon name={catIcon(p.category)} /></span>}
                   <div className="flex min-w-0 flex-col">
                     <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{p.name}</span>
-                    <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{p.description || '—'}</span>
+                    {!compact && <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{p.description || '—'}</span>}
                   </div>
                 </div>
-                <span className="w-[110px] text-xs font-semibold text-[var(--dash-text2)]">{p.sku || '—'}</span>
-                <span className="w-[130px]">
-                  {p.category
-                    ? <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(catTone(p.category))}>{displayCategory(p.category)}</span>
-                    : <span className="text-[11px] font-medium text-[var(--dash-muted)]">—</span>}
-                </span>
+                {!compact && <span className="w-[110px] text-xs font-semibold text-[var(--dash-text2)]">{p.sku || '—'}</span>}
+                {!compact && (
+                  <span className="w-[130px]">
+                    {p.category
+                      ? <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(catTone(p.category))}>{displayCategory(p.category)}</span>
+                      : <span className="text-[11px] font-medium text-[var(--dash-muted)]">—</span>}
+                  </span>
+                )}
                 <span className="w-[90px] text-[13px] font-bold text-[var(--dash-text)]">{formatPrice(p.price)}</span>
                 <span className="w-[110px]">
                   <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(STOCK_TONE[st])}>{STOCK_LABEL[st]}</span>
@@ -296,7 +312,7 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll }: 
   )
 }
 
-function QuickActions({ onProduct, onList, onCustomer, onQr }: { onProduct: () => void; onList: () => void; onCustomer: () => void; onQr: () => void }) {
+function QuickActions({ onProduct, onList, onCustomer, onQr, compact }: { onProduct: () => void; onList: () => void; onCustomer: () => void; onQr: () => void; compact?: boolean }) {
   const handlers: Record<string, () => void> = {
     'Nuevo producto': onProduct,
     'Crear lista': onList,
@@ -304,14 +320,19 @@ function QuickActions({ onProduct, onList, onCustomer, onQr }: { onProduct: () =
     'Compartir QR': onQr,
   }
   return (
-    <div className="flex flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-[22px] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)]">
-      <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Acciones rápidas</h3>
-      <div className="grid grid-cols-2 gap-3">
+    <div className={`flex flex-col rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)] ${compact ? 'gap-3 p-4' : 'gap-3.5 p-[22px]'}`}>
+      <h3 className={`font-extrabold text-[var(--dash-text)] ${compact ? 'text-lg' : 'text-[22px]'}`}>Acciones rápidas</h3>
+      <div className={compact ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-3'}>
         {quickActions.map((a) => (
-          <button key={a.title} type="button" onClick={handlers[a.title]} className="flex flex-col gap-2.5 rounded-2xl border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] p-[18px] text-left hover:opacity-80">
-            <span className={`flex h-9 w-9 items-center justify-center rounded-[10px] text-white ${gradient}`}><Icon name={a.icon} /></span>
+          <button
+            key={a.title}
+            type="button"
+            onClick={handlers[a.title]}
+            className={`rounded-2xl border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] text-left hover:opacity-80 ${compact ? 'flex items-center gap-3 p-2.5' : 'flex flex-col gap-2.5 p-[18px]'}`}
+          >
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-white ${gradient}`}><Icon name={a.icon} /></span>
             <span className="text-[13px] font-bold text-[var(--dash-text)]">{a.title}</span>
-            <span className="text-[11px] font-medium text-[var(--dash-muted)]">{a.desc}</span>
+            {!compact && <span className="text-[11px] font-medium text-[var(--dash-muted)]">{a.desc}</span>}
           </button>
         ))}
       </div>

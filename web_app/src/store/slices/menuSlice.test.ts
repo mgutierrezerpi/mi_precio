@@ -27,6 +27,7 @@ describe('menuSlice', () => {
       slug: 'test_list',
       published: true,
       showOnIndex: true,
+      kind: 'product',
       itemCount: 0,
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',

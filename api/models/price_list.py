@@ -35,6 +35,8 @@ class PriceList(BaseModel):
     slug = CharField(max_length=255, null=True, index=True)
     published = BooleanField(default=False, index=True)
     show_on_index = BooleanField(default=False, index=True)
+    # "product" lists show add-to-cart on the public page; "service" lists don't.
+    kind = CharField(max_length=20, default="product")
 
     class Meta:
         table_name = "lists"
