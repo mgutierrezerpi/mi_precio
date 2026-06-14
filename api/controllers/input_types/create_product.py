@@ -9,5 +9,4 @@ class CreateProduct(BaseModel):
     available: bool = True
     description: str | None = None
     image_url: str | None = None
-    image_url: str | None = None
     category: str | None = None

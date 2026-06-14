@@ -92,6 +92,13 @@ def test_update_role_and_remove_member(tenant, owner):
     assert User.get_or_none(User.id == member.id) is None
 
 
+def test_update_member_simple_admin_ui(tenant, owner):
+    member = User.create(email="m@shop.com", tenant=tenant, role="editor")
+    updated = team.update_member(tenant.id, member.id, simple_admin_ui=True)
+    assert updated.simple_admin_ui is True
+    assert User.get(User.id == member.id).simple_admin_ui is True
+
+
 def test_member_stats(tenant, owner):
     User.create(email="e@shop.com", tenant=tenant, role="editor")
     team.invite_member(tenant.id, "pending@shop.com", "viewer")

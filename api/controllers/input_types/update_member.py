@@ -2,4 +2,5 @@ from pydantic import BaseModel
 
 
 class UpdateMember(BaseModel):
-    role: str
+    role: str | None = None
+    simple_admin_ui: bool | None = None

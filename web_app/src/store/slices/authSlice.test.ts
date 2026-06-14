@@ -28,6 +28,7 @@ describe('authSlice', () => {
       tenantId: '1',
       role: 'owner',
       name: 'test',
+      simpleAdminUi: false,
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     }
@@ -43,6 +44,7 @@ describe('authSlice', () => {
       tenantId: '1',
       role: 'owner',
       name: 'test',
+      simpleAdminUi: false,
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     }

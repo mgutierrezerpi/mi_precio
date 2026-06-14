@@ -1,18 +1,16 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { MinimalLayout } from './components/MinimalLayout'
+import { AdminExperienceLayout } from './components/SimpleAdminLayout'
 import { HomeScreen } from './screens/home/HomeScreen'
 import { OldLandingScreen } from './screens/home/OldLandingScreen'
 import { MenuScreen } from './screens/menu/MenuScreen'
-import { DashboardScreen } from './screens/admin/DashboardScreen'
-import { PriceListsScreen } from './screens/admin/PriceListsScreen'
 import { ListEditScreen } from './screens/admin/ListEditScreen'
-import { ProductsScreen } from './screens/admin/ProductsScreen'
 import { CategoriesScreen } from './screens/admin/CategoriesScreen'
 import { CodesScreen } from './screens/admin/CodesScreen'
 import { CustomersScreen } from './screens/admin/CustomersScreen'
 import { ReportsScreen } from './screens/admin/ReportsScreen'
 import { TeamScreen } from './screens/admin/TeamScreen'
-import { SettingsCrmScreen } from './screens/admin/SettingsCrmScreen'
+import { AdminDashboardRoute, AdminListsRoute, AdminProductsRoute, AdminSettingsRoute } from './screens/admin/AdminRouteSwitches'
 
 export const router = createBrowserRouter([
   // Public routes
@@ -39,14 +37,15 @@ export const router = createBrowserRouter([
   // Admin routes
   {
     path: '/admin',
+    element: <AdminExperienceLayout />,
     children: [
       {
         index: true,
-        element: <DashboardScreen />,
+        element: <AdminDashboardRoute />,
       },
       {
         path: 'items',
-        element: <ProductsScreen />,
+        element: <AdminProductsRoute />,
       },
       {
         path: 'categories',
@@ -54,7 +53,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'lists',
-        element: <PriceListsScreen />,
+        element: <AdminListsRoute />,
       },
       {
         path: 'qr',
@@ -74,7 +73,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'settings',
-        element: <SettingsCrmScreen />,
+        element: <AdminSettingsRoute />,
       },
       {
         element: <MinimalLayout />,

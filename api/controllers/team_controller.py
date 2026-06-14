@@ -1,12 +1,38 @@
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 from lib.ctx import team, activity, plans
 from lib.ctx.team_context import TeamError
 from lib.ctx.plans_context import PlanLimitError
 from controllers.deps import get_current_user, require_admin
 from controllers.input_types import InviteMember, UpdateMember
 from views import DeletedView, UserView, InvitationView
+from models import User
 
 router = APIRouter(tags=["team"])
+
+
+class UpdateCurrentUser(BaseModel):
+    simple_admin_ui: bool | None = None
+
+
+@router.get("/users/me")
+def get_current_user_endpoint(current_user: dict = Depends(get_current_user)):
+    user = User.get_or_none(User.id == current_user.get("sub"))
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return UserView.render(user)
+
+
+@router.patch("/users/me")
+def update_current_user_endpoint(data: UpdateCurrentUser, current_user: dict = Depends(get_current_user)):
+    user = User.get_or_none(User.id == current_user.get("sub"))
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if data.simple_admin_ui is None:
+        raise HTTPException(status_code=400, detail="No hay cambios para guardar")
+    user.simple_admin_ui = bool(data.simple_admin_ui)
+    user.save()
+    return UserView.render(user)
 
 
 @router.get("/tenants/{tenant_id}/members")
@@ -43,12 +69,13 @@ def invite_member_endpoint(tenant_id: str, data: InviteMember, current_user: dic
 @router.patch("/tenants/{tenant_id}/members/{user_id}")
 def update_member_endpoint(tenant_id: str, user_id: str, data: UpdateMember, current_user: dict = Depends(require_admin)):
     try:
-        user = team.update_member_role(tenant_id, user_id, data.role)
+        user = team.update_member(tenant_id, user_id, data.role, data.simple_admin_ui)
     except TeamError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    activity.record(tenant_id, "member.role_changed", f"Cambió el rol de «{user.email}» a {user.role}",
-                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                    entity_type="user", entity_id=user.id)
+    if data.role is not None:
+        activity.record(tenant_id, "member.role_changed", f"Cambió el rol de «{user.email}» a {user.role}",
+                        actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                        entity_type="user", entity_id=user.id)
     return UserView.render(user)
 
 

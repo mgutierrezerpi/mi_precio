@@ -23,6 +23,7 @@ export type ProductInput = {
   description?: string | null
   category?: string | null
   imageUrl?: string | null
+  priceListIds?: string[]
 }
 
 export const fetchProducts = createAsyncThunk(

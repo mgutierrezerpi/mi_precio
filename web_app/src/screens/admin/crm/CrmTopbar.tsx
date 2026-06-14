@@ -3,6 +3,8 @@ import { useDensity } from '../../../hooks/useDensity'
 import { useT } from '../../../lib/i18n'
 import { Icon, UserMenu } from './ui'
 import { NotificationsBell } from './NotificationsBell'
+import { useAppDispatch } from '../../../store/hooks'
+import { updateCurrentUser } from '../../../store/slices/authSlice'
 
 interface CrmTopbarProps {
   title: string
@@ -21,6 +23,7 @@ interface CrmTopbarProps {
 
 /** Shared CRM topbar: title + search + density/theme toggles + notifications + user menu. */
 export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions, showDensityToggle }: CrmTopbarProps) {
+  const dispatch = useAppDispatch()
   const { isDark, toggleTheme } = useTheme()
   const { compact, toggleDensity } = useDensity()
   const t = useT()
@@ -63,6 +66,13 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
       )}
       <NotificationsBell />
       {actions}
+      <button
+        type="button"
+        onClick={() => dispatch(updateCurrentUser({ simpleAdminUi: true }))}
+        className="hidden h-10 items-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 text-[13px] font-bold text-[var(--dash-text2)] hover:text-[var(--dash-link)] xl:flex"
+      >
+        Modo simple
+      </button>
       <UserMenu />
     </header>
   )

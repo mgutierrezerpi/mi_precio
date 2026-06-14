@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useAppSelector } from '../../store/hooks'
-import { selectTenant, selectUser } from '../../store/slices/authSlice'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { selectTenant, selectUser, setUser } from '../../store/slices/authSlice'
 import api from '../../services/api'
 import type { TeamMember, Invitation, MemberStats, Role } from '../../types'
 import { CrmLayout } from './crm/CrmLayout'
@@ -46,6 +46,7 @@ function lastSeen(iso: string | null): { label: string; active: boolean } {
 
 /* ── Screen ──────────────────────────────────────────────────────────── */
 export function TeamScreen() {
+  const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
   const me = useAppSelector(selectUser)
   const myRole: Role = me?.role ?? 'owner'
@@ -105,6 +106,17 @@ export function TeamScreen() {
     else { setError(null); void refresh() }
   }
 
+  const changeUiMode = async (m: TeamMember, simpleAdminUi: boolean) => {
+    if (!tenant?.id) return
+    const res = await api.updateMember(tenant.id, m.id, { simpleAdminUi })
+    if (res.error) setError(res.error)
+    else {
+      setError(null)
+      if (res.data && me?.id === res.data.id) dispatch(setUser(res.data))
+      void refresh()
+    }
+  }
+
   const remove = async (m: TeamMember) => {
     if (!tenant?.id) return
     if (!confirm(`¿Quitar a ${m.name} del equipo? Perderá el acceso a la cuenta.`)) return
@@ -155,6 +167,7 @@ export function TeamScreen() {
             <div className="flex items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="flex-1">Miembro</span>
               <span className="w-[150px]">Rol</span>
+              <span className="w-[130px]">UI</span>
               <span className="w-[130px]">Último acceso</span>
               <span className="w-[90px]">Estado</span>
               {canManage && <span className="w-[70px] text-right">Acción</span>}
@@ -184,6 +197,16 @@ export function TeamScreen() {
                       </select>
                     ) : (
                       <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(ROLE_TONE[m.role])}>{ROLE_LABEL[m.role]}</span>
+                    )}
+                  </span>
+                  <span className="w-[130px]">
+                    {canManage ? (
+                      <select value={m.simpleAdminUi ? 'simple' : 'full'} onChange={(e) => changeUiMode(m, e.target.value === 'simple')} className="h-8 w-[112px] rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-[12px] font-bold text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]">
+                        <option value="simple">Simple</option>
+                        <option value="full">Completa</option>
+                      </select>
+                    ) : (
+                      <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(m.simpleAdminUi ? 'green' : 'slate')}>{m.simpleAdminUi ? 'Simple' : 'Completa'}</span>
                     )}
                   </span>
                   <span className="w-[130px] text-xs font-medium text-[var(--dash-muted)]">{seen.label}</span>

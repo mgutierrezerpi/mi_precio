@@ -1,4 +1,4 @@
-from peewee import CharField, ForeignKeyField, DateTimeField, TextField
+from peewee import BooleanField, CharField, ForeignKeyField, DateTimeField, TextField
 from models.base import BaseModel
 from models.tenant import Tenant
 
@@ -15,6 +15,7 @@ class User(BaseModel):
     # In-app notifications: JSON of enabled categories + when the user last opened the bell.
     notif_prefs = TextField(null=True)
     notifications_seen_at = DateTimeField(null=True)
+    simple_admin_ui = BooleanField(default=False)
 
     class Meta:
         table_name = "users"

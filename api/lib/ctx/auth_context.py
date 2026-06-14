@@ -24,6 +24,10 @@ def send_code(email: str) -> str:
         expires_at=datetime.utcnow() + timedelta(minutes=10),
     )
 
+    if settings.debug:
+        logger.warning(f"[AUTH] Local login code for {email}: {code}")
+        return code
+
     try:
         mailer.send(
             to=email,

@@ -92,6 +92,28 @@ def update_member_role(tenant_id: str, user_id: str, role: str) -> User:
     return user
 
 
+def update_member(tenant_id: str, user_id: str, role: str | None = None, simple_admin_ui: bool | None = None) -> User:
+    """Update editable member fields. At least one field must be provided."""
+    user = User.get_or_none(User.id == user_id, User.tenant == tenant_id)
+    if not user:
+        raise TeamError("Miembro no encontrado")
+    changed = False
+    if role is not None:
+        if role not in ASSIGNABLE_ROLES:
+            raise TeamError("Rol inválido")
+        if user.role == "owner":
+            raise TeamError("No se puede cambiar el rol del dueño")
+        user.role = role
+        changed = True
+    if simple_admin_ui is not None:
+        user.simple_admin_ui = bool(simple_admin_ui)
+        changed = True
+    if not changed:
+        raise TeamError("No hay cambios para guardar")
+    user.save()
+    return user
+
+
 def remove_member(tenant_id: str, user_id: str, acting_user_id: str | None) -> User:
     """Remove a member from the team. Owners and yourself can't be removed."""
     user = User.get_or_none(User.id == user_id, User.tenant == tenant_id)

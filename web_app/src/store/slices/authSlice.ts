@@ -78,6 +78,24 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   return null
 })
 
+export const updateCurrentUser = createAsyncThunk(
+  'auth/updateCurrentUser',
+  async ({ simpleAdminUi }: { simpleAdminUi: boolean }, { rejectWithValue }) => {
+    const response = await api.updateCurrentUser({ simpleAdminUi })
+    if (response.error || !response.data) return rejectWithValue(response.error || 'Error')
+    return response.data
+  }
+)
+
+export const refreshCurrentUser = createAsyncThunk(
+  'auth/refreshCurrentUser',
+  async (_, { rejectWithValue }) => {
+    const response = await api.getCurrentUser()
+    if (response.error || !response.data) return rejectWithValue(response.error || 'Error')
+    return response.data
+  }
+)
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -85,6 +103,7 @@ const authSlice = createSlice({
     setUser: (state, action: PayloadAction<User | null>) => {
       state.user = action.payload
       state.isAuthenticated = !!action.payload
+      saveAuthState(state.user, state.tenant)
     },
     setTenant: (state, action: PayloadAction<Tenant | null>) => {
       state.tenant = action.payload
@@ -143,6 +162,14 @@ const authSlice = createSlice({
         state.pendingEmail = null
         state.codeSent = false
       })
+      .addCase(updateCurrentUser.fulfilled, (state, action) => {
+        state.user = action.payload
+        saveAuthState(state.user, state.tenant)
+      })
+      .addCase(refreshCurrentUser.fulfilled, (state, action) => {
+        state.user = action.payload
+        saveAuthState(state.user, state.tenant)
+      })
   },
 })
 
@@ -157,6 +184,7 @@ export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.isLo
 export const selectAuthError = (state: { auth: AuthState }) => state.auth.error
 export const selectCodeSent = (state: { auth: AuthState }) => state.auth.codeSent
 export const selectPendingEmail = (state: { auth: AuthState }) => state.auth.pendingEmail
+export const selectSimpleAdminUi = (state: { auth: AuthState }) => state.auth.user?.simpleAdminUi ?? false
 
 // Role-based permissions. Sessions stored before roles existed default to "owner".
 const roleOf = (state: { auth: AuthState }) => state.auth.user?.role ?? 'owner'

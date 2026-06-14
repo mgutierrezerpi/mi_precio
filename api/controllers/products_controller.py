@@ -1,11 +1,14 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from lib.ctx import products, activity, plans
 from lib.ctx.plans_context import PlanLimitError
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateProduct, UpdateProduct
-from views import DeletedView, ProductView
+from views import DeletedView, ProductImageView, ProductView
 
 router = APIRouter(tags=["products"])
+
+MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024
+SUPPORTED_PRODUCT_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 
 @router.get("/tenants/{tenant_id}/products")
@@ -26,6 +29,31 @@ def create_product_endpoint(tenant_id: str, data: CreateProduct, current_user: d
                     actor=current_user.get("email"), actor_id=current_user.get("sub"),
                     entity_type="product", entity_id=product.id)
     return ProductView.render(product)
+
+
+@router.post("/tenants/{tenant_id}/product_images", status_code=201)
+async def create_product_image_endpoint(
+    tenant_id: str,
+    image: UploadFile = File(...),
+    current_user: dict = Depends(require_editor),
+):
+    content_type = image.content_type or ""
+    if content_type not in SUPPORTED_PRODUCT_IMAGE_TYPES:
+        raise HTTPException(status_code=415, detail="Unsupported image type")
+
+    data = await image.read()
+    if len(data) > MAX_PRODUCT_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="Image is too large")
+
+    try:
+        image_url = products.upload_product_image(tenant_id, image.filename or "product.jpg", content_type, data)
+    except products.ProductImageUploadError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+    if not image_url:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    return ProductImageView.render(image_url)
 
 
 @router.get("/products/{product_id}")

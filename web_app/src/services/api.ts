@@ -1,4 +1,4 @@
-import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role, NotificationsData, NotifPrefs, PlanInfo, PlanId } from '../types'
+import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role, NotificationsData, NotifPrefs, PlanInfo, PlanId, User } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
@@ -39,9 +39,13 @@ function transformKeys<T>(obj: unknown): T {
 }
 
 /** Map a product payload's camelCase `imageUrl` to the API's snake_case `image_url`. */
-function productBody<T extends { imageUrl?: string | null }>(data: T) {
-  const { imageUrl, ...rest } = data
-  return imageUrl !== undefined ? { ...rest, image_url: imageUrl } : rest
+function productBody<T extends { imageUrl?: string | null; priceListIds?: string[] }>(data: T) {
+  const { imageUrl, priceListIds, ...rest } = data
+  return {
+    ...rest,
+    ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
+    ...(priceListIds !== undefined ? { price_list_ids: priceListIds } : {}),
+  }
 }
 
 class ApiService {
@@ -66,10 +70,9 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    }
+    const headers: HeadersInit = options.body instanceof FormData
+      ? { ...options.headers }
+      : { 'Content-Type': 'application/json', ...options.headers }
 
     if (this.token) {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`
@@ -293,11 +296,29 @@ class ApiService {
     })
   }
 
-  async updateMemberRole(tenantId: string, userId: string, role: Role): Promise<ApiResponse<TeamMember>> {
+  async updateCurrentUser(data: { simpleAdminUi?: boolean }): Promise<ApiResponse<User>> {
+    return this.request('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ simple_admin_ui: data.simpleAdminUi }),
+    })
+  }
+
+  async getCurrentUser(): Promise<ApiResponse<User>> {
+    return this.request('/users/me')
+  }
+
+  async updateMember(tenantId: string, userId: string, data: { role?: Role; simpleAdminUi?: boolean }): Promise<ApiResponse<TeamMember>> {
     return this.request(`/tenants/${tenantId}/members/${userId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ role }),
+      body: JSON.stringify({
+        role: data.role,
+        simple_admin_ui: data.simpleAdminUi,
+      }),
     })
+  }
+
+  async updateMemberRole(tenantId: string, userId: string, role: Role): Promise<ApiResponse<TeamMember>> {
+    return this.updateMember(tenantId, userId, { role })
   }
 
   async removeMember(tenantId: string, userId: string): Promise<ApiResponse<{ deleted: boolean }>> {
@@ -325,7 +346,7 @@ class ApiService {
 
   async updateProduct(
     productId: string,
-    data: { name?: string; price?: number; sku?: string | null; currency?: string; available?: boolean; description?: string | null; category?: string | null; imageUrl?: string | null }
+    data: { name?: string; price?: number; sku?: string | null; currency?: string; available?: boolean; description?: string | null; category?: string | null; imageUrl?: string | null; priceListIds?: string[] }
   ): Promise<ApiResponse<Product>> {
     return this.request(`/products/${productId}`, {
       method: 'PATCH',
@@ -335,6 +356,15 @@ class ApiService {
 
   async deleteProduct(productId: string): Promise<ApiResponse<{ deleted: boolean }>> {
     return this.request(`/products/${productId}`, { method: 'DELETE' })
+  }
+
+  async uploadProductImage(tenantId: string, file: Blob): Promise<ApiResponse<{ url: string }>> {
+    const body = new FormData()
+    body.append('image', file, 'product.jpg')
+    return this.request(`/tenants/${tenantId}/product_images`, {
+      method: 'POST',
+      body,
+    })
   }
 
   // Category endpoints (tenant-level)

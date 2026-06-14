@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ThemeToggle } from '../../components/ThemeToggle'
+import { useTheme } from '../../hooks/useTheme'
 import { useAppSelector, useAppDispatch } from '../../store/hooks'
-import { selectTenant, setTenant } from '../../store/slices/authSlice'
+import { logout, selectTenant, setTenant } from '../../store/slices/authSlice'
 import { CURRENCIES, DEFAULT_CURRENCY } from '../../constants'
 import api from '../../services/api'
 
 export function SettingsScreen() {
   const dispatch = useAppDispatch()
+  const navigate = useNavigate()
   const tenant = useAppSelector(selectTenant)
 
   const [name, setName] = useState('')
@@ -13,7 +17,10 @@ export function SettingsScreen() {
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useTheme()
 
   useEffect(() => {
     if (tenant) {
@@ -43,6 +50,12 @@ export function SettingsScreen() {
     setSaving(false)
   }
 
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    await dispatch(logout())
+    navigate('/')
+  }
+
   const hasChanges = tenant && (
     name !== tenant.name ||
     subdomain !== tenant.subdomain ||
@@ -52,17 +65,38 @@ export function SettingsScreen() {
   const normalizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '')
 
   return (
-    <div className="max-w-2xl mx-auto pb-20">
-      <div className="mb-12">
-        <h1 className="text-4xl font-light text-[var(--color-text-primary)] tracking-wide">
-          Ajustes
-        </h1>
-        <p className="mt-3 text-[var(--color-text-muted)]">
-          Configura tu negocio
-        </p>
+    <div className="w-full pb-20">
+      <div className="mb-10 flex items-center justify-between">
+        <Link
+          to="/admin"
+          className="text-sm text-[var(--dash-muted)] transition-all hover:-translate-x-1 hover:text-[var(--dash-text)]"
+        >
+          ← Inicio
+        </Link>
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="text-sm text-[var(--dash-muted)] transition-colors hover:text-[var(--dash-text)] disabled:opacity-50"
+          >
+            {isLoggingOut ? 'Saliendo...' : 'Salir'}
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-12">
+          <h1 className="text-4xl font-light text-[var(--color-text-primary)] tracking-wide">
+            Ajustes
+          </h1>
+          <p className="mt-3 text-[var(--color-text-muted)]">
+            Configura tu negocio
+          </p>
+        </div>
+
+        <div className="space-y-8">
         {/* Business Name */}
         <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl p-6">
           <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-3">
@@ -155,6 +189,7 @@ export function SettingsScreen() {
           >
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
+        </div>
         </div>
       </div>
     </div>

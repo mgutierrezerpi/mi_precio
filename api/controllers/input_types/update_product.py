@@ -9,5 +9,5 @@ class UpdateProduct(BaseModel):
     available: bool | None = None
     description: str | None = None
     image_url: str | None = None
-    image_url: str | None = None
     category: str | None = None
+    price_list_ids: list[str] | None = None

@@ -13,11 +13,13 @@ import {
   selectProductsSaving,
   type ProductInput,
 } from '../../store/slices/productsSlice'
-import type { Product } from '../../types'
+import { fetchLists, selectLists } from '../../store/slices/menuSlice'
+import type { PriceList, Product } from '../../types'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { tone, gradient, type Tone } from './crm/theme'
 import { catTone, catIcon, formatPrice, timeAgo, displayCategory, normalizeCategory } from './crm/productFormat'
+import api from '../../services/api'
 
 const PAGE_SIZE = 8
 type Status = 'all' | 'available' | 'unavailable' | 'nophoto' | 'recent'
@@ -33,8 +35,8 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 
 const outlineBtn = 'flex h-[38px] items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'
 
-/** Read an image file, downscale to `max` px on its longest side, return a compressed JPEG data URL. */
-async function fileToDataUrl(file: File, max = 512): Promise<string> {
+/** Read an image file, downscale it, and return a compressed JPEG blob. */
+async function fileToImageBlob(file: File, max = 512): Promise<Blob> {
   const src = await new Promise<string>((res, rej) => {
     const r = new FileReader()
     r.onload = () => res(r.result as string)
@@ -54,9 +56,11 @@ async function fileToDataUrl(file: File, max = 512): Promise<string> {
   canvas.width = w
   canvas.height = h
   const ctx = canvas.getContext('2d')
-  if (!ctx) return src
+  if (!ctx) return file
   ctx.drawImage(img, 0, 0, w, h)
-  return canvas.toDataURL('image/jpeg', 0.8)
+  return await new Promise<Blob>((res, rej) => {
+    canvas.toBlob((blob) => blob ? res(blob) : rej(new Error('No se pudo procesar la imagen.')), 'image/jpeg', 0.8)
+  })
 }
 
 /* ── Screen ──────────────────────────────────────────────────────── */
@@ -65,6 +69,7 @@ export function ProductsScreen() {
   const tenant = useAppSelector(selectTenant)
   const canEdit = useAppSelector(selectCanEdit)
   const products = useAppSelector(selectProducts)
+  const lists = useAppSelector(selectLists)
   const loading = useAppSelector(selectProductsLoading)
 
   const [searchParams] = useSearchParams()
@@ -80,6 +85,10 @@ export function ProductsScreen() {
 
   useEffect(() => {
     if (tenant?.id) dispatch(fetchProducts(tenant.id))
+  }, [dispatch, tenant?.id])
+
+  useEffect(() => {
+    if (tenant?.id) dispatch(fetchLists(tenant.id))
   }, [dispatch, tenant?.id])
 
   // Distinct categories, deduped case-insensitively (keeps first-seen spelling).
@@ -376,6 +385,7 @@ export function ProductsScreen() {
           key={modal.product?.id ?? 'new'}
           product={modal.product}
           tenantId={tenant?.id}
+          lists={lists}
           onClose={() => setModal({ open: false, product: null })}
         />
       )}
@@ -681,7 +691,7 @@ function pageList(current: number, total: number): (number | '…')[] {
 }
 
 /* ── Create / edit modal ─────────────────────────────────────────── */
-function ProductModal({ product, tenantId, onClose }: { product: Product | null; tenantId?: string; onClose: () => void }) {
+function ProductModal({ product, tenantId, lists, onClose }: { product: Product | null; tenantId?: string; lists: PriceList[]; onClose: () => void }) {
   const dispatch = useAppDispatch()
   const saving = useAppSelector(selectProductsSaving)
   const [name, setName] = useState(product?.name ?? '')
@@ -691,16 +701,41 @@ function ProductModal({ product, tenantId, onClose }: { product: Product | null;
   const [available, setAvailable] = useState(product ? product.available : true)
   const [description, setDescription] = useState(product?.description ?? '')
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? '')
+  const [priceListIds, setPriceListIds] = useState<Set<string>>(() => new Set(lists.map((list) => list.id)))
   const [imgLoading, setImgLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const priceChanged = !!product && (parseFloat(price) || 0) !== (parseFloat(product.price) || 0)
+
+  useEffect(() => {
+    setPriceListIds(new Set(lists.map((list) => list.id)))
+  }, [lists])
+
+  const togglePriceList = (id: string) => {
+    setPriceListIds((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const selectAllPriceLists = () => setPriceListIds(new Set(lists.map((list) => list.id)))
+  const clearPriceLists = () => setPriceListIds(new Set())
 
   const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (!f) return
     setImgLoading(true)
+    setError(null)
     try {
-      setImageUrl(await fileToDataUrl(f))
+      const image = await fileToImageBlob(f)
+      if (!tenantId) throw new Error('No se encontró la empresa.')
+      const response = await api.uploadProductImage(tenantId, image)
+      if (response.error || !response.data) throw new Error(response.error || 'No se pudo subir la imagen.')
+      setImageUrl(response.data.url)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo subir la imagen.')
     } finally {
       setImgLoading(false)
       e.target.value = ''
@@ -728,6 +763,7 @@ function ProductModal({ product, tenantId, onClose }: { product: Product | null;
       description: description.trim() || null,
       imageUrl: imageUrl || '',
     }
+    if (priceChanged) data.priceListIds = Array.from(priceListIds)
     const result = product
       ? await dispatch(updateProduct({ productId: product.id, data }))
       : tenantId
@@ -741,7 +777,7 @@ function ProductModal({ product, tenantId, onClose }: { product: Product | null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1E1B4B]/60 p-4 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <form onSubmit={submit} className="w-full max-w-[460px] animate-scale-in rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_30px_80px_-20px_rgba(15,23,42,0.5)]">
+      <form onSubmit={submit} className="max-h-[calc(100vh-32px)] w-full max-w-[460px] animate-scale-in overflow-auto rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_30px_80px_-20px_rgba(15,23,42,0.5)]">
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-lg font-extrabold text-[var(--dash-text)]">{product ? 'Editar producto' : 'Nuevo producto'}</h3>
           <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80">✕</button>
@@ -782,6 +818,30 @@ function ProductModal({ product, tenantId, onClose }: { product: Product | null;
           <Field label="Descripción">
             <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Detalle opcional" className={inputCls} />
           </Field>
+          {priceChanged && (
+            <div className="rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-3.5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--dash-text2)]">Aplicar precio en listas</p>
+                  <p className="mt-1 text-[12px] font-medium text-[var(--dash-muted)]">Las listas no seleccionadas mantienen su precio propio.</p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <button type="button" onClick={selectAllPriceLists} className="text-[12px] font-bold text-[var(--dash-link)]">Todas</button>
+                  <button type="button" onClick={clearPriceLists} className="text-[12px] font-bold text-[var(--dash-muted)]">Ninguna</button>
+                </div>
+              </div>
+              <div className="mt-3 flex max-h-32 flex-col gap-2 overflow-auto pr-1">
+                {lists.length === 0 ? (
+                  <p className="text-[12px] font-semibold text-[var(--dash-muted)]">No hay listas creadas todavía.</p>
+                ) : lists.map((list) => (
+                  <label key={list.id} className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 py-2">
+                    <span className="text-[13px] font-bold text-[var(--dash-text)]">{list.name}</span>
+                    <input type="checkbox" checked={priceListIds.has(list.id)} onChange={() => togglePriceList(list.id)} className="h-4 w-4 accent-[#7C3AED]" />
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {error && (

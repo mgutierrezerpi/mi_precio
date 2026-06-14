@@ -175,7 +175,9 @@ export interface TeamMember {
   tenantId: string
   role: Role
   name: string
+  simpleAdminUi: boolean
   createdAt: string
+  updatedAt: string
   lastSeenAt: string | null
 }
 
@@ -201,6 +203,7 @@ export interface User {
   tenantId: string
   role: Role
   name: string
+  simpleAdminUi: boolean
   createdAt: string
   updatedAt: string
 }

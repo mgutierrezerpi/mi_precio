@@ -7,6 +7,7 @@ from lib import decode_token
 
 
 def setup_function():
+    auth.settings.debug = False
     auth.settings.mailer_enabled = False
     auth.settings.log_auth_codes = False
 
@@ -36,6 +37,23 @@ def test_send_code_deletes_previous_codes(db):
 
     count = AuthCode.select().where(AuthCode.email == "test@example.com").count()
     assert count == 1
+
+
+def test_send_code_skips_mailer_in_debug(db, monkeypatch):
+    called = False
+
+    def fail_if_called(*args, **kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("mailer should not be called in debug mode")
+
+    auth.settings.debug = True
+    monkeypatch.setattr(auth.mailer, "send", fail_if_called)
+
+    code = auth.send_code("test@example.com")
+
+    assert len(code) == 6
+    assert called is False
 
 
 def test_verify_code_success(db):
