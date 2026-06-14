@@ -78,3 +78,5 @@ def ensure_columns():
         db.execute_sql("ALTER TABLE users ADD COLUMN notif_prefs TEXT")
     if "notifications_seen_at" not in user_columns:
         db.execute_sql("ALTER TABLE users ADD COLUMN notifications_seen_at DATETIME")
+    if "simple_admin_ui" not in user_columns:
+        db.execute_sql("ALTER TABLE users ADD COLUMN simple_admin_ui INTEGER NOT NULL DEFAULT 0")
