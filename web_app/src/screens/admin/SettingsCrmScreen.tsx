@@ -55,6 +55,16 @@ async function fileToDataUrl(file: File, max = 256): Promise<string> {
 }
 
 export function SettingsCrmScreen() {
+  const t = useT()
+
+  return (
+    <CrmLayout active="Configuración" title={t('nav.settings')} subtitle={t('set.subtitle')} searchPlaceholder={t('common.search')}>
+      <SettingsCrmContent />
+    </CrmLayout>
+  )
+}
+
+export function SettingsCrmContent({ simple = false }: { simple?: boolean }) {
   const dispatch = useAppDispatch()
   const t = useT()
   const tenant = useAppSelector(selectTenant)
@@ -83,10 +93,9 @@ export function SettingsCrmScreen() {
   const ctx = { tenant, canManage, save, savingKey, savedKey, t }
 
   return (
-    <CrmLayout active="Configuración" title={t('nav.settings')} subtitle={t('set.subtitle')} searchPlaceholder={t('common.search')}>
-      <div className="flex min-w-[900px] gap-6 p-8">
+      <div className={simple ? 'flex w-full flex-col gap-4 md:flex-row md:gap-6' : 'flex min-w-[900px] gap-6 p-8'}>
         {/* Sub-nav */}
-        <div className="flex w-[240px] shrink-0 flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)]">
+        <div className={simple ? 'flex w-full shrink-0 flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)] md:w-[240px]' : 'flex w-[240px] shrink-0 flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)]'}>
           {sections.map((s) => (
             <button
               key={s.key}
@@ -100,7 +109,7 @@ export function SettingsCrmScreen() {
         </div>
 
         {/* Panel */}
-        <div className="flex flex-1 flex-col gap-5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-7 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+        <div className={simple ? 'flex min-w-0 flex-1 flex-col gap-5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)] sm:p-7' : 'flex flex-1 flex-col gap-5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-7 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]'}>
           {error && (
             <div className="flex items-center gap-2 rounded-2xl border border-[var(--tone-red-fg)]/40 bg-[var(--tone-red-bg)] px-4 py-3 text-sm font-semibold text-[var(--tone-red-fg)]">
               <Icon name="alert-triangle" size={16} /> {error}
@@ -123,7 +132,6 @@ export function SettingsCrmScreen() {
           {active === 'delete' && <DeleteSection t={t} tenant={tenant} isOwner={isOwner} />}
         </div>
       </div>
-    </CrmLayout>
   )
 }
 
