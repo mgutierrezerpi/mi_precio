@@ -1,0 +1,88 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+          cache-dependency-path: web_app/yarn.lock
+
+      - name: Build web app
+        working-directory: web_app
+        run: |
+          corepack enable
+          yarn install --frozen-lockfile
+          yarn build
+
+      - name: Build Docker images
+        run: |
+          docker build -t mi_precio/api:dev api
+          docker build -t mi_precio/landing:dev landing
+          docker save mi_precio/api:dev mi_precio/landing:dev | gzip > /tmp/mi_precio_images.tgz
+
+      - name: Prepare release archive
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='web_app/node_modules' \
+            --exclude='api/.pytest_cache' \
+            -czf /tmp/mi_precio_release.tgz .
+
+      - name: Install SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${{ secrets.VM_PORT || '22' }}" -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload release
+        run: |
+          scp -P "${{ secrets.VM_PORT || '22' }}" -i ~/.ssh/deploy_key /tmp/mi_precio_release.tgz \
+            "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/tmp/mi_precio_release_${{ github.sha }}.tgz"
+          scp -P "${{ secrets.VM_PORT || '22' }}" -i ~/.ssh/deploy_key /tmp/mi_precio_images.tgz \
+            "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/tmp/mi_precio_images_${{ github.sha }}.tgz"
+
+      - name: Deploy on VM
+        run: |
+          ssh -p "${{ secrets.VM_PORT || '22' }}" -i ~/.ssh/deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+
+          sha="${{ github.sha }}"
+          release="/srv/code/mi_precio_release_${sha}"
+          current="/srv/code/mi_precio_release"
+          archive="/tmp/mi_precio_release_${sha}.tgz"
+          images="/tmp/mi_precio_images_${sha}.tgz"
+
+          rm -rf "$release"
+          mkdir -p "$release"
+          tar -xzf "$archive" -C "$release"
+          gzip -dc "$images" | docker load
+
+          if [ -f "$current/.env" ]; then
+            cp "$current/.env" "$release/.env"
+          fi
+
+          if [ -f "$current/compose.production.yaml" ]; then
+            cp "$current/compose.production.yaml" "$release/compose.production.yaml"
+          fi
+
+          cd "$release"
+          docker compose -f compose.yaml -f compose.production.yaml up -d --no-build storage storage_setup api web_app landing
+          docker compose -f compose.yaml -f compose.production.yaml ps
+          REMOTE
