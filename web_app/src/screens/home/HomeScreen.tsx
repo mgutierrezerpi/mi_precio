@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectIsAuthenticated } from '../../store/slices/authSlice'
 import { AuthModal } from '../../components/AuthModal'
@@ -15,11 +15,9 @@ const line = (size: number, className: string | undefined, children: React.React
   </svg>
 )
 const Package = ({ className, size = 22 }: IcoProps) => line(size, className, <><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /><path d="m7.5 4.27 9 5.15" /></>)
-const Boxes = ({ className, size = 22 }: IcoProps) => line(size, className, <><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" /><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" /><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" /></>)
 const Link2 = ({ className, size = 22 }: IcoProps) => line(size, className, <><path d="M9 17H7A5 5 0 0 1 7 7h2" /><path d="M15 7h2a5 5 0 1 1 0 10h-2" /><line x1="8" x2="16" y1="12" y2="12" /></>)
 const QrCode = ({ className, size = 22 }: IcoProps) => line(size, className, <><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><path d="M21 16h-3a2 2 0 0 0-2 2v3" /><path d="M21 21v.01" /><path d="M12 7v3a2 2 0 0 1-2 2H7" /><path d="M3 12h.01" /><path d="M12 3h.01" /><path d="M12 16v.01" /><path d="M16 12h1" /><path d="M21 12v.01" /><path d="M12 21v-1" /></>)
 const DollarSign = ({ className, size = 22 }: IcoProps) => line(size, className, <><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></>)
-const RefreshCw = ({ className, size = 22 }: IcoProps) => line(size, className, <><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></>)
 const CircleCheck = ({ className, size = 20 }: IcoProps) => line(size, className, <><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></>)
 const Check = ({ className, size = 18 }: IcoProps) => line(size, className, <path d="M20 6 9 17l-5-5" />)
 const Sparkles = ({ className, size = 14 }: IcoProps) => line(size, className, <><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z" /><path d="M20 3v4" /><path d="M22 5h-4" /><path d="M4 17v2" /><path d="M5 18H3" /></>)
@@ -29,44 +27,19 @@ const Instagram = ({ className, size = 16 }: IcoProps) => line(size, className, 
 const Linkedin = ({ className, size = 16 }: IcoProps) => line(size, className, <><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /><rect width="4" height="12" x="2" y="9" /><circle cx="4" cy="4" r="2" /></>)
 const Twitter = ({ className, size = 16 }: IcoProps) => line(size, className, <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />)
 const Youtube = ({ className, size = 16 }: IcoProps) => line(size, className, <><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17z" /><path d="m10 15 5-3-5-3z" /></>)
-const Star = ({ className, size = 16 }: IcoProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-    <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2Z" />
-  </svg>
-)
-const Play = ({ className, size = 16 }: IcoProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-    <polygon points="6 3 20 12 6 21 6 3" />
-  </svg>
-)
 
 /* ── Data ─────────────────────────────────────────────────────── */
 const features = [
   { Icon: Package, color: '#7C3AED', bg: '#EDE9FE', title: 'Catálogo de productos', desc: 'Cargá productos, variantes, fotos y precios. Organizalos por categorías en minutos.' },
-  { Icon: Boxes, color: '#10B981', bg: '#D1FAE5', title: 'Control de stock', desc: 'Actualizá unidades en tiempo real y recibí alertas cuando un producto está por agotarse.' },
   { Icon: Link2, color: '#7C3AED', bg: '#EDE9FE', title: 'Lista de precios compartible', desc: 'Generá un link público o un QR para que tus clientes vean siempre la última versión.' },
   { Icon: QrCode, color: '#0EA5E9', bg: '#BAE6FD', title: 'Códigos QR personalizados', desc: 'Imprimí el QR para tu mostrador, catálogo impreso o redes sociales. Sin apps adicionales.' },
   { Icon: DollarSign, color: '#F59E0B', bg: '#FEF3C7', title: 'Multimoneda y listas por cliente', desc: 'Mostrá precios en pesos, dólares o por canal de venta. Una lista distinta por cliente.' },
-  { Icon: RefreshCw, color: '#F43F5E', bg: '#FFE4E6', title: 'Actualizaciones masivas', desc: 'Subí cambios desde un archivo o ajustá precios por porcentaje en toda una categoría.' },
 ]
 
 const steps = [
   ['1', 'Cargá tus productos', 'Importá tu lista o creala desde cero en pocos clics.'],
   ['2', 'Generá tu link o QR', 'Activá el link público y descargá el QR para compartirlo.'],
   ['3', 'Compartí con tus clientes', 'Tus precios y stock siempre actualizados, sin reimprimir nada.'],
-]
-
-const stats = [
-  ['2.500+', 'Negocios activos en MiPrecio'],
-  ['180k', 'Productos cargados'],
-  ['1.2M', 'QR escaneados por clientes'],
-  ['98%', 'Recomendarían MiPrecio'],
-]
-
-const testimonials = [
-  { stars: 5, quote: 'Antes mandaba la lista por PDF cada vez que cambiaban los precios. Ahora mis clientes simplemente escanean el QR y siempre ven la versión correcta.', initials: 'LF', color: '#7C3AED', name: 'Lucía Fernández', role: 'Dueña, Almacén Norte' },
-  { stars: 5, quote: 'El control de stock cambió la forma en que reponemos mercadería. Las alertas nos avisan antes de quedar sin producto y ahorramos horas de planillas.', initials: 'MS', color: '#0EA5E9', name: 'Martín Sosa', role: 'Gerente, Distrimax' },
-  { stars: 5, quote: 'Tener una lista por cliente es oro para ventas mayoristas. Cada uno ve sus precios, sin confusiones ni descuentos a mano.', initials: 'CP', color: '#10B981', name: 'Carla Pérez', role: 'Comercial, AceroPlus' },
 ]
 
 // Plan content is shared with the in-app billing cards (see lib/plans).
@@ -117,8 +90,6 @@ export function HomeScreen() {
       <Features />
       <HowItWorks />
       <ProductPreview />
-      <Stats />
-      <Testimonials />
       <Pricing onAuth={openAuth} />
       <Faq />
       <FinalCta onAuth={openAuth} />
@@ -214,15 +185,6 @@ function Hero({ onAuth }: { onAuth: OpenAuth }) {
             <button type="button" onClick={onAuth} className="rounded-xl bg-white px-[22px] py-3.5 text-[15px] font-semibold text-slate-950 shadow-[0_10px_24px_-6px_rgba(124,58,237,0.4)] hover:bg-violet-50">
               Crear cuenta gratis
             </button>
-            <Link to="/p/demo" className="flex items-center gap-2 rounded-xl border border-white/40 px-5 py-3.5 text-[15px] font-semibold text-white hover:bg-white/10">
-              <Play size={16} /> Ver demo
-            </Link>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="flex gap-0.5 text-white">
-              {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={16} />)}
-            </div>
-            <span className="text-[13px] font-medium text-[#C4B5FD]">Más de 2.500 negocios ya usan MiPrecio</span>
           </div>
         </div>
         <HeroMockup />
@@ -251,7 +213,7 @@ function Features() {
     <section id="funciones" className="scroll-mt-24 bg-[#F5F3FF] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead eyebrow="Funciones" title="Todo lo que tu negocio necesita para vender mejor." />
-        <Reveal className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Reveal className="grid gap-6 md:grid-cols-2">
           {features.map(({ Icon, color, bg, title, desc }) => (
             <article key={title} className="flex flex-col gap-3.5 rounded-[20px] border border-[#E2E8F0] bg-white p-6 shadow-[0_4px_16px_-6px_rgba(15,23,42,0.08)]">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: bg, color }}>
@@ -318,51 +280,6 @@ function PhoneMockup() {
         <img src="/mockup-img.png" alt="Vista del catálogo de MiPrecio en el celular" className="block w-full" />
       </div>
     </div>
-  )
-}
-
-function Stats() {
-  return (
-    <section className="bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-5 py-20 md:px-8">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
-        <SectionHead eyebrow="Resultados" title="Negocios que ya tienen su lista de precios online." eyebrowColor="text-[#C7D2FE]" inverted />
-        <Reveal className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map(([value, label]) => (
-            <div key={label} className="flex flex-col gap-2 rounded-[20px] border border-white/20 bg-white/10 p-6">
-              <p className="text-[44px] font-black leading-none text-white">{value}</p>
-              <p className="text-sm font-medium text-[#E0E7FF]">{label}</p>
-            </div>
-          ))}
-        </Reveal>
-      </div>
-    </section>
-  )
-}
-
-function Testimonials() {
-  return (
-    <section className="bg-[#FAF5FF] px-5 py-24 md:px-8">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
-        <SectionHead eyebrow="Testimonios" title="Lo que dicen quienes ya usan MiPrecio." />
-        <Reveal className="grid gap-6 lg:grid-cols-3">
-          {testimonials.map((t) => (
-            <article key={t.name} className="flex flex-col gap-5 rounded-3xl border border-[#E2E8F0] bg-[#F8FAFC] px-7 py-8">
-              <div className="flex gap-1 text-[#F59E0B]">
-                {Array.from({ length: t.stars }).map((_, i) => <Star key={i} size={16} />)}
-              </div>
-              <p className="leading-relaxed text-[#334155]">"{t.quote}"</p>
-              <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-white" style={{ backgroundColor: t.color }}>{t.initials}</span>
-                <div>
-                  <p className="text-sm font-bold text-[#0F172A]">{t.name}</p>
-                  <p className="text-xs font-medium text-[#64748B]">{t.role}</p>
-                </div>
-              </div>
-            </article>
-          ))}
-        </Reveal>
-      </div>
-    </section>
   )
 }
 

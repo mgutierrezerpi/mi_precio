@@ -7,9 +7,11 @@ usage, and enforcement when creating those resources."""
 from models import Tenant, Product, PriceList, User, Invitation
 
 # Per-plan limits. `None` means unlimited.
+# Must mirror the advertised limits in web_app/src/lib/plans.ts (and the landing).
+# Those marketing cards are the source of truth; enforcement here follows them.
 PLANS: dict[str, dict[str, int | None]] = {
-    "free": {"products": 25, "lists": 3, "members": 1},
-    "pyme": {"products": 300, "lists": 15, "members": 5},
+    "free": {"products": 10, "lists": 1, "members": 1},
+    "pyme": {"products": None, "lists": None, "members": 5},
     "pro": {"products": None, "lists": None, "members": None},
 }
 PLAN_ORDER = ["free", "pyme", "pro"]

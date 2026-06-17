@@ -29,7 +29,7 @@ def tenant(db):
 def test_new_tenant_is_free(tenant):
     info = plans.plan_info(tenant.id)
     assert info["plan"] == "free"
-    assert info["limits"] == {"products": 25, "lists": 3, "members": 1}
+    assert info["limits"] == {"products": 10, "lists": 1, "members": 1}
     assert info["usage"] == {"products": 0, "lists": 0, "members": 0}
 
 
@@ -54,7 +54,7 @@ def test_upgrade_lifts_limits(tenant):
     for i in range(25):
         Product.create(tenant=tenant, name=f"P{i}", price=1)
     plans.set_plan(tenant.id, "pyme")
-    plans.assert_can_add(tenant.id, "products")  # no raise (limit 300)
+    plans.assert_can_add(tenant.id, "products")  # no raise (pyme products unlimited)
 
 
 def test_pro_is_unlimited(tenant):
