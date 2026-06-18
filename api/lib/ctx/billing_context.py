@@ -99,16 +99,17 @@ def create_checkout(
     product_options: dict[str, Any] = {"enabled_variants": [int(variant_id)]}
     if redirect_url:
         product_options["redirect_url"] = redirect_url
+    checkout_data: dict[str, Any] = {"custom": {"tenant_id": tenant_id, "plan": plan}}
+    if email:
+        checkout_data["email"] = email
+    if name:
+        checkout_data["name"] = name
 
     payload = {
         "data": {
             "type": "checkouts",
             "attributes": {
-                "checkout_data": {
-                    "email": email,
-                    "name": name,
-                    "custom": {"tenant_id": tenant_id, "plan": plan},
-                },
+                "checkout_data": checkout_data,
                 "product_options": product_options,
             },
             "relationships": {
