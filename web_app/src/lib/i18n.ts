@@ -127,6 +127,8 @@ const DICT: Record<string, Entry> = {
   'bill.ownerOnly': { es: 'Solo el dueño de la cuenta puede cambiar el plan.', en: 'Only the account owner can change the plan.', pt: 'Apenas o dono da conta pode mudar o plano.' },
   'bill.paymentNote': { es: 'Los pagos se procesan con Lemon Squeezy. Tu plan se activa automáticamente cuando el pago queda confirmado.', en: 'Payments are processed with Lemon Squeezy. Your plan activates automatically once payment is confirmed.', pt: 'Os pagamentos são processados com Lemon Squeezy. Seu plano é ativado automaticamente quando o pagamento é confirmado.' },
   'bill.managePortal': { es: 'Gestionar en Lemon Squeezy', en: 'Manage in Lemon Squeezy', pt: 'Gerenciar no Lemon Squeezy' },
+  'bill.pending': { es: 'Seleccionaste {plan}. Estamos esperando la confirmación de Lemon Squeezy.', en: 'You selected {plan}. Waiting for Lemon Squeezy confirmation.', pt: 'Você selecionou {plan}. Aguardando a confirmação do Lemon Squeezy.' },
+  'bill.pendingShort': { es: 'Pendiente', en: 'Pending', pt: 'Pendente' },
   // Plan names, prices and feature copy now live in lib/plans (shared with the landing).
 
   'set.delete.subtitle': { es: 'Acción permanente e irreversible.', en: 'Permanent and irreversible action.', pt: 'Ação permanente e irreversível.' },

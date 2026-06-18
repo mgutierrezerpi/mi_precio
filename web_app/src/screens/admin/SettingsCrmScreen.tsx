@@ -390,8 +390,10 @@ function Row({ label, value }: { label: string; value: string }) {
 function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null; isOwner: boolean }) {
   const [info, setInfo] = useState<PlanInfo | null>(null)
   const [changing, setChanging] = useState<PlanId | null>(null)
+  const [pendingPlan, setPendingPlan] = useState<PlanId | null>(null)
   const [error, setError] = useState<string | null>(null)
   const tenantId = tenant?.id
+  const pendingKey = tenantId ? `billing_pending_plan_${tenantId}` : null
 
   useEffect(() => {
     if (!tenantId) return
@@ -400,15 +402,41 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
     return () => { cancelled = true }
   }, [tenantId])
 
+  useEffect(() => {
+    if (!pendingKey) return
+    const params = new URLSearchParams(window.location.search)
+    const returnedPlan = params.get('checkout_plan') as PlanId | null
+    if (returnedPlan && PLANS.some((plan) => plan.id === returnedPlan)) {
+      sessionStorage.setItem(pendingKey, returnedPlan)
+      setPendingPlan(returnedPlan)
+      params.delete('checkout_plan')
+      const qs = params.toString()
+      window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`)
+      return
+    }
+    const storedPlan = sessionStorage.getItem(pendingKey) as PlanId | null
+    setPendingPlan(storedPlan && PLANS.some((plan) => plan.id === storedPlan) ? storedPlan : null)
+  }, [pendingKey])
+
   const current = info?.plan ?? tenant?.plan ?? 'free'
+  const visiblePlan = pendingPlan ?? current
+
+  useEffect(() => {
+    if (!pendingKey || !pendingPlan || current !== pendingPlan) return
+    sessionStorage.removeItem(pendingKey)
+    setPendingPlan(null)
+  }, [current, pendingKey, pendingPlan])
 
   const openCheckout = async (plan: PlanId) => {
     if (!tenant?.id || plan === current) return
     setChanging(plan); setError(null)
-    const redirectUrl = `${window.location.origin}/admin/settings?section=billing`
+    const redirectUrl = `${window.location.origin}/admin/settings?section=billing&checkout_plan=${plan}`
     const res = await api.createCheckout(tenant.id, plan, redirectUrl)
     setChanging(null)
-    if (res.data?.url) window.location.assign(res.data.url)
+    if (res.data?.url) {
+      if (pendingKey) sessionStorage.setItem(pendingKey, plan)
+      window.location.assign(res.data.url)
+    }
     else setError(res.error || 'No se pudo abrir el checkout.')
   }
 
@@ -424,13 +452,19 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
         </div>
       )}
 
+      {pendingPlan && current !== pendingPlan && (
+        <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-sm font-semibold text-[var(--dash-text2)]">
+          <Icon name="tags" size={16} /> {t('bill.pending', { plan: planById(pendingPlan).name })}
+        </div>
+      )}
+
       {/* Usage of the current plan */}
       <div className="flex flex-col gap-3 rounded-2xl border border-[var(--dash-border)] p-4">
         <span className="text-[13px] font-extrabold text-[var(--dash-text)]">{t('bill.usageTitle')}</span>
         {info && ([['products', 'bill.products'], ['lists', 'bill.lists'], ['members', 'bill.members']] as const).map(([key, lbl]) => {
           const used = info.usage[key]
           // Limit comes from the advertised plan content so the bars match the cards.
-          const limit = planById(current).limits[key]
+          const limit = planById(visiblePlan).limits[key]
           const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0
           const full = limit !== null && used >= limit
           return (
@@ -462,8 +496,9 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
       <div className="grid grid-cols-3 items-stretch gap-3">
         {PLANS.map((plan) => {
           const isCurrent = plan.id === current
+          const isPending = plan.id === pendingPlan && plan.id !== current
           return (
-            <div key={plan.id} className={`flex flex-col gap-2.5 rounded-2xl border p-4 ${isCurrent ? 'border-[var(--dash-link)] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)]'}`}>
+            <div key={plan.id} className={`flex flex-col gap-2.5 rounded-2xl border p-4 ${isCurrent || isPending ? 'border-[var(--dash-link)] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)]'}`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[15px] font-extrabold text-[var(--dash-text)]">{plan.name}</span>
                 {plan.popular && <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide" style={tone('violet')}>{t('bill.recommended')}</span>}
@@ -483,6 +518,8 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
               </ul>
               {isCurrent ? (
                 <span className="mt-auto flex h-9 items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold" style={tone('violet')}><Icon name="circle-check" size={15} /> {t('bill.current')}</span>
+              ) : isPending ? (
+                <span className="mt-auto flex h-9 items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold" style={tone('violet')}><Icon name="tags" size={15} /> {t('bill.pendingShort')}</span>
               ) : (
                 <button type="button" disabled={!isOwner || changing !== null} onClick={() => openCheckout(plan.id)}
                   className={`mt-auto flex h-9 items-center justify-center rounded-xl text-[13px] font-bold text-white disabled:opacity-50 ${gradient}`}>
