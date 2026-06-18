@@ -43,7 +43,7 @@ const steps = [
 ]
 
 // Plan content is shared with the in-app billing cards (see lib/plans).
-const PLAN_CTA = 'Probar 14 días'
+const PLAN_CTA = 'Probar gratis'
 
 const faqs = [
   ['¿Necesito instalar algo en mi computadora?', 'No. MiPrecio funciona 100% en el navegador y en el celular. Solo creás tu cuenta y empezás a cargar productos.'],
@@ -299,7 +299,7 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
                 <strong className={`mt-2 text-[2.75rem] font-black leading-none ${dark ? 'text-white' : 'text-[#0F172A]'}`}>{plan.price}</strong>
                 <small className={`-mt-1.5 text-[0.82rem] font-medium ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{plan.cadence}</small>
                 <span className={`flex w-fit items-center gap-1.5 rounded-full px-[11px] py-[5px] text-[0.74rem] font-semibold ${dark ? 'bg-white/[0.12] text-[#C4B5FD]' : 'bg-[#EDE9FE] text-[#7C3AED]'}`}>
-                  <Sparkles size={14} /> 14 días de prueba gratis
+                  <Sparkles size={14} /> {plan.trialLabel}
                 </span>
                 <ul className="my-2 flex flex-col gap-3">
                   {plan.features.map((f) => (

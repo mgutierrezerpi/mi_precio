@@ -19,6 +19,7 @@ def create_checkout_endpoint(data: CreateCheckout, current_user: dict = Depends(
             data.plan,
             email=current_user.get("email"),
             name=current_user.get("name"),
+            redirect_url=data.redirect_url,
         )
     except billing.BillingError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

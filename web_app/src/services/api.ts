@@ -152,6 +152,13 @@ class ApiService {
     return this.request(`/tenants/${tenantId}/plan`, { method: 'PATCH', body: JSON.stringify({ plan }) })
   }
 
+  async createCheckout(tenantId: string, plan: PlanId, redirectUrl?: string): Promise<ApiResponse<{ url: string }>> {
+    return this.request('/billing/checkouts', {
+      method: 'POST',
+      body: JSON.stringify({ tenant_id: tenantId, plan, redirect_url: redirectUrl }),
+    })
+  }
+
   // Lists endpoints
   async getLists(tenantId: string): Promise<ApiResponse<PriceList[]>> {
     return this.request(`/tenants/${tenantId}/lists`)

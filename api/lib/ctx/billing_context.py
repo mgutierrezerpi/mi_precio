@@ -77,7 +77,13 @@ def billing_snapshot(tenant: Tenant) -> dict[str, Any]:
     }
 
 
-def create_checkout(tenant_id: str, plan: str, email: str | None = None, name: str | None = None) -> str:
+def create_checkout(
+    tenant_id: str,
+    plan: str,
+    email: str | None = None,
+    name: str | None = None,
+    redirect_url: str | None = None,
+) -> str:
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant:
         raise BillingError("Tenant not found")
@@ -90,6 +96,10 @@ def create_checkout(tenant_id: str, plan: str, email: str | None = None, name: s
     if not variant_id:
         raise BillingError(f"Lemon Squeezy variant is not configured for {plan}")
 
+    product_options: dict[str, Any] = {"enabled_variants": [int(variant_id)]}
+    if redirect_url:
+        product_options["redirect_url"] = redirect_url
+
     payload = {
         "data": {
             "type": "checkouts",
@@ -99,9 +109,7 @@ def create_checkout(tenant_id: str, plan: str, email: str | None = None, name: s
                     "name": name,
                     "custom": {"tenant_id": tenant_id, "plan": plan},
                 },
-                "product_options": {
-                    "enabled_variants": [int(variant_id)],
-                },
+                "product_options": product_options,
             },
             "relationships": {
                 "store": {"data": {"type": "stores", "id": settings.lemonsqueezy_store_id}},

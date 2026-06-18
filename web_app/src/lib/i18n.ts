@@ -122,10 +122,11 @@ const DICT: Record<string, Entry> = {
   'bill.unlimited': { es: 'Ilimitado', en: 'Unlimited', pt: 'Ilimitado' },
   'bill.current': { es: 'Plan actual', en: 'Current plan', pt: 'Plano atual' },
   'bill.choose': { es: 'Elegir plan', en: 'Choose plan', pt: 'Escolher plano' },
-  'bill.changing': { es: 'Cambiando…', en: 'Switching…', pt: 'Alterando…' },
+  'bill.changing': { es: 'Abriendo checkout…', en: 'Opening checkout…', pt: 'Abrindo checkout…' },
   'bill.recommended': { es: 'Más popular', en: 'Most popular', pt: 'Mais popular' },
   'bill.ownerOnly': { es: 'Solo el dueño de la cuenta puede cambiar el plan.', en: 'Only the account owner can change the plan.', pt: 'Apenas o dono da conta pode mudar o plano.' },
-  'bill.paymentNote': { es: 'El cobro con tarjeta se activará con la pasarela de pago. Por ahora el cambio de plan es inmediato.', en: 'Card billing will be enabled with the payment gateway. For now, plan changes are instant.', pt: 'A cobrança no cartão será ativada com o gateway de pagamento. Por enquanto, a troca de plano é imediata.' },
+  'bill.paymentNote': { es: 'Los pagos se procesan con Lemon Squeezy. Tu plan se activa automáticamente cuando el pago queda confirmado.', en: 'Payments are processed with Lemon Squeezy. Your plan activates automatically once payment is confirmed.', pt: 'Os pagamentos são processados com Lemon Squeezy. Seu plano é ativado automaticamente quando o pagamento é confirmado.' },
+  'bill.managePortal': { es: 'Gestionar en Lemon Squeezy', en: 'Manage in Lemon Squeezy', pt: 'Gerenciar no Lemon Squeezy' },
   // Plan names, prices and feature copy now live in lib/plans (shared with the landing).
 
   'set.delete.subtitle': { es: 'Acción permanente e irreversible.', en: 'Permanent and irreversible action.', pt: 'Ação permanente e irreversível.' },

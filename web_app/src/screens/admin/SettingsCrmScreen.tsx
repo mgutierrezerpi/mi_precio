@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant, setTenant, selectUser, selectIsAdmin, selectIsOwner, logout, updateCurrentUser } from '../../store/slices/authSlice'
@@ -126,7 +126,7 @@ export function SettingsCrmContent({ simple = false }: { simple?: boolean }) {
           {active === 'notifications' && <NotificationsSection t={t} tenantId={tenant?.id} />}
           {active === 'region' && <RegionSection {...ctx} />}
           {active === 'security' && <SecuritySection t={t} user={user} onUiModeChange={(simpleAdminUi) => dispatch(updateCurrentUser({ simpleAdminUi }))} onLogout={() => dispatch(logout())} />}
-          {active === 'billing' && <BillingSection t={t} tenant={tenant} isOwner={isOwner} onPlanChange={(tn) => dispatch(setTenant(tn))} />}
+          {active === 'billing' && <BillingSection t={t} tenant={tenant} isOwner={isOwner} />}
           {/* Datos fiscales: oculta por ahora (ver array `sections`). Para reactivar, descomentá: */}
           {/* {active === 'tax' && <TaxSection {...ctx} />} */}
           {active === 'delete' && <DeleteSection t={t} tenant={tenant} isOwner={isOwner} />}
@@ -386,18 +386,12 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
-/* ── 5. Billing — plans, usage and limit enforcement (no card payments yet) ── */
-function BillingSection({ t, tenant, isOwner, onPlanChange }: { t: TFn; tenant: Tenant | null; isOwner: boolean; onPlanChange: (tenant: Tenant) => void }) {
+/* ── 5. Billing — plans, usage and limit enforcement ── */
+function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null; isOwner: boolean }) {
   const [info, setInfo] = useState<PlanInfo | null>(null)
   const [changing, setChanging] = useState<PlanId | null>(null)
   const [error, setError] = useState<string | null>(null)
   const tenantId = tenant?.id
-
-  const load = useCallback(async () => {
-    if (!tenantId) return
-    const res = await api.getPlan(tenantId)
-    if (res.data) setInfo(res.data)
-  }, [tenantId])
 
   useEffect(() => {
     if (!tenantId) return
@@ -408,13 +402,14 @@ function BillingSection({ t, tenant, isOwner, onPlanChange }: { t: TFn; tenant: 
 
   const current = info?.plan ?? tenant?.plan ?? 'free'
 
-  const changePlan = async (plan: PlanId) => {
+  const openCheckout = async (plan: PlanId) => {
     if (!tenant?.id || plan === current) return
     setChanging(plan); setError(null)
-    const res = await api.updatePlan(tenant.id, plan)
+    const redirectUrl = `${window.location.origin}/admin/settings?section=billing`
+    const res = await api.createCheckout(tenant.id, plan, redirectUrl)
     setChanging(null)
-    if (res.data) { onPlanChange(res.data); void load() }
-    else setError(res.error || 'No se pudo cambiar el plan.')
+    if (res.data?.url) window.location.assign(res.data.url)
+    else setError(res.error || 'No se pudo abrir el checkout.')
   }
 
   const limitLabel = (n: number | null) => (n === null ? t('bill.unlimited') : String(n))
@@ -452,6 +447,17 @@ function BillingSection({ t, tenant, isOwner, onPlanChange }: { t: TFn; tenant: 
         })}
       </div>
 
+      {info?.billing?.portal_url && (
+        <a
+          href={info.billing.portal_url}
+          target="_blank"
+          rel="noreferrer"
+          className="flex h-11 w-fit items-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
+        >
+          <Icon name="tags" size={16} /> {t('bill.managePortal')}
+        </a>
+      )}
+
       {/* Plan cards — same copy as the public landing (lib/plans). */}
       <div className="grid grid-cols-3 items-stretch gap-3">
         {PLANS.map((plan) => {
@@ -478,7 +484,7 @@ function BillingSection({ t, tenant, isOwner, onPlanChange }: { t: TFn; tenant: 
               {isCurrent ? (
                 <span className="mt-auto flex h-9 items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold" style={tone('violet')}><Icon name="circle-check" size={15} /> {t('bill.current')}</span>
               ) : (
-                <button type="button" disabled={!isOwner || changing !== null} onClick={() => changePlan(plan.id)}
+                <button type="button" disabled={!isOwner || changing !== null} onClick={() => openCheckout(plan.id)}
                   className={`mt-auto flex h-9 items-center justify-center rounded-xl text-[13px] font-bold text-white disabled:opacity-50 ${gradient}`}>
                   {changing === plan.id ? t('bill.changing') : t('bill.choose')}
                 </button>

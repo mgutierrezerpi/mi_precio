@@ -16,6 +16,7 @@ export interface PlanContent {
   description: string
   price: string
   cadence: string
+  trialLabel: string
   features: string[]
   limits: PlanLimits
   popular?: boolean
@@ -27,6 +28,7 @@ const FREE_PLAN: PlanContent = {
   description: 'Cuenta sin suscripción activa.',
   price: '$U 0',
   cadence: 'sin suscripción',
+  trialLabel: '',
   features: ['Hasta 10 productos', '1 lista pública', '1 usuario'],
   limits: { products: 10, lists: 1, members: 1 },
 }
@@ -38,6 +40,7 @@ export const PLANS: PlanContent[] = [
     description: 'Para empezar con una lista simple y compartirla por link o QR.',
     price: '$U 200',
     cadence: 'por mes',
+    trialLabel: '14 días de prueba gratis',
     features: ['14 días gratis', 'Hasta 25 productos', '3 listas públicas', 'QR personalizado'],
     limits: { products: 25, lists: 3, members: 1 },
   },
@@ -45,9 +48,10 @@ export const PLANS: PlanContent[] = [
     id: 'plus',
     name: 'Plus',
     description: 'Más productos, más listas y herramientas para operar mejor.',
-    price: '$U 790',
+    price: '$U 800',
     cadence: 'por mes',
-    features: ['Prueba gratis', 'Hasta 300 productos', '15 listas públicas', 'Equipo de hasta 5 usuarios'],
+    trialLabel: '30 días de prueba gratis',
+    features: ['30 días gratis', 'Hasta 300 productos', '15 listas públicas', 'Equipo de hasta 5 usuarios'],
     limits: { products: 300, lists: 15, members: 5 },
     popular: true,
   },
@@ -55,9 +59,10 @@ export const PLANS: PlanContent[] = [
     id: 'pro',
     name: 'Pro',
     description: 'Límites altos, equipo completo y funciones avanzadas.',
-    price: '$U 1.390',
+    price: '$U 1.500',
     cadence: 'por mes',
-    features: ['Prueba gratis', 'Productos ilimitados', 'Listas ilimitadas', 'Usuarios ilimitados'],
+    trialLabel: '30 días de prueba gratis',
+    features: ['30 días gratis', 'Productos ilimitados', 'Listas ilimitadas', 'Usuarios ilimitados'],
     limits: { products: null, lists: null, members: null },
   },
 ]

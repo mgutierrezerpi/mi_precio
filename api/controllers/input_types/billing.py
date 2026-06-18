@@ -5,6 +5,7 @@ from pydantic import BaseModel
 class CreateCheckout(BaseModel):
     tenant_id: str
     plan: str
+    redirect_url: str | None = None
 
 
 class ManualSubscriptionSync(BaseModel):
