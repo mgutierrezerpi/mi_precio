@@ -154,10 +154,10 @@ function Navbar({ onAuth, isAuthenticated }: { onAuth: OpenAuth; isAuthenticated
             <a href="#faq" className="hover:text-[#7C3AED]">Recursos</a>
           </nav>
           <div className="flex items-center gap-3">
-            <button type="button" onClick={onAuth} className="rounded-[10px] border-[1.5px] border-[#7C3AED] px-[18px] py-2.5 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]">
+            <button type="button" onClick={onAuth} className="cursor-pointer rounded-[10px] border-[1.5px] border-[#7C3AED] px-[18px] py-2.5 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]">
               {isAuthenticated ? 'Mi panel' : 'Iniciar sesión'}
             </button>
-            <button type="button" onClick={onAuth} className="rounded-[10px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-[18px] py-2.5 text-sm font-semibold text-white hover:brightness-105">
+            <button type="button" onClick={onAuth} className="cursor-pointer rounded-[10px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-[18px] py-2.5 text-sm font-semibold text-white hover:brightness-105">
               Probar gratis
             </button>
           </div>
