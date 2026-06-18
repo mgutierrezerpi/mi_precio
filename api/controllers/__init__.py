@@ -10,6 +10,7 @@ from controllers.import_controller import router as import_router
 from controllers.customers_controller import router as customers_router
 from controllers.team_controller import router as team_router
 from controllers.notifications_controller import router as notifications_router
+from controllers.billing_controller import router as billing_router
 
 # Explicit re-exports
 auth_router = auth_router
@@ -24,3 +25,4 @@ import_router = import_router
 customers_router = customers_router
 team_router = team_router
 notifications_router = notifications_router
+billing_router = billing_router

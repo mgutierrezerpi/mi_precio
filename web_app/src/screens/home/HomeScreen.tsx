@@ -50,13 +50,13 @@ const faqs = [
   ['¿Mis clientes necesitan registrarse para ver la lista?', 'No. Tus clientes abren el link o escanean el QR y ven la lista pública sin crear cuenta.'],
   ['¿Puedo tener listas distintas por cliente o canal?', 'Sí. Podés manejar listas por cliente, mayorista, minorista o canal de venta, cada una con sus precios.'],
   ['¿Cómo se actualizan los precios y el stock?', 'Actualizás desde tu panel y el cambio se refleja inmediatamente en el link y el QR que ya compartiste.'],
-  ['¿Hay límite de productos o usuarios?', 'Depende de tu plan. El plan Inicial es gratis hasta 10 productos; los planes pagos ofrecen productos y usuarios ilimitados.'],
+  ['¿Hay límite de productos o usuarios?', 'Depende de tu plan. Micro incluye lo básico para empezar; Plus y Pro agregan más capacidad para operar con más listas, productos y equipo.'],
 ]
 
 const footerColumns = [
   ['Producto', 'Funciones', 'Precios', 'Casos de uso', 'Novedades', 'Demo'],
   ['Empresa', 'Sobre nosotros', 'Blog', 'Clientes', 'Contacto', 'Trabajá con nosotros'],
-  ['Recursos', 'Centro de ayuda', 'Documentación', 'Estado del servicio', 'Guías para pymes', 'Comunidad'],
+  ['Recursos', 'Centro de ayuda', 'Documentación', 'Estado del servicio', 'Guías para negocios', 'Comunidad'],
   ['Legal', 'Términos', 'Privacidad', 'Cookies', 'Seguridad'],
 ]
 
@@ -287,7 +287,7 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
   return (
     <section id="precios" className="scroll-mt-24 bg-[#EDE9FE] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
-        <SectionHead eyebrow="Precios" title="Planes simples, pensados para pymes." subtitle="Probá MiPrecio gratis 14 días. Sin tarjeta de crédito." />
+        <SectionHead eyebrow="Precios" title="Planes simples para vender mejor." subtitle="Probá MiPrecio gratis antes de pagar. Sin tarjeta de crédito." />
         <Reveal className="grid items-stretch gap-6 lg:grid-cols-3">
           {PLANS.map((plan) => {
             const dark = plan.popular

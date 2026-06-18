@@ -84,7 +84,7 @@ function useAccount() {
     : ''
   const name = tenant?.name?.trim() || emailName || 'Mi cuenta'
   const initials = name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'U'
-  const plan = 'Negocio Pro' // TODO: traer el plan real del backend
+  const plan = 'Pro' // TODO: traer el plan real del backend
   return { name, initials, plan }
 }
 

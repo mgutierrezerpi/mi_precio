@@ -1,11 +1,25 @@
 // Core domain types for Mi Precio
 
-export type PlanId = 'free' | 'pyme' | 'pro'
+export type PlanId = 'free' | 'micro' | 'plus' | 'pro'
 
 export interface PlanInfo {
   plan: PlanId
   limits: { products: number | null; lists: number | null; members: number | null }
   usage: { products: number; lists: number; members: number }
+  billing?: {
+    provider: string | null
+    customer_id: string | null
+    subscription_id: string | null
+    variant_id: string | null
+    status: string | null
+    renews_at: string | null
+    ends_at: string | null
+    trial_ends_at: string | null
+    portal_url: string | null
+    update_payment_url: string | null
+    card_brand: string | null
+    card_last_four: string | null
+  }
 }
 
 export interface Tenant {

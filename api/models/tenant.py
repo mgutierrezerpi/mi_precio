@@ -1,4 +1,4 @@
-from peewee import CharField, TextField
+from peewee import CharField, DateTimeField, TextField
 from models.base import BaseModel
 
 
@@ -7,8 +7,23 @@ class Tenant(BaseModel):
     subdomain = CharField(max_length=63, unique=True, index=True)
     currency = CharField(max_length=3, default="UYU")
 
-    # Subscription plan: free | pyme | pro (limits enforced in plans_context).
+    # Subscription plan: free | micro | plus | pro (limits enforced in plans_context).
     plan = CharField(max_length=16, default="free")
+
+    # Billing provider state. Lemon Squeezy is the first provider, but these
+    # columns stay generic enough for manual fallback and future migration.
+    billing_provider = CharField(max_length=32, null=True)
+    billing_customer_id = CharField(max_length=64, null=True)
+    billing_subscription_id = CharField(max_length=64, null=True)
+    billing_variant_id = CharField(max_length=64, null=True)
+    billing_status = CharField(max_length=32, null=True)
+    billing_renews_at = DateTimeField(null=True)
+    billing_ends_at = DateTimeField(null=True)
+    billing_trial_ends_at = DateTimeField(null=True)
+    billing_portal_url = TextField(null=True)
+    billing_update_payment_url = TextField(null=True)
+    billing_card_brand = CharField(max_length=32, null=True)
+    billing_card_last_four = CharField(max_length=8, null=True)
 
     # Brand & appearance (shown on the public price-list page)
     logo_url = TextField(null=True)        # data URL or hosted URL

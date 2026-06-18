@@ -164,7 +164,7 @@ def _extract_from_google_maps(url: str, openai_client: OpenAI) -> list[dict]:
                     close_btn = driver.find_element(By.CSS_SELECTOR, "a.detail__close")
                     close_btn.click()
                     time.sleep(0.3)
-                except:
+                except Exception:
                     driver.find_element(By.TAG_NAME, "body").send_keys("\ue00c")  # Escape
                     time.sleep(0.3)
             except Exception as e:
@@ -216,7 +216,7 @@ def _extract_from_google_maps(url: str, openai_client: OpenAI) -> list[dict]:
                         score += 5
 
                     scored_results.append((score, result, link, href))
-                except:
+                except Exception:
                     continue
 
             # Sort by score descending

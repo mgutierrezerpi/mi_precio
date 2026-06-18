@@ -21,35 +21,45 @@ export interface PlanContent {
   popular?: boolean
 }
 
+const FREE_PLAN: PlanContent = {
+  id: 'free',
+  name: 'Sin plan',
+  description: 'Cuenta sin suscripción activa.',
+  price: '$U 0',
+  cadence: 'sin suscripción',
+  features: ['Hasta 10 productos', '1 lista pública', '1 usuario'],
+  limits: { products: 10, lists: 1, members: 1 },
+}
+
 export const PLANS: PlanContent[] = [
   {
-    id: 'free',
-    name: 'Inicial',
-    description: 'Para empezar a tener tu lista online.',
-    price: '$ 5',
-    cadence: 'USD por mes',
-    features: ['Hasta 10 productos', '1 lista pública', 'QR personalizado', 'Soporte por email'],
-    limits: { products: 10, lists: 1, members: 1 },
+    id: 'micro',
+    name: 'Micro',
+    description: 'Para empezar con una lista simple y compartirla por link o QR.',
+    price: '$U 200',
+    cadence: 'por mes',
+    features: ['14 días gratis', 'Hasta 25 productos', '3 listas públicas', 'QR personalizado'],
+    limits: { products: 25, lists: 3, members: 1 },
   },
   {
-    id: 'pyme',
-    name: 'Pyme',
-    description: 'Para negocios que ya están creciendo.',
-    price: '$ 20',
-    cadence: 'USD por mes',
-    features: ['Productos ilimitados', 'Listas por cliente', 'Multiusuario (5)', 'Soporte prioritario'],
-    limits: { products: null, lists: null, members: 5 },
+    id: 'plus',
+    name: 'Plus',
+    description: 'Más productos, más listas y herramientas para operar mejor.',
+    price: '$U 790',
+    cadence: 'por mes',
+    features: ['Prueba gratis', 'Hasta 300 productos', '15 listas públicas', 'Equipo de hasta 5 usuarios'],
+    limits: { products: 300, lists: 15, members: 5 },
     popular: true,
   },
   {
     id: 'pro',
-    name: 'Negocio Pro',
-    description: 'Para equipos comerciales y mayoristas.',
-    price: '$ 35',
-    cadence: 'USD por mes',
-    features: ['Todo lo de Pyme', 'Multimoneda', 'Importación masiva', 'Usuarios ilimitados', 'Integración con WhatsApp'],
+    name: 'Pro',
+    description: 'Límites altos, equipo completo y funciones avanzadas.',
+    price: '$U 1.390',
+    cadence: 'por mes',
+    features: ['Prueba gratis', 'Productos ilimitados', 'Listas ilimitadas', 'Usuarios ilimitados'],
     limits: { products: null, lists: null, members: null },
   },
 ]
 
-export const planById = (id: PlanId): PlanContent => PLANS.find((p) => p.id === id)!
+export const planById = (id: PlanId): PlanContent => id === 'free' ? FREE_PLAN : (PLANS.find((p) => p.id === id) || FREE_PLAN)

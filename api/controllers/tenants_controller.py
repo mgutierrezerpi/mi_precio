@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from config import settings
 from lib.ctx import identity, analytics, activity, plans
 from controllers.deps import get_current_user, require_admin, require_owner
 from controllers.input_types import CreateTenant, UpdateTenant, UpdatePlan
@@ -19,6 +20,8 @@ def plan_info_endpoint(tenant_id: str, current_user: dict = Depends(get_current_
 
 @router.patch("/{tenant_id}/plan")
 def update_plan_endpoint(tenant_id: str, data: UpdatePlan, current_user: dict = Depends(require_owner)):
+    if settings.billing_enabled and data.plan != "free":
+        raise HTTPException(status_code=402, detail="Los planes pagos se activan desde facturación.")
     if current_user.get("tenant_id") != tenant_id:
         raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
     try:

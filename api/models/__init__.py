@@ -54,6 +54,18 @@ def ensure_columns():
     tenant_columns = [column.name for column in db.get_columns("tenants")]
     for col, ddl in [
         ("plan", "plan VARCHAR(16) NOT NULL DEFAULT 'free'"),
+        ("billing_provider", "billing_provider VARCHAR(32)"),
+        ("billing_customer_id", "billing_customer_id VARCHAR(64)"),
+        ("billing_subscription_id", "billing_subscription_id VARCHAR(64)"),
+        ("billing_variant_id", "billing_variant_id VARCHAR(64)"),
+        ("billing_status", "billing_status VARCHAR(32)"),
+        ("billing_renews_at", "billing_renews_at DATETIME"),
+        ("billing_ends_at", "billing_ends_at DATETIME"),
+        ("billing_trial_ends_at", "billing_trial_ends_at DATETIME"),
+        ("billing_portal_url", "billing_portal_url TEXT"),
+        ("billing_update_payment_url", "billing_update_payment_url TEXT"),
+        ("billing_card_brand", "billing_card_brand VARCHAR(32)"),
+        ("billing_card_last_four", "billing_card_last_four VARCHAR(8)"),
         ("logo_url", "logo_url TEXT"),
         ("brand_color", "brand_color VARCHAR(9)"),
         ("description", "description TEXT"),

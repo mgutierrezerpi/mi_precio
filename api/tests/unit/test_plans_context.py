@@ -45,7 +45,7 @@ def test_member_limit_counts_users_and_pending_invites(tenant):
     with pytest.raises(PlanLimitError):
         plans.assert_can_add(tenant.id, "members")
     # a pending invitation also counts toward the limit
-    plans.set_plan(tenant.id, "pyme")  # limit 5
+    plans.set_plan(tenant.id, "plus")  # limit 5
     Invitation.create(tenant=tenant, email="a@shop.com", role="editor", status="pending")
     assert plans.plan_info(tenant.id)["usage"]["members"] == 2
 
@@ -53,8 +53,13 @@ def test_member_limit_counts_users_and_pending_invites(tenant):
 def test_upgrade_lifts_limits(tenant):
     for i in range(25):
         Product.create(tenant=tenant, name=f"P{i}", price=1)
+    plans.set_plan(tenant.id, "plus")
+    plans.assert_can_add(tenant.id, "products")  # no raise (limit 300)
+
+
+def test_legacy_pyme_normalizes_to_plus(tenant):
     plans.set_plan(tenant.id, "pyme")
-    plans.assert_can_add(tenant.id, "products")  # no raise (pyme products unlimited)
+    assert plans.plan_info(tenant.id)["plan"] == "plus"
 
 
 def test_pro_is_unlimited(tenant):

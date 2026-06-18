@@ -21,7 +21,9 @@ class TenantView(BaseView):
 
     @classmethod
     def render(cls, tenant):
-        g = lambda attr, default=None: getattr(tenant, attr, default)
+        def g(attr, default=None):
+            return getattr(tenant, attr, default)
+
         return cls(
             id=tenant.id,
             name=tenant.name,

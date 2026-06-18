@@ -28,6 +28,17 @@ class Settings(BaseSettings):
     mailer_enabled: bool = False
     log_auth_codes: bool = True
 
+    # Billing settings
+    billing_enabled: bool = False
+    billing_manual_secret: str = ""
+    lemonsqueezy_api_key: str = ""
+    lemonsqueezy_store_id: str = ""
+    lemonsqueezy_webhook_secret: str = ""
+    lemonsqueezy_variant_micro: str = ""
+    lemonsqueezy_variant_plus: str = ""
+    lemonsqueezy_variant_pyme: str = ""  # Legacy alias for Plus.
+    lemonsqueezy_variant_pro: str = ""
+
     # Storage settings
     storage_endpoint_url: str = ""
     storage_public_url: str = ""

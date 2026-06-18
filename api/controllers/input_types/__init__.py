@@ -23,3 +23,5 @@ from controllers.input_types.invite_member import InviteMember as InviteMember
 from controllers.input_types.update_member import UpdateMember as UpdateMember
 from controllers.input_types.update_notif_prefs import UpdateNotifPrefs as UpdateNotifPrefs
 from controllers.input_types.update_plan import UpdatePlan as UpdatePlan
+from controllers.input_types.billing import CreateCheckout as CreateCheckout
+from controllers.input_types.billing import ManualSubscriptionSync as ManualSubscriptionSync

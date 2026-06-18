@@ -41,7 +41,8 @@ const DICT: Record<string, Entry> = {
   'side.settings': { es: 'AJUSTES', en: 'SETTINGS', pt: 'AJUSTES' },
   'side.planTag': { es: 'Plan {plan}', en: '{plan} plan', pt: 'Plano {plan}' },
   'side.upgradeTitle': { es: 'Subí a {plan}', en: 'Upgrade to {plan}', pt: 'Assine o {plan}' },
-  'side.upgradeDesc.pyme': { es: 'Productos ilimitados y multiusuario.', en: 'Unlimited products and multi-user.', pt: 'Produtos ilimitados e multiusuário.' },
+  'side.upgradeDesc.micro': { es: 'Lista simple, QR y primeros productos.', en: 'Simple list, QR and first products.', pt: 'Lista simples, QR e primeiros produtos.' },
+  'side.upgradeDesc.plus': { es: 'Más productos, listas y multiusuario.', en: 'More products, lists and multi-user.', pt: 'Mais produtos, listas e multiusuário.' },
   'side.upgradeDesc.pro': { es: 'Multimoneda, importación masiva y usuarios ilimitados.', en: 'Multi-currency, bulk import and unlimited users.', pt: 'Multimoeda, importação em massa e usuários ilimitados.' },
   'side.viewPlans': { es: 'Ver planes', en: 'View plans', pt: 'Ver planos' },
 

@@ -10,7 +10,7 @@ import { tone, gradient } from './theme'
 
 // Plans cheapest → most expensive; the upsell card points to the next tier up.
 // 'pro' is the top plan, so it has no upgrade and the card is hidden.
-const NEXT_PLAN: Partial<Record<PlanId, PlanId>> = { free: 'pyme', pyme: 'pro' }
+const NEXT_PLAN: Partial<Record<PlanId, PlanId>> = { free: 'micro', micro: 'plus', plus: 'pro' }
 
 // `id` is the stable (Spanish) key screens pass as CrmLayout `active`; `tKey` is the display label.
 const navMain: { icon: IconName; id: string; tKey: string; to?: string; badge?: string }[] = [
