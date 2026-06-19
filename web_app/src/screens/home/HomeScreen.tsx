@@ -94,6 +94,7 @@ export function HomeScreen() {
       <Faq />
       <FinalCta onAuth={openAuth} />
       <Footer />
+      <BackToTop />
       <AuthModal
         open={authOpen}
         onClose={() => {
@@ -102,6 +103,27 @@ export function HomeScreen() {
         }}
       />
     </main>
+  )
+}
+
+/** Floating button that scrolls back to the top once the user has scrolled down. */
+function BackToTop() {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setShow(window.scrollY > 400)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  return (
+    <button
+      type="button"
+      aria-label="Volver arriba"
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      className={`fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#A855F7] text-white shadow-[0_10px_24px_-6px_rgba(124,58,237,0.6)] transition-all duration-300 hover:brightness-110 ${show ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg>
+    </button>
   )
 }
 
@@ -171,7 +193,7 @@ function Navbar({ onAuth, isAuthenticated }: { onAuth: OpenAuth; isAuthenticated
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#E2E8F0] bg-white/90 backdrop-blur-xl">
-      <div className="relative z-10 mx-auto flex max-w-[1200px] items-center justify-between bg-white/90 px-5 py-4 backdrop-blur-xl md:px-8">
+      <div className="relative z-10 mx-auto flex max-w-[1200px] items-center justify-between px-5 py-4 md:px-8">
         <a href="#" className="flex items-center" onClick={() => setOpen(false)}>
           <img src="/miprecio-logo-pencil.png" alt="MiPrecio" className="h-11 w-auto" />
         </a>
@@ -578,8 +600,9 @@ function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
 function Footer() {
   const socials = [Instagram, Linkedin, Twitter, Youtube]
   return (
-    <footer className="bg-[#2E1065] px-5 pb-8 pt-16 text-white md:px-[120px]">
+    <footer className="bg-[#2E1065] px-5 py-8 text-white md:px-[120px]">
       <div className="mx-auto max-w-[1200px]">
+        {/* Navegación/marca del footer oculta: estas páginas todavía no existen. Descomentar cuando estén listas.
         <div className="grid gap-16 lg:grid-cols-[320px_repeat(4,1fr)]">
           <div className="flex flex-col gap-4">
             <img src="/miprecio-logo-white-pencil.png" alt="MiPrecio" className="h-12 w-auto self-start" />
@@ -604,6 +627,7 @@ function Footer() {
           ))}
         </div>
         <div className="my-10 h-px bg-white/10" />
+        */}
         <p className="text-center text-xs font-medium text-[#64748B]">© 2026 MiPrecio. Todos los derechos reservados.</p>
       </div>
     </footer>
