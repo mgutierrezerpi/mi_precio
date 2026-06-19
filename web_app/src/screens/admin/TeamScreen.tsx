@@ -134,7 +134,7 @@ export function TeamScreen() {
 
   return (
     <CrmLayout active="Equipo" title="Equipo" subtitle="Gestioná quién accede a tu cuenta." searchPlaceholder="Buscar miembros…" searchValue={search} onSearchChange={setSearch}>
-      <div className="flex min-w-[980px] flex-col gap-5 p-8">
+      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[980px]">
         {error && (
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm font-semibold text-[#B91C1C]">
             <span className="flex items-center gap-2"><Icon name="alert-triangle" size={16} /> {error}</span>
@@ -143,7 +143,7 @@ export function TeamScreen() {
         )}
 
         {/* KPIs */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.label} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)]">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(k.iconTone)}><Icon name={k.icon} size={22} /></span>
@@ -163,8 +163,8 @@ export function TeamScreen() {
               <button type="button" onClick={() => setShowInvite(true)} className={`flex h-[38px] items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] ${gradient}`}><Icon name="plus" size={16} /> Invitar miembro</button>
             )}
           </div>
-          <div className="overflow-hidden rounded-2xl border border-[var(--dash-border)]">
-            <div className="flex items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+          <div className="overflow-x-auto rounded-2xl border border-[var(--dash-border)]">
+            <div className="flex min-w-[640px] items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="flex-1">Miembro</span>
               <span className="w-[150px]">Rol</span>
               <span className="w-[130px]">UI</span>
@@ -173,16 +173,16 @@ export function TeamScreen() {
               {canManage && <span className="w-[70px] text-right">Acción</span>}
             </div>
             {loading ? (
-              <div className="flex h-32 items-center justify-center text-sm font-medium text-[var(--dash-muted)]">Cargando…</div>
+              <div className="flex h-32 min-w-[640px] items-center justify-center text-sm font-medium text-[var(--dash-muted)]">Cargando…</div>
             ) : shown.length === 0 ? (
-              <div className="flex h-32 items-center justify-center text-sm font-medium text-[var(--dash-muted)]">No se encontraron miembros.</div>
+              <div className="flex h-32 min-w-[640px] items-center justify-center text-sm font-medium text-[var(--dash-muted)]">No se encontraron miembros.</div>
             ) : shown.map((m, idx) => {
               const isYou = me?.id === m.id
               const isOwner = m.role === 'owner'
               const editable = canManage && !isOwner && !isYou
               const seen = lastSeen(m.lastSeenAt)
               return (
-                <div key={m.id} className={`flex items-center gap-3 bg-[var(--dash-surface)] px-[18px] py-3 ${idx > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                <div key={m.id} className={`flex min-w-[640px] items-center gap-3 bg-[var(--dash-surface)] px-[18px] py-3 ${idx > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
                   <div className="flex flex-1 items-center gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={tone(avatarTone(m.email))}>{initials(m.name || m.email)}</span>
                     <div className="flex min-w-0 flex-col">
@@ -225,7 +225,7 @@ export function TeamScreen() {
         </div>
 
         {/* Bottom: permissions + pending invites */}
-        <div className="flex gap-5">
+        <div className="flex flex-col gap-5 lg:flex-row">
           <div className="flex flex-1 flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
             <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Permisos por rol</h3>
             {ROLE_PERMS.map((r) => (
@@ -235,7 +235,7 @@ export function TeamScreen() {
               </div>
             ))}
           </div>
-          <div className="flex w-[380px] shrink-0 flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+          <div className="flex w-full shrink-0 flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)] lg:w-[380px]">
             <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Invitaciones pendientes</h3>
             {loading ? (
               <p className="py-4 text-center text-xs font-medium text-[var(--dash-muted)]">Cargando…</p>
@@ -282,8 +282,8 @@ function InviteModal({ tenantId, onClose, onInvited }: { tenantId: string; onClo
   }
 
   return (
-    <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="w-[440px] rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-[440px] rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-extrabold text-[var(--dash-text)]">Invitar miembro</h3>
         <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">Se unirá a tu equipo al iniciar sesión con este email.</p>
         <div className="mt-4 flex flex-col gap-3">

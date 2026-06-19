@@ -98,9 +98,9 @@ export function CategoriesScreen() {
       searchValue={search}
       onSearchChange={setSearch}
     >
-      <div className="flex min-w-[900px] flex-col gap-5 p-8">
+      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[900px]">
         {/* KPIs */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.label} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)]">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(k.iconTone)}>
@@ -118,7 +118,7 @@ export function CategoriesScreen() {
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-1">
             <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Mis categorías</h3>
             <p className="text-xs font-medium text-[var(--dash-muted)]">Organizá los productos en grupos para que tus clientes los encuentren más rápido.</p>
@@ -148,7 +148,7 @@ export function CategoriesScreen() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((c) => {
               const t = catColor(c)
               const n = countFor(c)

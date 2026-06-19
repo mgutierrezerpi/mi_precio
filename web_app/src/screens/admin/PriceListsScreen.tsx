@@ -96,11 +96,11 @@ export function PriceListsScreen() {
       searchValue={search}
       onSearchChange={setSearch}
     >
-      <div className="flex min-w-[900px] flex-col gap-5 p-8">
+      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[900px]">
         {/* Banner */}
-        <div className={`flex items-center gap-6 rounded-3xl p-7 text-white shadow-[0_16px_32px_-8px_rgba(124,58,237,0.4)] ${gradient}`}>
+        <div className={`flex flex-col gap-6 rounded-3xl p-6 text-white shadow-[0_16px_32px_-8px_rgba(124,58,237,0.4)] md:p-7 lg:flex-row lg:items-center ${gradient}`}>
           <div className="flex flex-1 flex-col gap-3">
-            <h2 className="text-3xl font-extrabold leading-tight">Compartí tu catálogo en un escaneo.</h2>
+            <h2 className="text-2xl font-extrabold leading-tight md:text-3xl">Compartí tu catálogo en un escaneo.</h2>
             <p className="text-sm font-medium leading-relaxed text-white/80">Generá un link o un QR para cada lista y mantenelos siempre actualizados sin reimprimir.</p>
             {canEdit && (
               <button type="button" onClick={() => setModal({ open: true, list: null })} className="mt-1 flex h-11 w-fit items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#7C3AED] hover:bg-violet-50">
@@ -108,18 +108,18 @@ export function PriceListsScreen() {
               </button>
             )}
           </div>
-          <div className="flex h-[140px] w-[140px] shrink-0 items-center justify-center rounded-2xl bg-white p-2.5">
+          <div className="flex h-[140px] w-[140px] shrink-0 items-center justify-center self-center rounded-2xl bg-white p-2.5 lg:self-auto">
             <QrGraphic className="h-full w-full" />
           </div>
         </div>
 
         {/* Header + filters */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-1">
             <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Mis listas</h3>
             <p className="text-xs font-medium text-[var(--dash-muted)]">Compartí precios distintos por cliente o canal.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {tabs.map((t) => (
               <button
                 key={t.key}

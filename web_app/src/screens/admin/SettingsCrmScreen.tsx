@@ -93,9 +93,9 @@ export function SettingsCrmContent({ simple = false }: { simple?: boolean }) {
   const ctx = { tenant, canManage, save, savingKey, savedKey, t }
 
   return (
-      <div className={simple ? 'flex w-full flex-col gap-4 md:flex-row md:gap-6' : 'flex min-w-[900px] gap-6 p-8'}>
+      <div className={simple ? 'flex w-full flex-col gap-4 md:flex-row md:gap-6' : 'flex flex-col gap-6 p-4 md:p-8 lg:min-w-[900px] lg:flex-row'}>
         {/* Sub-nav */}
-        <div className={simple ? 'flex w-full shrink-0 flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)] md:w-[240px]' : 'flex w-[240px] shrink-0 flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)]'}>
+        <div className={simple ? 'flex w-full shrink-0 flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)] md:w-[240px]' : 'flex w-full shrink-0 lg:w-[240px] flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)]'}>
           {sections.map((s) => (
             <button
               key={s.key}
@@ -427,9 +427,24 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
     setPendingPlan(null)
   }, [current, pendingKey, pendingPlan])
 
-  const openCheckout = async (plan: PlanId) => {
+  const choosePlan = async (plan: PlanId) => {
     if (!tenant?.id || plan === current) return
     setChanging(plan); setError(null)
+
+    // No payment gateway: switch the plan immediately.
+    if (!info?.billingEnabled) {
+      const res = await api.updatePlan(tenant.id, plan)
+      setChanging(null)
+      if (res.data) {
+        const refreshed = await api.getPlan(tenant.id)
+        if (refreshed.data) setInfo(refreshed.data)
+      } else {
+        setError(res.error || 'No se pudo cambiar el plan.')
+      }
+      return
+    }
+
+    // Billing enabled: open the Lemon Squeezy checkout.
     const redirectUrl = `${window.location.origin}/admin/settings?section=billing&checkout_plan=${plan}`
     const res = await api.createCheckout(tenant.id, plan, redirectUrl)
     setChanging(null)
@@ -493,7 +508,7 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
       )}
 
       {/* Plan cards — same copy as the public landing (lib/plans). */}
-      <div className="grid grid-cols-3 items-stretch gap-3">
+      <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {PLANS.map((plan) => {
           const isCurrent = plan.id === current
           const isPending = plan.id === pendingPlan && plan.id !== current
@@ -521,7 +536,7 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
               ) : isPending ? (
                 <span className="mt-auto flex h-9 items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold" style={tone('violet')}><Icon name="tags" size={15} /> {t('bill.pendingShort')}</span>
               ) : (
-                <button type="button" disabled={!isOwner || changing !== null} onClick={() => openCheckout(plan.id)}
+                <button type="button" disabled={!isOwner || changing !== null} onClick={() => choosePlan(plan.id)}
                   className={`mt-auto flex h-9 items-center justify-center rounded-xl text-[13px] font-bold text-white disabled:opacity-50 ${gradient}`}>
                   {changing === plan.id ? t('bill.changing') : t('bill.choose')}
                 </button>

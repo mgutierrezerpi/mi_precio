@@ -19,19 +19,29 @@ interface CrmTopbarProps {
   actions?: React.ReactNode
   /** Show the compact/full density toggle. Enabled per-screen while we roll it out. */
   showDensityToggle?: boolean
+  /** Opens the mobile navigation drawer (hamburger). */
+  onMenu?: () => void
 }
 
 /** Shared CRM topbar: title + search + density/theme toggles + notifications + user menu. */
-export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions, showDensityToggle }: CrmTopbarProps) {
+export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions, showDensityToggle, onMenu }: CrmTopbarProps) {
   const dispatch = useAppDispatch()
   const { isDark, toggleTheme } = useTheme()
   const { compact, toggleDensity } = useDensity()
   const t = useT()
 
   return (
-    <header className="flex h-[72px] shrink-0 items-center gap-4 border-b border-[var(--dash-border)] bg-[var(--dash-surface)] px-8">
+    <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 md:gap-4 md:px-8">
+      <button
+        type="button"
+        onClick={onMenu}
+        aria-label="Abrir menú"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80 lg:hidden"
+      >
+        <Icon name="menu" />
+      </button>
       <div className="flex min-w-0 flex-col">
-        <h1 className="truncate text-xl font-extrabold text-[var(--dash-text)]">{title}</h1>
+        <h1 className="truncate text-lg font-extrabold text-[var(--dash-text)] md:text-xl">{title}</h1>
         <p className="truncate text-xs font-medium text-[var(--dash-muted)]">{subtitle}</p>
       </div>
       <div className="flex-1" />
@@ -58,7 +68,7 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
         <button
           type="button"
           onClick={toggleDensity}
-          className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] hover:opacity-80"
+          className="hidden h-10 w-10 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] hover:opacity-80 lg:flex"
           title={compact ? t('top.fullView') : t('top.compactView')}
         >
           <Icon name={compact ? 'layout-dashboard' : 'rows-2'} className={compact ? 'text-[var(--dash-link)]' : 'text-[var(--dash-text2)]'} />

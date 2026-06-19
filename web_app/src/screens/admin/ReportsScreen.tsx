@@ -65,9 +65,9 @@ export function ReportsScreen() {
 
   return (
     <CrmLayout active="Reportes" title="Reportes" subtitle="Medí el rendimiento de tu catálogo." searchPlaceholder="Buscar…">
-      <div className="flex min-w-[980px] flex-col gap-5 p-8">
+      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[980px]">
         {/* KPI row */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.label} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)]">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(k.iconTone)}><Icon name={k.icon} size={22} /></span>
@@ -79,21 +79,21 @@ export function ReportsScreen() {
           ))}
         </div>
 
-        <div className="flex gap-5">
+        <div className="flex flex-col gap-5 lg:flex-row">
           {/* Bar chart */}
           <div className="flex flex-1 flex-col gap-5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
               <div className="flex flex-col gap-1">
                 <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Visitas y escaneos · Últimos {days} días</h3>
                 <p className="text-xs font-medium text-[var(--dash-muted)]">{fmtInt(periodVisits)} aperturas de tus listas públicas en el período.</p>
               </div>
-              <div className="flex shrink-0 items-center gap-1.5 rounded-xl bg-[var(--dash-soft)] p-1">
+              <div className="flex w-full items-center gap-1.5 rounded-xl bg-[var(--dash-soft)] p-1 sm:w-auto sm:shrink-0">
                 {RANGES.map((r) => (
                   <button
                     key={r.days}
                     type="button"
                     onClick={() => setDays(r.days)}
-                    className={`flex h-8 items-center rounded-lg px-3 text-xs font-bold ${days === r.days ? `text-white ${gradient}` : 'text-[var(--dash-text2)]'}`}
+                    className={`flex h-8 flex-1 items-center justify-center rounded-lg px-3 text-xs font-bold sm:flex-none ${days === r.days ? `text-white ${gradient}` : 'text-[var(--dash-text2)]'}`}
                   >
                     {r.label}
                   </button>
@@ -110,7 +110,7 @@ export function ReportsScreen() {
           </div>
 
           {/* Right column */}
-          <div className="flex w-[320px] shrink-0 flex-col gap-5">
+          <div className="flex w-full shrink-0 flex-col gap-5 lg:w-[320px]">
             <TopProducts data={data} loading={loading} />
             <Channels data={data} loading={loading} />
           </div>

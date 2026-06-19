@@ -221,11 +221,11 @@ export function ProductsScreen() {
       searchValue={search}
       onSearchChange={(v) => resetTo(() => setSearch(v))}
     >
-      <div className="flex min-w-[980px] flex-col gap-5 p-8">
-        {/* KPIs */}
-        <div className="grid grid-cols-4 gap-4">
+      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[980px]">
+        {/* KPIs — 2×2 on mobile, single row on desktop */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {kpis.map((k) => (
-            <div key={k.label} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)]">
+            <div key={k.label} className="flex items-center gap-3 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 py-4 shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] sm:gap-3.5 sm:px-5 sm:py-[18px]">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(k.iconTone)}>
                 <Icon name={k.icon} size={22} />
               </span>
@@ -243,7 +243,7 @@ export function ProductsScreen() {
         {/* Catalog card */}
         <div className="flex flex-col gap-[18px] rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
           {/* Header */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2.5">
                 <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Catálogo</h3>
@@ -251,7 +251,7 @@ export function ProductsScreen() {
               </div>
               <p className="text-xs font-medium text-[var(--dash-muted)]">Editá precios y disponibilidad al instante. Los cambios se reflejan en tus listas públicas.</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
               <FilterMenu
                 status={status} onStatus={(s) => resetTo(() => setStatus(s))}
                 priceMin={priceMin} priceMax={priceMax}
@@ -264,7 +264,7 @@ export function ProductsScreen() {
                 <button
                   type="button"
                   onClick={() => setModal({ open: true, product: null })}
-                  className={`flex h-[38px] items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] ${gradient}`}
+                  className={`flex h-[38px] w-full items-center justify-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] lg:w-auto lg:justify-start ${gradient}`}
                 >
                   <Icon name="plus" size={16} /> Nuevo producto
                 </button>
@@ -273,7 +273,7 @@ export function ProductsScreen() {
           </div>
 
           {/* Filter chips */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {filters.map((f) => {
               const active = status === f.key
               return (
@@ -310,8 +310,8 @@ export function ProductsScreen() {
           )}
 
           {/* Table */}
-          <div className="overflow-hidden rounded-2xl border border-[var(--dash-border)]">
-            <div className="flex items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+          <div className="overflow-x-auto rounded-2xl border border-[var(--dash-border)]">
+            <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="w-9"><Checkbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={toggleSelectAll} /></span>
               <span className="flex-1">Producto</span>
               <span className="w-[110px]">SKU</span>
@@ -329,7 +329,7 @@ export function ProductsScreen() {
             ) : (
               pageItems.map((p, i) => {
                 return (
-                  <div key={p.id} className={`flex items-center gap-3 px-[18px] py-3.5 ${selected.has(p.id) ? 'bg-[var(--dash-soft)]' : 'bg-[var(--dash-surface)]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                  <div key={p.id} className={`flex min-w-[720px] items-center gap-3 px-[18px] py-3.5 ${selected.has(p.id) ? 'bg-[var(--dash-soft)]' : 'bg-[var(--dash-surface)]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
                     <span className="w-9"><Checkbox checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} /></span>
                     <div className="flex flex-1 items-center gap-3">
                       {p.imageUrl
@@ -483,9 +483,9 @@ function Menu({ icon, label, width = 'w-56', children }: { icon: IconName; label
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
   return (
-    <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen((o) => !o)} className={outlineBtn}>
-        <Icon name={icon} size={16} /> {label}
+    <div ref={ref} className="relative w-full lg:w-auto">
+      <button type="button" onClick={() => setOpen((o) => !o)} className={`${outlineBtn} w-full justify-between lg:w-auto lg:justify-start`}>
+        <span className="flex items-center gap-2"><Icon name={icon} size={16} /> {label}</span>
         <Icon name="chevron-down" size={14} className={`text-[var(--dash-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       <div className={`absolute right-0 top-[calc(100%+6px)] z-40 ${width} origin-top-right rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-2 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.3)] transition-all duration-150 ${open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'}`}>

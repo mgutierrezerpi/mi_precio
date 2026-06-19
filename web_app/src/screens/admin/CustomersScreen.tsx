@@ -113,8 +113,8 @@ export function CustomersScreen() {
 
   return (
     <CrmLayout active="Clientes" title="Clientes" subtitle="Gestioná tu cartera de clientes." searchPlaceholder="Buscar clientes…" searchValue={search} onSearchChange={setSearch}>
-      <div className="flex min-w-[980px] flex-col gap-5 p-8">
-        <div className="grid grid-cols-4 gap-4">
+      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[980px]">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.label} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)]">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(k.iconTone)}><Icon name={k.icon} size={22} /></span>
@@ -135,8 +135,8 @@ export function CustomersScreen() {
             {canEdit && <button type="button" onClick={() => setShowNew(true)} className={`flex h-[38px] items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] ${gradient}`}><Icon name="plus" size={16} /> Nuevo cliente</button>}
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-[var(--dash-border)]">
-            <div className="flex items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+          <div className="overflow-x-auto rounded-2xl border border-[var(--dash-border)]">
+            <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="flex-1">Cliente</span>
               <span className="w-[150px]">Teléfono</span>
               <span className="w-[120px]">Última compra</span>
@@ -158,7 +158,7 @@ export function CustomersScreen() {
               filtered.map((c, i) => {
                 const st = statusOf(c)
                 return (
-                  <div key={c.id} role="button" tabIndex={0} onClick={() => setOpenId(c.id)} onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(c.id) }} className={`flex w-full cursor-pointer items-center gap-3 bg-[var(--dash-surface)] px-[18px] py-3 text-left hover:bg-[var(--dash-soft)] ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                  <div key={c.id} role="button" tabIndex={0} onClick={() => setOpenId(c.id)} onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(c.id) }} className={`flex w-full min-w-[720px] cursor-pointer items-center gap-3 bg-[var(--dash-surface)] px-[18px] py-3 text-left hover:bg-[var(--dash-soft)] ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
                     <div className="flex flex-1 items-center gap-3">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={tone(avatarTone(c.name))}>{initials(c.name)}</span>
                       <div className="flex min-w-0 flex-col">
@@ -229,7 +229,7 @@ function CustomerModal({ tenantId, customer, onClose, onSaved }: { tenantId?: st
 
   return (
     <Overlay onClose={onClose}>
-      <div className="w-[440px] rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[440px] rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-extrabold text-[var(--dash-text)]">{isEdit ? 'Editar cliente' : 'Nuevo cliente'}</h3>
         <div className="mt-4 flex flex-col gap-3">
           <Field label="Nombre cliente/empresa *"><input value={name} onChange={(e) => setName(e.target.value)} autoFocus className={inputCls} placeholder="Lucía Fernández" /></Field>
@@ -290,7 +290,7 @@ function CustomerDrawer({ customerId, products, money, canEdit, onClose, onChang
 
   return (
     <Overlay onClose={onClose} align="right">
-      <aside className="flex h-full w-[480px] flex-col border-l border-[var(--dash-border)] bg-[var(--dash-bg)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <aside className="flex h-full w-[480px] max-w-full flex-col border-l border-[var(--dash-border)] bg-[var(--dash-bg)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
         {loading || !customer ? (
           <div className="flex flex-1 items-center justify-center text-sm font-medium text-[var(--dash-muted)]">Cargando ficha…</div>
         ) : (
@@ -503,7 +503,7 @@ const inputCls = 'rounded-xl border border-[var(--dash-border)] bg-[var(--dash-s
 
 function Overlay({ children, onClose, align = 'center' }: { children: React.ReactNode; onClose: () => void; align?: 'center' | 'right' }) {
   return (
-    <div onClick={(e) => { e.stopPropagation(); onClose() }} className={`fixed inset-0 z-50 flex bg-black/40 backdrop-blur-sm ${align === 'right' ? 'justify-end' : 'items-center justify-center'}`}>
+    <div onClick={(e) => { e.stopPropagation(); onClose() }} className={`fixed inset-0 z-50 flex bg-black/40 backdrop-blur-sm ${align === 'right' ? 'justify-end' : 'items-center justify-center p-4'}`}>
       {children}
     </div>
   )

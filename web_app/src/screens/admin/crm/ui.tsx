@@ -13,7 +13,7 @@ export type IconName =
   | 'trending-up' | 'alert-triangle' | 'wrench' | 'zap' | 'paintbrush' | 'list-plus'
   | 'file-spreadsheet' | 'upload' | 'log-out' | 'user' | 'box' | 'cable' | 'layers'
   | 'cog' | 'droplet' | 'droplets' | 'ellipsis' | 'sliders-horizontal' | 'arrow-up-down' | 'download'
-  | 'circle-check' | 'circle-x' | 'pencil' | 'rows-2'
+  | 'circle-check' | 'circle-x' | 'pencil' | 'rows-2' | 'menu'
 
 const ICONS: Record<IconName, React.ReactNode> = {
   pencil: <><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></>,
@@ -65,6 +65,7 @@ const ICONS: Record<IconName, React.ReactNode> = {
   'circle-check': <><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></>,
   'circle-x': <><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></>,
   'rows-2': <><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 12h18" /></>,
+  menu: <><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="18" y2="18" /></>,
 }
 
 export function Icon({ name, size = 18, className }: { name: IconName; size?: number; className?: string }) {
@@ -140,14 +141,14 @@ export function UserMenu() {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-10 items-center gap-2.5 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] py-1 pl-1 pr-3 transition hover:opacity-80"
+        className="flex h-10 items-center gap-2.5 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] py-1 pl-1 pr-1 transition hover:opacity-80 lg:pr-3"
       >
         <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white ${gradient}`}>{initials}</span>
-        <span className="flex max-w-[160px] flex-col items-start leading-tight">
+        <span className="hidden max-w-[160px] flex-col items-start leading-tight lg:flex">
           <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{name}</span>
           <span className="truncate text-[11px] font-semibold text-[var(--dash-link)]">{plan}</span>
         </span>
-        <Icon name="chevron-down" size={14} className={`text-[var(--dash-muted)] transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <Icon name="chevron-down" size={14} className={`hidden text-[var(--dash-muted)] transition-transform duration-200 lg:block ${open ? 'rotate-180' : ''}`} />
       </button>
 
       <div

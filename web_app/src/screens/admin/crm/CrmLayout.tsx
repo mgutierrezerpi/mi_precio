@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { CrmSidebar } from './CrmSidebar'
 import { CrmTopbar } from './CrmTopbar'
 
@@ -17,11 +18,12 @@ interface CrmLayoutProps {
 
 /** Full CRM screen shell: themed background + sidebar + topbar + scrollable content. */
 export function CrmLayout({ active, title, subtitle, searchPlaceholder, searchValue, onSearchChange, onSearchSubmit, actions, showDensityToggle, children }: CrmLayoutProps) {
+  const [navOpen, setNavOpen] = useState(false)
   return (
     <div className="dash flex h-screen overflow-hidden bg-[var(--dash-bg)] font-sans text-[var(--dash-text)]">
-      <CrmSidebar active={active} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <CrmTopbar title={title} subtitle={subtitle} searchPlaceholder={searchPlaceholder} searchValue={searchValue} onSearchChange={onSearchChange} onSearchSubmit={onSearchSubmit} actions={actions} showDensityToggle={showDensityToggle} />
+      <CrmSidebar active={active} open={navOpen} onClose={() => setNavOpen(false)} />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <CrmTopbar title={title} subtitle={subtitle} searchPlaceholder={searchPlaceholder} searchValue={searchValue} onSearchChange={onSearchChange} onSearchSubmit={onSearchSubmit} actions={actions} showDensityToggle={showDensityToggle} onMenu={() => setNavOpen(true)} />
         <div className="flex-1 overflow-y-auto">{children}</div>
       </div>
     </div>

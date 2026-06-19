@@ -6,6 +6,8 @@ export interface PlanInfo {
   plan: PlanId
   limits: { products: number | null; lists: number | null; members: number | null }
   usage: { products: number; lists: number; members: number }
+  /** When false there is no payment gateway, so plan changes apply immediately. */
+  billingEnabled?: boolean
   billing?: {
     provider: string | null
     customer_id: string | null

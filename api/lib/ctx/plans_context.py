@@ -4,6 +4,7 @@ There is no payment gateway yet, so changing plan is immediate (no charge).
 What is real: per-plan limits on products, lists and team members, the current
 usage, and enforcement when creating those resources."""
 
+from config import settings
 from models import Tenant, Product, PriceList, User, Invitation
 
 # Per-plan limits. `None` means unlimited.
@@ -51,7 +52,9 @@ def plan_info(tenant_id: str) -> dict:
     """Current plan + its limits + current usage for the billing screen."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     plan = normalize_plan(getattr(tenant, "plan", "free")) if tenant else "free"
-    info = {"plan": plan, "limits": PLANS[plan], "usage": _usage(tenant_id)}
+    # When billing is disabled there is no payment gateway, so the UI switches
+    # plans immediately via PATCH instead of opening a checkout.
+    info = {"plan": plan, "limits": PLANS[plan], "usage": _usage(tenant_id), "billing_enabled": settings.billing_enabled}
     if tenant:
         info["billing"] = {
             "provider": tenant.billing_provider,

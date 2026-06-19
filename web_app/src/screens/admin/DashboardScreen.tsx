@@ -5,6 +5,7 @@ import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import { fetchProducts, selectProducts, selectProductsLoading } from '../../store/slices/productsSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
 import { selectDensity } from '../../store/slices/uiSlice'
+import { useIsDesktop } from '../../hooks/useMediaQuery'
 import type { Product, CustomerStats, Activity } from '../../types'
 import api, { type VisitStats } from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
@@ -32,7 +33,10 @@ export function DashboardScreen() {
   const products = useAppSelector(selectProducts)
   const loading = useAppSelector(selectProductsLoading)
   const lists = useAppSelector(selectLists)
-  const compact = useAppSelector(selectDensity) === 'compact'
+  // The density toggle is desktop-only; mobile always uses the full layout.
+  const isDesktop = useIsDesktop()
+  const densityCompact = useAppSelector(selectDensity) === 'compact'
+  const compact = isDesktop && densityCompact
   const [visits, setVisits] = useState<VisitStats | null>(null)
   const [custStats, setCustStats] = useState<CustomerStats | null>(null)
   const [search, setSearch] = useState('')
@@ -88,30 +92,30 @@ export function DashboardScreen() {
       onSearchSubmit={(q) => navigate(q.trim() ? `/admin/items?q=${encodeURIComponent(q.trim())}` : '/admin/items')}
       showDensityToggle
     >
-      <div className={`flex min-w-[900px] flex-col ${compact ? 'gap-4 p-5' : 'gap-6 p-8'}`}>
+      <div className={`flex flex-col lg:min-w-[900px] ${compact ? 'gap-4 p-5' : 'gap-6 p-4 md:p-8'}`}>
         {/* Welcome row — promo hero + public list. Full view only; in compact the
             public list moves into the KPI row so everything sits on one line. */}
         {!compact && (
-          <div className="flex gap-6">
-            <div className={`flex flex-1 items-center gap-6 rounded-3xl p-7 text-white shadow-[0_16px_32px_-8px_rgba(124,58,237,0.4)] ${gradient}`}>
+          <div className="flex flex-col gap-6 lg:flex-row">
+            <div className={`hidden flex-col items-start gap-6 rounded-3xl p-6 text-white shadow-[0_16px_32px_-8px_rgba(124,58,237,0.4)] sm:flex-row sm:items-center md:p-7 lg:flex lg:flex-1 ${gradient}`}>
               <div className="flex flex-1 flex-col gap-3">
                 <p className="text-xs font-bold tracking-[0.2em] text-white/70">NOVEDAD</p>
-                <h2 className="text-3xl font-extrabold leading-tight">Compartí tu catálogo en un escaneo.</h2>
+                <h2 className="text-2xl font-extrabold leading-tight md:text-3xl">Compartí tu catálogo en un escaneo.</h2>
                 <p className="text-sm font-medium leading-relaxed text-white/80">Generá códigos QR personalizados con tu logo y actualizalos sin reimprimir.</p>
                 <button type="button" onClick={goQr} className="mt-1 flex h-11 w-fit items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#7C3AED] hover:bg-violet-50">
                   <Icon name="qr-code" size={16} /> Crear QR
                 </button>
               </div>
-              <button type="button" onClick={goQr} title="Ver códigos QR" className="flex h-[140px] w-[140px] shrink-0 items-center justify-center rounded-2xl bg-white p-3.5">
+              <button type="button" onClick={goQr} title="Ver códigos QR" className="flex h-[140px] w-[140px] shrink-0 items-center justify-center self-center rounded-2xl bg-white p-3.5">
                 <QrCode value={qrUrl} size={120} fg="#0F172A" logoUrl={FAVICON} className="h-full w-full object-contain" />
               </button>
             </div>
-            <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} className="w-[320px] shrink-0" />
+            <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} className="w-full shrink-0 lg:w-[320px]" />
           </div>
         )}
 
         {/* KPI row — in compact the public list card joins this row (grid widens to 6 cols). */}
-        <div className={compact ? 'grid grid-cols-6 gap-3' : 'grid grid-cols-4 gap-4'}>
+        <div className={compact ? 'grid grid-cols-6 gap-3' : 'grid grid-cols-1 gap-4 lg:grid-cols-4'}>
           {compact && <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} compact className="col-span-2" />}
           <ProductsCard total={total} available={available} unavailable={unavailable} onClick={goProducts} compact={compact} />
           <KpiCard icon="list-checks" iconTone="violet" value={lists.length} label="Listas" tag={`${activeLists} activas`} tagTone="green" note="Compartibles por link y QR" onClick={goLists} compact={compact} />
@@ -119,9 +123,9 @@ export function DashboardScreen() {
         </div>
 
         {/* Bottom row */}
-        <div className={`flex ${compact ? 'gap-4' : 'gap-5'}`}>
+        <div className={`flex flex-col lg:flex-row ${compact ? 'gap-4' : 'gap-5'}`}>
           <RecentProducts products={products} total={total} loading={loading} search={search} onNew={canEdit ? () => navigate('/admin/items?new=1') : undefined} onViewAll={goProducts} compact={compact} />
-          <div className={`flex w-[380px] shrink-0 flex-col ${compact ? 'gap-4' : 'gap-5'}`}>
+          <div className={`flex w-full shrink-0 flex-col lg:w-[380px] ${compact ? 'gap-4' : 'gap-5'}`}>
             {canEdit && (
               <QuickActions
                 onProduct={() => navigate('/admin/items?new=1')}
@@ -186,7 +190,7 @@ function KpiCard({ icon, iconTone, value, label, tag, tagTone, note, onClick, co
 /** Products KPI split in half: available vs unavailable. */
 function ProductsCard({ total, available, unavailable, onClick, compact }: { total: number; available: number; unavailable: number; onClick?: () => void; compact?: boolean }) {
   return (
-    <button type="button" onClick={onClick} className={`col-span-2 flex items-center rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)] ${compact ? 'gap-3 px-4 py-3' : 'gap-4 px-5 py-[18px]'}`}>
+    <button type="button" onClick={onClick} className={`flex items-center rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)] lg:col-span-2 ${compact ? 'gap-3 px-4 py-3' : 'gap-4 px-5 py-[18px]'}`}>
       <span className={`flex shrink-0 items-center justify-center rounded-[14px] ${compact ? 'h-10 w-10' : 'h-12 w-12'}`} style={tone('violet')}>
         <Icon name="package" size={compact ? 18 : 22} />
       </span>
@@ -231,12 +235,12 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll, co
 
   return (
     <div className={`flex flex-1 flex-col rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)] ${compact ? 'gap-3 p-4' : 'gap-[18px] p-6'}`}>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <h3 className={`font-extrabold text-[var(--dash-text)] ${compact ? 'text-lg' : 'text-[22px]'}`}>Productos recientes</h3>
           {!compact && <p className="text-xs font-medium text-[var(--dash-muted)]">Actualizá precios y disponibilidad al instante.</p>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -253,10 +257,10 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll, co
       <div className="overflow-hidden rounded-2xl border border-[var(--dash-border)]">
         <div className={`flex items-center gap-3 bg-[var(--dash-table-head)] px-[18px] text-[11px] font-bold tracking-wide text-[var(--dash-muted)] ${compact ? 'h-9' : 'h-[42px]'}`}>
           <span className="flex-1">PRODUCTO</span>
-          {!compact && <span className="w-[110px]">SKU</span>}
-          {!compact && <span className="w-[130px]">CATEGORÍA</span>}
-          <span className="w-[90px]">PRECIO</span>
-          <span className="w-[110px]">DISPONIBLE</span>
+          {!compact && <span className="hidden w-[110px] lg:block">SKU</span>}
+          {!compact && <span className="hidden w-[130px] lg:block">CATEGORÍA</span>}
+          <span className="w-[70px] sm:w-[90px]">PRECIO</span>
+          <span className="w-[90px] text-right sm:w-[110px] sm:text-left">DISPONIBLE</span>
         </div>
 
         {loading ? (
@@ -284,16 +288,16 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll, co
                     {!compact && <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{p.description || '—'}</span>}
                   </div>
                 </div>
-                {!compact && <span className="w-[110px] text-xs font-semibold text-[var(--dash-text2)]">{p.sku || '—'}</span>}
+                {!compact && <span className="hidden w-[110px] text-xs font-semibold text-[var(--dash-text2)] lg:block">{p.sku || '—'}</span>}
                 {!compact && (
-                  <span className="w-[130px]">
+                  <span className="hidden w-[130px] lg:block">
                     {p.category
                       ? <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(catTone(p.category))}>{displayCategory(p.category)}</span>
                       : <span className="text-[11px] font-medium text-[var(--dash-muted)]">—</span>}
                   </span>
                 )}
-                <span className="w-[90px] text-[13px] font-bold text-[var(--dash-text)]">{formatPrice(p.price)}</span>
-                <span className="w-[110px]">
+                <span className="w-[70px] text-[13px] font-bold text-[var(--dash-text)] sm:w-[90px]">{formatPrice(p.price)}</span>
+                <span className="w-[90px] text-right sm:w-[110px] sm:text-left">
                   <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(STOCK_TONE[st])}>{STOCK_LABEL[st]}</span>
                 </span>
               </div>
