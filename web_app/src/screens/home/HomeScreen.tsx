@@ -139,30 +139,118 @@ function SectionHead({ eyebrow, title, subtitle, eyebrowColor = 'text-[#7C3AED]'
   )
 }
 
+const navLinks = [
+  ['#funciones', 'Funciones'],
+  ['#precios', 'Precios'],
+  ['#faq', 'Recursos'],
+]
+
 function Navbar({ onAuth, isAuthenticated }: { onAuth: OpenAuth; isAuthenticated: boolean }) {
+  const [open, setOpen] = useState(false)
+
+  // Close the mobile menu once the viewport grows to the desktop layout.
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1024px)')
+    const sync = () => mql.matches && setOpen(false)
+    mql.addEventListener('change', sync)
+    return () => mql.removeEventListener('change', sync)
+  }, [])
+
+  // Lock background scroll and close on Escape while the menu is open.
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
   return (
     <header className="sticky top-0 z-50 border-b border-[#E2E8F0] bg-white/90 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-5 py-4 md:px-8">
-        <a href="#" className="flex items-center">
+      <div className="relative z-10 mx-auto flex max-w-[1200px] items-center justify-between bg-white/90 px-5 py-4 backdrop-blur-xl md:px-8">
+        <a href="#" className="flex items-center" onClick={() => setOpen(false)}>
           <img src="/miprecio-logo-pencil.png" alt="MiPrecio" className="h-11 w-auto" />
         </a>
-        <div className="flex items-center gap-7">
-          <nav className="hidden items-center gap-6 text-sm font-medium text-[#475569] lg:flex">
-            <a href="#funciones" className="hover:text-[#7C3AED]">Producto</a>
-            <a href="#funciones" className="hover:text-[#7C3AED]">Funciones</a>
-            <a href="#precios" className="hover:text-[#7C3AED]">Precios</a>
-            <a href="#faq" className="hover:text-[#7C3AED]">Recursos</a>
+
+        {/* Desktop nav */}
+        <div className="hidden items-center gap-7 lg:flex">
+          <nav className="flex items-center gap-6 text-sm font-medium text-[#475569]">
+            {navLinks.map(([href, label]) => (
+              <a key={href} href={href} className="hover:text-[#7C3AED]">{label}</a>
+            ))}
           </nav>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={onAuth} className="cursor-pointer rounded-[10px] border-[1.5px] border-[#7C3AED] px-[18px] py-2.5 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]">
+          <div className="flex shrink-0 items-center gap-3">
+            <button type="button" onClick={onAuth} className="cursor-pointer whitespace-nowrap rounded-[10px] border-[1.5px] border-[#7C3AED] px-[18px] py-2.5 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]">
               {isAuthenticated ? 'Mi panel' : 'Iniciar sesión'}
             </button>
-            <button type="button" onClick={onAuth} className="cursor-pointer rounded-[10px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-[18px] py-2.5 text-sm font-semibold text-white hover:brightness-105">
+            <button type="button" onClick={onAuth} className="cursor-pointer whitespace-nowrap rounded-[10px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-[18px] py-2.5 text-sm font-semibold text-white hover:brightness-105">
               Probar gratis
             </button>
           </div>
         </div>
+
+        {/* Hamburger (below lg) */}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={open}
+          className="flex h-10 w-10 items-center justify-center rounded-[10px] text-[#0F172A] hover:bg-[#F5F3FF] lg:hidden"
+        >
+          {open ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" /></svg>
+          )}
+        </button>
       </div>
+
+      {/* Mobile menu */}
+      {open && (
+        <div className="lg:hidden">
+          {/* Transparent click-catcher (no dim, no blur — keeps the logo crisp) */}
+          <button
+            type="button"
+            aria-label="Cerrar menú"
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 top-0 z-0 cursor-default"
+          />
+          {/* Full-width dropdown attached to the header */}
+          <nav className="animate-fade-in-down absolute inset-x-0 top-full z-10 origin-top border-b border-[#E2E8F0] bg-white shadow-[0_18px_36px_-18px_rgba(15,23,42,0.25)]">
+            <div className="mx-auto max-w-[1200px] px-5 py-4 md:px-8">
+              <p className="px-1 pb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#94A3B8]">
+                Navegación
+              </p>
+              <div className="flex flex-col gap-0.5">
+                {navLinks.map(([href, label]) => (
+                  <a
+                    key={href}
+                    href={href}
+                    onClick={() => setOpen(false)}
+                    className="group flex items-center justify-between rounded-xl px-1 py-3 text-[15px] font-semibold text-[#334155] hover:text-[#7C3AED]"
+                  >
+                    {label}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#CBD5E1] transition-transform group-hover:translate-x-0.5 group-hover:text-[#7C3AED]" aria-hidden="true"><polyline points="9 18 15 12 9 6" /></svg>
+                  </a>
+                ))}
+              </div>
+              <div className="my-3 h-px bg-[#F1F5F9]" />
+              <div className="flex gap-3">
+                <button type="button" onClick={() => { setOpen(false); onAuth() }} className="flex-1 whitespace-nowrap rounded-xl border-[1.5px] border-[#7C3AED] px-3 py-3 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]">
+                  {isAuthenticated ? 'Mi panel' : 'Iniciar sesión'}
+                </button>
+                <button type="button" onClick={() => { setOpen(false); onAuth() }} className="flex-1 whitespace-nowrap rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-3 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(124,58,237,0.6)] hover:brightness-105">
+                  Probar gratis
+                </button>
+              </div>
+            </div>
+          </nav>
+        </div>
+      )}
     </header>
   )
 }
@@ -208,24 +296,133 @@ function HeroMockup() {
   )
 }
 
+type Feature = (typeof features)[number]
+
+function FeatureCard({ Icon, color, bg, title, desc }: Feature) {
+  return (
+    <article className="flex h-full flex-col gap-3.5 rounded-[20px] border border-[#E2E8F0] bg-white p-6 shadow-[0_4px_16px_-6px_rgba(15,23,42,0.08)]">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: bg, color }}>
+        <Icon size={22} />
+      </div>
+      <h3 className="text-lg font-bold text-[#0F172A]">{title}</h3>
+      <p className="text-sm leading-relaxed text-[#475569]">{desc}</p>
+    </article>
+  )
+}
+
 function Features() {
   return (
     <section id="funciones" className="scroll-mt-24 bg-[#F5F3FF] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead eyebrow="Funciones" title="Todo lo que tu negocio necesita para vender mejor." />
-        <Reveal className="grid gap-6 md:grid-cols-2">
-          {features.map(({ Icon, color, bg, title, desc }) => (
-            <article key={title} className="flex flex-col gap-3.5 rounded-[20px] border border-[#E2E8F0] bg-white p-6 shadow-[0_4px_16px_-6px_rgba(15,23,42,0.08)]">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: bg, color }}>
-                <Icon size={22} />
-              </div>
-              <h3 className="text-lg font-bold text-[#0F172A]">{title}</h3>
-              <p className="text-sm leading-relaxed text-[#475569]">{desc}</p>
-            </article>
+
+        {/* Desktop: 2-column grid */}
+        <Reveal className="hidden gap-6 md:grid md:grid-cols-2">
+          {features.map((f) => (
+            <FeatureCard key={f.title} {...f} />
           ))}
         </Reveal>
+
+        {/* Mobile: auto-advancing carousel */}
+        <MobileCarousel>
+          {features.map((f) => (
+            <FeatureCard key={f.title} {...f} />
+          ))}
+        </MobileCarousel>
       </div>
     </section>
+  )
+}
+
+// Auto-advancing carousel shown only on mobile; siblings render a grid on md+.
+function MobileCarousel({ children }: { children: React.ReactNode[] }) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState(0)
+  const count = children.length
+
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track) return
+    // Only auto-advance while the carousel layout is visible (below md).
+    const mql = window.matchMedia('(min-width: 768px)')
+    let timer: ReturnType<typeof setInterval> | undefined
+
+    const start = () => {
+      if (timer || mql.matches) return
+      timer = setInterval(() => {
+        setActive((prev) => {
+          const next = (prev + 1) % count
+          const card = track.children[next] as HTMLElement | undefined
+          // Scroll only the horizontal track, never the page.
+          if (card) track.scrollTo({ left: card.offsetLeft, behavior: 'smooth' })
+          return next
+        })
+      }, 3500)
+    }
+    const stop = () => {
+      if (timer) clearInterval(timer)
+      timer = undefined
+    }
+    const sync = () => (mql.matches ? stop() : start())
+
+    sync()
+    mql.addEventListener('change', sync)
+    return () => {
+      stop()
+      mql.removeEventListener('change', sync)
+    }
+  }, [count])
+
+  // Keep the dots in sync when the user swipes manually.
+  const onScroll = () => {
+    const track = trackRef.current
+    if (!track) return
+    const idx = Math.round(track.scrollLeft / track.clientWidth)
+    setActive(Math.max(0, Math.min(count - 1, idx)))
+  }
+
+  const goTo = (i: number) => {
+    const track = trackRef.current
+    const card = track?.children[i] as HTMLElement | undefined
+    if (track && card) track.scrollTo({ left: card.offsetLeft, behavior: 'smooth' })
+    setActive(i)
+  }
+
+  return (
+    <div className="md:hidden">
+      <div
+        ref={trackRef}
+        onScroll={onScroll}
+        className="relative flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {children.map((child, i) => (
+          <div key={i} className="w-full shrink-0 snap-center">
+            {child}
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 flex items-center justify-center gap-2">
+        {children.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            aria-label={`Ir a la tarjeta ${i + 1}`}
+            onClick={() => goTo(i)}
+            className={`h-2 rounded-full transition-all ${active === i ? 'w-6 bg-[#7C3AED]' : 'w-2 bg-[#C4B5FD]'}`}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function StepCard({ number, title, desc }: { number: string; title: string; desc: string }) {
+  return (
+    <article className="flex h-full flex-col gap-4 rounded-3xl border border-[#E2E8F0] bg-white p-8 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.08)]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#A855F7] text-2xl font-extrabold text-white shadow-[0_8px_18px_-4px_rgba(124,58,237,0.4)]">{number}</div>
+      <h3 className="text-xl font-bold text-[#0F172A]">{title}</h3>
+      <p className="leading-relaxed text-[#475569]">{desc}</p>
+    </article>
   )
 }
 
@@ -234,15 +431,20 @@ function HowItWorks() {
     <section className="bg-[#EDE9FE] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead eyebrow="Cómo funciona" title="Empezá en 3 pasos." eyebrowColor="text-[#6D28D9]" />
-        <Reveal className="grid gap-6 md:grid-cols-3">
+
+        {/* Desktop: 3-column grid */}
+        <Reveal className="hidden gap-6 md:grid md:grid-cols-3">
           {steps.map(([number, title, desc]) => (
-            <article key={number} className="flex flex-col gap-4 rounded-3xl border border-[#E2E8F0] bg-white p-8 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.08)]">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#A855F7] text-2xl font-extrabold text-white shadow-[0_8px_18px_-4px_rgba(124,58,237,0.4)]">{number}</div>
-              <h3 className="text-xl font-bold text-[#0F172A]">{title}</h3>
-              <p className="leading-relaxed text-[#475569]">{desc}</p>
-            </article>
+            <StepCard key={number} number={number} title={title} desc={desc} />
           ))}
         </Reveal>
+
+        {/* Mobile: auto-advancing carousel */}
+        <MobileCarousel>
+          {steps.map(([number, title, desc]) => (
+            <StepCard key={number} number={number} title={title} desc={desc} />
+          ))}
+        </MobileCarousel>
       </div>
     </section>
   )
@@ -292,16 +494,19 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
           {PLANS.map((plan) => {
             const dark = plan.popular
             return (
-              <article key={plan.name} className={`relative flex flex-col gap-[14px] rounded-[24px] px-7 py-8 ${dark ? 'bg-[#0F172A] text-white shadow-[0_30px_60px_rgba(15,23,42,0.2)]' : 'border border-[#E2E8F0] bg-white'}`}>
+              <article key={plan.name} className={`relative flex flex-col gap-[14px] rounded-[24px] px-7 py-8 ${dark ? 'bg-[#0F172A] text-white shadow-[0_30px_60px_rgba(15,23,42,0.2)]' : 'border border-[#E2E8F0] bg-white shadow-[0_12px_32px_-14px_rgba(15,23,42,0.18)]'}`}>
                 {dark && <em className="absolute right-6 top-6 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-3 py-1.5 text-[0.64rem] font-bold not-italic uppercase tracking-[0.05em] text-white">Más popular</em>}
                 <h3 className={`text-[1.4rem] font-extrabold ${dark ? 'text-white' : 'text-[#0F172A]'}`}>{plan.name}</h3>
                 <p className={`text-[0.84rem] ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{plan.description}</p>
-                <strong className={`mt-2 text-[2.75rem] font-black leading-none ${dark ? 'text-white' : 'text-[#0F172A]'}`}>{plan.price}</strong>
-                <small className={`-mt-1.5 text-[0.82rem] font-medium ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{plan.cadence}</small>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <strong className={`text-[2.75rem] font-black leading-none ${dark ? 'text-white' : 'text-[#0F172A]'}`}>{plan.price}</strong>
+                  <small className={`text-[0.82rem] font-medium ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{plan.cadence}</small>
+                </div>
                 <span className={`flex w-fit items-center gap-1.5 rounded-full px-[11px] py-[5px] text-[0.74rem] font-semibold ${dark ? 'bg-white/[0.12] text-[#C4B5FD]' : 'bg-[#EDE9FE] text-[#7C3AED]'}`}>
                   <Sparkles size={14} /> {plan.trialLabel}
                 </span>
-                <ul className="my-2 flex flex-col gap-3">
+                <div className={`h-px ${dark ? 'bg-white/10' : 'bg-[#F1F5F9]'}`} />
+                <ul className="flex flex-col gap-3">
                   {plan.features.map((f) => (
                     <li key={f} className={`flex items-center gap-2.5 text-[0.88rem] font-medium ${dark ? 'text-[#E2E8F0]' : 'text-[#334155]'}`}>
                       <Check size={18} className={`flex-none ${dark ? 'text-[#C4B5FD]' : 'text-[#7C3AED]'}`} /> {f}

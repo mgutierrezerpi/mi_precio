@@ -80,9 +80,9 @@ services:
   web_app:
     build:
       context: ./web_app
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: "${VITE_API_URL:-http://localhost:${API_PORT:-8000}/api/v1}"
+      # Dev image runs the Vite dev server (HMR). The production build lives in
+      # ./web_app/Dockerfile and is used by compose.production.yaml / deploy.
+      dockerfile: Dockerfile.dev
     image: mi_precio/web_app:dev
     environment:
       VITE_API_URL: "http://localhost:${API_PORT:-8000}/api/v1"
