@@ -23,10 +23,6 @@ const Check = ({ className, size = 18 }: IcoProps) => line(size, className, <pat
 const Sparkles = ({ className, size = 14 }: IcoProps) => line(size, className, <><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z" /><path d="M20 3v4" /><path d="M22 5h-4" /><path d="M4 17v2" /><path d="M5 18H3" /></>)
 const ArrowRight = ({ className, size = 18 }: IcoProps) => line(size, className, <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>)
 const Plus = ({ className, size = 20 }: IcoProps) => line(size, className, <><path d="M5 12h14" /><path d="M12 5v14" /></>)
-const Instagram = ({ className, size = 16 }: IcoProps) => line(size, className, <><rect width="20" height="20" x="2" y="2" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" x2="17.51" y1="6.5" y2="6.5" /></>)
-const Linkedin = ({ className, size = 16 }: IcoProps) => line(size, className, <><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /><rect width="4" height="12" x="2" y="9" /><circle cx="4" cy="4" r="2" /></>)
-const Twitter = ({ className, size = 16 }: IcoProps) => line(size, className, <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />)
-const Youtube = ({ className, size = 16 }: IcoProps) => line(size, className, <><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17z" /><path d="m10 15 5-3-5-3z" /></>)
 
 /* ── Data ─────────────────────────────────────────────────────── */
 const features = [
@@ -51,13 +47,6 @@ const faqs = [
   ['¿Puedo tener listas distintas por cliente o canal?', 'Sí. Podés manejar listas por cliente, mayorista, minorista o canal de venta, cada una con sus precios.'],
   ['¿Cómo se actualizan los precios y el stock?', 'Actualizás desde tu panel y el cambio se refleja inmediatamente en el link y el QR que ya compartiste.'],
   ['¿Hay límite de productos o usuarios?', 'Depende de tu plan. Micro incluye lo básico para empezar; Plus y Pro agregan más capacidad para operar con más listas, productos y equipo.'],
-]
-
-const footerColumns = [
-  ['Producto', 'Funciones', 'Precios', 'Casos de uso', 'Novedades', 'Demo'],
-  ['Empresa', 'Sobre nosotros', 'Blog', 'Clientes', 'Contacto', 'Trabajá con nosotros'],
-  ['Recursos', 'Centro de ayuda', 'Documentación', 'Estado del servicio', 'Guías para negocios', 'Comunidad'],
-  ['Legal', 'Términos', 'Privacidad', 'Cookies', 'Seguridad'],
 ]
 
 /* ── Page ─────────────────────────────────────────────────────── */
@@ -597,37 +586,13 @@ function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
   )
 }
 
+// Footer brand/nav/socials are intentionally omitted for now — those pages don't
+// exist yet. The full markup lives in the static landing (landing/index.html) and
+// git history; restore from there when the links are ready.
 function Footer() {
-  const socials = [Instagram, Linkedin, Twitter, Youtube]
   return (
     <footer className="bg-[#2E1065] px-5 py-8 text-white md:px-[120px]">
       <div className="mx-auto max-w-[1200px]">
-        {/* Navegación/marca del footer oculta: estas páginas todavía no existen. Descomentar cuando estén listas.
-        <div className="grid gap-16 lg:grid-cols-[320px_repeat(4,1fr)]">
-          <div className="flex flex-col gap-4">
-            <img src="/miprecio-logo-white-pencil.png" alt="MiPrecio" className="h-12 w-auto self-start" />
-            <p className="text-[13px] leading-relaxed text-[#94A3B8]">
-              La plataforma simple para que tu negocio cargue productos, controle stock y comparta su lista de precios con un link o un QR.
-            </p>
-            <div className="mt-2 flex gap-2.5">
-              {socials.map((Ico, i) => (
-                <a key={i} href="#" className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-white/10 text-white hover:bg-white/20">
-                  <Ico size={16} />
-                </a>
-              ))}
-            </div>
-          </div>
-          {footerColumns.map(([title, ...links]) => (
-            <div key={title} className="flex flex-col gap-3.5">
-              <h3 className="text-[13px] font-bold tracking-wide text-white">{title}</h3>
-              {links.map((link) => (
-                <a key={link} href="#" className="text-[13px] font-medium text-[#94A3B8] hover:text-white">{link}</a>
-              ))}
-            </div>
-          ))}
-        </div>
-        <div className="my-10 h-px bg-white/10" />
-        */}
         <p className="text-center text-xs font-medium text-[#64748B]">© 2026 MiPrecio. Todos los derechos reservados.</p>
       </div>
     </footer>
