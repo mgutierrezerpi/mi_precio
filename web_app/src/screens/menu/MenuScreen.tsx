@@ -55,7 +55,12 @@ export function MenuScreen() {
     if ((n[id] ?? 0) <= 1) delete n[id]; else n[id] -= 1
     return n
   })
+  const removeFromCart = (id: string) => setCart((c) => { const n = { ...c }; delete n[id]; return n })
   const clearCart = () => setCart({})
+  // Full cart page (mirrors the Pencil "Carrito" design). "Mi carrito" opens this instead of jumping to WhatsApp.
+  const [showCart, setShowCart] = useState(false)
+  // Customer details collected on the cart page; folded into the WhatsApp order message.
+  const [customer, setCustomer] = useState({ name: '', phone: '', email: '', delivery: 'pickup' as 'pickup' | 'delivery', address: '', notes: '' })
 
   const displayLists = listId ? lists.filter((l) => l.id === listId || l.slug === listId) : lists
   // Service lists are read-only price lists: no cart / add-to-cart.
@@ -147,10 +152,24 @@ export function MenuScreen() {
     const lines = allItems
       .filter((it) => cart[it.id])
       .map((it) => `• ${cart[it.id]}× ${it.name} — ${money(it.price)}`)
-    const msg = `${t('pub.cartHeading')}\n${lines.join('\n')}\n\n${money(cartTotal)}`
+    const datos = [
+      customer.name && `Nombre: ${customer.name}`,
+      customer.phone && `Tel: ${customer.phone}`,
+      customer.email && `Email: ${customer.email}`,
+      `Entrega: ${customer.delivery === 'delivery' ? 'Envío a domicilio' : 'Retiro en el local'}`,
+      customer.delivery === 'delivery' && customer.address && `Dirección: ${customer.address}`,
+      customer.notes && `Notas: ${customer.notes}`,
+    ].filter(Boolean)
+    const msg = [
+      t('pub.cartHeading'),
+      lines.join('\n'),
+      '',
+      `Total: ${money(cartTotal)}`,
+      datos.length ? `\n${datos.join('\n')}` : '',
+    ].join('\n')
     return `https://wa.me/?text=${encodeURIComponent(msg)}`
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, allItems, cartTotal])
+  }, [cart, allItems, cartTotal, customer])
 
   if (isLoading) return <div className="flex min-h-screen items-center justify-center" style={{ background: C.bg }}><LoadingSpinner size="lg" /></div>
   if (error || !tenant) {
@@ -173,16 +192,26 @@ export function MenuScreen() {
         html::-webkit-scrollbar-thumb:hover { background: ${C.accent2}; }
       `}</style>
 
-      {view === 'full' && (
+      {view === 'full' && !showCart && (
         <Storefront
           tenant={tenant} C={C} accent={accent} t={t} money={money} currency={currency} updated={updated}
           sections={sections} base={base} allItems={allItems} cat={cat} setCat={setCat} q={q} setQ={setQ}
           cart={cart} addToCart={addToCart} cartCount={cartCount} view={view} switchView={switchView}
           shareLink={shareLink} copied={copied} waHref={waHref} list={list} norm={norm} isService={isService}
+          openCart={() => setShowCart(true)}
         />
       )}
 
-      {view === 'compact' && (
+      {showCart && !isService && (
+        <CartView
+          tenant={tenant} C={C} accent={accent} t={t} money={money} cart={cart} allItems={allItems}
+          cartCount={cartCount} cartTotal={cartTotal} addToCart={addToCart} decFromCart={decFromCart}
+          removeFromCart={removeFromCart} clearCart={clearCart} customer={customer} setCustomer={setCustomer}
+          waHref={waHref} norm={norm} onBack={() => setShowCart(false)}
+        />
+      )}
+
+      {view === 'compact' && !showCart && (
       <>
       {/* Brand ribbon */}
       <div className="h-1.5 w-full" style={{ background: brandGradient }} />
@@ -329,8 +358,8 @@ export function MenuScreen() {
       </>
       )}
 
-      {/* Sticky cart bar — shared by both views, visual only (composes a WhatsApp order) */}
-      {!isService && cartCount > 0 && (
+      {/* Sticky cart bar — shared by both views; opens the full cart page to review before ordering. */}
+      {!isService && cartCount > 0 && !showCart && (
         <div className="fixed inset-x-0 bottom-0 border-t bg-white/95 backdrop-blur" style={{ borderColor: C.line, boxShadow: '0 -4px 24px rgba(15,13,26,0.08)' }}>
           <div className="mx-auto flex w-full max-w-[1160px] items-center justify-between gap-4 px-6 py-4 md:px-12">
             <div className="flex items-center gap-3.5">
@@ -342,10 +371,10 @@ export function MenuScreen() {
             </div>
             <div className="flex items-center gap-4">
               <button type="button" onClick={clearCart} className="text-[13px] font-semibold hover:opacity-70" style={{ color: C.muted }}>{t('pub.cartClear')}</button>
-              <a href={waHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-full px-5 py-3 text-[14px] font-bold text-white hover:opacity-90" style={{ background: '#25D366' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg>
-                {t('pub.cartWhatsApp')}
-              </a>
+              <button type="button" onClick={() => setShowCart(true)} className="flex items-center gap-2 rounded-full px-5 py-3 text-[14px] font-bold text-white hover:opacity-90" style={{ background: brandGradient }}>
+                <SIco name="shopping-cart" size={18} color="#fff" />
+                {t('store.myCart')}
+              </button>
             </div>
           </div>
         </div>
@@ -399,6 +428,7 @@ interface StoreProps {
   list: PublicList | null
   norm: (s?: string | null) => string
   isService: boolean
+  openCart: () => void
 }
 
 const STORE_ICONS: Record<string, React.ReactNode> = {
@@ -406,6 +436,11 @@ const STORE_ICONS: Record<string, React.ReactNode> = {
   'shopping-cart': <><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /></>,
   search: <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
   plus: <><path d="M5 12h14" /><path d="M12 5v14" /></>,
+  minus: <path d="M5 12h14" />,
+  x: <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>,
+  'trash-2': <><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></>,
+  'arrow-left': <><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></>,
+  'shield-check': <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></>,
   'message-circle': <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />,
   'share-2': <><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /><line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></>,
   package: <><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /><path d="M12 22V12" /><path d="m3.3 7 8.7 5 8.7-5" /></>,
@@ -437,7 +472,7 @@ const STORE_CAT_ICON: Record<string, string> = {
 const catIco = (cat?: string | null): string => (cat && STORE_CAT_ICON[cat.trim().toLowerCase()]) || 'box'
 
 function Storefront(p: StoreProps) {
-  const { tenant, C, accent, t, money, updated, sections, base, allItems, cat, setCat, q, setQ, cart, addToCart, cartCount, view, switchView, shareLink, copied, waHref, list, norm, isService } = p
+  const { tenant, C, accent, t, money, updated, sections, base, allItems, cat, setCat, q, setQ, cart, addToCart, cartCount, view, switchView, shareLink, copied, waHref, list, norm, isService, openCart } = p
   const grad = { background: `linear-gradient(135deg, ${accent} 0%, ${C.accent2} 100%)` }
   const gridItems = cat === 'all' ? base : base.filter((i) => norm(i.category) === cat)
   const featured = useMemo(() => [...allItems].sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0))[0], [allItems])
@@ -465,9 +500,9 @@ function Storefront(p: StoreProps) {
           <div className="flex items-center gap-3">
             <ViewToggle view={view} onChange={switchView} t={t} C={C} />
             {!isService && (
-              <a href={waHref} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-bold text-white" style={grad}>
+              <button type="button" onClick={openCart} className="flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-bold text-white" style={grad}>
                 <SIco name="shopping-cart" size={16} color="#fff" /> {t('store.myCart')}{cartCount > 0 ? ` · ${cartCount}` : ''}
-              </a>
+              </button>
             )}
           </div>
         </div>
@@ -491,9 +526,11 @@ function Storefront(p: StoreProps) {
           </div>
           {featured && (
             <div className="w-full max-w-[380px] rounded-3xl bg-white p-6 shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
-              <div className="mb-4 flex h-44 items-end justify-between rounded-2xl p-3" style={{ background: `linear-gradient(135deg, ${accent}26 0%, #ffffff 100%)` }}>
-                <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold" style={{ color: accent }}>{t('store.featured')}</span>
-                <SIco name={catIco(featured.category)} size={52} color={accent} style={{ opacity: 0.5 }} />
+              <div className="relative mb-4 flex h-44 items-end justify-between overflow-hidden rounded-2xl p-3" style={{ background: `linear-gradient(135deg, ${accent}26 0%, #ffffff 100%)` }}>
+                {featured.imageUrl && <img src={featured.imageUrl} alt={featured.name} className="absolute inset-0 h-full w-full object-cover" />}
+                {featured.imageUrl && <div className="pointer-events-none absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}55 0%, ${accent}12 100%)` }} />}
+                <span className="relative rounded-full bg-white px-2.5 py-1 text-[11px] font-bold" style={{ color: accent }}>{t('store.featured')}</span>
+                {!featured.imageUrl && <SIco name={catIco(featured.category)} size={52} color={accent} style={{ opacity: 0.5 }} />}
               </div>
               <p className="text-[16px] font-bold" style={{ color: C.ink }}>{featured.name}</p>
               <div className="mt-2 flex items-end justify-between">
@@ -588,6 +625,7 @@ function Storefront(p: StoreProps) {
                       {it.imageUrl
                         ? <img src={it.imageUrl} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
                         : <SIco name={catIco(it.category)} size={48} color={accent} style={{ opacity: 0.45 }} />}
+                      {it.imageUrl && <div className="pointer-events-none absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}55 0%, ${accent}12 100%)` }} />}
                       {it.category && <span className="absolute left-2.5 top-2.5 rounded-full bg-white px-2.5 py-0.5 text-[10px] font-bold" style={{ color: accent }}>{p.norm(it.category) === 'otros' ? t('store.other') : it.category}</span>}
                     </div>
                     <p className="line-clamp-2 text-[14px] font-bold leading-tight" style={{ color: C.ink }}>{it.name}</p>
@@ -619,6 +657,217 @@ function Storefront(p: StoreProps) {
           <div className="my-2 h-px w-full" style={{ background: 'rgba(255,255,255,0.1)' }} />
           <span className="text-[12px] font-medium" style={{ color: '#94A3B8' }}>{t('pub.footer', { currency: p.currency })}{list ? ` · ${list.name}` : ''}</span>
         </div>
+      </footer>
+    </div>
+  )
+}
+
+/* ── Cart page — mirrors the Pencil "Carrito · Desktop" design, wired to real cart data ── */
+type CartCustomer = { name: string; phone: string; email: string; delivery: 'pickup' | 'delivery'; address: string; notes: string }
+interface CartProps {
+  tenant: Tenant
+  C: StoreColors
+  accent: string
+  t: ReturnType<typeof getT>
+  money: (p: string | number) => string
+  cart: Record<string, number>
+  allItems: Item[]
+  cartCount: number
+  cartTotal: number
+  addToCart: (id: string) => void
+  decFromCart: (id: string) => void
+  removeFromCart: (id: string) => void
+  clearCart: () => void
+  customer: CartCustomer
+  setCustomer: React.Dispatch<React.SetStateAction<CartCustomer>>
+  waHref: string
+  norm: (s?: string | null) => string
+  onBack: () => void
+}
+
+function CartView(p: CartProps) {
+  const { tenant, C, accent, t, money, cart, allItems, cartCount, cartTotal, addToCart, decFromCart, removeFromCart, clearCart, customer, setCustomer, waHref, norm, onBack } = p
+  const grad = { background: `linear-gradient(135deg, ${accent} 0%, ${lighten(accent, 0.22)} 100%)` }
+  const cartItems = allItems.filter((it) => (cart[it.id] ?? 0) > 0)
+  const set = (patch: Partial<CartCustomer>) => setCustomer((c) => ({ ...c, ...patch }))
+  const field = "h-[46px] w-full rounded-xl border bg-white px-3.5 text-[13px] font-semibold outline-none focus:ring-2"
+  const labelCls = "text-[12px] font-bold"
+
+  return (
+    <div className="min-h-screen font-sans" style={{ background: `linear-gradient(180deg, ${accent}0E 0%, ${accent}05 420px, #FFFFFF 420px)` }}>
+      {/* Navbar */}
+      <header className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b bg-white/95 px-5 py-3.5 backdrop-blur md:px-16" style={{ borderColor: C.line }}>
+        <div className="flex items-center gap-3">
+          {tenant.logoUrl
+            ? <img src={tenant.logoUrl} alt={tenant.name} className="h-11 w-auto max-w-[160px] object-contain" />
+            : (
+              <>
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl text-white" style={grad}><SIco name="shopping-bag" size={22} color="#fff" /></span>
+                <div className="flex flex-col">
+                  <span className="text-[17px] font-extrabold" style={{ color: C.ink }}>{tenant.name}</span>
+                  {tenant.address && <span className="text-[12px] font-medium" style={{ color: C.muted }}>{tenant.address}</span>}
+                </div>
+              </>
+            )}
+        </div>
+        <div className="flex-1" />
+        <button type="button" onClick={onBack} className="flex h-9 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-bold" style={{ background: `${accent}14`, color: accent }}>
+          <SIco name="arrow-left" size={14} color={accent} /> {t('store.keepShopping')}
+        </button>
+      </header>
+
+      {/* Breadcrumb */}
+      <div className="flex flex-wrap items-center gap-3 px-5 pb-4 pt-7 md:px-16">
+        <div className="flex items-center gap-1.5">
+          <button type="button" onClick={onBack} className="text-[12px] font-medium hover:underline" style={{ color: C.muted }}>{t('store.catalog')}</button>
+          <SIco name="chevron-right" size={14} color={C.muted} />
+          <span className="text-[12px] font-bold" style={{ color: C.body }}>{t('store.yourCart')}</span>
+        </div>
+      </div>
+
+      {cartCount === 0 ? (
+        <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center gap-5 px-5 py-24 text-center md:px-16">
+          <span className="flex h-20 w-20 items-center justify-center rounded-3xl" style={{ background: `${accent}12` }}><SIco name="shopping-cart" size={36} color={accent} /></span>
+          <div className="flex flex-col gap-1">
+            <p className="text-[20px] font-extrabold" style={{ color: C.ink }}>{t('store.cartEmptyTitle')}</p>
+            <p className="text-[14px] font-medium" style={{ color: C.muted }}>{t('store.cartEmptySub')}</p>
+          </div>
+          <button type="button" onClick={onBack} className="flex h-12 items-center gap-2 rounded-2xl px-6 text-[14px] font-bold text-white" style={grad}>
+            <SIco name="arrow-left" size={16} color="#fff" /> {t('store.keepShopping')}
+          </button>
+        </div>
+      ) : (
+        <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-5 pb-12 md:px-16 lg:flex-row">
+          {/* Left column */}
+          <div className="flex flex-1 flex-col gap-4">
+            {/* Title row */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <h1 className="text-[28px] font-black md:text-[32px]" style={{ color: C.ink }}>{t('store.yourCart')}</h1>
+                <p className="text-[14px] font-medium" style={{ color: C.muted }}>{t('store.cartReview')}</p>
+              </div>
+              <button type="button" onClick={clearCart} className="flex h-9 items-center gap-2 rounded-[10px] border bg-white px-3.5 text-[13px] font-bold" style={{ borderColor: '#FECACA', color: '#EF4444' }}>
+                <SIco name="trash-2" size={14} color="#EF4444" /> {t('store.cartClear')}
+              </button>
+            </div>
+
+            {/* Products card */}
+            <div className="rounded-[24px] border bg-white p-5 shadow-[0_18px_50px_-20px_rgba(30,27,75,0.18)] md:p-7" style={{ borderColor: C.line }}>
+              <div className="flex items-center gap-2.5 pb-2">
+                <h2 className="text-[18px] font-extrabold md:text-[20px]" style={{ color: C.ink }}>{t('store.cartProducts')}</h2>
+                <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={{ background: `${accent}1A`, color: accent }}>{cartCount} {cartCount === 1 ? t('pub.product') : t('pub.products')}</span>
+              </div>
+              {cartItems.map((it) => {
+                const qty = cart[it.id] ?? 0
+                const line = (parseFloat(it.price) || 0) * qty
+                return (
+                  <div key={it.id} className="flex flex-wrap items-center gap-4 border-t py-4 first:border-t-0" style={{ borderColor: '#F1F5F9' }}>
+                    <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[14px]" style={{ background: `linear-gradient(135deg, ${accent}1F 0%, #ffffff 100%)` }}>
+                      {it.imageUrl
+                        ? <img src={it.imageUrl} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
+                        : <SIco name={catIco(it.category)} size={34} color={accent} style={{ opacity: 0.7 }} />}
+                    </div>
+                    <div className="flex min-w-[140px] flex-1 flex-col gap-1.5">
+                      <p className="text-[15px] font-bold leading-tight" style={{ color: C.ink }}>{it.name}</p>
+                      {it.description && <p className="line-clamp-1 text-[12px] font-medium" style={{ color: C.muted }}>{it.description}</p>}
+                      {it.category && <span className="w-fit rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ background: '#F1F5F9', color: C.body }}>{norm(it.category) === 'otros' ? t('store.other') : it.category}</span>}
+                    </div>
+                    <div className="flex items-center rounded-xl border bg-white" style={{ borderColor: C.line }}>
+                      <button type="button" onClick={() => decFromCart(it.id)} aria-label="−" className="flex h-10 w-10 items-center justify-center hover:opacity-60"><SIco name="minus" size={14} color={C.body} /></button>
+                      <span className="flex h-10 w-10 items-center justify-center text-[16px] font-extrabold" style={{ color: C.ink }}>{qty}</span>
+                      <button type="button" onClick={() => addToCart(it.id)} aria-label="+" className="flex h-10 w-10 items-center justify-center hover:opacity-60"><SIco name="plus" size={14} color={C.body} /></button>
+                    </div>
+                    <div className="flex w-[120px] flex-col items-end gap-0.5">
+                      <span className="text-[18px] font-black" style={{ color: C.ink }}>{money(line)}</span>
+                      {qty > 1 && <span className="text-[12px] font-medium" style={{ color: C.muted }}>{money(it.price)} {t('store.each')}</span>}
+                    </div>
+                    <button type="button" onClick={() => removeFromCart(it.id)} aria-label={t('store.cartRemove')} className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: '#FEF2F2' }}><SIco name="x" size={16} color="#EF4444" /></button>
+                  </div>
+                )
+              })}
+              <div className="flex items-center justify-end gap-2 border-t pt-4" style={{ borderColor: '#F1F5F9' }}>
+                <span className="text-[14px] font-medium" style={{ color: C.body }}>{t('store.cartSubtotalN', { n: String(cartCount) })}</span>
+                <span className="text-[18px] font-extrabold" style={{ color: C.ink }}>{money(cartTotal)}</span>
+              </div>
+            </div>
+
+            {/* Contact card */}
+            <div className="flex flex-col gap-4 rounded-[24px] border bg-white p-5 shadow-[0_18px_50px_-20px_rgba(30,27,75,0.18)] md:p-7" style={{ borderColor: C.line }}>
+              <div className="flex flex-col gap-1">
+                <h2 className="text-[18px] font-extrabold" style={{ color: C.ink }}>{t('store.cartYourData')}</h2>
+                <p className="text-[12px] font-medium" style={{ color: C.muted }}>{t('store.cartYourDataSub')}</p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelCls} style={{ color: '#334155' }}>{t('store.cartName')}</span>
+                  <input value={customer.name} onChange={(e) => set({ name: e.target.value })} placeholder={t('store.cartNamePh')} className={field} style={{ borderColor: C.line, color: C.ink }} />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelCls} style={{ color: '#334155' }}>{t('store.cartPhone')}</span>
+                  <input value={customer.phone} onChange={(e) => set({ phone: e.target.value })} placeholder={t('store.cartPhonePh')} className={field} style={{ borderColor: C.line, color: C.ink }} />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelCls} style={{ color: '#334155' }}>{t('store.cartEmail')}</span>
+                  <input value={customer.email} onChange={(e) => set({ email: e.target.value })} placeholder={t('store.cartEmailPh')} className={field} style={{ borderColor: C.line, color: C.ink }} />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelCls} style={{ color: '#334155' }}>{t('store.cartDelivery')}</span>
+                  {tenant.deliveryEnabled ? (
+                    <select value={customer.delivery} onChange={(e) => set({ delivery: e.target.value as 'pickup' | 'delivery' })} className={field} style={{ borderColor: C.line, color: C.ink }}>
+                      <option value="pickup">{t('store.cartPickup')}</option>
+                      <option value="delivery">{t('store.cartShipping')}</option>
+                    </select>
+                  ) : (
+                    // Business doesn't offer delivery → pickup is the only option.
+                    <div className={`${field} flex items-center`} style={{ borderColor: C.line, color: C.ink, background: '#F8FAFC' }}>{t('store.cartPickup')}</div>
+                  )}
+                </label>
+                {tenant.deliveryEnabled && customer.delivery === 'delivery' && (
+                  <label className="flex flex-col gap-1.5 md:col-span-2">
+                    <span className={labelCls} style={{ color: '#334155' }}>{t('store.cartAddress')}</span>
+                    <input value={customer.address} onChange={(e) => set({ address: e.target.value })} placeholder={t('store.cartAddressPh')} className={field} style={{ borderColor: C.line, color: C.ink }} />
+                  </label>
+                )}
+                <label className="flex flex-col gap-1.5 md:col-span-2">
+                  <span className={labelCls} style={{ color: '#334155' }}>{t('store.cartNotes')}</span>
+                  <textarea value={customer.notes} onChange={(e) => set({ notes: e.target.value })} placeholder={t('store.cartNotesPh')} rows={3} className="w-full rounded-xl border bg-white px-3.5 py-3 text-[13px] font-semibold outline-none focus:ring-2" style={{ borderColor: C.line, color: C.ink }} />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Right column — order summary */}
+          <div className="flex w-full flex-col gap-4 lg:w-[380px]">
+            <div className="flex flex-col gap-4 rounded-[24px] border bg-white p-5 shadow-[0_18px_50px_-20px_rgba(30,27,75,0.18)] md:p-7 lg:sticky lg:top-24">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-[18px] font-extrabold" style={{ color: C.ink }}>{t('store.cartSummary')}</h2>
+                <p className="text-[12px] font-medium" style={{ color: C.muted }}>{t('store.cartPricesIn', { currency: tenant.currency || 'UYU' })}</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] font-medium" style={{ color: C.body }}>{t('store.cartSubtotal')}</span>
+                <span className="text-[14px] font-bold" style={{ color: C.ink }}>{money(cartTotal)}</span>
+              </div>
+              <div className="h-px w-full" style={{ background: '#F1F5F9' }} />
+              <div className="flex items-center justify-between">
+                <span className="text-[16px] font-extrabold" style={{ color: C.ink }}>{t('store.cartTotal')}</span>
+                <span className="text-[24px] font-black" style={{ color: C.ink }}>{money(cartTotal)}</span>
+              </div>
+              <a href={waHref} target="_blank" rel="noopener noreferrer" className="flex h-14 items-center justify-center gap-2 rounded-2xl text-[16px] font-extrabold text-white" style={grad}>
+                <SIco name="message-circle" size={22} color="#fff" /> {t('store.cartSend')}
+              </a>
+              <div className="flex items-center justify-center gap-1.5">
+                <SIco name="shield-check" size={12} color="#10B981" />
+                <span className="text-[11px] font-medium" style={{ color: C.muted }}>{t('store.cartTrust')}</span>
+              </div>
+            </div>
+          </div>
+        </main>
+      )}
+
+      {/* Footer */}
+      <footer className="flex flex-col items-center gap-2 px-5 py-8 md:px-16" style={{ background: '#0F172A' }}>
+        <span className="text-[14px] font-bold text-white">{tenant.name}</span>
+        <span className="text-[12px] font-medium" style={{ color: '#94A3B8' }}>{t('pub.footer', { currency: tenant.currency || 'UYU' })}</span>
       </footer>
     </div>
   )

@@ -70,6 +70,7 @@ describe('authSlice', () => {
       description: null,
       language: 'es',
       timezone: 'America/Montevideo',
+      deliveryEnabled: false,
       legalName: null,
       taxId: null,
       address: null,

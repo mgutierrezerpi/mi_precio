@@ -1,4 +1,4 @@
-from peewee import CharField, DateTimeField, TextField
+from peewee import BooleanField, CharField, DateTimeField, TextField
 from models.base import BaseModel
 
 
@@ -33,6 +33,9 @@ class Tenant(BaseModel):
     # Language & region
     language = CharField(max_length=5, default="es")
     timezone = CharField(max_length=64, default="America/Montevideo")
+
+    # Whether the business offers home delivery; gates the cart's delivery option.
+    delivery_enabled = BooleanField(default=False)
 
     # Tax / legal data
     legal_name = CharField(max_length=255, null=True)

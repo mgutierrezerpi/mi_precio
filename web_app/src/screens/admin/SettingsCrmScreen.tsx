@@ -323,11 +323,12 @@ function RegionSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx)
   const [currency, setCurrency] = useState(tenant?.currency ?? 'UYU')
   const [language, setLanguage] = useState(tenant?.language ?? 'es')
   const [timezone, setTimezone] = useState(tenant?.timezone ?? 'America/Montevideo')
+  const [deliveryEnabled, setDeliveryEnabled] = useState(tenant?.deliveryEnabled ?? false)
 
   return (
     <>
       <SectionHeader t={t} title={t('set.sec.region')} subtitle={t('set.region.subtitle')} canManage={canManage}
-        onSave={() => save({ currency, language, timezone }, 'region')} saving={savingKey === 'region'} saved={savedKey === 'region'} />
+        onSave={() => save({ currency, language, timezone, deliveryEnabled }, 'region')} saving={savingKey === 'region'} saved={savedKey === 'region'} />
       <div className="grid grid-cols-2 gap-4">
         <Field label={t('set.region.currency')}>
           <select value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={!canManage} className={inputCls}>
@@ -344,6 +345,13 @@ function RegionSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx)
             {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>)}
           </select>
         </Field>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-[var(--dash-border)] p-4">
+        <div className="flex flex-col gap-1">
+          <span className="text-[13px] font-bold text-[var(--dash-text)]">{t('set.region.delivery')}</span>
+          <span className="text-[11px] font-medium text-[var(--dash-muted)]">{t('set.region.deliverySub')}</span>
+        </div>
+        <Toggle on={deliveryEnabled} disabled={!canManage} onClick={() => setDeliveryEnabled((v) => !v)} />
       </div>
     </>
   )

@@ -35,6 +35,7 @@ export interface Tenant {
   description: string | null
   language: string
   timezone: string
+  deliveryEnabled: boolean
   legalName: string | null
   taxId: string | null
   address: string | null

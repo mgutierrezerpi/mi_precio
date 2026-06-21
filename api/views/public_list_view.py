@@ -17,5 +17,5 @@ class PublicListView(BaseView):
             name=published.price_list.name,
             slug=published.price_list.slug,
             kind=getattr(published.price_list, "kind", "product") or "product",
-            version=ListVersionView.render(published.version, include_items=True),
+            version=ListVersionView.render(published.version, include_items=True, items=published.items),
         )

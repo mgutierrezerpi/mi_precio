@@ -13,6 +13,7 @@ class TenantView(BaseView):
     description: str | None = None
     language: str = "es"
     timezone: str = "America/Montevideo"
+    delivery_enabled: bool = False
     legal_name: str | None = None
     tax_id: str | None = None
     address: str | None = None
@@ -35,6 +36,7 @@ class TenantView(BaseView):
             description=g("description"),
             language=g("language", "es") or "es",
             timezone=g("timezone", "America/Montevideo") or "America/Montevideo",
+            delivery_enabled=bool(g("delivery_enabled", False)),
             legal_name=g("legal_name"),
             tax_id=g("tax_id"),
             address=g("address"),

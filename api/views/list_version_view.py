@@ -15,11 +15,12 @@ class ListVersionView(BaseView):
     items: list[ItemView] | None = None
 
     @classmethod
-    def render(cls, version, include_items=False):
+    def render(cls, version, include_items=False, items=None):
         view = cls.model_validate(version)
         if include_items:
             from models import Item
-            view.items = ItemView.render_many(version.items.order_by(Item.position))
+            source = items if items is not None else version.items.order_by(Item.position)
+            view.items = ItemView.render_many(source)
         return view
 
     @classmethod

@@ -13,6 +13,7 @@ class UpdateTenant(BaseModel):
     # Language & region
     language: str | None = None
     timezone: str | None = None
+    delivery_enabled: bool | None = None
     # Tax / legal
     legal_name: str | None = None
     tax_id: str | None = None
