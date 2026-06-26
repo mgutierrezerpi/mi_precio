@@ -43,6 +43,12 @@ class Mailer:
             response = client.send(message)
             if response.status_code >= 400:
                 raise MailerError(f"SendGrid returned {response.status_code}")
+            logger.info(
+                "[MAILER] SendGrid accepted email to %s with status %s message_id=%s",
+                to,
+                response.status_code,
+                response.headers.get("X-Message-Id", "unknown"),
+            )
             return True
         except MailerError:
             raise

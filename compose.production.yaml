@@ -1,4 +1,10 @@
 services:
+  api:
+    environment:
+      DEBUG: "false"
+      MAILER_ENABLED: "true"
+      LOG_AUTH_CODES: "false"
+
   web_app:
     build: null
     image: nginx:1.27-alpine

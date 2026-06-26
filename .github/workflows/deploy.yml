@@ -79,10 +79,6 @@ jobs:
             cp "$current/.env" "$release/.env"
           fi
 
-          if [ -f "$current/compose.production.yaml" ]; then
-            cp "$current/compose.production.yaml" "$release/compose.production.yaml"
-          fi
-
           cd "$release"
           docker compose -f compose.yaml -f compose.production.yaml up -d --no-build storage storage_setup api web_app landing
           docker compose -f compose.yaml -f compose.production.yaml ps
