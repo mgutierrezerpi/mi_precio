@@ -93,3 +93,8 @@ def ensure_columns():
         db.execute_sql("ALTER TABLE users ADD COLUMN notifications_seen_at DATETIME")
     if "simple_admin_ui" not in user_columns:
         db.execute_sql("ALTER TABLE users ADD COLUMN simple_admin_ui INTEGER NOT NULL DEFAULT 0")
+    if "admin_ui_mode" not in user_columns:
+        db.execute_sql(
+            "ALTER TABLE users ADD COLUMN admin_ui_mode VARCHAR(16) NOT NULL DEFAULT 'full'"
+        )
+        db.execute_sql("UPDATE users SET admin_ui_mode = 'simple' WHERE simple_admin_ui = 1")

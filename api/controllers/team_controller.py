@@ -13,6 +13,7 @@ router = APIRouter(tags=["team"])
 
 class UpdateCurrentUser(BaseModel):
     simple_admin_ui: bool | None = None
+    admin_ui_mode: str | None = None
 
 
 @router.get("/users/me")
@@ -28,9 +29,16 @@ def update_current_user_endpoint(data: UpdateCurrentUser, current_user: dict = D
     user = User.get_or_none(User.id == current_user.get("sub"))
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    if data.simple_admin_ui is None:
+    if data.simple_admin_ui is None and data.admin_ui_mode is None:
         raise HTTPException(status_code=400, detail="No hay cambios para guardar")
-    user.simple_admin_ui = bool(data.simple_admin_ui)
+    if data.admin_ui_mode is not None:
+        if data.admin_ui_mode not in ("simple", "medium", "full"):
+            raise HTTPException(status_code=400, detail="Modo inválido")
+        user.admin_ui_mode = data.admin_ui_mode
+        user.simple_admin_ui = data.admin_ui_mode == "simple"
+    elif data.simple_admin_ui is not None:
+        user.simple_admin_ui = bool(data.simple_admin_ui)
+        user.admin_ui_mode = "simple" if user.simple_admin_ui else "full"
     user.save()
     return UserView.render(user)
 
@@ -69,7 +77,7 @@ def invite_member_endpoint(tenant_id: str, data: InviteMember, current_user: dic
 @router.patch("/tenants/{tenant_id}/members/{user_id}")
 def update_member_endpoint(tenant_id: str, user_id: str, data: UpdateMember, current_user: dict = Depends(require_admin)):
     try:
-        user = team.update_member(tenant_id, user_id, data.role, data.simple_admin_ui)
+        user = team.update_member(tenant_id, user_id, data.role, data.simple_admin_ui, data.admin_ui_mode)
     except TeamError as e:
         raise HTTPException(status_code=400, detail=str(e))
     if data.role is not None:

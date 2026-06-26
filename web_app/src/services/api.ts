@@ -1,4 +1,4 @@
-import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role, NotificationsData, NotifPrefs, PlanInfo, PlanId, User } from '../types'
+import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role, NotificationsData, NotifPrefs, PlanInfo, PlanId, User, AdminUiMode } from '../types'
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
@@ -303,10 +303,10 @@ class ApiService {
     })
   }
 
-  async updateCurrentUser(data: { simpleAdminUi?: boolean }): Promise<ApiResponse<User>> {
+  async updateCurrentUser(data: { simpleAdminUi?: boolean; adminUiMode?: AdminUiMode }): Promise<ApiResponse<User>> {
     return this.request('/users/me', {
       method: 'PATCH',
-      body: JSON.stringify({ simple_admin_ui: data.simpleAdminUi }),
+      body: JSON.stringify({ simple_admin_ui: data.simpleAdminUi, admin_ui_mode: data.adminUiMode }),
     })
   }
 
@@ -314,12 +314,13 @@ class ApiService {
     return this.request('/users/me')
   }
 
-  async updateMember(tenantId: string, userId: string, data: { role?: Role; simpleAdminUi?: boolean }): Promise<ApiResponse<TeamMember>> {
+  async updateMember(tenantId: string, userId: string, data: { role?: Role; simpleAdminUi?: boolean; adminUiMode?: AdminUiMode }): Promise<ApiResponse<TeamMember>> {
     return this.request(`/tenants/${tenantId}/members/${userId}`, {
       method: 'PATCH',
       body: JSON.stringify({
         role: data.role,
         simple_admin_ui: data.simpleAdminUi,
+        admin_ui_mode: data.adminUiMode,
       }),
     })
   }

@@ -76,13 +76,14 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
       )}
       <NotificationsBell />
       {actions}
-      <button
-        type="button"
-        onClick={() => dispatch(updateCurrentUser({ simpleAdminUi: true }))}
-        className="hidden h-10 items-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 text-[13px] font-bold text-[var(--dash-text2)] hover:text-[var(--dash-link)] xl:flex"
-      >
-        Modo simple
-      </button>
+      <div className="hidden items-center overflow-hidden rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] xl:flex">
+        <button type="button" onClick={() => dispatch(updateCurrentUser({ adminUiMode: 'medium' }))} className="h-10 px-3 text-[13px] font-bold text-[var(--dash-text2)] hover:text-[var(--dash-link)]">
+          Medio
+        </button>
+        <button type="button" onClick={() => dispatch(updateCurrentUser({ adminUiMode: 'simple' }))} className="h-10 border-l border-[var(--dash-soft-border)] px-3 text-[13px] font-bold text-[var(--dash-text2)] hover:text-[var(--dash-link)]">
+          Simple
+        </button>
+      </div>
       <UserMenu />
     </header>
   )
