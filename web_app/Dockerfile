@@ -6,9 +6,10 @@ COPY package.json yarn.lock ./
 RUN corepack enable && yarn install --frozen-lockfile
 
 COPY . .
-ARG VITE_API_URL=http://localhost:8000/api/v1
+ARG VITE_API_URL=/api/v1
 ENV VITE_API_URL=$VITE_API_URL
 RUN yarn build
+RUN yarn test:prod-api-url
 
 FROM nginx:1.27-alpine
 

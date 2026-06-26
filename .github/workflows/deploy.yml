@@ -31,7 +31,9 @@ jobs:
         run: |
           corepack enable
           yarn install --frozen-lockfile
+          yarn test
           yarn build
+          yarn test:prod-api-url
 
       - name: Build Docker images
         run: |

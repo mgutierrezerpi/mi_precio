@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:prod-api-url": "node scripts/assert-prod-api-url.mjs",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
