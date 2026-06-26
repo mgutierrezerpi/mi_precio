@@ -283,6 +283,25 @@ class ApiService {
     return this.request(`/tenants/${tenantId}/notifications/seen`, { method: 'POST' })
   }
 
+  // Web Push (PWA desktop/mobile notifications)
+  async getPushPublicKey(): Promise<ApiResponse<{ key: string; enabled: boolean }>> {
+    return this.request('/push/public-key')
+  }
+
+  async subscribePush(tenantId: string, subscription: PushSubscriptionJSON): Promise<ApiResponse<{ ok: boolean }>> {
+    return this.request(`/tenants/${tenantId}/push/subscribe`, {
+      method: 'POST',
+      body: JSON.stringify(subscription),
+    })
+  }
+
+  async unsubscribePush(tenantId: string, endpoint: string): Promise<ApiResponse<{ ok: boolean }>> {
+    return this.request(`/tenants/${tenantId}/push/unsubscribe`, {
+      method: 'POST',
+      body: JSON.stringify({ endpoint }),
+    })
+  }
+
   // Team endpoints
   async getMembers(tenantId: string): Promise<ApiResponse<TeamMember[]>> {
     return this.request(`/tenants/${tenantId}/members`)

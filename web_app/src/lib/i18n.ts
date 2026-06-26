@@ -85,7 +85,7 @@ const DICT: Record<string, Entry> = {
   'set.brand.previewCat': { es: 'Catálogo público', en: 'Public catalog', pt: 'Catálogo público' },
 
   'set.notif.subtitle': { es: 'Elegí qué te avisa la campana de la barra superior.', en: 'Choose what the topbar bell notifies you about.', pt: 'Escolha o que o sino da barra superior avisa.' },
-  'set.notif.banner': { es: 'Las notificaciones aparecen dentro de la app (campana arriba a la derecha). El envío por email llegará más adelante.', en: 'Notifications appear inside the app (bell, top right). Email delivery is coming later.', pt: 'As notificações aparecem dentro do app (sino, canto superior direito). O envio por e-mail virá mais adiante.' },
+  'set.notif.banner': { es: 'Las notificaciones aparecen dentro de la app (campana arriba a la derecha) y, si las activás abajo, también en tu escritorio o celular.', en: 'Notifications appear inside the app (bell, top right) and, if you enable them below, on your desktop or phone too.', pt: 'As notificações aparecem dentro do app (sino, canto superior direito) e, se ativá-las abaixo, também no seu desktop ou celular.' },
   'set.notif.sales': { es: 'Ventas', en: 'Sales', pt: 'Vendas' },
   'set.notif.salesDesc': { es: 'Cuando se registra una compra.', en: 'When a purchase is recorded.', pt: 'Quando uma compra é registrada.' },
   'set.notif.catalog': { es: 'Catálogo', en: 'Catalog', pt: 'Catálogo' },
@@ -94,6 +94,14 @@ const DICT: Record<string, Entry> = {
   'set.notif.customersDesc': { es: 'Cuando se agrega un cliente nuevo.', en: 'When a new customer is added.', pt: 'Quando um novo cliente é adicionado.' },
   'set.notif.team': { es: 'Equipo', en: 'Team', pt: 'Equipe' },
   'set.notif.teamDesc': { es: 'Invitaciones y cambios de rol.', en: 'Invitations and role changes.', pt: 'Convites e mudanças de função.' },
+  'set.notif.deviceTitle': { es: 'Notificaciones en este dispositivo', en: 'Notifications on this device', pt: 'Notificações neste dispositivo' },
+  'set.notif.deviceDesc': { es: 'Recibí avisos en el escritorio y, si instalaste la app en el celular, también en tu teléfono.', en: 'Get desktop alerts and, if you installed the app on your phone, push notifications there too.', pt: 'Receba avisos no desktop e, se instalou o app no celular, também no seu telefone.' },
+  'set.notif.enable': { es: 'Activar', en: 'Enable', pt: 'Ativar' },
+  'set.notif.enabling': { es: 'Activando…', en: 'Enabling…', pt: 'Ativando…' },
+  'set.notif.disable': { es: 'Desactivar', en: 'Disable', pt: 'Desativar' },
+  'set.notif.active': { es: 'Activadas en este dispositivo ✓', en: 'On for this device ✓', pt: 'Ativadas neste dispositivo ✓' },
+  'set.notif.denied': { es: 'Las notificaciones están bloqueadas. Activalas en los permisos del navegador.', en: 'Notifications are blocked. Enable them in your browser permissions.', pt: 'As notificações estão bloqueadas. Ative-as nas permissões do navegador.' },
+  'set.notif.unsupported': { es: 'Este navegador no admite notificaciones push.', en: 'This browser does not support push notifications.', pt: 'Este navegador não suporta notificações push.' },
 
   'set.region.subtitle': { es: 'Moneda, idioma y zona horaria de tu cuenta.', en: 'Your account currency, language and time zone.', pt: 'Moeda, idioma e fuso horário da sua conta.' },
   'set.region.currency': { es: 'Moneda', en: 'Currency', pt: 'Moeda' },
