@@ -1,6 +1,6 @@
 import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role, NotificationsData, NotifPrefs, PlanInfo, PlanId, User } from '../types'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 type ApiResponse<T> = { data: T; error?: never } | { data?: never; error: string }
 
