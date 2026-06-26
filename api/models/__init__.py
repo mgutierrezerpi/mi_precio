@@ -71,6 +71,7 @@ def ensure_columns():
         ("description", "description TEXT"),
         ("language", "language VARCHAR(5) NOT NULL DEFAULT 'es'"),
         ("timezone", "timezone VARCHAR(64) NOT NULL DEFAULT 'America/Montevideo'"),
+        ("delivery_enabled", "delivery_enabled INTEGER NOT NULL DEFAULT 0"),
         ("legal_name", "legal_name VARCHAR(255)"),
         ("tax_id", "tax_id VARCHAR(32)"),
         ("address", "address TEXT"),
