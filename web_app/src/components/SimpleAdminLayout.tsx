@@ -1,22 +1,22 @@
 import { useEffect } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import { refreshCurrentUser, selectIsAuthenticated, selectSimpleAdminUi, selectTenant, updateCurrentUser } from '../store/slices/authSlice'
+import { refreshCurrentUser, selectAdminUiMode, selectIsAuthenticated, selectTenant, updateCurrentUser } from '../store/slices/authSlice'
 
 export function AdminExperienceLayout() {
   const dispatch = useAppDispatch()
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
-  const simple = useAppSelector(selectSimpleAdminUi)
+  const mode = useAppSelector(selectAdminUiMode)
 
   useEffect(() => {
     if (isAuthenticated) dispatch(refreshCurrentUser())
   }, [dispatch, isAuthenticated])
 
-  if (!simple) return <Outlet />
-  return <SimpleAdminLayout />
+  if (mode === 'full') return <Outlet />
+  return <SimpleAdminLayout mode={mode} />
 }
 
-function SimpleAdminLayout() {
+function SimpleAdminLayout({ mode }: { mode: 'simple' | 'medium' | 'full' }) {
   const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
 
@@ -28,19 +28,27 @@ function SimpleAdminLayout() {
             {tenant?.name || 'Mi Precio'}
           </Link>
           <div className="flex-1" />
-          <button
-            type="button"
-            onClick={() => dispatch(updateCurrentUser({ simpleAdminUi: false }))}
-            className="text-sm font-semibold text-[var(--dash-muted)] hover:text-[var(--dash-link)]"
-          >
-            Modo completo
-          </button>
+          <ModeButton label="Simple" active={mode === 'simple'} onClick={() => dispatch(updateCurrentUser({ adminUiMode: 'simple' }))} />
+          <ModeButton label="Medio" active={mode === 'medium'} onClick={() => dispatch(updateCurrentUser({ adminUiMode: 'medium' }))} />
+          <ModeButton label="Completo" active={mode === 'full'} onClick={() => dispatch(updateCurrentUser({ adminUiMode: 'full' }))} />
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
         <Outlet />
       </main>
     </div>
+  )
+}
+
+function ModeButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-sm font-semibold ${active ? 'text-[var(--dash-link)]' : 'text-[var(--dash-muted)] hover:text-[var(--dash-link)]'}`}
+    >
+      {label}
+    </button>
   )
 }
 

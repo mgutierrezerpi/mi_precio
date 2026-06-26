@@ -185,6 +185,7 @@ export interface NotificationsData {
 
 // Team types
 export type Role = 'owner' | 'admin' | 'editor' | 'viewer'
+export type AdminUiMode = 'simple' | 'medium' | 'full'
 
 export interface TeamMember {
   id: string
@@ -193,6 +194,7 @@ export interface TeamMember {
   role: Role
   name: string
   simpleAdminUi: boolean
+  adminUiMode: AdminUiMode
   createdAt: string
   updatedAt: string
   lastSeenAt: string | null
@@ -221,6 +223,7 @@ export interface User {
   role: Role
   name: string
   simpleAdminUi: boolean
+  adminUiMode: AdminUiMode
   createdAt: string
   updatedAt: string
 }

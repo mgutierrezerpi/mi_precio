@@ -4,6 +4,7 @@ import { AdminExperienceLayout } from './components/SimpleAdminLayout'
 import { HomeScreen } from './screens/home/HomeScreen'
 import { OldLandingScreen } from './screens/home/OldLandingScreen'
 import { MenuScreen } from './screens/menu/MenuScreen'
+import { CompactListsScreen } from './screens/admin/CompactListsScreen'
 import { ListEditScreen } from './screens/admin/ListEditScreen'
 import { CategoriesScreen } from './screens/admin/CategoriesScreen'
 import { CodesScreen } from './screens/admin/CodesScreen'
@@ -54,6 +55,10 @@ export const router = createBrowserRouter([
       {
         path: 'lists',
         element: <AdminListsRoute />,
+      },
+      {
+        path: 'lists/compact',
+        element: <CompactListsScreen />,
       },
       {
         path: 'qr',

@@ -29,6 +29,7 @@ describe('authSlice', () => {
       role: 'owner',
       name: 'test',
       simpleAdminUi: false,
+      adminUiMode: 'full',
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     }
@@ -45,6 +46,7 @@ describe('authSlice', () => {
       role: 'owner',
       name: 'test',
       simpleAdminUi: false,
+      adminUiMode: 'full',
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     }

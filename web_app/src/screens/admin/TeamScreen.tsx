@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant, selectUser, setUser } from '../../store/slices/authSlice'
 import api from '../../services/api'
-import type { TeamMember, Invitation, MemberStats, Role } from '../../types'
+import type { AdminUiMode, TeamMember, Invitation, MemberStats, Role } from '../../types'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { tone, gradient, type Tone } from './crm/theme'
@@ -10,6 +10,7 @@ import { tone, gradient, type Tone } from './crm/theme'
 /* ── Role metadata ───────────────────────────────────────────────────── */
 const ROLE_LABEL: Record<Role, string> = { owner: 'Dueño', admin: 'Admin', editor: 'Editor', viewer: 'Lector' }
 const ROLE_TONE: Record<Role, Tone> = { owner: 'violet', admin: 'sky', editor: 'green', viewer: 'slate' }
+const UI_MODE_LABEL: Record<AdminUiMode, string> = { simple: 'Simple', medium: 'Medio', full: 'Completa' }
 // Roles an owner/admin can assign (never "owner").
 const ASSIGNABLE: Role[] = ['admin', 'editor', 'viewer']
 const ROLE_PERMS: { role: Role; desc: string }[] = [
@@ -106,9 +107,11 @@ export function TeamScreen() {
     else { setError(null); void refresh() }
   }
 
-  const changeUiMode = async (m: TeamMember, simpleAdminUi: boolean) => {
+  const uiModeOf = (m: TeamMember): AdminUiMode => m.adminUiMode ?? (m.simpleAdminUi ? 'simple' : 'full')
+
+  const changeUiMode = async (m: TeamMember, adminUiMode: AdminUiMode) => {
     if (!tenant?.id) return
-    const res = await api.updateMember(tenant.id, m.id, { simpleAdminUi })
+    const res = await api.updateMember(tenant.id, m.id, { adminUiMode })
     if (res.error) setError(res.error)
     else {
       setError(null)
@@ -201,12 +204,13 @@ export function TeamScreen() {
                   </span>
                   <span className="w-[130px]">
                     {canManage ? (
-                      <select value={m.simpleAdminUi ? 'simple' : 'full'} onChange={(e) => changeUiMode(m, e.target.value === 'simple')} className="h-8 w-[112px] rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-[12px] font-bold text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]">
+                      <select value={uiModeOf(m)} onChange={(e) => changeUiMode(m, e.target.value as AdminUiMode)} className="h-8 w-[112px] rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-[12px] font-bold text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]">
                         <option value="simple">Simple</option>
+                        <option value="medium">Medio</option>
                         <option value="full">Completa</option>
                       </select>
                     ) : (
-                      <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(m.simpleAdminUi ? 'green' : 'slate')}>{m.simpleAdminUi ? 'Simple' : 'Completa'}</span>
+                      <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(uiModeOf(m) === 'simple' ? 'green' : uiModeOf(m) === 'medium' ? 'amber' : 'slate')}>{UI_MODE_LABEL[uiModeOf(m)]}</span>
                     )}
                   </span>
                   <span className="w-[130px] text-xs font-medium text-[var(--dash-muted)]">{seen.label}</span>

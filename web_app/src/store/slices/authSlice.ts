@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
-import type { Tenant, User, LoadingState } from '../../types'
+import type { AdminUiMode, Tenant, User, LoadingState } from '../../types'
 import api from '../../services/api'
 
 const AUTH_STORAGE_KEY = 'auth_state'
@@ -80,8 +80,8 @@ export const logout = createAsyncThunk('auth/logout', async () => {
 
 export const updateCurrentUser = createAsyncThunk(
   'auth/updateCurrentUser',
-  async ({ simpleAdminUi }: { simpleAdminUi: boolean }, { rejectWithValue }) => {
-    const response = await api.updateCurrentUser({ simpleAdminUi })
+  async ({ simpleAdminUi, adminUiMode }: { simpleAdminUi?: boolean; adminUiMode?: AdminUiMode }, { rejectWithValue }) => {
+    const response = await api.updateCurrentUser({ simpleAdminUi, adminUiMode })
     if (response.error || !response.data) return rejectWithValue(response.error || 'Error')
     return response.data
   }
@@ -184,7 +184,10 @@ export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.isLo
 export const selectAuthError = (state: { auth: AuthState }) => state.auth.error
 export const selectCodeSent = (state: { auth: AuthState }) => state.auth.codeSent
 export const selectPendingEmail = (state: { auth: AuthState }) => state.auth.pendingEmail
-export const selectSimpleAdminUi = (state: { auth: AuthState }) => state.auth.user?.simpleAdminUi ?? false
+export const selectAdminUiMode = (state: { auth: AuthState }): AdminUiMode => state.auth.user?.adminUiMode ?? (state.auth.user?.simpleAdminUi ? 'simple' : 'full')
+export const selectSimpleAdminUi = (state: { auth: AuthState }) => selectAdminUiMode(state) === 'simple'
+export const selectMediumAdminUi = (state: { auth: AuthState }) => selectAdminUiMode(state) === 'medium'
+export const selectFullAdminUi = (state: { auth: AuthState }) => selectAdminUiMode(state) === 'full'
 
 // Role-based permissions. Sessions stored before roles existed default to "owner".
 const roleOf = (state: { auth: AuthState }) => state.auth.user?.role ?? 'owner'

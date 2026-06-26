@@ -16,6 +16,7 @@ class User(BaseModel):
     notif_prefs = TextField(null=True)
     notifications_seen_at = DateTimeField(null=True)
     simple_admin_ui = BooleanField(default=False)
+    admin_ui_mode = CharField(max_length=16, default="full")
 
     class Meta:
         table_name = "users"
