@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectIsAuthenticated } from '../../store/slices/authSlice'
 import { AuthModal } from '../../components/AuthModal'
@@ -71,6 +71,12 @@ export function HomeScreen() {
     root.style.scrollBehavior = 'smooth'
     return () => { root.style.scrollBehavior = prev }
   }, [])
+
+  // Already-logged-in users hitting /login (e.g. from the static landing's
+  // "Iniciar sesión" link, which can't know the session) go straight to the panel.
+  if (isAuthenticated && location.pathname === '/login') {
+    return <Navigate to="/admin" replace />
+  }
 
   return (
     <main className="landing-page min-h-screen bg-white font-sans text-slate-900">
