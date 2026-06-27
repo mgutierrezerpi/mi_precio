@@ -46,13 +46,16 @@ def subscribe(tenant_id: str, user_id: str, subscription: dict) -> PushSubscript
     )
 
 
-def unsubscribe(endpoint: str) -> bool:
-    """Remove a subscription (the device opted out or its endpoint expired)."""
+def unsubscribe(endpoint: str, user_id: str | None = None) -> bool:
+    """Remove a subscription (the device opted out or its endpoint expired).
+
+    Scoped to `user_id` when given so a caller can only drop their own devices."""
     if not endpoint:
         return False
-    return bool(
-        PushSubscription.delete().where(PushSubscription.endpoint == endpoint).execute()
-    )
+    query = PushSubscription.delete().where(PushSubscription.endpoint == endpoint)
+    if user_id:
+        query = query.where(PushSubscription.user == user_id)
+    return bool(query.execute())
 
 
 def _send_one(sub: PushSubscription, payload: str) -> None:

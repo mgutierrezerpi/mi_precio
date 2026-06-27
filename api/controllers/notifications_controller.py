@@ -44,11 +44,14 @@ def push_public_key_endpoint(current_user: dict = Depends(get_current_user)):
 
 @router.post("/tenants/{tenant_id}/push/subscribe")
 def push_subscribe_endpoint(tenant_id: str, data: PushSubscribe, current_user: dict = Depends(get_current_user)):
-    sub = push.subscribe(tenant_id, current_user.get("sub"), data.model_dump())
+    # Bind the subscription to the caller's own identity from the token, never to
+    # values taken from the path/body.
+    sub = push.subscribe(current_user.get("tenant_id"), current_user.get("sub"), data.model_dump())
     return {"ok": sub is not None}
 
 
 @router.post("/tenants/{tenant_id}/push/unsubscribe")
 def push_unsubscribe_endpoint(tenant_id: str, data: PushUnsubscribe, current_user: dict = Depends(get_current_user)):
-    push.unsubscribe(data.endpoint)
+    # Only let a user remove their own device subscriptions.
+    push.unsubscribe(data.endpoint, current_user.get("sub"))
     return {"ok": True}
