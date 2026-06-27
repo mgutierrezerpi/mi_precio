@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from lib.ctx import products, activity, plans
 from lib.ctx.plans_context import PlanLimitError
+from controllers import ownership
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateProduct, UpdateProduct
 from views import DeletedView, ProductImageView, ProductView
@@ -58,14 +59,13 @@ async def create_product_image_endpoint(
 
 @router.get("/products/{product_id}")
 def get_product_endpoint(product_id: str, current_user: dict = Depends(get_current_user)):
-    product = products.get_product(product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+    product = ownership.own_product(product_id, current_user)
     return ProductView.render(product)
 
 
 @router.patch("/products/{product_id}")
 def update_product_endpoint(product_id: str, data: UpdateProduct, current_user: dict = Depends(require_editor)):
+    ownership.own_product(product_id, current_user)
     product = products.update_product(product_id, **data.model_dump(exclude_unset=True))
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -74,9 +74,7 @@ def update_product_endpoint(product_id: str, data: UpdateProduct, current_user: 
 
 @router.delete("/products/{product_id}")
 def delete_product_endpoint(product_id: str, current_user: dict = Depends(require_editor)):
-    product = products.get_product(product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+    product = ownership.own_product(product_id, current_user)
     name, tenant_id = product.name, product.tenant_id
     products.delete_product(product_id)
     activity.record(tenant_id, "product.deleted", f"Eliminó el producto «{name}»",

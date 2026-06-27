@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from lib.ctx import categories
+from controllers import ownership
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateCategory, UpdateCategory
 from views import DeletedView, CategoryView
@@ -22,6 +23,7 @@ def create_category_endpoint(tenant_id: str, data: CreateCategory, current_user:
 
 @router.patch("/categories/{category_id}")
 def update_category_endpoint(category_id: str, data: UpdateCategory, current_user: dict = Depends(require_editor)):
+    ownership.own_category(category_id, current_user)
     category = categories.update_category(category_id, **data.model_dump(exclude_unset=True))
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -30,6 +32,7 @@ def update_category_endpoint(category_id: str, data: UpdateCategory, current_use
 
 @router.delete("/categories/{category_id}")
 def delete_category_endpoint(category_id: str, current_user: dict = Depends(require_editor)):
+    ownership.own_category(category_id, current_user)
     if not categories.delete_category(category_id):
         raise HTTPException(status_code=404, detail="Category not found")
     return DeletedView()
