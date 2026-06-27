@@ -15,13 +15,29 @@ def record(tenant_id: str, action: str, summary: str, actor: str | None = None,
         tenant = Tenant.get_or_none(Tenant.id == tenant_id)
         if not tenant:
             return None
-        return Activity.create(
+        entry = Activity.create(
             tenant=tenant, action=action, summary=summary,
             actor=actor, actor_id=actor_id, entity_type=entity_type, entity_id=entity_id,
         )
+        _push(tenant_id, action, summary, actor_id)
+        return entry
     except Exception:  # pragma: no cover - defensive
         logger.exception("Failed to record activity")
         return None
+
+
+def _push(tenant_id: str, action: str, summary: str, actor_id: str | None) -> None:
+    """Send a Web Push for this activity to opted-in teammates. Never raises."""
+    try:
+        # Imported here to avoid a circular import at module load.
+        from lib.ctx import push
+        from lib.ctx.notifications_context import ACTION_CATEGORY
+
+        category = ACTION_CATEGORY.get(action)
+        if category:
+            push.notify_activity(tenant_id, category, summary, actor_id)
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("Failed to dispatch push notification")
 
 
 def list_activity(tenant_id: str, limit: int = 20) -> list[Activity]:

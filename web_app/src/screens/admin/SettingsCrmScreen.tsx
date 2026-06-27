@@ -6,6 +6,7 @@ import type { AdminUiMode, Tenant, Role, NotifPrefs, PlanId, PlanInfo } from '..
 import api from '../../services/api'
 import { useT, type TFn } from '../../lib/i18n'
 import { PLANS, planById } from '../../lib/plans'
+import { getPushStatus, enablePush, disablePush, type PushStatus } from '../../lib/push'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { gradient, tone } from './crm/theme'
@@ -291,6 +292,7 @@ function NotificationsSection({ t, tenantId }: { t: TFn; tenantId?: string }) {
       <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
         <Icon name="bell" size={15} /> {t('set.notif.banner')}
       </div>
+      <DeviceNotifications t={t} tenantId={tenantId} />
       <div className="flex flex-col divide-y divide-[var(--dash-divider)] rounded-2xl border border-[var(--dash-border)]">
         {NOTIF_ROWS.map((r) => (
           <div key={r.key} className="flex items-center justify-between gap-4 px-4 py-3.5">
@@ -300,6 +302,53 @@ function NotificationsSection({ t, tenantId }: { t: TFn; tenantId?: string }) {
         ))}
       </div>
     </>
+  )
+}
+
+/** Per-device Web Push opt-in: enables desktop + mobile (installed PWA) alerts. */
+function DeviceNotifications({ t, tenantId }: { t: TFn; tenantId?: string }) {
+  const [status, setStatus] = useState<PushStatus>('default')
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    getPushStatus().then((s) => { if (!cancelled) setStatus(s) })
+    return () => { cancelled = true }
+  }, [])
+
+  const toggle = async () => {
+    if (!tenantId || busy) return
+    setBusy(true)
+    try {
+      setStatus(status === 'subscribed' ? await disablePush(tenantId) : await enablePush(tenantId))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const isOn = status === 'subscribed'
+  const note =
+    status === 'unsupported' ? t('set.notif.unsupported')
+      : status === 'denied' ? t('set.notif.denied')
+        : isOn ? t('set.notif.active')
+          : t('set.notif.deviceDesc')
+  const disabled = busy || status === 'unsupported' || status === 'denied'
+
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--dash-border)] px-4 py-3.5">
+      <div className="flex min-w-0 flex-col">
+        <span className="text-[13px] font-bold text-[var(--dash-text)]">{t('set.notif.deviceTitle')}</span>
+        <span className="text-[11px] font-medium text-[var(--dash-muted)]">{note}</span>
+      </div>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={toggle}
+        className={`shrink-0 rounded-xl px-3.5 py-2 text-[12px] font-bold text-white transition ${isOn ? 'bg-[var(--dash-border)] text-[var(--dash-text2)]' : gradient} ${disabled ? 'cursor-not-allowed opacity-50' : 'hover:opacity-90'}`}
+      >
+        {busy ? t('set.notif.enabling') : isOn ? t('set.notif.disable') : t('set.notif.enable')}
+      </button>
+    </div>
   )
 }
 

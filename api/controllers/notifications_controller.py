@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
-from lib.ctx import notifications, identity
+from config import settings
+from lib.ctx import notifications, identity, push
 from controllers.deps import get_current_user
-from controllers.input_types import UpdateNotifPrefs
+from controllers.input_types import UpdateNotifPrefs, PushSubscribe, PushUnsubscribe
 from views import ActivityView
 
 router = APIRouter(tags=["notifications"])
@@ -29,4 +30,28 @@ def update_notif_prefs_endpoint(tenant_id: str, data: UpdateNotifPrefs, current_
 @router.post("/tenants/{tenant_id}/notifications/seen")
 def mark_notifications_seen_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
     notifications.mark_seen(current_user.get("sub"))
+    return {"ok": True}
+
+
+# --- Web Push (PWA desktop/mobile notifications) ---
+
+@router.get("/push/public-key")
+def push_public_key_endpoint(current_user: dict = Depends(get_current_user)):
+    """VAPID public key the browser needs to subscribe; `enabled` is false when
+    the server has no keys configured (push is a no-op then)."""
+    return {"key": settings.vapid_public_key, "enabled": settings.push_enabled}
+
+
+@router.post("/tenants/{tenant_id}/push/subscribe")
+def push_subscribe_endpoint(tenant_id: str, data: PushSubscribe, current_user: dict = Depends(get_current_user)):
+    # Bind the subscription to the caller's own identity from the token, never to
+    # values taken from the path/body.
+    sub = push.subscribe(current_user.get("tenant_id"), current_user.get("sub"), data.model_dump())
+    return {"ok": sub is not None}
+
+
+@router.post("/tenants/{tenant_id}/push/unsubscribe")
+def push_unsubscribe_endpoint(tenant_id: str, data: PushUnsubscribe, current_user: dict = Depends(get_current_user)):
+    # Only let a user remove their own device subscriptions.
+    push.unsubscribe(data.endpoint, current_user.get("sub"))
     return {"ok": True}

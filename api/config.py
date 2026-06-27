@@ -46,6 +46,18 @@ class Settings(BaseSettings):
     storage_access_key: str = ""
     storage_secret_key: str = ""
 
+    # Web Push (PWA notifications). Generate keys with bin/generate_vapid_keys.py.
+    # `vapid_public_key` is the base64url applicationServerKey the browser uses to
+    # subscribe; `vapid_private_key` signs the push requests. Push is silently
+    # disabled while either is empty.
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_subject: str = "mailto:soporte@miprecio.app"
+
+    @property
+    def push_enabled(self) -> bool:
+        return bool(self.vapid_public_key and self.vapid_private_key)
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -13,13 +13,14 @@ from models.order import Order as Order
 from models.order_item import OrderItem as OrderItem
 from models.activity import Activity as Activity
 from models.invitation import Invitation as Invitation
+from models.push_subscription import PushSubscription as PushSubscription
 
 # Resolve deferred foreign key
 Item.list_version.set_model(ListVersion)
 
 
 def create_tables():
-    db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item, Product, Category, PageView, Customer, Order, OrderItem, Activity, Invitation])
+    db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item, Product, Category, PageView, Customer, Order, OrderItem, Activity, Invitation, PushSubscription])
     ensure_columns()
 
 
