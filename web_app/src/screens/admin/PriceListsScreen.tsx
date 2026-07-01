@@ -292,7 +292,14 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
   const [prodSearch, setProdSearch] = useState('')
   const [saving, setSaving] = useState(false)
   const versionId = useRef<string | undefined>(undefined)
-  const [loadedItems, setLoadedItems] = useState<{ id: string; name: string }[]>([])
+  const [loadedItems, setLoadedItems] = useState<{ id: string; name: string; productId: string | null }[]>([])
+
+  // The product an item came from: by stable product id, else (legacy items with no
+  // product_id) by name. Renaming a product no longer detaches it from the list.
+  const productForItem = (it: { name: string; productId: string | null }): Product | undefined =>
+    it.productId
+      ? products.find((p) => p.id === it.productId)
+      : products.find((p) => p.name.trim().toLowerCase() === it.name.trim().toLowerCase())
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -313,17 +320,18 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
       const ires = await api.getItems(vid)
       if (cancelled) return
       versionId.current = vid
-      setLoadedItems((ires.data ?? []).map((i) => ({ id: i.id, name: i.name })))
+      setLoadedItems((ires.data ?? []).map((i) => ({ id: i.id, name: i.name, productId: i.productId })))
     })()
     return () => { cancelled = true }
   }, [list?.id])
 
-  // Pre-select the products already in the list. Depends on `products` too, so the
-  // checkboxes recompute once the catalog finishes loading (it may arrive after the
-  // modal opens, which used to leave every product unchecked).
+  // Pre-select the products already in the list (matched by id, name for legacy items).
+  // Depends on `products` too, so the checkboxes recompute once the catalog finishes
+  // loading — it may arrive after the modal opens, which used to leave everything unchecked.
   useEffect(() => {
-    const names = new Set(loadedItems.map((i) => i.name.trim().toLowerCase()))
-    setSelected(new Set(products.filter((p) => names.has(p.name.trim().toLowerCase())).map((p) => p.id)))
+    const inList = new Set(loadedItems.map((i) => productForItem(i)?.id).filter(Boolean))
+    setSelected(new Set(products.filter((p) => inList.has(p.id)).map((p) => p.id)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadedItems, products])
 
   const filteredProducts = useMemo(() => {
@@ -343,18 +351,19 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
 
   const goNext = (e: React.FormEvent) => { e.preventDefault(); if (name.trim()) setStep(2) }
 
-  // Add the selected products as items / remove the ones deselected (matched by name).
-  // Items copy the product's image so the public list shows the real photo instead
-  // of a shared category placeholder.
+  // Add the selected products as items / remove the ones deselected. Membership is
+  // keyed off the product id (stable across renames); items store product_id and copy
+  // the product's image so the public list shows the real photo, not a category icon.
   const syncItems = async (vid: string) => {
-    const chosen = products.filter((p) => selected.has(p.id))
-    const curNames = new Set(loadedItems.map((i) => i.name.trim().toLowerCase()))
-    const selNames = new Set(chosen.map((p) => p.name.trim().toLowerCase()))
-    const availNames = new Set(products.map((p) => p.name.trim().toLowerCase()))
-    for (const p of chosen.filter((p) => !curNames.has(p.name.trim().toLowerCase()))) {
-      await dispatch(createItem({ versionId: vid, data: { name: p.name, price: parseFloat(p.price) || 0, description: p.description || undefined, category: p.category || undefined, imageUrl: p.imageUrl || undefined } }))
+    const chosenIds = new Set(products.filter((p) => selected.has(p.id)).map((p) => p.id))
+    const representedIds = new Set(loadedItems.map((i) => productForItem(i)?.id).filter(Boolean))
+    // Create an item for every newly-selected product not already in the list.
+    for (const p of products.filter((p) => selected.has(p.id) && !representedIds.has(p.id))) {
+      await dispatch(createItem({ versionId: vid, data: { name: p.name, price: parseFloat(p.price) || 0, description: p.description || undefined, category: p.category || undefined, imageUrl: p.imageUrl || undefined, productId: p.id } }))
     }
-    for (const it of loadedItems.filter((i) => availNames.has(i.name.trim().toLowerCase()) && !selNames.has(i.name.trim().toLowerCase()))) {
+    // Remove items whose product was deselected. Orphan/manual items (no matching
+    // product) are left untouched.
+    for (const it of loadedItems.filter((i) => { const p = productForItem(i); return p && !chosenIds.has(p.id) })) {
       await dispatch(deleteItem(it.id))
     }
   }

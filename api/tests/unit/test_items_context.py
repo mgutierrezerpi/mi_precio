@@ -1,6 +1,8 @@
 """Tests for items context."""
 
-from lib.ctx import lists, items, identity
+from lib.ctx import lists, items, identity, products
+from models import Item
+from views import ItemView
 
 
 def test_create_item(db):
@@ -15,6 +17,27 @@ def test_create_item(db):
     assert item.currency == "UYU"
     assert item.description == "Delicious"
     assert item.position == 0
+
+
+def test_create_item_with_product_id_links_and_view_exposes_it(db):
+    tenant = identity.create_tenant("Store", "store-fk")
+    created = lists.create_list(tenant.id, "Menu")
+    product = products.create_product(tenant.id, name="Pizza", price=150)
+
+    item = items.create_item(created.version.id, name="Pizza", price=150, product_id=product.id)
+
+    assert item.product_id == product.id
+    # The view exposes the link so the list editor can match membership by id.
+    view = ItemView.render(Item.get_by_id(item.id))
+    assert view.product_id == product.id
+
+
+def test_create_item_without_product_id_is_null(db):
+    tenant = identity.create_tenant("Store", "store-fk2")
+    created = lists.create_list(tenant.id, "Menu")
+    item = items.create_item(created.version.id, name="Manual", price=10)
+    assert item.product_id is None
+    assert ItemView.render(Item.get_by_id(item.id)).product_id is None
 
 
 def test_create_item_auto_increments_position(db):
