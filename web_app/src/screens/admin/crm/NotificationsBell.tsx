@@ -5,6 +5,7 @@ import { selectTenant } from '../../../store/slices/authSlice'
 import api from '../../../services/api'
 import type { Activity } from '../../../types'
 import { useT } from '../../../lib/i18n'
+import { activityText, activityAgo } from './activity'
 import { Icon, type IconName } from './ui'
 import { tone, type Tone } from './theme'
 
@@ -22,16 +23,6 @@ const STYLE: Record<string, { icon: IconName; tone: Tone }> = {
 }
 const styleFor = (action: string) => STYLE[action] || { icon: 'bell' as IconName, tone: 'slate' as Tone }
 
-// Backend timestamps are naive UTC; tag as UTC so relative time is correct.
-function ago(iso: string): string {
-  const hasTz = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(iso)
-  const s = (Date.now() - new Date(hasTz ? iso : `${iso}Z`).getTime()) / 1000
-  if (s < 60) return 'Recién'
-  if (s < 3600) return `hace ${Math.floor(s / 60)} min`
-  if (s < 86400) return `hace ${Math.floor(s / 3600)} h`
-  const d = Math.floor(s / 86400)
-  return d < 2 ? 'ayer' : `hace ${d} días`
-}
 const actorShort = (a: string | null) => (a ? a.split('@')[0] : null)
 
 /** Topbar bell: polls in-app notifications, shows an unread badge, opens a feed. */
@@ -108,8 +99,8 @@ export function NotificationsBell() {
                 <div key={a.id} className="flex items-center gap-3 border-b border-[var(--dash-divider)] px-4 py-3 last:border-0">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]" style={tone(st.tone)}><Icon name={st.icon} /></span>
                   <div className="flex min-w-0 flex-col">
-                    <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{a.summary}</span>
-                    <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{who ? `${who} · ` : ''}{ago(a.createdAt)}</span>
+                    <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{activityText(a, t)}</span>
+                    <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{who ? `${who} · ` : ''}{activityAgo(a.createdAt, t)}</span>
                   </div>
                 </div>
               )

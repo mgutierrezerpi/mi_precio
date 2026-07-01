@@ -25,7 +25,7 @@ def create_customer_endpoint(tenant_id: str, data: CreateCustomer, current_user:
         raise HTTPException(status_code=404, detail="Tenant not found")
     activity.record(tenant_id, "customer.created", f"Agregó el cliente «{customer.name}»",
                     actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                    entity_type="customer", entity_id=customer.id)
+                    entity_type="customer", entity_id=customer.id, meta={"name": customer.name})
     return CustomerView.render(customer)
 
 
@@ -70,7 +70,8 @@ def create_order_endpoint(customer_id: str, data: CreateOrder, current_user: dic
     activity.record(order.tenant_id, "order.created",
                     f"Registró una compra de «{order.customer.name}» por {order.currency} {order.total:.0f}",
                     actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                    entity_type="order", entity_id=order.id)
+                    entity_type="order", entity_id=order.id,
+                    meta={"customer": order.customer.name, "currency": order.currency, "total": f"{order.total:.0f}"})
     return OrderView.render(order)
 
 

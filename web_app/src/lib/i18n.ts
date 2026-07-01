@@ -59,6 +59,28 @@ const DICT: Record<string, Entry> = {
   'notif.empty': { es: 'No hay notificaciones todavía.', en: 'No notifications yet.', pt: 'Nenhuma notificação ainda.' },
   'notif.prefs': { es: 'Preferencias de notificaciones', en: 'Notification preferences', pt: 'Preferências de notificações' },
 
+  // ── Activity feed (rebuilt client-side from action + meta; falls back to the
+  //    stored Spanish summary for pre-i18n rows or unknown actions) ──────────
+  'activity.product.created': { es: 'Agregó el producto «{name}»', en: 'Added product “{name}”', pt: 'Adicionou o produto «{name}»' },
+  'activity.product.deleted': { es: 'Eliminó el producto «{name}»', en: 'Deleted product “{name}”', pt: 'Excluiu o produto «{name}»' },
+  'activity.list.created': { es: 'Creó la lista «{name}»', en: 'Created list “{name}”', pt: 'Criou a lista «{name}»' },
+  'activity.list.published': { es: 'Publicó la lista «{name}»', en: 'Published list “{name}”', pt: 'Publicou a lista «{name}»' },
+  'activity.customer.created': { es: 'Agregó el cliente «{name}»', en: 'Added customer “{name}”', pt: 'Adicionou o cliente «{name}»' },
+  'activity.order.created': { es: 'Registró una compra de «{customer}» por {currency} {total}', en: 'Recorded a purchase from “{customer}” for {currency} {total}', pt: 'Registrou uma compra de «{customer}» por {currency} {total}' },
+  'activity.member.invited': { es: 'Invitó a «{email}» como {role}', en: 'Invited “{email}” as {role}', pt: 'Convidou «{email}» como {role}' },
+  'activity.member.role_changed': { es: 'Cambió el rol de «{email}» a {role}', en: 'Changed “{email}” role to {role}', pt: 'Alterou a função de «{email}» para {role}' },
+  'activity.member.removed': { es: 'Quitó a «{email}» del equipo', en: 'Removed “{email}” from the team', pt: 'Removeu «{email}» da equipe' },
+  'activity.plan.changed': { es: 'Cambió el plan a {plan}', en: 'Changed plan to {plan}', pt: 'Alterou o plano para {plan}' },
+  'activity.billing.manual_sync': { es: 'Sincronizó el plan {plan} ({status})', en: 'Synced plan {plan} ({status})', pt: 'Sincronizou o plano {plan} ({status})' },
+  'activity.billing.webhook': { es: 'Suscripción actualizada ({status})', en: 'Subscription updated ({status})', pt: 'Assinatura atualizada ({status})' },
+
+  // ── Relative time (activity feed) ───────────────────────────────────────
+  'time.now': { es: 'Recién', en: 'Just now', pt: 'Agora' },
+  'time.minAgo': { es: 'hace {n} min', en: '{n} min ago', pt: 'há {n} min' },
+  'time.hAgo': { es: 'hace {n} h', en: '{n} h ago', pt: 'há {n} h' },
+  'time.yesterday': { es: 'ayer', en: 'yesterday', pt: 'ontem' },
+  'time.daysAgo': { es: 'hace {n} días', en: '{n} days ago', pt: 'há {n} dias' },
+
   // ── Settings ────────────────────────────────────────────────────
   'set.subtitle': { es: 'Administrá los datos y preferencias de tu cuenta.', en: 'Manage your account data and preferences.', pt: 'Gerencie os dados e preferências da sua conta.' },
   'set.onlyAdmins': { es: 'Solo los administradores pueden editar la configuración de la cuenta.', en: 'Only admins can edit account settings.', pt: 'Apenas administradores podem editar as configurações da conta.' },

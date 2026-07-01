@@ -1,5 +1,6 @@
 """Activity context - tenant activity feed (who did what), shown live on the dashboard."""
 
+import json
 import logging
 
 from models import Tenant, Activity
@@ -9,14 +10,18 @@ logger = logging.getLogger(__name__)
 
 def record(tenant_id: str, action: str, summary: str, actor: str | None = None,
            actor_id: str | None = None, entity_type: str | None = None,
-           entity_id: str | None = None) -> Activity | None:
-    """Append an activity entry. Never raises — a failed audit log must not break the request."""
+           entity_id: str | None = None, meta: dict | None = None) -> Activity | None:
+    """Append an activity entry. Never raises — a failed audit log must not break the request.
+
+    `summary` is the pre-rendered Spanish fallback; `meta` holds the dynamic values
+    (name, email, amount…) so the client can rebuild the text in the viewer's language."""
     try:
         tenant = Tenant.get_or_none(Tenant.id == tenant_id)
         if not tenant:
             return None
         entry = Activity.create(
             tenant=tenant, action=action, summary=summary,
+            meta=json.dumps(meta) if meta else None,
             actor=actor, actor_id=actor_id, entity_type=entity_type, entity_id=entity_id,
         )
         _push(tenant_id, action, summary, actor_id)
