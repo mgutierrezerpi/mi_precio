@@ -53,7 +53,7 @@ const DICT: Record<string, Entry> = {
   'top.fullView': { es: 'Vista completa', en: 'Full view', pt: 'Visão completa' },
   'mode.simple': { es: 'Simple', en: 'Simple', pt: 'Simples' },
   'mode.medium': { es: 'Medio', en: 'Medium', pt: 'Médio' },
-  'mode.full': { es: 'Completo', en: 'Full', pt: 'Full' },
+  'mode.full': { es: 'Completo', en: 'Full', pt: 'Completo' },
   'notif.title': { es: 'Notificaciones', en: 'Notifications', pt: 'Notificações' },
   'notif.live': { es: 'En vivo', en: 'Live', pt: 'Ao vivo' },
   'notif.empty': { es: 'No hay notificaciones todavía.', en: 'No notifications yet.', pt: 'Nenhuma notificação ainda.' },
