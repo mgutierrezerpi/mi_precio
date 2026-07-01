@@ -78,10 +78,10 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
       {actions}
       <div className="hidden items-center overflow-hidden rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] xl:flex">
         <button type="button" onClick={() => dispatch(updateCurrentUser({ adminUiMode: 'medium' }))} className="h-10 px-3 text-[13px] font-bold text-[var(--dash-text2)] hover:text-[var(--dash-link)]">
-          Medio
+          {t('mode.medium')}
         </button>
         <button type="button" onClick={() => dispatch(updateCurrentUser({ adminUiMode: 'simple' }))} className="h-10 border-l border-[var(--dash-soft-border)] px-3 text-[13px] font-bold text-[var(--dash-text2)] hover:text-[var(--dash-link)]">
-          Simple
+          {t('mode.simple')}
         </button>
       </div>
       <UserMenu />

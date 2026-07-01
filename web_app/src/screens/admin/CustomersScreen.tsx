@@ -216,7 +216,11 @@ function CustomerModal({ tenantId, customer, onClose, onSaved }: { tenantId?: st
   const [notes, setNotes] = useState(customer?.notes ?? '')
   const [saving, setSaving] = useState(false)
 
-  const valid = name.trim() !== '' && email.trim() !== '' && phone.trim() !== ''
+  // Basic email shape check (non-empty local@domain.tld). Keeps out values like
+  // "correo-sin-arroba" that used to be saved verbatim.
+  const emailValid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())
+  const emailError = email.trim() !== '' && !emailValid
+  const valid = name.trim() !== '' && emailValid && phone.trim() !== ''
 
   const save = async () => {
     if (!valid || saving) return
@@ -234,7 +238,10 @@ function CustomerModal({ tenantId, customer, onClose, onSaved }: { tenantId?: st
         <div className="mt-4 flex flex-col gap-3">
           <Field label="Nombre cliente/empresa *"><input value={name} onChange={(e) => setName(e.target.value)} autoFocus className={inputCls} placeholder="Lucía Fernández" /></Field>
           <Field label="RUT (opcional)"><input value={rut} onChange={(e) => setRut(e.target.value)} className={inputCls} placeholder="21 123456 0017" /></Field>
-          <Field label="Email *"><input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputCls} placeholder="lucia@correo.com" /></Field>
+          <Field label="Email *">
+            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputCls} placeholder="lucia@correo.com" aria-invalid={emailError} />
+            {emailError && <p className="mt-1 text-xs font-semibold text-[#EF4444]">Ingresá un email válido (ej: lucia@correo.com).</p>}
+          </Field>
           <Field label="Teléfono *"><input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} placeholder="+598 99 123 456" /></Field>
           <Field label="Notas"><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputCls} placeholder="Preferencias, observaciones…" /></Field>
         </div>

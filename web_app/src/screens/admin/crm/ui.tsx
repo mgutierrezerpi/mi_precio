@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '../../../store/hooks'
 import { selectTenant, selectUser, logout } from '../../../store/slices/authSlice'
+import { planById } from '../../../lib/plans'
+import { useT } from '../../../lib/i18n'
 import { tone, gradient } from './theme'
 
 /* ── Inline icon set (lucide-style) ──────────────────────────────── */
@@ -85,7 +87,7 @@ function useAccount() {
     : ''
   const name = tenant?.name?.trim() || emailName || 'Mi cuenta'
   const initials = name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'U'
-  const plan = 'Pro' // TODO: traer el plan real del backend
+  const plan = planById(tenant?.plan ?? 'free').name
   return { name, initials, plan }
 }
 
@@ -108,6 +110,7 @@ export function QrGraphic({ className = '', seed = 0 }: { className?: string; se
 export function UserMenu() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const t = useT()
   const { name, initials, plan } = useAccount()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -169,7 +172,7 @@ export function UserMenu() {
           onClick={handleLogout}
           className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-[#EF4444] transition-colors hover:bg-[var(--dash-soft)]"
         >
-          <Icon name="log-out" size={16} /> Cerrar sesión
+          <Icon name="log-out" size={16} /> {t('set.security.logout')}
         </button>
       </div>
     </div>

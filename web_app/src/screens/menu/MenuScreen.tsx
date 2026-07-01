@@ -79,14 +79,17 @@ export function MenuScreen() {
   }, [subdomain])
 
   useEffect(() => {
-    if (!subdomain) return
+    // Only count a view once the tenant loaded fine. If a slug is given, it must
+    // match a published list — a bogus or unpublished slug must not pollute metrics.
+    if (!subdomain || isLoading || error || !tenant) return
+    if (listId && displayLists.length === 0) return
     const key = `${subdomain}/${listId ?? ''}/${viewSource}`
     const now = Date.now()
     const last = recentViews.get(key)
     if (last && now - last < 3000) return
     recentViews.set(key, now)
     api.recordPublicView(subdomain, listId, viewSource)
-  }, [subdomain, listId, viewSource])
+  }, [subdomain, listId, viewSource, isLoading, error, tenant, displayLists.length])
 
   // Palette tinted by the tenant's brand color (falls back to the default purple).
   const accent = tenant?.brandColor || BASE.accent
@@ -176,6 +179,16 @@ export function MenuScreen() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 font-sans" style={{ background: C.bg }}>
         <p className="text-sm font-medium" style={{ color: C.muted }}>{error || t('pub.notFound')}</p>
+        <Link to="/" className="text-sm font-bold hover:underline" style={{ color: C.accent }}>{t('pub.backHome')}</Link>
+      </div>
+    )
+  }
+  // A slug was requested but matches no published list (invalid, renamed, or
+  // unpublished): show "list not found" instead of the empty storefront shell.
+  if (listId && displayLists.length === 0) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 font-sans" style={{ background: C.bg }}>
+        <p className="text-sm font-medium" style={{ color: C.muted }}>{t('pub.notFound')}</p>
         <Link to="/" className="text-sm font-bold hover:underline" style={{ color: C.accent }}>{t('pub.backHome')}</Link>
       </div>
     )

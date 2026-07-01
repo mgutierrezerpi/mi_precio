@@ -34,10 +34,12 @@ export function displayCategory(cat?: string | null): string {
   return c ? c.charAt(0).toUpperCase() + c.slice(1) : ''
 }
 
-/** Canonical form stored on save: trimmed, first letter upper, rest lower (collapses casing variants). */
+/** Canonical form stored on save: trimmed with collapsed whitespace. Casing is
+ * preserved as typed so acronyms and proper names (iPhone, TV LED) survive;
+ * grouping/lookup elsewhere is already case-insensitive. */
 export function normalizeCategory(cat?: string | null): string | null {
   const c = cat?.trim().replace(/\s+/g, ' ')
-  return c ? c.charAt(0).toUpperCase() + c.slice(1).toLowerCase() : null
+  return c ? c : null
 }
 
 export function formatPrice(price: string): string {
