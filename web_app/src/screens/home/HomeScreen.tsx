@@ -190,7 +190,7 @@ function Navbar({ onAuth, isAuthenticated }: { onAuth: OpenAuth; isAuthenticated
     <header className="sticky top-0 z-50 border-b border-[#E2E8F0] bg-white/90 backdrop-blur-xl">
       <div className="relative z-10 mx-auto flex max-w-[1200px] items-center justify-between px-5 py-4 md:px-8">
         <a href="#" className="flex items-center" onClick={() => setOpen(false)}>
-          <img src="/miprecio-logo-pencil.png" alt="MiPrecio" className="h-11 w-auto" />
+          <img src="/miprecio-logo-pencil.webp" alt="MiPrecio" className="h-11 w-auto" />
         </a>
 
         {/* Desktop nav */}
@@ -302,7 +302,7 @@ function HeroMockup() {
   return (
     <div className="relative mx-auto w-full max-w-[580px]">
       <img
-        src="/hero-img.png"
+        src="/hero-img.webp"
         alt="Ejemplo de lista de precios de MiPrecio"
         className="w-full"
       />
@@ -496,7 +496,7 @@ function PhoneMockup() {
   return (
     <div className="mx-auto h-[560px] w-[280px] rounded-[32px] bg-[#2E1065] p-2 shadow-[0_30px_60px_-10px_rgba(30,41,59,0.4)]">
       <div className="h-full overflow-hidden rounded-[26px] bg-white">
-        <img src="/mockup-img.png" alt="Vista del catálogo de MiPrecio en el celular" className="block w-full" />
+        <img src="/mockup-img.webp" alt="Vista del catálogo de MiPrecio en el celular" className="block w-full" />
       </div>
     </div>
   )

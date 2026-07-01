@@ -136,7 +136,7 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
     <div className="flex w-full max-w-[440px] flex-col gap-5 rounded-[24px] bg-white p-9 shadow-[0_30px_80px_-20px_rgba(30,27,75,0.45)] sm:p-10">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <img src="/miprecio-logo-pencil.png" alt="Mi Precio" className="h-10 w-auto" />
+        <img src="/miprecio-logo-pencil.webp" alt="Mi Precio" className="h-10 w-auto" />
         <button
           type="button"
           onClick={onClose}
