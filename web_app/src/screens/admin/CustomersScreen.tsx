@@ -216,16 +216,15 @@ function CustomerModal({ tenantId, customer, onClose, onSaved }: { tenantId?: st
   const [notes, setNotes] = useState(customer?.notes ?? '')
   const [saving, setSaving] = useState(false)
 
-  // Basic email shape check (non-empty local@domain.tld). Keeps out values like
-  // "correo-sin-arroba" that used to be saved verbatim.
-  const emailValid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())
-  const emailError = email.trim() !== '' && !emailValid
-  const valid = name.trim() !== '' && emailValid && phone.trim() !== ''
+  // Only the name is required. Email and phone are optional, but if an email is
+  // entered it must be a valid shape (keeps out values like "correo-sin-arroba").
+  const emailError = email.trim() !== '' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())
+  const valid = name.trim() !== '' && !emailError
 
   const save = async () => {
     if (!valid || saving) return
     setSaving(true)
-    const body = { name: name.trim(), rut: rut.trim() || null, email: email.trim(), phone: phone.trim(), notes: notes.trim() || null }
+    const body = { name: name.trim(), rut: rut.trim() || null, email: email.trim() || null, phone: phone.trim() || null, notes: notes.trim() || null }
     const res = isEdit ? await api.updateCustomer(customer.id, body) : await api.createCustomer(tenantId!, body)
     setSaving(false)
     if (res.data) onSaved(res.data.id)
@@ -238,11 +237,11 @@ function CustomerModal({ tenantId, customer, onClose, onSaved }: { tenantId?: st
         <div className="mt-4 flex flex-col gap-3">
           <Field label="Nombre cliente/empresa *"><input value={name} onChange={(e) => setName(e.target.value)} autoFocus className={inputCls} placeholder="Lucía Fernández" /></Field>
           <Field label="RUT (opcional)"><input value={rut} onChange={(e) => setRut(e.target.value)} className={inputCls} placeholder="21 123456 0017" /></Field>
-          <Field label="Email *">
+          <Field label="Email (opcional)">
             <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputCls} placeholder="lucia@correo.com" aria-invalid={emailError} />
             {emailError && <p className="mt-1 text-xs font-semibold text-[#EF4444]">Ingresá un email válido (ej: lucia@correo.com).</p>}
           </Field>
-          <Field label="Teléfono *"><input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} placeholder="+598 99 123 456" /></Field>
+          <Field label="Teléfono (opcional)"><input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} placeholder="+598 99 123 456" /></Field>
           <Field label="Notas"><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputCls} placeholder="Preferencias, observaciones…" /></Field>
         </div>
         <div className="mt-5 flex justify-end gap-2">
