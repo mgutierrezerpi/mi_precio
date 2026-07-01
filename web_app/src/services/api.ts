@@ -229,10 +229,11 @@ class ApiService {
     return this.request(`/items/${itemId}`)
   }
 
-  async createItem(versionId: string, data: { name: string; price: number; description?: string; currency?: string; category?: string }): Promise<ApiResponse<Item>> {
+  async createItem(versionId: string, data: { name: string; price: number; description?: string; currency?: string; category?: string; imageUrl?: string; productId?: string }): Promise<ApiResponse<Item>> {
+    const { imageUrl, productId, ...rest } = data
     return this.request(`/versions/${versionId}/items`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...rest, image_url: imageUrl, product_id: productId }),
     })
   }
 

@@ -81,6 +81,8 @@ export interface Item {
   position: number
   imageUrl: string | null
   category: string | null
+  /** The catalog product this item came from, when applicable (null for manual/imported items). */
+  productId: string | null
   createdAt: string
   updatedAt: string
 }

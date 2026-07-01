@@ -8,3 +8,4 @@ class CreateItem(BaseModel):
     description: str | None = None
     image_url: str | None = None
     category: str | None = None
+    product_id: str | None = None

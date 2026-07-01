@@ -14,6 +14,7 @@ class ItemView(BaseView):
     position: int
     image_url: str | None
     category: str | None
+    product_id: str | None = None
     created_at: datetime
     updated_at: datetime
 
