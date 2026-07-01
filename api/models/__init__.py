@@ -42,6 +42,14 @@ def ensure_columns():
     if "source" not in page_view_columns:
         db.execute_sql("ALTER TABLE page_views ADD COLUMN source VARCHAR(16) NOT NULL DEFAULT 'link'")
 
+    activity_columns = [column.name for column in db.get_columns("activities")]
+    if "meta" not in activity_columns:
+        db.execute_sql("ALTER TABLE activities ADD COLUMN meta TEXT")
+
+    item_columns = [column.name for column in db.get_columns("items")]
+    if "product_id" not in item_columns:
+        db.execute_sql("ALTER TABLE items ADD COLUMN product_id VARCHAR(32)")
+
     if db.table_exists("customers"):
         customer_columns = [column.name for column in db.get_columns("customers")]
         if "rut" not in customer_columns:
