@@ -32,7 +32,7 @@ def update_plan_endpoint(tenant_id: str, data: UpdatePlan, current_user: dict = 
         raise HTTPException(status_code=404, detail="Tenant not found")
     activity.record(tenant_id, "plan.changed", f"Cambió el plan a {data.plan}",
                     actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                    entity_type="tenant", entity_id=tenant_id)
+                    entity_type="tenant", entity_id=tenant_id, meta={"plan": data.plan})
     return TenantView.render(tenant)
 
 

@@ -70,7 +70,7 @@ def invite_member_endpoint(tenant_id: str, data: InviteMember, current_user: dic
         raise HTTPException(status_code=400, detail=str(e))
     activity.record(tenant_id, "member.invited", f"Invitó a «{invite.email}» como {invite.role}",
                     actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                    entity_type="invitation", entity_id=invite.id)
+                    entity_type="invitation", entity_id=invite.id, meta={"email": invite.email, "role": invite.role})
     return InvitationView.render(invite)
 
 
@@ -83,7 +83,7 @@ def update_member_endpoint(tenant_id: str, user_id: str, data: UpdateMember, cur
     if data.role is not None:
         activity.record(tenant_id, "member.role_changed", f"Cambió el rol de «{user.email}» a {user.role}",
                         actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                        entity_type="user", entity_id=user.id)
+                        entity_type="user", entity_id=user.id, meta={"email": user.email, "role": user.role})
     return UserView.render(user)
 
 
@@ -95,7 +95,7 @@ def remove_member_endpoint(tenant_id: str, user_id: str, current_user: dict = De
         raise HTTPException(status_code=400, detail=str(e))
     activity.record(tenant_id, "member.removed", f"Quitó a «{user.email}» del equipo",
                     actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                    entity_type="user", entity_id=user_id)
+                    entity_type="user", entity_id=user_id, meta={"email": user.email})
     return DeletedView()
 
 

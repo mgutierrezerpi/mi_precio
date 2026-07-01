@@ -28,7 +28,7 @@ def create_product_endpoint(tenant_id: str, data: CreateProduct, current_user: d
         raise HTTPException(status_code=404, detail="Tenant not found")
     activity.record(tenant_id, "product.created", f"Agregó el producto «{product.name}»",
                     actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                    entity_type="product", entity_id=product.id)
+                    entity_type="product", entity_id=product.id, meta={"name": product.name})
     return ProductView.render(product)
 
 
@@ -79,5 +79,5 @@ def delete_product_endpoint(product_id: str, current_user: dict = Depends(requir
     products.delete_product(product_id)
     activity.record(tenant_id, "product.deleted", f"Eliminó el producto «{name}»",
                     actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                    entity_type="product", entity_id=product_id)
+                    entity_type="product", entity_id=product_id, meta={"name": name})
     return DeletedView()

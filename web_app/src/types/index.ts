@@ -164,6 +164,8 @@ export interface Activity {
   id: string
   action: string
   summary: string
+  /** Dynamic values (name, email, amount…) for per-locale rendering; null for pre-i18n rows. */
+  meta: Record<string, string> | null
   actor: string | null
   entityType: string | null
   entityId: string | null

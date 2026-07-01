@@ -25,7 +25,7 @@ def create_list_endpoint(tenant_id: str, data: CreateList, current_user: dict = 
         raise HTTPException(status_code=404, detail="Tenant not found")
     activity.record(tenant_id, "list.created", f"Creó la lista «{result.price_list.name}»",
                     actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                    entity_type="list", entity_id=result.price_list.id)
+                    entity_type="list", entity_id=result.price_list.id, meta={"name": result.price_list.name})
     return PriceListView.render(result.price_list, include_versions=True)
 
 
@@ -44,7 +44,7 @@ def update_list_endpoint(list_id: str, data: UpdateList, current_user: dict = De
     if data.published is True:
         activity.record(price_list.tenant_id, "list.published", f"Publicó la lista «{price_list.name}»",
                         actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                        entity_type="list", entity_id=price_list.id)
+                        entity_type="list", entity_id=price_list.id, meta={"name": price_list.name})
     return PriceListView.render(price_list)
 
 
