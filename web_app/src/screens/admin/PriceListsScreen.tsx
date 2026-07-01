@@ -292,7 +292,7 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
   const [prodSearch, setProdSearch] = useState('')
   const [saving, setSaving] = useState(false)
   const versionId = useRef<string | undefined>(undefined)
-  const currentItems = useRef<{ id: string; name: string }[]>([])
+  const [loadedItems, setLoadedItems] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -302,7 +302,7 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey) }
   }, [onClose])
 
-  // When editing, load the current version + items to pre-select them in step 2.
+  // When editing, load the current version + its items once.
   useEffect(() => {
     if (!list) return
     let cancelled = false
@@ -313,13 +313,18 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
       const ires = await api.getItems(vid)
       if (cancelled) return
       versionId.current = vid
-      currentItems.current = (ires.data ?? []).map((i) => ({ id: i.id, name: i.name }))
-      const names = new Set(currentItems.current.map((i) => i.name.trim().toLowerCase()))
-      setSelected(new Set(products.filter((p) => names.has(p.name.trim().toLowerCase())).map((p) => p.id)))
+      setLoadedItems((ires.data ?? []).map((i) => ({ id: i.id, name: i.name })))
     })()
     return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list?.id])
+
+  // Pre-select the products already in the list. Depends on `products` too, so the
+  // checkboxes recompute once the catalog finishes loading (it may arrive after the
+  // modal opens, which used to leave every product unchecked).
+  useEffect(() => {
+    const names = new Set(loadedItems.map((i) => i.name.trim().toLowerCase()))
+    setSelected(new Set(products.filter((p) => names.has(p.name.trim().toLowerCase())).map((p) => p.id)))
+  }, [loadedItems, products])
 
   const filteredProducts = useMemo(() => {
     const q = prodSearch.trim().toLowerCase()
@@ -339,15 +344,17 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
   const goNext = (e: React.FormEvent) => { e.preventDefault(); if (name.trim()) setStep(2) }
 
   // Add the selected products as items / remove the ones deselected (matched by name).
+  // Items copy the product's image so the public list shows the real photo instead
+  // of a shared category placeholder.
   const syncItems = async (vid: string) => {
     const chosen = products.filter((p) => selected.has(p.id))
-    const curNames = new Set(currentItems.current.map((i) => i.name.trim().toLowerCase()))
+    const curNames = new Set(loadedItems.map((i) => i.name.trim().toLowerCase()))
     const selNames = new Set(chosen.map((p) => p.name.trim().toLowerCase()))
     const availNames = new Set(products.map((p) => p.name.trim().toLowerCase()))
     for (const p of chosen.filter((p) => !curNames.has(p.name.trim().toLowerCase()))) {
-      await dispatch(createItem({ versionId: vid, data: { name: p.name, price: parseFloat(p.price) || 0, description: p.description || undefined, category: p.category || undefined } }))
+      await dispatch(createItem({ versionId: vid, data: { name: p.name, price: parseFloat(p.price) || 0, description: p.description || undefined, category: p.category || undefined, imageUrl: p.imageUrl || undefined } }))
     }
-    for (const it of currentItems.current.filter((i) => availNames.has(i.name.trim().toLowerCase()) && !selNames.has(i.name.trim().toLowerCase()))) {
+    for (const it of loadedItems.filter((i) => availNames.has(i.name.trim().toLowerCase()) && !selNames.has(i.name.trim().toLowerCase()))) {
       await dispatch(deleteItem(it.id))
     }
   }

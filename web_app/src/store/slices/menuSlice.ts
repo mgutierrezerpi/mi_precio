@@ -105,7 +105,7 @@ export const fetchItems = createAsyncThunk(
 
 export const createItem = createAsyncThunk(
   'menu/createItem',
-  async ({ versionId, data }: { versionId: string; data: { name: string; price: number; description?: string; category?: string } }, { rejectWithValue }) => {
+  async ({ versionId, data }: { versionId: string; data: { name: string; price: number; description?: string; category?: string; imageUrl?: string } }, { rejectWithValue }) => {
     const response = await api.createItem(versionId, data)
     if (response.error) return rejectWithValue(response.error)
     return response.data
