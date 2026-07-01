@@ -62,7 +62,7 @@ export function CrmSidebar({ active, open = false, onClose }: { active: string; 
         className={`fixed inset-y-0 left-0 z-50 flex w-[260px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 transition-transform duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <Link to="/" onClick={onClose} className="flex items-center">
-          <img src={isDark ? '/miprecio-logo-white-pencil.png' : '/miprecio-logo-pencil.png'} alt="MiPrecio" className="h-12 w-auto" />
+          <img src={isDark ? '/miprecio-logo-white-pencil.webp' : '/miprecio-logo-pencil.webp'} alt="MiPrecio" className="h-12 w-auto" />
         </Link>
         <p className="mt-5 text-xs font-medium text-[var(--dash-muted)]">{t('side.crm')}</p>
 
