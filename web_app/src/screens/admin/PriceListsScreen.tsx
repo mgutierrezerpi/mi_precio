@@ -9,25 +9,15 @@ import type { PriceList, Product } from '../../types'
 import api from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
+import { QrCode } from './crm/QrCode'
 import { tone, gradient } from './crm/theme'
 import { timeAgo, formatPrice, catTone, catIcon } from './crm/productFormat'
 
 type Tab = 'all' | 'active' | 'inactive'
 
-/* Deterministic QR-looking pattern (placeholder graphic). */
-function QrGraphic({ className = '' }: { className?: string }) {
-  const cells = Array.from({ length: 13 * 13 }, (_, i) => {
-    const r = Math.floor(i / 13)
-    const c = i % 13
-    const finder = (r < 4 && c < 4) || (r < 4 && c > 8) || (r > 8 && c < 4)
-    return finder || (r * 7 + c * 13 + r * c) % 3 === 0
-  })
-  return (
-    <div className={`grid grid-cols-[repeat(13,minmax(0,1fr))] gap-px ${className}`}>
-      {cells.map((on, i) => <span key={i} className={on ? 'bg-[#0F172A]' : 'bg-white'} style={{ aspectRatio: '1' }} />)}
-    </div>
-  )
-}
+const FAVICON = '/miprecio-favicon.png'
+// The banner QR is illustrative: it opens the app home.
+const HOME_URL = `${window.location.origin}/`
 
 const slugOf = (l: PriceList) => l.slug || l.id
 const publicPath = (sub: string | undefined, l: PriceList) => `/p/${sub || ''}/${slugOf(l)}`
@@ -109,7 +99,7 @@ export function PriceListsScreen() {
             )}
           </div>
           <div className="flex h-[140px] w-[140px] shrink-0 items-center justify-center self-center rounded-2xl bg-white p-2.5 lg:self-auto">
-            <QrGraphic className="h-full w-full" />
+            <QrCode value={HOME_URL} size={120} fg="#0F172A" logoUrl={FAVICON} className="h-full w-full object-contain" />
           </div>
         </div>
 
@@ -169,7 +159,7 @@ export function PriceListsScreen() {
       </div>
 
       {modal.open && <ListModal key={modal.list?.id ?? 'new'} list={modal.list} tenantId={tenant?.id} products={availableProducts} onClose={() => setModal({ open: false, list: null })} />}
-      {qr && <QrModal list={qr} url={publicDisplay(tenant?.subdomain, qr)} onClose={() => setQr(null)} />}
+      {qr && <QrModal list={qr} url={publicDisplay(tenant?.subdomain, qr)} qrValue={publicUrl(tenant?.subdomain, qr)} onClose={() => setQr(null)} />}
     </CrmLayout>
   )
 }
@@ -275,12 +265,12 @@ function MenuItemBtn({ icon, label, onClick, danger }: { icon: IconName; label: 
 }
 
 /* ── QR modal ────────────────────────────────────────────────────── */
-function QrModal({ list, url, onClose }: { list: PriceList; url: string; onClose: () => void }) {
+function QrModal({ list, url, qrValue, onClose }: { list: PriceList; url: string; qrValue: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1E1B4B]/60 p-4 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="dash flex w-full max-w-[360px] animate-scale-in flex-col items-center gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-7 text-center font-sans shadow-[0_30px_80px_-20px_rgba(15,23,42,0.5)]">
         <h3 className="text-lg font-extrabold text-[var(--dash-text)]">{list.name}</h3>
-        <div className="h-52 w-52 rounded-2xl bg-white p-3 shadow-[0_10px_30px_-10px_rgba(15,23,42,0.3)]"><QrGraphic className="h-full w-full" /></div>
+        <div className="h-52 w-52 rounded-2xl bg-white p-3 shadow-[0_10px_30px_-10px_rgba(15,23,42,0.3)]"><QrCode value={qrValue} size={180} fg="#0F172A" logoUrl={FAVICON} className="h-full w-full object-contain" /></div>
         <p className="text-xs font-semibold text-[var(--dash-link)]">{url}</p>
         <button type="button" onClick={onClose} className={`flex h-11 w-full items-center justify-center rounded-xl text-sm font-bold text-white ${gradient}`}>Listo</button>
       </div>
