@@ -89,6 +89,12 @@ export const router = createBrowserRouter([
           },
         ],
       },
+      // Unknown /admin/* path (e.g. a typo like /admin/customers): stay in the
+      // panel instead of bouncing a logged-in user to the marketing landing.
+      {
+        path: '*',
+        element: <Navigate to="/admin" replace />,
+      },
     ],
   },
   {

@@ -450,6 +450,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 /* ── 5. Billing — plans, usage and limit enforcement ── */
 function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null; isOwner: boolean }) {
+  const dispatch = useAppDispatch()
   const [info, setInfo] = useState<PlanInfo | null>(null)
   const [changing, setChanging] = useState<PlanId | null>(null)
   const [pendingPlan, setPendingPlan] = useState<PlanId | null>(null)
@@ -500,6 +501,9 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
       if (res.data) {
         const refreshed = await api.getPlan(tenant.id)
         if (refreshed.data) setInfo(refreshed.data)
+        // Keep the auth store's tenant in sync so the header plan badge (and any
+        // other consumer) reflects the new plan without needing a re-login.
+        dispatch(setTenant({ ...tenant, plan: refreshed.data?.plan ?? plan }))
       } else {
         setError(res.error || 'No se pudo cambiar el plan.')
       }

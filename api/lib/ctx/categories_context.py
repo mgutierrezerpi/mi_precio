@@ -1,5 +1,7 @@
 """Categories context - tenant-level category operations (with product cascade)."""
 
+from peewee import fn
+
 from models import Tenant, Category, Product
 
 
@@ -32,8 +34,11 @@ def update_category(category_id: str, **updates) -> Category | None:
         setattr(category, key, value)
     category.save()
     if "name" in updates and category.name != old_name:
+        # Match products case-insensitively: their category is free text and may
+        # differ only in casing from the category record (casing is preserved on
+        # save, not canonicalized), so an exact match would miss them.
         Product.update(category=category.name).where(
-            (Product.tenant == category.tenant_id) & (Product.category == old_name)
+            (Product.tenant == category.tenant_id) & (fn.LOWER(Product.category) == old_name.lower())
         ).execute()
     return category
 
@@ -43,8 +48,10 @@ def delete_category(category_id: str) -> bool:
     category = get_category(category_id)
     if not category:
         return False
+    # Case-insensitive match: product categories are free text and may differ
+    # only in casing from the category record (see update_category).
     Product.update(category=None).where(
-        (Product.tenant == category.tenant_id) & (Product.category == category.name)
+        (Product.tenant == category.tenant_id) & (fn.LOWER(Product.category) == category.name.lower())
     ).execute()
     category.delete_instance()
     return True
