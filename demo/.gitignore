@@ -1,0 +1,17 @@
+# Generated artifact — regenerable byte-for-byte with `python build_tour.py`
+# (see COMO_GENERAR.md). Not committed to keep the repo light.
+tour.html
+
+# Node deps for the capture scripts (reinstall with: npm install playwright-core)
+node_modules/
+package.json
+package-lock.json
+
+# Session-specific auth token (JWT) — never commit; regenerate via the auth flow
+tok.json
+
+# Transient API schema dump
+openapi.json
+
+# Verification renders produced by vcap.js / verify_tour.js
+shots/tour_*.png
