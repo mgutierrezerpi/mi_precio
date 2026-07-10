@@ -17,7 +17,7 @@ export function MenuItem({ item, viewMode = 'grid' }: MenuItemProps) {
       <div className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
         {item.imageUrl ? (
           <img
-            src={item.imageUrl}
+            src={item.imageThumbUrl || item.imageUrl}
             alt={item.name}
             className="w-16 h-16 rounded-lg object-cover"
           />
@@ -41,7 +41,7 @@ export function MenuItem({ item, viewMode = 'grid' }: MenuItemProps) {
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
       {item.imageUrl ? (
         <img
-          src={item.imageUrl}
+          src={item.imageThumbUrl || item.imageUrl}
           alt={item.name}
           className="w-full h-40 object-cover"
         />

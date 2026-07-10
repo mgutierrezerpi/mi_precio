@@ -1,6 +1,7 @@
 """Products context - tenant-level product catalog operations."""
 
-from pathlib import Path
+from io import BytesIO
+from typing import TypedDict
 from uuid import uuid4
 
 from infra.storage import object_storage
@@ -8,12 +9,16 @@ from infra.storage import ObjectStorageError
 from models import Tenant, Product, PriceList, ListVersion, Item
 
 
-SUPPORTED_IMAGE_TYPES = {
-    "image/jpeg": ".jpg",
-    "image/png": ".png",
-    "image/webp": ".webp",
-    "image/gif": ".gif",
-}
+SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+PRODUCT_IMAGE_MAX_SIDE = 1600
+PRODUCT_THUMB_MAX_SIDE = 320
+WEBP_QUALITY = 82
+WEBP_THUMB_QUALITY = 76
+
+
+class ProductImageUpload(TypedDict):
+    url: str
+    thumbnail_url: str
 
 
 class ProductImageUploadError(Exception):
@@ -63,6 +68,8 @@ def update_product(product_id: str, **updates) -> Product | None:
     product.save()
     if "price" in updates:
         _sync_item_prices(product.tenant_id, original_name, product.price, price_list_ids)
+    if "image_url" in updates or "image_thumb_url" in updates:
+        _sync_item_images(product.id, product.image_url, product.image_thumb_url)
     return product
 
 
@@ -75,18 +82,27 @@ def delete_product(product_id: str) -> bool:
     return True
 
 
-def upload_product_image(tenant_id: str, filename: str, content_type: str, data: bytes) -> str | None:
-    """Store a product image and return its public URL."""
+def upload_product_image(tenant_id: str, content_type: str, data: bytes) -> ProductImageUpload | None:
+    """Store a WebP product image and thumbnail, returning their public URLs."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant:
         return None
 
-    extension = _image_extension(filename, content_type)
-    key = f"tenants/{tenant_id}/product_images/{uuid4().hex}{extension}"
     try:
-        return object_storage.upload(key, data, content_type)
+        image = _open_image(data)
+        image_webp = _encode_webp(image, PRODUCT_IMAGE_MAX_SIDE, WEBP_QUALITY)
+        thumb_webp = _encode_webp(image, PRODUCT_THUMB_MAX_SIDE, WEBP_THUMB_QUALITY)
+    except Exception as e:
+        raise ProductImageUploadError("Invalid image data") from e
+
+    key_base = f"tenants/{tenant_id}/product_images/{uuid4().hex}"
+    try:
+        image_url = object_storage.upload(f"{key_base}.webp", image_webp, "image/webp")
+        thumb_url = object_storage.upload(f"{key_base}_thumb.webp", thumb_webp, "image/webp")
     except ObjectStorageError as e:
         raise ProductImageUploadError(str(e)) from e
+
+    return {"url": image_url, "thumbnail_url": thumb_url}
 
 
 def _next_position(tenant_id: str) -> int:
@@ -113,13 +129,33 @@ def _sync_item_prices(tenant_id: str, product_name: str, price, price_list_ids: 
     ).execute()
 
 
-def _image_extension(filename: str, content_type: str) -> str:
-    extension = SUPPORTED_IMAGE_TYPES.get(content_type)
-    if extension:
-        return extension
+def _sync_item_images(product_id: str, image_url: str | None, image_thumb_url: str | None) -> None:
+    Item.update(image_url=image_url, image_thumb_url=image_thumb_url).where(
+        Item.product == product_id
+    ).execute()
 
-    suffix = Path(filename).suffix.lower()
-    if suffix in SUPPORTED_IMAGE_TYPES.values():
-        return suffix
 
-    return ".jpg"
+def _open_image(data: bytes):
+    from PIL import Image, ImageOps
+
+    image = Image.open(BytesIO(data))
+    return ImageOps.exif_transpose(image)
+
+
+def _encode_webp(image, max_side: int, quality: int) -> bytes:
+    from PIL import Image
+
+    image = image.copy()
+    image.thumbnail((max_side, max_side))
+
+    if image.mode in ("RGBA", "LA") or (image.mode == "P" and "transparency" in image.info):
+        background = image.convert("RGBA")
+        flattened = Image.new("RGBA", background.size, (255, 255, 255, 255))
+        flattened.alpha_composite(background)
+        image = flattened.convert("RGB")
+    elif image.mode != "RGB":
+        image = image.convert("RGB")
+
+    output = BytesIO()
+    image.save(output, format="WEBP", quality=quality, method=6)
+    return output.getvalue()

@@ -14,6 +14,7 @@ class ProductView(BaseView):
     available: bool
     description: str | None
     image_url: str | None
+    image_thumb_url: str | None
     category: str | None
     position: int
     created_at: datetime

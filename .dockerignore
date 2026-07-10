@@ -1,0 +1,16 @@
+.git
+.github
+.env
+tmp
+demo/shots
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/node_modules
+**/dist
+**/*.db
+**/*.db-*
+pencil.pen
+TEST_TODO.md
+outsanding_todos.md

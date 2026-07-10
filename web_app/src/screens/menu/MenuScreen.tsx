@@ -636,7 +636,7 @@ function Storefront(p: StoreProps) {
                   <div key={it.id} className="flex flex-col gap-2.5 rounded-3xl border bg-white p-3.5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]" style={{ borderColor: C.line }}>
                     <div className="relative flex h-40 items-end justify-end overflow-hidden rounded-2xl p-2.5" style={{ background: `linear-gradient(135deg, ${accent}22 0%, #ffffff 100%)` }}>
                       {it.imageUrl
-                        ? <img src={it.imageUrl} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
+                        ? <img src={it.imageThumbUrl || it.imageUrl} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
                         : <SIco name={catIco(it.category)} size={48} color={accent} style={{ opacity: 0.45 }} />}
                       {it.imageUrl && <div className="pointer-events-none absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}55 0%, ${accent}12 100%)` }} />}
                       {it.category && <span className="absolute left-2.5 top-2.5 rounded-full bg-white px-2.5 py-0.5 text-[10px] font-bold" style={{ color: accent }}>{p.norm(it.category) === 'otros' ? t('store.other') : it.category}</span>}
@@ -777,7 +777,7 @@ function CartView(p: CartProps) {
                   <div key={it.id} className="flex flex-wrap items-center gap-4 border-t py-4 first:border-t-0" style={{ borderColor: '#F1F5F9' }}>
                     <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[14px]" style={{ background: `linear-gradient(135deg, ${accent}1F 0%, #ffffff 100%)` }}>
                       {it.imageUrl
-                        ? <img src={it.imageUrl} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
+                        ? <img src={it.imageThumbUrl || it.imageUrl} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
                         : <SIco name={catIco(it.category)} size={34} color={accent} style={{ opacity: 0.7 }} />}
                     </div>
                     <div className="flex min-w-[140px] flex-1 flex-col gap-1.5">

@@ -34,6 +34,8 @@ def ensure_columns():
     product_columns = [column.name for column in db.get_columns("products")]
     if "available" not in product_columns:
         db.execute_sql("ALTER TABLE products ADD COLUMN available INTEGER NOT NULL DEFAULT 1")
+    if "image_thumb_url" not in product_columns:
+        db.execute_sql("ALTER TABLE products ADD COLUMN image_thumb_url TEXT")
     if "stock" in product_columns:
         # Stock-by-quantity was replaced by the `available` boolean.
         db.execute_sql("ALTER TABLE products DROP COLUMN stock")
@@ -49,6 +51,8 @@ def ensure_columns():
     item_columns = [column.name for column in db.get_columns("items")]
     if "product_id" not in item_columns:
         db.execute_sql("ALTER TABLE items ADD COLUMN product_id VARCHAR(32)")
+    if "image_thumb_url" not in item_columns:
+        db.execute_sql("ALTER TABLE items ADD COLUMN image_thumb_url VARCHAR(500)")
 
     if db.table_exists("customers"):
         customer_columns = [column.name for column in db.get_columns("customers")]

@@ -1,4 +1,5 @@
 from io import BytesIO
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from config import settings
@@ -13,7 +14,11 @@ class ObjectStorage:
         self._client: Any | None = None
 
     def upload(self, key: str, body: bytes, content_type: str) -> str:
-        if not self._configured:
+        if self._local_configured:
+            self._write_local(key, body)
+            return self.public_url_for(key)
+
+        if not self._s3_configured:
             raise ObjectStorageError("Storage is not configured")
 
         try:
@@ -33,7 +38,7 @@ class ObjectStorage:
         return f"{base_url}/{settings.storage_bucket}/{key}"
 
     @property
-    def _configured(self) -> bool:
+    def _s3_configured(self) -> bool:
         return all([
             settings.storage_endpoint_url,
             settings.storage_public_url,
@@ -41,6 +46,22 @@ class ObjectStorage:
             settings.storage_access_key,
             settings.storage_secret_key,
         ])
+
+    @property
+    def _local_configured(self) -> bool:
+        return bool(settings.storage_local_path and settings.storage_public_url and settings.storage_bucket)
+
+    def _write_local(self, key: str, body: bytes) -> None:
+        path = PurePosixPath(key)
+        if path.is_absolute() or ".." in path.parts:
+            raise ObjectStorageError("Invalid object key")
+
+        try:
+            target = Path(settings.storage_local_path) / settings.storage_bucket / Path(*path.parts)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(body)
+        except Exception as e:
+            raise ObjectStorageError(f"Failed to write object: {e}") from e
 
     def _get_client(self) -> Any:
         if self._client is None:

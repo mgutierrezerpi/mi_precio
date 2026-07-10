@@ -7,5 +7,6 @@ class CreateItem(BaseModel):
     currency: str = "UYU"
     description: str | None = None
     image_url: str | None = None
+    image_thumb_url: str | None = None
     category: str | None = None
     product_id: str | None = None

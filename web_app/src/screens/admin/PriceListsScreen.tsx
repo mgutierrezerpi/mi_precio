@@ -359,7 +359,7 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
     const representedIds = new Set(loadedItems.map((i) => productForItem(i)?.id).filter(Boolean))
     // Create an item for every newly-selected product not already in the list.
     for (const p of products.filter((p) => selected.has(p.id) && !representedIds.has(p.id))) {
-      await dispatch(createItem({ versionId: vid, data: { name: p.name, price: parseFloat(p.price) || 0, description: p.description || undefined, category: p.category || undefined, imageUrl: p.imageUrl || undefined, productId: p.id } }))
+      await dispatch(createItem({ versionId: vid, data: { name: p.name, price: parseFloat(p.price) || 0, description: p.description || undefined, category: p.category || undefined, imageUrl: p.imageUrl || undefined, imageThumbUrl: p.imageThumbUrl || undefined, productId: p.id } }))
     }
     // Remove items whose product was deselected. Orphan/manual items (no matching
     // product) are left untouched.
@@ -468,7 +468,7 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
                     <button key={p.id} type="button" onClick={() => toggleSel(p.id)} className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${on ? 'border-[#7C3AED] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)] bg-[var(--dash-surface)] hover:bg-[var(--dash-soft)]'}`}>
                       <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${on ? `border-transparent text-white ${gradient}` : 'border-[#CBD5E1]'}`}>{on && <Icon name="circle-check" size={13} />}</span>
                       {p.imageUrl
-                        ? <img src={p.imageUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+                        ? <img src={p.imageThumbUrl || p.imageUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
                         : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={tone(catTone(p.category))}><Icon name={catIcon(p.category)} size={18} /></span>}
                       <div className="flex min-w-0 flex-1 flex-col">
                         <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{p.name}</span>

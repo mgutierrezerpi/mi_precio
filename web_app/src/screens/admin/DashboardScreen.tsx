@@ -281,7 +281,7 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll, co
               <div key={p.id} className={`flex items-center gap-3 bg-[var(--dash-surface)] px-[18px] ${compact ? 'h-[52px]' : 'h-[68px]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
                 <div className="flex flex-1 items-center gap-3">
                   {p.imageUrl
-                    ? <img src={p.imageUrl} alt={p.name} className="h-9 w-9 shrink-0 rounded-[10px] object-cover" />
+                    ? <img src={p.imageThumbUrl || p.imageUrl} alt={p.name} className="h-9 w-9 shrink-0 rounded-[10px] object-cover" />
                     : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]" style={tone(catTone(p.category))}><Icon name={catIcon(p.category)} /></span>}
                   <div className="flex min-w-0 flex-col">
                     <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{p.name}</span>

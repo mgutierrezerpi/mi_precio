@@ -14,6 +14,7 @@ class Item(BaseModel):
     description = TextField(null=True)
     position = IntegerField(default=0)
     image_url = CharField(max_length=500, null=True)
+    image_thumb_url = CharField(max_length=500, null=True)
     category = CharField(max_length=100, null=True)  # For grouping items (e.g., "Bebidas", "Postres")
 
     class Meta:

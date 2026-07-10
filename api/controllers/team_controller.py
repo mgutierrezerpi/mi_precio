@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from lib.ctx import team, activity, plans
@@ -7,8 +9,10 @@ from controllers.deps import get_current_user, require_admin
 from controllers.input_types import InviteMember, UpdateMember
 from views import DeletedView, UserView, InvitationView
 from models import User
+from tasks import send_invitation_email
 
 router = APIRouter(tags=["team"])
+logger = logging.getLogger(__name__)
 
 
 class UpdateCurrentUser(BaseModel):
@@ -71,6 +75,10 @@ def invite_member_endpoint(tenant_id: str, data: InviteMember, current_user: dic
     activity.record(tenant_id, "member.invited", f"Invitó a «{invite.email}» como {invite.role}",
                     actor=current_user.get("email"), actor_id=current_user.get("sub"),
                     entity_type="invitation", entity_id=invite.id, meta={"email": invite.email, "role": invite.role})
+    try:
+        send_invitation_email(invite.email, invite.role, invite.tenant.name)
+    except Exception:
+        logger.exception("Failed to queue invitation email for %s", invite.email)
     return InvitationView.render(invite)
 
 
