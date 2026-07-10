@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import {
   sendCode,
@@ -95,6 +95,7 @@ const submitCls =
 export function AuthCard({ onClose }: { onClose: () => void }) {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const isLoading = useAppSelector(selectAuthLoading)
   const error = useAppSelector(selectAuthError)
   const codeSent = useAppSelector(selectCodeSent)
@@ -103,6 +104,13 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
 
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
+
+  useEffect(() => {
+    const inviteEmail = searchParams.get('email')
+    if (inviteEmail && !codeSent) {
+      setEmail(inviteEmail)
+    }
+  }, [codeSent, searchParams])
 
   // Redirect if already authenticated.
   useEffect(() => {

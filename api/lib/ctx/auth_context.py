@@ -43,6 +43,12 @@ def send_code(email: str) -> str:
     return code
 
 
+def prune_expired_codes(now: datetime | None = None) -> int:
+    """Delete expired auth codes. Used by the in-machine maintenance worker."""
+    cutoff = now or datetime.utcnow()
+    return AuthCode.delete().where(AuthCode.expires_at <= cutoff).execute()
+
+
 def verify_code(email: str, code: str) -> bool:
     """Verify and consume an auth code."""
     auth_code = AuthCode.get_or_none(

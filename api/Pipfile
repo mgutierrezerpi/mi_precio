@@ -16,6 +16,8 @@ sendgrid = ">=6.11.0"
 boto3 = ">=1.34.0"
 python-multipart = ">=0.0.9"
 pywebpush = ">=2.0.0"
+huey = "*"
+pillow = "*"
 
 [dev-packages]
 ruff = ">=0.1.0"

@@ -1,9 +1,11 @@
 """Tests for products context."""
 
 from decimal import Decimal
+from io import BytesIO
 
 import pytest
 from peewee import SqliteDatabase
+from PIL import Image
 
 from lib.ctx import identity, items, lists, products
 from models import Item, ListVersion, PriceList, Product, Tenant
@@ -88,3 +90,55 @@ def test_update_product_price_can_skip_all_lists(db):
     item = Item.get_by_id(item.id)
     assert product.price == Decimal("200.00")
     assert item.price == Decimal("150.00")
+
+
+def test_update_product_image_updates_linked_items(db):
+    tenant = identity.create_tenant("Test Store", "test_store")
+    product = products.create_product(tenant.id, name="Pizza", price=150)
+    created = lists.create_list(tenant.id, "Lunch")
+    item = items.create_item(
+        created.version.id,
+        name="Pizza",
+        price=150,
+        product_id=product.id,
+        image_url="http://img/old.webp",
+        image_thumb_url="http://img/old_thumb.webp",
+    )
+
+    products.update_product(
+        product.id,
+        image_url="http://img/new.webp",
+        image_thumb_url="http://img/new_thumb.webp",
+    )
+
+    item = Item.get_by_id(item.id)
+    assert item.image_url == "http://img/new.webp"
+    assert item.image_thumb_url == "http://img/new_thumb.webp"
+
+
+def test_upload_product_image_stores_webp_original_and_thumbnail(db, monkeypatch):
+    tenant = identity.create_tenant("Test Store", "test_store")
+    uploaded = []
+
+    def fake_upload(key, body, content_type):
+        uploaded.append((key, body, content_type))
+        return f"https://cdn.test/{key}"
+
+    monkeypatch.setattr(products.object_storage, "upload", fake_upload)
+
+    source = BytesIO()
+    Image.new("RGB", (900, 600), (255, 0, 0)).save(source, format="PNG")
+
+    result = products.upload_product_image(tenant.id, "image/png", source.getvalue())
+
+    assert result is not None
+    assert result["url"].endswith(".webp")
+    assert result["thumbnail_url"].endswith("_thumb.webp")
+    assert [content_type for _, _, content_type in uploaded] == ["image/webp", "image/webp"]
+    assert all(key.endswith(".webp") for key, _, _ in uploaded)
+    sizes = []
+    for _, body, _ in uploaded:
+        with Image.open(BytesIO(body)) as image:
+            assert image.format == "WEBP"
+            sizes.append(max(image.size))
+    assert sizes == [900, 320]

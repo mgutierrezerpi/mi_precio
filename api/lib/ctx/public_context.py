@@ -23,17 +23,21 @@ def get_published_lists(tenant: Tenant) -> list[PublishedList]:
         if version:
             items = list(version.items.order_by(Item.position))
             for item in items:
-                if not item.image_url:
-                    item.image_url = product_images.get(_norm_name(item.name))
+                fallback = product_images.get(_norm_name(item.name))
+                if fallback and not item.image_url:
+                    item.image_url = fallback["image_url"]
+                    item.image_thumb_url = fallback["image_thumb_url"]
+                elif fallback and not item.image_thumb_url:
+                    item.image_thumb_url = fallback["image_thumb_url"]
             result.append(PublishedList(price_list, version, items))
     return result
 
 
-def _product_images_by_name(tenant_id: str) -> dict[str, str]:
+def _product_images_by_name(tenant_id: str) -> dict[str, dict[str, str | None]]:
     """Map of normalized product name -> image URL for products that have one."""
     return {
-        _norm_name(p.name): p.image_url
-        for p in Product.select(Product.name, Product.image_url).where(
+        _norm_name(p.name): {"image_url": p.image_url, "image_thumb_url": p.image_thumb_url}
+        for p in Product.select(Product.name, Product.image_url, Product.image_thumb_url).where(
             (Product.tenant == tenant_id) & Product.image_url.is_null(False)
         )
         if p.image_url

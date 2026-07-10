@@ -23,6 +23,7 @@ export type ProductInput = {
   description?: string | null
   category?: string | null
   imageUrl?: string | null
+  imageThumbUrl?: string | null
   priceListIds?: string[]
 }
 

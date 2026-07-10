@@ -1,0 +1,49 @@
+app = "mi-precio"
+primary_region = "gru"
+kill_signal = "SIGINT"
+kill_timeout = "30s"
+
+[build]
+  dockerfile = "Dockerfile.fly"
+
+[env]
+  APP_NAME = "Mi Precio API"
+  DEBUG = "false"
+  DATABASE_PATH = "/litefs/mi_precio.db"
+  HUEY_DB_PATH = "/litefs/huey.db"
+  HUEY_WORKERS = "1"
+  CORS_ORIGINS = '["https://mi-precio.fly.dev", "https://miprecio.app", "https://www.miprecio.app"]'
+  PUBLIC_APP_URL = "https://miprecio.app"
+  JWT_ALGORITHM = "HS256"
+  JWT_EXPIRE_MINUTES = "1440"
+  MAILER_ENABLED = "true"
+  LOG_AUTH_CODES = "false"
+  BILLING_ENABLED = "true"
+  STORAGE_BUCKET = "product-pictures"
+  STORAGE_LOCAL_PATH = "/var/lib/litefs"
+  STORAGE_PUBLIC_URL = "https://miprecio.app"
+  VAPID_SUBJECT = "mailto:soporte@miprecio.app"
+
+[mounts]
+  source = "litefs"
+  destination = "/var/lib/litefs"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/healthz"
+
+[[vm]]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 2

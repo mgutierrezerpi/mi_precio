@@ -13,6 +13,7 @@ class ItemView(BaseView):
     description: str | None
     position: int
     image_url: str | None
+    image_thumb_url: str | None
     category: str | None
     product_id: str | None = None
     created_at: datetime

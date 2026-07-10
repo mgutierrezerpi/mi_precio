@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     database_path: str = "mi_precio.db"
     secret_key: str = "change-me-in-production"
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    public_app_url: str = "http://localhost:5173"
 
     # JWT settings
     jwt_algorithm: str = "HS256"
@@ -45,6 +46,7 @@ class Settings(BaseSettings):
     storage_bucket: str = "product-pictures"
     storage_access_key: str = ""
     storage_secret_key: str = ""
+    storage_local_path: str = ""
 
     # Web Push (PWA notifications). Generate keys with bin/generate_vapid_keys.py.
     # `vapid_public_key` is the base64url applicationServerKey the browser uses to

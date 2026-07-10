@@ -1,0 +1,49 @@
+FROM node:22-alpine AS web-build
+
+WORKDIR /app/web_app
+
+COPY web_app/package.json web_app/yarn.lock ./
+RUN corepack enable && yarn install --frozen-lockfile
+
+COPY web_app/ ./
+ARG VITE_API_URL=/api/v1
+ENV VITE_API_URL=$VITE_API_URL
+RUN yarn build
+RUN yarn test:prod-api-url
+
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DATABASE_PATH=/litefs/mi_precio.db
+
+WORKDIR /app
+
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends ca-certificates fuse3 nginx sqlite3 bash \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /etc/nginx/sites-enabled/default
+
+COPY --from=flyio/litefs:0.5 /usr/local/bin/litefs /usr/local/bin/litefs
+
+COPY api/Pipfile api/Pipfile.lock /app/api/
+WORKDIR /app/api
+RUN pip install --no-cache-dir pipenv \
+    && pipenv install --system --deploy \
+    && pip uninstall -y pipenv
+
+WORKDIR /app
+COPY api/ /app/api/
+COPY landing/index.html /usr/share/nginx/landing/index.html
+COPY landing/assets /usr/share/nginx/landing/assets
+COPY landing/images /usr/share/nginx/landing/images
+COPY --from=web-build /app/web_app/dist /usr/share/nginx/web_app
+COPY .fly/nginx.conf /etc/nginx/conf.d/default.conf
+COPY .fly/litefs.yml /etc/litefs.yml
+COPY .fly/start.sh /app/.fly/start.sh
+
+RUN chmod +x /app/.fly/start.sh
+
+EXPOSE 8080
+
+ENTRYPOINT ["litefs", "mount"]

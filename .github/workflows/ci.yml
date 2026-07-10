@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies
+        working-directory: api
+        run: |
+          python -m pip install --upgrade pip pipenv
+          pipenv install --dev --deploy
+
+      - name: Lint backend
+        working-directory: api
+        run: pipenv run ruff check .
+
+      - name: Test backend
+        working-directory: api
+        run: pipenv run pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: yarn
+          cache-dependency-path: web_app/yarn.lock
+
+      - name: Test and build frontend
+        working-directory: web_app
+        env:
+          VITE_API_URL: /api/v1
+        run: |
+          corepack enable
+          yarn install --frozen-lockfile
+          yarn test
+          yarn build
+          yarn test:prod-api-url

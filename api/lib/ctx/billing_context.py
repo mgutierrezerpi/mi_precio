@@ -204,3 +204,22 @@ def sync_manual_subscription(
     tenant.billing_ends_at = ends_at
     tenant.save()
     return tenant
+
+
+def expire_ended_subscriptions(now: datetime | None = None) -> int:
+    """Downgrade tenants whose paid subscription end date has passed.
+
+    Webhooks should normally perform this immediately. The worker uses this as a
+    backstop for missed manual updates or delayed provider webhooks.
+    """
+    cutoff = now or datetime.utcnow()
+    query = (
+        Tenant.update(plan="free", billing_status="expired")
+        .where(
+            (Tenant.billing_ends_at.is_null(False))
+            & (Tenant.billing_ends_at <= cutoff)
+            & (Tenant.billing_status != "expired")
+            & (Tenant.plan != "free")
+        )
+    )
+    return query.execute()

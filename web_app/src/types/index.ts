@@ -80,6 +80,7 @@ export interface Item {
   description: string | null
   position: number
   imageUrl: string | null
+  imageThumbUrl: string | null
   category: string | null
   /** The catalog product this item came from, when applicable (null for manual/imported items). */
   productId: string | null
@@ -97,6 +98,7 @@ export interface Product {
   available: boolean
   description: string | null
   imageUrl: string | null
+  imageThumbUrl: string | null
   category: string | null
   position: number
   createdAt: string

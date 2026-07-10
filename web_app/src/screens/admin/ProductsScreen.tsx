@@ -35,8 +35,8 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 
 const outlineBtn = 'flex h-[38px] items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'
 
-/** Read an image file, downscale it, and return a compressed JPEG blob. */
-async function fileToImageBlob(file: File, max = 512): Promise<Blob> {
+/** Read an image file, downscale it, and return a compressed WebP blob. */
+async function fileToImageBlob(file: File, max = 1600): Promise<Blob> {
   const src = await new Promise<string>((res, rej) => {
     const r = new FileReader()
     r.onload = () => res(r.result as string)
@@ -59,7 +59,7 @@ async function fileToImageBlob(file: File, max = 512): Promise<Blob> {
   if (!ctx) return file
   ctx.drawImage(img, 0, 0, w, h)
   return await new Promise<Blob>((res, rej) => {
-    canvas.toBlob((blob) => blob ? res(blob) : rej(new Error('No se pudo procesar la imagen.')), 'image/jpeg', 0.8)
+    canvas.toBlob((blob) => blob ? res(blob) : rej(new Error('No se pudo procesar la imagen.')), 'image/webp', 0.82)
   })
 }
 
@@ -333,7 +333,7 @@ export function ProductsScreen() {
                     <span className="w-9"><Checkbox checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} /></span>
                     <div className="flex flex-1 items-center gap-3">
                       {p.imageUrl
-                        ? <img src={p.imageUrl} alt={p.name} className="h-10 w-10 shrink-0 rounded-[10px] object-cover" />
+                        ? <img src={p.imageThumbUrl || p.imageUrl} alt={p.name} className="h-10 w-10 shrink-0 rounded-[10px] object-cover" />
                         : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]" style={tone(catTone(p.category))}><Icon name={catIcon(p.category)} size={20} /></span>}
                       <div className="flex min-w-0 flex-col">
                         <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{p.name}</span>
@@ -701,6 +701,7 @@ function ProductModal({ product, tenantId, lists, onClose }: { product: Product 
   const [available, setAvailable] = useState(product ? product.available : true)
   const [description, setDescription] = useState(product?.description ?? '')
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? '')
+  const [imageThumbUrl, setImageThumbUrl] = useState(product?.imageThumbUrl ?? '')
   const [priceListIds, setPriceListIds] = useState<Set<string>>(() => new Set(lists.map((list) => list.id)))
   const [imgLoading, setImgLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -734,6 +735,7 @@ function ProductModal({ product, tenantId, lists, onClose }: { product: Product 
       const response = await api.uploadProductImage(tenantId, image)
       if (response.error || !response.data) throw new Error(response.error || 'No se pudo subir la imagen.')
       setImageUrl(response.data.url)
+      setImageThumbUrl(response.data.thumbnailUrl)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo subir la imagen.')
     } finally {
@@ -762,6 +764,7 @@ function ProductModal({ product, tenantId, lists, onClose }: { product: Product 
       category: normalizeCategory(categoryValue),
       description: description.trim() || null,
       imageUrl: imageUrl || '',
+      imageThumbUrl: imageUrl ? imageThumbUrl || imageUrl : '',
     }
     if (priceChanged) data.priceListIds = Array.from(priceListIds)
     const result = product
@@ -788,13 +791,13 @@ function ProductModal({ product, tenantId, lists, onClose }: { product: Product 
             <span className="text-xs font-bold text-[var(--dash-text2)]">Foto</span>
             <div className="flex items-center gap-4">
               <button type="button" onClick={() => fileRef.current?.click()} className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] text-[var(--dash-muted)] hover:opacity-90">
-                {imageUrl ? <img src={imageUrl} alt="" className="h-full w-full object-cover" /> : <Icon name="package" size={26} />}
+                {imageUrl ? <img src={imageThumbUrl || imageUrl} alt="" className="h-full w-full object-cover" /> : <Icon name="package" size={26} />}
               </button>
               <div className="flex flex-col items-start gap-1.5">
                 <button type="button" onClick={() => fileRef.current?.click()} className="flex h-9 items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
                   <Icon name="upload" size={15} /> {imgLoading ? 'Cargando…' : imageUrl ? 'Cambiar foto' : 'Cargar foto'}
                 </button>
-                {imageUrl && <button type="button" onClick={() => setImageUrl('')} className="text-[12px] font-semibold text-[#EF4444] hover:underline">Quitar foto</button>}
+                {imageUrl && <button type="button" onClick={() => { setImageUrl(''); setImageThumbUrl('') }} className="text-[12px] font-semibold text-[#EF4444] hover:underline">Quitar foto</button>}
               </div>
               <input ref={fileRef} type="file" accept="image/*" onChange={onPickImage} className="hidden" />
             </div>

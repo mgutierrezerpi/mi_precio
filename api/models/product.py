@@ -14,6 +14,7 @@ class Product(BaseModel):
     available = BooleanField(default=True)
     description = TextField(null=True)
     image_url = TextField(null=True)
+    image_thumb_url = TextField(null=True)
     category = CharField(max_length=100, null=True)
     position = IntegerField(default=0)
 

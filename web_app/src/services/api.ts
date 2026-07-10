@@ -38,12 +38,13 @@ function transformKeys<T>(obj: unknown): T {
   return transformed as T
 }
 
-/** Map a product payload's camelCase `imageUrl` to the API's snake_case `image_url`. */
-function productBody<T extends { imageUrl?: string | null; priceListIds?: string[] }>(data: T) {
-  const { imageUrl, priceListIds, ...rest } = data
+/** Map a product payload's camelCase image fields to the API's snake_case keys. */
+function productBody<T extends { imageUrl?: string | null; imageThumbUrl?: string | null; priceListIds?: string[] }>(data: T) {
+  const { imageUrl, imageThumbUrl, priceListIds, ...rest } = data
   return {
     ...rest,
     ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
+    ...(imageThumbUrl !== undefined ? { image_thumb_url: imageThumbUrl } : {}),
     ...(priceListIds !== undefined ? { price_list_ids: priceListIds } : {}),
   }
 }
@@ -229,11 +230,11 @@ class ApiService {
     return this.request(`/items/${itemId}`)
   }
 
-  async createItem(versionId: string, data: { name: string; price: number; description?: string; currency?: string; category?: string; imageUrl?: string; productId?: string }): Promise<ApiResponse<Item>> {
-    const { imageUrl, productId, ...rest } = data
+  async createItem(versionId: string, data: { name: string; price: number; description?: string; currency?: string; category?: string; imageUrl?: string; imageThumbUrl?: string; productId?: string }): Promise<ApiResponse<Item>> {
+    const { imageUrl, imageThumbUrl, productId, ...rest } = data
     return this.request(`/versions/${versionId}/items`, {
       method: 'POST',
-      body: JSON.stringify({ ...rest, image_url: imageUrl, product_id: productId }),
+      body: JSON.stringify({ ...rest, image_url: imageUrl, image_thumb_url: imageThumbUrl, product_id: productId }),
     })
   }
 
@@ -364,7 +365,7 @@ class ApiService {
 
   async createProduct(
     tenantId: string,
-    data: { name: string; price: number; sku?: string | null; currency?: string; available?: boolean; description?: string | null; category?: string | null; imageUrl?: string | null }
+    data: { name: string; price: number; sku?: string | null; currency?: string; available?: boolean; description?: string | null; category?: string | null; imageUrl?: string | null; imageThumbUrl?: string | null }
   ): Promise<ApiResponse<Product>> {
     return this.request(`/tenants/${tenantId}/products`, {
       method: 'POST',
@@ -374,7 +375,7 @@ class ApiService {
 
   async updateProduct(
     productId: string,
-    data: { name?: string; price?: number; sku?: string | null; currency?: string; available?: boolean; description?: string | null; category?: string | null; imageUrl?: string | null; priceListIds?: string[] }
+    data: { name?: string; price?: number; sku?: string | null; currency?: string; available?: boolean; description?: string | null; category?: string | null; imageUrl?: string | null; imageThumbUrl?: string | null; priceListIds?: string[] }
   ): Promise<ApiResponse<Product>> {
     return this.request(`/products/${productId}`, {
       method: 'PATCH',
@@ -386,9 +387,9 @@ class ApiService {
     return this.request(`/products/${productId}`, { method: 'DELETE' })
   }
 
-  async uploadProductImage(tenantId: string, file: Blob): Promise<ApiResponse<{ url: string }>> {
+  async uploadProductImage(tenantId: string, file: Blob): Promise<ApiResponse<{ url: string; thumbnailUrl: string }>> {
     const body = new FormData()
-    body.append('image', file, 'product.jpg')
+    body.append('image', file, 'product.webp')
     return this.request(`/tenants/${tenantId}/product_images`, {
       method: 'POST',
       body,

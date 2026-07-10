@@ -47,14 +47,14 @@ async def create_product_image_endpoint(
         raise HTTPException(status_code=413, detail="Image is too large")
 
     try:
-        image_url = products.upload_product_image(tenant_id, image.filename or "product.jpg", content_type, data)
+        uploaded = products.upload_product_image(tenant_id, content_type, data)
     except products.ProductImageUploadError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
-    if not image_url:
+    if not uploaded:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    return ProductImageView.render(image_url)
+    return ProductImageView.render(uploaded)
 
 
 @router.get("/products/{product_id}")

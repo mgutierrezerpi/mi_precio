@@ -3,6 +3,7 @@
 Guards the middleware in app.py (enforce_tenant_isolation)."""
 
 from lib import encode_token
+from models import PriceList, Tenant
 
 
 def _auth(tenant_id: str, user_id: str = "u1", role: str = "owner") -> dict:
@@ -14,6 +15,15 @@ def test_cross_tenant_request_is_forbidden(client):
     # A token scoped to tenant "aaa" must not reach tenant "bbb"'s endpoints,
     # regardless of whether that tenant/data exists.
     res = client.get("/api/v1/tenants/bbb/customers", headers=_auth("aaa"))
+    assert res.status_code == 403
+
+
+def test_cross_tenant_list_collection_is_forbidden(client):
+    first = Tenant.create(name="Org A", subdomain="org-a", currency="UYU")
+    second = Tenant.create(name="Org B", subdomain="org-b", currency="UYU")
+    PriceList.create(tenant=second, name="Private list")
+
+    res = client.get(f"/api/v1/tenants/{second.id}/lists", headers=_auth(first.id))
     assert res.status_code == 403
 
 

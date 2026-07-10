@@ -46,6 +46,17 @@ def test_list_lists(db):
     assert len(result) == 2
 
 
+def test_list_lists_only_returns_tenant_lists(db):
+    first = identity.create_tenant("First Store", "first_store")
+    second = identity.create_tenant("Second Store", "second_store")
+    visible = lists.create_list(first.id, "Visible")
+    lists.create_list(second.id, "Private")
+
+    result = lists.list_lists(first.id)
+
+    assert [price_list.id for price_list in result] == [visible.price_list.id]
+
+
 def test_update_list(db):
     tenant = identity.create_tenant("Test Store", "test_store")
     created = lists.create_list(tenant.id, "Menu")
