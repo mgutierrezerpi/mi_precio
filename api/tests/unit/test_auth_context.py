@@ -56,6 +56,22 @@ def test_send_code_skips_mailer_in_debug(db, monkeypatch):
     assert called is False
 
 
+def test_send_code_sends_spanish_email(db, monkeypatch):
+    sent = {}
+    monkeypatch.setattr(
+        auth.mailer,
+        "send",
+        lambda **kwargs: sent.update(kwargs) or True,
+    )
+
+    code = auth.send_code("test@example.com")
+
+    assert sent["to"] == "test@example.com"
+    assert sent["subject"] == "Tu código de verificación de Mi Precio"
+    assert f"Tu código de verificación es: {code}" in sent["body"]
+    assert "Este código vence en 10 minutos." in sent["body"]
+
+
 def test_verify_code_success(db):
     code = auth.send_code("test@example.com")
     result = auth.verify_code("test@example.com", code)

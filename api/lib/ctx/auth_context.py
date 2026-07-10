@@ -31,8 +31,8 @@ def send_code(email: str) -> str:
     try:
         mailer.send(
             to=email,
-            subject="Your Mi Precio verification code",
-            body=f"Your verification code is: {code}\n\nThis code expires in 10 minutes.",
+            subject="Tu código de verificación de Mi Precio",
+            body=f"Tu código de verificación es: {code}\n\nEste código vence en 10 minutos.",
         )
     except MailerError as e:
         raise RuntimeError(f"Failed to send code to {email}") from e
