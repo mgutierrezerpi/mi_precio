@@ -12,11 +12,26 @@ listo para producir y publicar en **Instagram + LinkedIn**.
 - **`../Plan de Contenidos Agosto - MiPrecio.md`** — estrategia, idea del mes, pilares, calendario y métricas.
 - **`../Kit de Produccion Agosto - MiPrecio.md`** — ficha autónoma por pieza: copy listo, hashtags, texto en la imagen, prompt/captura, medidas y armado.
 - **`../redes-sociales.md`** — manual de marca y base de redes (bios, tono, paleta, hashtags).
-- **`agosto/`** — contenido por semana/día. En cada día:
-  - **`_LEEME.md`** → el brief de esa pieza.
-  - **`img editada/`** → las imágenes/reels **finales** listos para publicar.
+- **`fuente/`** — todo lo necesario para **producir** cada pieza: el brief (`_LEEME.md`), los HTML de las placas, fondos, imágenes de referencia y videos.
+  - **`fuente/_lib/`** — librería compartida del mes: `base.css`, logo y QR.
+- **`publicar/`** — las piezas **finales** (PNG / MP4) listas para subir.
 
-> 📌 **Convención:** todo lo **final** va dentro de `img editada/`. Lo suelto en la carpeta del día es material de trabajo.
+Las dos carpetas comparten el **mismo árbol interno** `Semana N/<día> de agosto/`, así que la pieza final de un día vive en la ruta espejada de su fuente:
+
+```
+agosto/
+├── fuente/
+│   ├── _lib/                       base.css · logo-white.webp · qr-miprecio.png
+│   └── Semana 1 (1 al 9 de agosto)/
+│       └── 3 de agosto/            _LEEME.md · placa-01..04.html · toy.jpg
+└── publicar/                       (ignorada por git)
+    └── Semana 1 (1 al 9 de agosto)/
+        └── 3 de agosto/            3-agosto-01..04.png
+```
+
+> 📌 **Convención:** en `fuente/` va todo el material de trabajo; en `publicar/`, sólo lo final.
+>
+> ⚠️ `publicar/` **no se versiona** (regla `marketing/*/publicar/` en `.gitignore`): son archivos pesados y siempre se pueden regenerar desde `fuente/`. Guardá una copia aparte si necesitás respaldarlos.
 
 ---
 
