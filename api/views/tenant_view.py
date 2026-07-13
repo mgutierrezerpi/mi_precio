@@ -11,6 +11,10 @@ class TenantView(BaseView):
     logo_url: str | None = None
     brand_color: str | None = None
     description: str | None = None
+    list_design: str | None = None
+    list_bg_url: str | None = None
+    list_bg_overlay: bool = False
+    list_hero_color: str | None = None
     language: str = "es"
     timezone: str = "America/Montevideo"
     delivery_enabled: bool = False
@@ -34,6 +38,10 @@ class TenantView(BaseView):
             logo_url=g("logo_url"),
             brand_color=g("brand_color"),
             description=g("description"),
+            list_design=g("list_design"),
+            list_bg_url=g("list_bg_url"),
+            list_bg_overlay=bool(g("list_bg_overlay", False)),
+            list_hero_color=g("list_hero_color"),
             language=g("language", "es") or "es",
             timezone=g("timezone", "America/Montevideo") or "America/Montevideo",
             delivery_enabled=bool(g("delivery_enabled", False)),

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant, setTenant, selectUser, selectIsAdmin, selectIsOwner, logout, updateCurrentUser } from '../../store/slices/authSlice'
-import type { AdminUiMode, Tenant, Role, NotifPrefs, PlanId, PlanInfo } from '../../types'
+import type { AdminUiMode, Tenant, Role, NotifPrefs, PlanId, PlanInfo, ListDesign } from '../../types'
 import api from '../../services/api'
 import { useT, type TFn } from '../../lib/i18n'
 import { PLANS, planById } from '../../lib/plans'
@@ -222,27 +222,191 @@ function InfoSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) {
 }
 
 /* ── 1. Brand ────────────────────────────────────────────────────────── */
+const LIST_DESIGNS: ListDesign[] = ['store', 'classic', 'nordic', 'fine', 'modern', 'photo', 'cards', 'catalog', 'tech']
+const SERIF = "'Playfair Display', Georgia, serif"
+
+/** Lightweight stylized mini-preview of each public-list design (not real data). */
+function DesignThumb({ design, accent }: { design: ListDesign; accent: string }) {
+  if (design === 'store') {
+    return (
+      <div className="h-24 w-full p-2" style={{ background: '#FAFAF7' }}>
+        <div className="grid h-full grid-cols-2 gap-1.5">
+          {[0, 1].map((i) => (
+            <div key={i} className="flex flex-col justify-end rounded-md p-1.5" style={{ background: `${accent}22` }}>
+              <span className="h-1 w-2/3 rounded-full" style={{ background: accent }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  if (design === 'classic') {
+    return (
+      <div className="flex h-24 w-full flex-col gap-1.5 bg-white p-2.5">
+        <span className="mb-0.5 block h-1 w-8 rounded-full" style={{ background: accent }} />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center justify-between gap-2">
+            <span className="h-1 rounded-full bg-[#D8D5CE]" style={{ width: `${55 - i * 8}%` }} />
+            <span className="h-1 w-6 rounded-full" style={{ background: accent }} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+  if (design === 'nordic') {
+    return (
+      <div className="flex h-24 w-full flex-col items-center justify-center gap-1" style={{ background: '#F3EBE2' }}>
+        <span style={{ fontFamily: SERIF, color: '#2B2620', fontSize: 17, lineHeight: 1 }}>Aa</span>
+        <span className="h-px w-6" style={{ background: accent }} />
+        {[0, 1].map((i) => <span key={i} className="h-1 rounded-full" style={{ width: 64 - i * 16, background: '#C9C0B4' }} />)}
+      </div>
+    )
+  }
+  if (design === 'fine') {
+    return (
+      <div className="flex h-24 w-full items-stretch justify-center p-2" style={{ background: '#10100F' }}>
+        <div className="flex w-3/4 flex-col items-center justify-center gap-1.5 border" style={{ background: '#F7F2E8', borderColor: '#B69A62' }}>
+          <span style={{ fontFamily: SERIF, color: '#211D16', fontSize: 13, lineHeight: 1 }}>Aa</span>
+          <span className="h-px w-7" style={{ background: '#B69A62' }} />
+          <span className="h-1 w-10 rounded-full" style={{ background: '#CDBF9F' }} />
+        </div>
+      </div>
+    )
+  }
+  if (design === 'modern') {
+    return (
+      <div className="flex h-24 w-full flex-col gap-1.5 bg-white p-2.5">
+        <span className="block h-1.5 w-3/4 rounded-full bg-[#0F0F0F]" />
+        <span className="block h-3 w-full rounded" style={{ background: accent }} />
+        {[0, 1].map((i) => (
+          <div key={i} className="flex items-center justify-between gap-2">
+            <span className="h-1 rounded-full bg-[#D8D5CE]" style={{ width: `${50 - i * 8}%` }} />
+            <span className="h-1 w-5 rounded-full bg-[#0F0F0F]" />
+          </div>
+        ))}
+      </div>
+    )
+  }
+  if (design === 'cards') {
+    return (
+      <div className="h-24 w-full p-2" style={{ background: '#F4F7FB' }}>
+        <div className="grid h-full grid-cols-2 grid-rows-2 gap-1.5">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex flex-col justify-between rounded-md border border-[#E2E8F0] bg-white p-1.5">
+              <span className="h-2 w-2 rounded" style={{ background: accent }} />
+              <span className="h-1 w-2/3 rounded-full" style={{ background: accent }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  if (design === 'catalog') {
+    return (
+      <div className="h-24 w-full bg-white">
+        <div className="flex h-9 items-center gap-1.5 px-2" style={{ background: '#0B1F30' }}>
+          <span className="h-2.5 w-2.5 rounded" style={{ background: accent }} />
+          <span className="h-1 w-12 rounded-full bg-white/70" />
+        </div>
+        <div className="grid grid-cols-3 gap-1.5 p-2">
+          {[0, 1, 2].map((i) => <span key={i} className="h-10 rounded bg-[#E2E8F0]" />)}
+        </div>
+      </div>
+    )
+  }
+  if (design === 'tech') {
+    return (
+      <div className="relative h-24 w-full overflow-hidden p-2" style={{ background: '#0A0E16' }}>
+        <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '12px 12px' }} />
+        <div className="absolute -right-3 -top-3 h-14 w-14 rounded-full" style={{ background: accent, filter: 'blur(16px)', opacity: 0.5 }} />
+        <div className="relative flex h-full flex-col justify-center gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center justify-between gap-2 rounded border px-1.5 py-1" style={{ borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)' }}>
+              <span className="h-1 rounded-full" style={{ width: 58 - i * 8, background: '#3A465C' }} />
+              <span className="h-1 w-5 rounded-full" style={{ background: accent }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  // photo
+  return (
+    <div className="h-24 w-full p-2" style={{ background: '#0A0A0A' }}>
+      <div className="grid h-full grid-cols-3 grid-rows-2 gap-1">
+        {[0, 1, 2].map((i) => <div key={i} className="rounded" style={{ background: '#1E1E1E' }} />)}
+        {[0, 1].map((i) => (
+          <div key={`r${i}`} className="col-span-3 flex items-center justify-between gap-2 px-0.5">
+            <span className="h-1 w-1/2 rounded-full bg-[#2A2A2A]" />
+            <span className="h-1 w-6 rounded-full" style={{ background: accent }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function BrandSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) {
   const [color, setColor] = useState(tenant?.brandColor ?? '#7C3AED')
   const [description, setDescription] = useState(tenant?.description ?? '')
+  const [design, setDesign] = useState<ListDesign>(tenant?.listDesign ?? 'store')
+  const [heroColor, setHeroColor] = useState<string | null>(tenant?.listHeroColor ?? null)
+  const [bgUrl, setBgUrl] = useState<string | null>(tenant?.listBgUrl ?? null)
+  const [bgOverlay, setBgOverlay] = useState<boolean>(tenant?.listBgOverlay ?? false)
+  const bgFileRef = useRef<HTMLInputElement>(null)
+
+  const pickDesign = (d: ListDesign) => {
+    setDesign(d)
+    if (canManage) save({ listDesign: d }, 'design')
+  }
+  const pickBg = async (file?: File) => {
+    if (!file || !canManage) return
+    const url = await fileToDataUrl(file, 1600)
+    setBgUrl(url)
+    save({ listBgUrl: url, listBgOverlay: bgOverlay }, 'bg')
+  }
+  const removeBg = () => { setBgUrl(null); if (canManage) save({ listBgUrl: null, listBgOverlay: bgOverlay }, 'bg') }
+  const toggleOverlay = () => {
+    const v = !bgOverlay
+    setBgOverlay(v)
+    if (canManage && bgUrl) save({ listBgUrl: bgUrl, listBgOverlay: v }, 'bg')
+  }
 
   return (
     <>
       <SectionHeader t={t} title={t('set.sec.brand')} subtitle={t('set.brand.subtitle')} canManage={canManage}
-        onSave={() => save({ brandColor: color, description: description.trim() || null }, 'brand')} saving={savingKey === 'brand'} saved={savedKey === 'brand'} />
+        onSave={() => save({ brandColor: color, description: description.trim() || null, listHeroColor: heroColor }, 'brand')} saving={savingKey === 'brand'} saved={savedKey === 'brand'} />
 
-      <Field label={t('set.brand.color')}>
-        <div className="flex items-center gap-2.5">
-          {BRAND_SWATCHES.map((c) => (
-            <button key={c} type="button" disabled={!canManage} onClick={() => setColor(c)} title={c}
-              className={`h-8 w-8 shrink-0 rounded-full transition ${color.toUpperCase() === c ? 'ring-2 ring-offset-2 ring-offset-[var(--dash-surface)]' : ''}`}
-              style={{ backgroundColor: c, boxShadow: color.toUpperCase() === c ? `0 0 0 2px ${c}` : undefined }} />
-          ))}
-          <span className="mx-1 h-6 w-px bg-[var(--dash-border)]" />
-          <input type="color" value={color} disabled={!canManage} onChange={(e) => setColor(e.target.value.toUpperCase())} className="h-8 w-10 cursor-pointer rounded border border-[var(--dash-border)] bg-transparent disabled:opacity-60" />
-          <input value={color} disabled={!canManage} onChange={(e) => setColor(e.target.value.toUpperCase())} className={`${inputCls} h-8 w-28 font-mono`} />
-        </div>
-      </Field>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Field label={t('set.brand.color')}>
+          <span className="-mt-1 block min-h-[32px] text-[11px] font-medium leading-snug text-[var(--dash-muted)]">{t('set.brand.colorSub')}</span>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
+            {BRAND_SWATCHES.map((c) => (
+              <button key={c} type="button" disabled={!canManage} onClick={() => setColor(c)} title={c}
+                className={`h-8 w-8 shrink-0 rounded-full transition ${color.toUpperCase() === c ? 'ring-2 ring-offset-2 ring-offset-[var(--dash-surface)]' : ''}`}
+                style={{ backgroundColor: c, boxShadow: color.toUpperCase() === c ? `0 0 0 2px ${c}` : undefined }} />
+            ))}
+            <span className="mx-1 h-6 w-px bg-[var(--dash-border)]" />
+            <input type="color" value={color} disabled={!canManage} onChange={(e) => setColor(e.target.value.toUpperCase())} className="h-8 w-10 cursor-pointer rounded border border-[var(--dash-border)] bg-transparent disabled:opacity-60" />
+            <input value={color} disabled={!canManage} onChange={(e) => setColor(e.target.value.toUpperCase())} className={`${inputCls} h-8 w-28 font-mono`} />
+          </div>
+        </Field>
+
+        <Field label={t('set.hero.title')}>
+          <span className="-mt-1 block min-h-[32px] text-[11px] font-medium leading-snug text-[var(--dash-muted)]">{t('set.hero.subtitle')}</span>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
+            {BRAND_SWATCHES.map((c) => (
+              <button key={c} type="button" disabled={!canManage} onClick={() => setHeroColor(c)} title={c}
+                className={`h-8 w-8 shrink-0 rounded-full transition ${(heroColor ?? '').toUpperCase() === c ? 'ring-2 ring-offset-2 ring-offset-[var(--dash-surface)]' : ''}`}
+                style={{ backgroundColor: c, boxShadow: (heroColor ?? '').toUpperCase() === c ? `0 0 0 2px ${c}` : undefined }} />
+            ))}
+            <span className="mx-1 h-6 w-px bg-[var(--dash-border)]" />
+            <input type="color" value={heroColor ?? color} disabled={!canManage} onChange={(e) => setHeroColor(e.target.value.toUpperCase())} className="h-8 w-10 cursor-pointer rounded border border-[var(--dash-border)] bg-transparent disabled:opacity-60" />
+            <input value={heroColor ?? color} disabled={!canManage} onChange={(e) => setHeroColor(e.target.value ? e.target.value.toUpperCase() : null)} className={`${inputCls} h-8 w-28 font-mono`} />
+            {heroColor && canManage && <button type="button" onClick={() => setHeroColor(null)} className="text-[12px] font-bold text-[var(--dash-link)] hover:underline">{t('set.hero.useBrand')}</button>}
+          </div>
+        </Field>
+      </div>
 
       <Field label={t('set.brand.desc')}><textarea value={description} onChange={(e) => setDescription(e.target.value)} disabled={!canManage} rows={3} placeholder={t('set.brand.descPlaceholder')} className={`${inputCls} h-auto py-2.5`} /></Field>
 
@@ -255,6 +419,69 @@ function BrandSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) 
             <span className="text-sm font-extrabold text-[var(--dash-text)]">{tenant?.name || t('set.brand.previewBiz')}</span>
             <span className="text-xs font-medium" style={{ color }}>{description || t('set.brand.previewCat')}</span>
           </div>
+        </div>
+      </div>
+
+      {/* List design picker — applies to every public list. */}
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <div className="flex flex-col gap-0.5">
+          <h4 className="text-[15px] font-extrabold text-[var(--dash-text)]">{t('set.design.title')}</h4>
+          <p className="text-xs font-medium text-[var(--dash-muted)]">{t('set.design.subtitle')}</p>
+        </div>
+        {savedKey === 'design' && <span className="shrink-0 text-xs font-bold text-[var(--tone-green-fg)]">{t('common.saved')}</span>}
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {LIST_DESIGNS.map((d) => {
+          const on = design === d
+          return (
+            <button
+              key={d}
+              type="button"
+              disabled={!canManage || savingKey === 'design'}
+              onClick={() => pickDesign(d)}
+              className={`flex flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${on ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
+            >
+              <DesignThumb design={d} accent={color} />
+              <div className="flex items-start justify-between gap-2 border-t border-[var(--dash-border)] bg-[var(--dash-surface)] p-3">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[13px] font-bold text-[var(--dash-text)]">{t(`set.design.${d}.name`)}</span>
+                  <span className="text-[11px] font-medium leading-tight text-[var(--dash-muted)]">{t(`set.design.${d}.desc`)}</span>
+                </div>
+                {on && <Icon name="circle-check" size={16} className="mt-0.5 shrink-0 text-[#7C3AED]" />}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Background image + brand-color filter */}
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <div className="flex flex-col gap-0.5">
+          <h4 className="text-[15px] font-extrabold text-[var(--dash-text)]">{t('set.bg.title')}</h4>
+          <p className="text-xs font-medium text-[var(--dash-muted)]">{t('set.bg.subtitle')}</p>
+        </div>
+        {savedKey === 'bg' && <span className="shrink-0 text-xs font-bold text-[var(--tone-green-fg)]">{t('common.saved')}</span>}
+      </div>
+      <div className="flex flex-col gap-4 rounded-2xl border border-[var(--dash-border)] p-4">
+        <div className="flex items-center gap-4">
+          <span className="relative flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)]">
+            {bgUrl ? <img src={bgUrl} alt="" className="h-full w-full object-cover" /> : <Icon name="paintbrush" size={18} className="text-[var(--dash-muted)]" />}
+            {bgUrl && bgOverlay && <span className="absolute inset-0" style={{ background: color, opacity: 0.5, mixBlendMode: 'multiply' }} />}
+          </span>
+          {canManage && (
+            <div className="flex items-center gap-2">
+              <input ref={bgFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => pickBg(e.target.files?.[0])} />
+              <button type="button" onClick={() => bgFileRef.current?.click()} className="flex h-9 items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="upload" size={15} /> {bgUrl ? t('set.bg.change') : t('set.bg.upload')}</button>
+              {bgUrl && <button type="button" onClick={removeBg} className="text-[13px] font-bold text-[#EF4444] hover:underline">{t('common.remove')}</button>}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--dash-border)] p-3.5">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[13px] font-bold text-[var(--dash-text)]">{t('set.bg.overlay')}</span>
+            <span className="text-[11px] font-medium text-[var(--dash-muted)]">{t('set.bg.overlayDesc')}</span>
+          </div>
+          <Toggle on={bgOverlay} disabled={!canManage || !bgUrl} onClick={toggleOverlay} />
         </div>
       </div>
     </>

@@ -4,8 +4,6 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import { fetchProducts, selectProducts, selectProductsLoading } from '../../store/slices/productsSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
-import { selectDensity } from '../../store/slices/uiSlice'
-import { useIsDesktop } from '../../hooks/useMediaQuery'
 import type { Product, CustomerStats, Activity } from '../../types'
 import api, { type VisitStats } from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
@@ -33,10 +31,8 @@ export function DashboardScreen() {
   const products = useAppSelector(selectProducts)
   const loading = useAppSelector(selectProductsLoading)
   const lists = useAppSelector(selectLists)
-  // The density toggle is desktop-only; mobile always uses the full layout.
-  const isDesktop = useIsDesktop()
-  const densityCompact = useAppSelector(selectDensity) === 'compact'
-  const compact = isDesktop && densityCompact
+  // Admin always uses the full (spacious) layout; the compact/full toggle was removed.
+  const compact = false
   const [visits, setVisits] = useState<VisitStats | null>(null)
   const [custStats, setCustStats] = useState<CustomerStats | null>(null)
   const [search, setSearch] = useState('')
@@ -90,7 +86,6 @@ export function DashboardScreen() {
       searchValue={search}
       onSearchChange={setSearch}
       onSearchSubmit={(q) => navigate(q.trim() ? `/admin/items?q=${encodeURIComponent(q.trim())}` : '/admin/items')}
-      showDensityToggle
     >
       <div className={`flex flex-col lg:min-w-[900px] ${compact ? 'gap-4 p-5' : 'gap-6 p-4 md:p-8'}`}>
         {/* Welcome row — promo hero + public list. Full view only; in compact the

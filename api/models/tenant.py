@@ -29,6 +29,13 @@ class Tenant(BaseModel):
     logo_url = TextField(null=True)        # data URL or hosted URL
     brand_color = CharField(max_length=9, null=True)  # hex, e.g. #7C3AED
     description = TextField(null=True)
+    # Visual template for the public price list: store | classic | nordic | fine | modern | photo | cards | catalog
+    list_design = CharField(max_length=32, null=True)
+    # Optional background image for the public list + whether to tint it with the brand color.
+    list_bg_url = TextField(null=True)
+    list_bg_overlay = BooleanField(default=False)
+    # Optional hero/header color for the public list (falls back to brand_color when null).
+    list_hero_color = CharField(max_length=9, null=True)
 
     # Language & region
     language = CharField(max_length=5, default="es")
