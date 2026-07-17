@@ -129,12 +129,13 @@ class ApiService {
     data: {
       name?: string; subdomain?: string; currency?: string
       logoUrl?: string | null; brandColor?: string | null; description?: string | null
+      listDesign?: string | null; listBgUrl?: string | null; listBgOverlay?: boolean; listHeroColor?: string | null
       language?: string; timezone?: string; deliveryEnabled?: boolean
       legalName?: string | null; taxId?: string | null; address?: string | null
     }
   ): Promise<ApiResponse<Tenant>> {
     // Map the camelCase brand/tax fields to the API's snake_case keys.
-    const map: Record<string, string> = { logoUrl: 'logo_url', brandColor: 'brand_color', legalName: 'legal_name', taxId: 'tax_id', deliveryEnabled: 'delivery_enabled' }
+    const map: Record<string, string> = { logoUrl: 'logo_url', brandColor: 'brand_color', listDesign: 'list_design', listBgUrl: 'list_bg_url', listBgOverlay: 'list_bg_overlay', listHeroColor: 'list_hero_color', legalName: 'legal_name', taxId: 'tax_id', deliveryEnabled: 'delivery_enabled' }
     const body: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(data)) body[map[k] ?? k] = v
     return this.request(`/tenants/${id}`, { method: 'PATCH', body: JSON.stringify(body) })

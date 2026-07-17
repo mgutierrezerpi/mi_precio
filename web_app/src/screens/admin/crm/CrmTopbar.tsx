@@ -1,10 +1,7 @@
 import { useTheme } from '../../../hooks/useTheme'
-import { useDensity } from '../../../hooks/useDensity'
 import { useT } from '../../../lib/i18n'
 import { Icon, UserMenu } from './ui'
 import { NotificationsBell } from './NotificationsBell'
-import { useAppDispatch } from '../../../store/hooks'
-import { updateCurrentUser } from '../../../store/slices/authSlice'
 
 interface CrmTopbarProps {
   title: string
@@ -17,17 +14,13 @@ interface CrmTopbarProps {
   onSearchSubmit?: (value: string) => void
   /** Optional action button(s) rendered before the theme toggle (e.g. "Compartir lista"). */
   actions?: React.ReactNode
-  /** Show the compact/full density toggle. Enabled per-screen while we roll it out. */
-  showDensityToggle?: boolean
   /** Opens the mobile navigation drawer (hamburger). */
   onMenu?: () => void
 }
 
-/** Shared CRM topbar: title + search + density/theme toggles + notifications + user menu. */
-export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions, showDensityToggle, onMenu }: CrmTopbarProps) {
-  const dispatch = useAppDispatch()
+/** Shared CRM topbar: title + search + theme toggle + notifications + user menu. */
+export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions, onMenu }: CrmTopbarProps) {
   const { isDark, toggleTheme } = useTheme()
-  const { compact, toggleDensity } = useDensity()
   const t = useT()
 
   return (
@@ -64,26 +57,8 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
       >
         <Icon name={isDark ? 'sun' : 'moon'} className={isDark ? 'text-[#FBBF24]' : 'text-[var(--dash-text2)]'} />
       </button>
-      {showDensityToggle && (
-        <button
-          type="button"
-          onClick={toggleDensity}
-          className="hidden h-10 w-10 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] hover:opacity-80 lg:flex"
-          title={compact ? t('top.fullView') : t('top.compactView')}
-        >
-          <Icon name={compact ? 'layout-dashboard' : 'rows-2'} className={compact ? 'text-[var(--dash-link)]' : 'text-[var(--dash-text2)]'} />
-        </button>
-      )}
       <NotificationsBell />
       {actions}
-      <div className="hidden items-center overflow-hidden rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] xl:flex">
-        <button type="button" onClick={() => dispatch(updateCurrentUser({ adminUiMode: 'medium' }))} className="h-10 px-3 text-[13px] font-bold text-[var(--dash-text2)] hover:text-[var(--dash-link)]">
-          {t('mode.medium')}
-        </button>
-        <button type="button" onClick={() => dispatch(updateCurrentUser({ adminUiMode: 'simple' }))} className="h-10 border-l border-[var(--dash-soft-border)] px-3 text-[13px] font-bold text-[var(--dash-text2)] hover:text-[var(--dash-link)]">
-          {t('mode.simple')}
-        </button>
-      </div>
       <UserMenu />
     </header>
   )

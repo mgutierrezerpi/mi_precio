@@ -33,6 +33,10 @@ export interface Tenant {
   logoUrl: string | null
   brandColor: string | null
   description: string | null
+  listDesign: ListDesign | null
+  listBgUrl: string | null
+  listBgOverlay: boolean
+  listHeroColor: string | null
   language: string
   timezone: string
   deliveryEnabled: boolean
@@ -42,6 +46,9 @@ export interface Tenant {
   createdAt: string
   updatedAt: string
 }
+
+/** Visual template for the public price list. */
+export type ListDesign = 'store' | 'classic' | 'nordic' | 'fine' | 'modern' | 'photo' | 'cards' | 'catalog' | 'tech'
 
 export type ListKind = 'product' | 'service'
 
