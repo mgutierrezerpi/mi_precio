@@ -24,6 +24,7 @@ const navMain: { icon: IconName; id: string; tKey: string; to?: string; badge?: 
 const navSettings: { icon: IconName; id: string; tKey: string; to?: string }[] = [
   { icon: 'user-plus', id: 'Equipo', tKey: 'nav.team', to: '/admin/equipo' },
   { icon: 'settings', id: 'Configuración', tKey: 'nav.settings', to: '/admin/settings' },
+  { icon: 'life-buoy', id: 'Soporte', tKey: 'nav.support', to: '/admin/soporte' },
 ]
 
 function NavItem({ icon, label, to, badge, active, onNavigate }: { icon: IconName; label: string; to?: string; badge?: string; active: boolean; onNavigate?: () => void }) {

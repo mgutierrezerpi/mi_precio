@@ -36,6 +36,7 @@ const DICT: Record<string, Entry> = {
   'nav.reports': { es: 'Reportes', en: 'Reports', pt: 'Relatórios' },
   'nav.team': { es: 'Equipo', en: 'Team', pt: 'Equipe' },
   'nav.settings': { es: 'Configuración', en: 'Settings', pt: 'Configurações' },
+  'nav.support': { es: 'Soporte', en: 'Support', pt: 'Suporte' },
   'side.crm': { es: 'CRM · Comercial', en: 'CRM · Sales', pt: 'CRM · Comercial' },
   'side.main': { es: 'PRINCIPAL', en: 'MAIN', pt: 'PRINCIPAL' },
   'side.settings': { es: 'AJUSTES', en: 'SETTINGS', pt: 'AJUSTES' },

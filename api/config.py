@@ -40,6 +40,20 @@ class Settings(BaseSettings):
     lemonsqueezy_variant_pyme: str = ""  # Legacy alias for Plus.
     lemonsqueezy_variant_pro: str = ""
 
+    # Support / Zoho Desk settings. Tickets are created server-side via the Zoho
+    # Desk REST API (OAuth2), so the client secret + refresh token never reach
+    # the browser. `*_base` are data-center specific: US .com, EU .eu, IN .in,
+    # AU .com.au. Support is silently disabled until the OAuth values are set.
+    zohodesk_api_base: str = "https://desk.zoho.com"
+    zohodesk_accounts_base: str = "https://accounts.zoho.com"
+    zohodesk_org_id: str = ""
+    zohodesk_client_id: str = ""
+    zohodesk_client_secret: str = ""
+    zohodesk_refresh_token: str = ""
+    # Optional: which department to file tickets under. Auto-detected (default
+    # department) when left empty.
+    zohodesk_department_id: str = ""
+
     # Storage settings
     storage_endpoint_url: str = ""
     storage_public_url: str = ""
@@ -59,6 +73,15 @@ class Settings(BaseSettings):
     @property
     def push_enabled(self) -> bool:
         return bool(self.vapid_public_key and self.vapid_private_key)
+
+    @property
+    def zohodesk_enabled(self) -> bool:
+        return bool(
+            self.zohodesk_org_id
+            and self.zohodesk_client_id
+            and self.zohodesk_client_secret
+            and self.zohodesk_refresh_token
+        )
 
 
 @lru_cache

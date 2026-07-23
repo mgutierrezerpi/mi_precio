@@ -161,6 +161,18 @@ class ApiService {
     })
   }
 
+  // Support (Zoho Desk ticket). Requester identity comes from the JWT server-side.
+  async createSupportTicket(
+    subject: string,
+    description: string,
+    priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium',
+  ): Promise<ApiResponse<{ id: number | string; status: string }>> {
+    return this.request('/support/tickets', {
+      method: 'POST',
+      body: JSON.stringify({ subject, description, priority }),
+    })
+  }
+
   // Lists endpoints
   async getLists(tenantId: string): Promise<ApiResponse<PriceList[]>> {
     return this.request(`/tenants/${tenantId}/lists`)

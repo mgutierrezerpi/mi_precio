@@ -15,7 +15,7 @@ export type IconName =
   | 'trending-up' | 'alert-triangle' | 'wrench' | 'zap' | 'paintbrush' | 'list-plus'
   | 'file-spreadsheet' | 'upload' | 'log-out' | 'user' | 'box' | 'cable' | 'layers'
   | 'cog' | 'droplet' | 'droplets' | 'ellipsis' | 'sliders-horizontal' | 'arrow-up-down' | 'download'
-  | 'circle-check' | 'circle-x' | 'pencil' | 'rows-2' | 'menu'
+  | 'circle-check' | 'circle-x' | 'pencil' | 'rows-2' | 'menu' | 'life-buoy' | 'send'
 
 const ICONS: Record<IconName, React.ReactNode> = {
   pencil: <><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></>,
@@ -68,6 +68,8 @@ const ICONS: Record<IconName, React.ReactNode> = {
   'circle-x': <><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></>,
   'rows-2': <><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 12h18" /></>,
   menu: <><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="18" y2="18" /></>,
+  'life-buoy': <><circle cx="12" cy="12" r="10" /><path d="m4.93 4.93 4.24 4.24" /><path d="m14.83 9.17 4.24-4.24" /><path d="m14.83 14.83 4.24 4.24" /><path d="m9.17 14.83-4.24 4.24" /><circle cx="12" cy="12" r="4" /></>,
+  send: <><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" /><path d="m21.854 2.147-10.94 10.939" /></>,
 }
 
 export function Icon({ name, size = 18, className }: { name: IconName; size?: number; className?: string }) {
