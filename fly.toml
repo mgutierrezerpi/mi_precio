@@ -15,7 +15,8 @@ kill_timeout = "30s"
   CORS_ORIGINS = '["https://mi-precio.fly.dev", "https://miprecio.app", "https://www.miprecio.app"]'
   PUBLIC_APP_URL = "https://miprecio.app"
   JWT_ALGORITHM = "HS256"
-  JWT_EXPIRE_MINUTES = "1440"
+  # Keep users signed in for 30 days in production.
+  JWT_EXPIRE_MINUTES = "43200"
   MAILER_ENABLED = "true"
   LOG_AUTH_CODES = "false"
   BILLING_ENABLED = "true"

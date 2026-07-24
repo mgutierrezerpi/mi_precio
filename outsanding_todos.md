@@ -1,0 +1,23 @@
+- El landing en desktop tiene secciones grandes vacías después de los títulos de Funciones, Cómo funciona, Precios y Preguntas frecuentes.
+- El landing en mobile muestra solo la primera tarjeta de funciones/cómo funciona y los puntos del carrusel; las secciones de precios y FAQ quedan vacías.
+- El landing muestra una advertencia de producción porque usa `cdn.tailwindcss.com`.
+- `/admin/lists/compact` carga, pero el estilo visual está muy crudo comparado con el resto de la app y necesita una pasada de diseño.
+- `/admin/compact-lists` redirige/vuelve a `/`; agregar un alias o eliminar links/tests viejos que usen esa ruta.
+- `/p/sample` muestra `Not found`, pero la consola del navegador registra varios errores 404 de recursos.
+- Agregar una URL pública de menú/lista con datos seed o fixture para los smoke tests del navegador, en vez de depender de un `/p/sample` inexistente.
+- `http://localhost:3000/healthz` sirve el shell de la SPA en dev en vez de una respuesta real de health check.
+- Navegadores sin autenticar pueden abrir `/admin/items` y ver el shell del admin; las rutas de admin necesitan un guard real de auth y redirección a login.
+- El flujo de login sin contraseña necesita un helper local/dev confiable porque las credenciales viejas del README ya no sirven.
+- Los modales de creación necesitan roles de diálogo correctos, focus trap y asociación entre labels e inputs; Playwright todavía podía apuntar a inputs del fondo/topbar mientras había un modal abierto.
+- La validación de campos requeridos en productos y listas cae en el mensaje nativo en inglés del navegador (`Please fill out this field`) en vez de errores inline localizados.
+- La creación de productos es difícil de automatizar y de acceder porque los campos no se pueden seleccionar de forma confiable por label; agregar nombres accesibles y test IDs a los controles principales.
+- La creación de clientes puede dejar el botón de envío deshabilitado sin explicar qué campo requerido falta.
+- Después de intentar crear una lista, el contador puede subir mientras el área visible dice `Sin resultados`; limpiar búsqueda/filtros o mostrar la lista recién creada.
+- La página de QR muestra controles para descargar PNG/SVG aunque no haya listas publicadas ni QRs; deshabilitarlos o explicar qué hay que crear primero.
+- El chrome del dashboard/cuenta dice `Pro` mientras la tarjeta de upgrade del sidebar dice `PLAN SIN PLAN`; unificar el texto del plan.
+- Reemplazar `PLAN SIN PLAN` por un texto más claro para el plan gratis.
+- Los toggles de notificaciones en Settings necesitan feedback visible de guardado/estado para saber si los cambios persistieron.
+
+---- guti 
+- correr lighthouse scores, hay unas imagenes que estan demorando en cargar
+- 
