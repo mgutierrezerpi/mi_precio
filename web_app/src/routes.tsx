@@ -11,6 +11,7 @@ import { CodesScreen } from './screens/admin/CodesScreen'
 import { CustomersScreen } from './screens/admin/CustomersScreen'
 import { ReportsScreen } from './screens/admin/ReportsScreen'
 import { TeamScreen } from './screens/admin/TeamScreen'
+import { SupportScreen } from './screens/admin/SupportScreen'
 import { AdminDashboardRoute, AdminListsRoute, AdminProductsRoute, AdminSettingsRoute } from './screens/admin/AdminRouteSwitches'
 
 export const router = createBrowserRouter([
@@ -75,6 +76,10 @@ export const router = createBrowserRouter([
       {
         path: 'equipo',
         element: <TeamScreen />,
+      },
+      {
+        path: 'soporte',
+        element: <SupportScreen />,
       },
       {
         path: 'settings',
