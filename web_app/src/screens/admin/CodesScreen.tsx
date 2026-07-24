@@ -65,7 +65,7 @@ export function CodesScreen() {
       searchValue={search}
       onSearchChange={setSearch}
     >
-      <div className="flex flex-col gap-6 p-4 md:p-8 lg:min-w-[900px] lg:flex-row">
+      <div className="flex flex-col gap-6 p-4 md:p-8 xl:min-w-[900px] xl:flex-row">
         {/* QR grid */}
         <div className="flex flex-1 flex-col gap-4">
           <div className="flex items-center justify-between">

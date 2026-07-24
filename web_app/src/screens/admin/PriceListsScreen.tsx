@@ -86,7 +86,7 @@ export function PriceListsScreen() {
       searchValue={search}
       onSearchChange={setSearch}
     >
-      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[900px]">
+      <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[900px]">
         {/* Banner */}
         <div className={`flex flex-col gap-6 rounded-3xl p-6 text-white shadow-[0_16px_32px_-8px_rgba(124,58,237,0.4)] md:p-7 lg:flex-row lg:items-center ${gradient}`}>
           <div className="flex flex-1 flex-col gap-3">

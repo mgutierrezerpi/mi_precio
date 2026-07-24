@@ -98,7 +98,7 @@ export function CategoriesScreen() {
       searchValue={search}
       onSearchChange={setSearch}
     >
-      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[900px]">
+      <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[900px]">
         {/* KPIs */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {kpis.map((k) => (

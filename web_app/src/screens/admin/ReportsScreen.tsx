@@ -65,7 +65,7 @@ export function ReportsScreen() {
 
   return (
     <CrmLayout active="Reportes" title="Reportes" subtitle="Medí el rendimiento de tu catálogo." searchPlaceholder="Buscar…">
-      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[980px]">
+      <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[980px]">
         {/* KPI row */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {kpis.map((k) => (
@@ -79,7 +79,7 @@ export function ReportsScreen() {
           ))}
         </div>
 
-        <div className="flex flex-col gap-5 lg:flex-row">
+        <div className="flex flex-col gap-5 xl:flex-row">
           {/* Bar chart */}
           <div className="flex flex-1 flex-col gap-5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -110,7 +110,7 @@ export function ReportsScreen() {
           </div>
 
           {/* Right column */}
-          <div className="flex w-full shrink-0 flex-col gap-5 lg:w-[320px]">
+          <div className="flex w-full shrink-0 flex-col gap-5 xl:w-[320px]">
             <TopProducts data={data} loading={loading} />
             <Channels data={data} loading={loading} />
           </div>

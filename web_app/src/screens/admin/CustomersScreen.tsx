@@ -113,7 +113,7 @@ export function CustomersScreen() {
 
   return (
     <CrmLayout active="Clientes" title="Clientes" subtitle="Gestioná tu cartera de clientes." searchPlaceholder="Buscar clientes…" searchValue={search} onSearchChange={setSearch}>
-      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[980px]">
+      <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[980px]">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.label} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)]">
