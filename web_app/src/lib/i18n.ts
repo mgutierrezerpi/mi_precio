@@ -73,7 +73,30 @@ const DICT: Record<string, Entry> = {
   'activity.member.removed': { es: 'Quitó a «{email}» del equipo', en: 'Removed “{email}” from the team', pt: 'Removeu «{email}» da equipe' },
   'activity.plan.changed': { es: 'Cambió el plan a {plan}', en: 'Changed plan to {plan}', pt: 'Alterou o plano para {plan}' },
   'activity.billing.manual_sync': { es: 'Sincronizó el plan {plan} ({status})', en: 'Synced plan {plan} ({status})', pt: 'Sincronizou o plano {plan} ({status})' },
-  'activity.billing.webhook': { es: 'Suscripción actualizada ({status})', en: 'Subscription updated ({status})', pt: 'Assinatura atualizada ({status})' },
+  // `event` + `plan` are localized from meta (billingEvent.*/plan). Rows without
+  // meta.event fall back to the stored summary (see activityText).
+  'activity.billing.webhook': { es: '{event} · plan {plan}', en: '{event} · {plan} plan', pt: '{event} · plano {plan}' },
+  // Lemon Squeezy event labels.
+  'billingEvent.subscription_created': { es: 'Suscripción iniciada', en: 'Subscription started', pt: 'Assinatura iniciada' },
+  'billingEvent.subscription_updated': { es: 'Suscripción actualizada', en: 'Subscription updated', pt: 'Assinatura atualizada' },
+  'billingEvent.subscription_cancelled': { es: 'Suscripción cancelada', en: 'Subscription cancelled', pt: 'Assinatura cancelada' },
+  'billingEvent.subscription_resumed': { es: 'Suscripción reanudada', en: 'Subscription resumed', pt: 'Assinatura retomada' },
+  'billingEvent.subscription_expired': { es: 'Suscripción vencida', en: 'Subscription expired', pt: 'Assinatura expirada' },
+  'billingEvent.subscription_paused': { es: 'Suscripción pausada', en: 'Subscription paused', pt: 'Assinatura pausada' },
+  'billingEvent.subscription_unpaused': { es: 'Suscripción reactivada', en: 'Subscription unpaused', pt: 'Assinatura reativada' },
+  'billingEvent.subscription_payment_success': { es: 'Pago confirmado', en: 'Payment confirmed', pt: 'Pagamento confirmado' },
+  'billingEvent.subscription_payment_failed': { es: 'Pago rechazado', en: 'Payment failed', pt: 'Pagamento recusado' },
+  'billingEvent.subscription_payment_recovered': { es: 'Pago recuperado', en: 'Payment recovered', pt: 'Pagamento recuperado' },
+  'billingEvent.subscription_plan_changed': { es: 'Plan actualizado', en: 'Plan changed', pt: 'Plano atualizado' },
+  // Lemon Squeezy subscription statuses.
+  'billingStatus.on_trial': { es: 'en prueba', en: 'on trial', pt: 'em teste' },
+  'billingStatus.active': { es: 'activa', en: 'active', pt: 'ativa' },
+  'billingStatus.paid': { es: 'al día', en: 'paid', pt: 'em dia' },
+  'billingStatus.past_due': { es: 'pago pendiente', en: 'past due', pt: 'pagamento pendente' },
+  'billingStatus.unpaid': { es: 'impaga', en: 'unpaid', pt: 'não paga' },
+  'billingStatus.cancelled': { es: 'cancelada', en: 'cancelled', pt: 'cancelada' },
+  'billingStatus.expired': { es: 'vencida', en: 'expired', pt: 'expirada' },
+  'billingStatus.paused': { es: 'pausada', en: 'paused', pt: 'pausada' },
 
   // ── Relative time (activity feed) ───────────────────────────────────────
   'time.now': { es: 'Recién', en: 'Just now', pt: 'Agora' },

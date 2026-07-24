@@ -17,7 +17,7 @@ const ACTIVITY_STYLE: Record<string, { icon: IconName; tone: Tone }> = {
 const activityStyle = (action: string) =>
   ACTIVITY_STYLE[action] || { icon: 'ellipsis' as IconName, tone: 'slate' as Tone }
 
-/** Localize enum-like meta values (role, plan) before interpolation. */
+/** Localize enum-like meta values (role, plan, billing event/status) before interpolation. */
 function localizedMeta(meta: Record<string, string> | null, t: TFn): Record<string, string> {
   if (!meta) return {}
   const out = { ...meta }
@@ -26,6 +26,13 @@ function localizedMeta(meta: Record<string, string> | null, t: TFn): Record<stri
     out.role = r === `role.${out.role}` ? out.role : r
   }
   if (out.plan) out.plan = planById(out.plan as PlanId).name
+  // Billing codes → words (leave unknown codes untouched, like role).
+  for (const field of ['event', 'status'] as const) {
+    if (!out[field]) continue
+    const key = `billing${field === 'event' ? 'Event' : 'Status'}.${out[field]}`
+    const v = t(key)
+    if (v !== key) out[field] = v
+  }
   return out
 }
 
@@ -35,7 +42,9 @@ export function activityText(a: Activity, t: TFn): string {
   const key = `activity.${a.action}`
   if (a.meta) {
     const s = t(key, localizedMeta(a.meta, t))
-    if (s !== key) return s
+    // Use the localized line only if it fully resolved. Rows missing a meta
+    // field leave an unfilled `{placeholder}` — fall back to the stored summary.
+    if (s !== key && !s.includes('{')) return s
   }
   return a.summary
 }
