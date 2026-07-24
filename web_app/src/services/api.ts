@@ -52,6 +52,7 @@ function productBody<T extends { imageUrl?: string | null; imageThumbUrl?: strin
 class ApiService {
   private baseUrl: string
   private token: string | null = null
+  private authErrorHandled = false
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
@@ -60,6 +61,9 @@ class ApiService {
 
   setToken(token: string | null) {
     this.token = token
+    // A fresh login starts a new auth-error cycle. Keep the expired-session
+    // handler one-shot while all requests from the old session drain.
+    if (token) this.authErrorHandled = false
     if (token) {
       localStorage.setItem('auth_token', token)
     } else {
@@ -86,7 +90,8 @@ class ApiService {
       })
 
       if (!response.ok) {
-        if (response.status === 401 && onAuthError) {
+        if (response.status === 401 && onAuthError && !this.authErrorHandled) {
+          this.authErrorHandled = true
           onAuthError()
         }
         const errorData = await response.json().catch(() => ({}))
