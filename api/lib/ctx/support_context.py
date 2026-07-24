@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from infra.zohodesk import ZohoDeskError, client as zohodesk
+from infra.zohodesk import client as zohodesk
 from models import Tenant
 
 VALID_PRIORITIES = {"low", "medium", "high", "urgent"}
