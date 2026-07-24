@@ -94,7 +94,7 @@ export function SettingsCrmContent({ simple = false }: { simple?: boolean }) {
   const ctx = { tenant, canManage, save, savingKey, savedKey, t }
 
   return (
-      <div className={simple ? 'flex w-full flex-col gap-4 md:flex-row md:gap-6' : 'flex flex-col gap-6 p-4 md:p-8 lg:min-w-[900px] lg:flex-row'}>
+      <div className={simple ? 'flex w-full flex-col gap-4 md:flex-row md:gap-6' : 'flex flex-col gap-6 p-4 md:p-8 xl:min-w-[900px] lg:flex-row'}>
         {/* Sub-nav */}
         <div className={simple ? 'flex w-full shrink-0 flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)] md:w-[240px]' : 'flex w-full shrink-0 lg:w-[240px] flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)]'}>
           {sections.map((s) => (

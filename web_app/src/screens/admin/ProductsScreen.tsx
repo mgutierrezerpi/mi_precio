@@ -221,7 +221,7 @@ export function ProductsScreen() {
       searchValue={search}
       onSearchChange={(v) => resetTo(() => setSearch(v))}
     >
-      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[980px]">
+      <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[980px]">
         {/* KPIs — 2×2 on mobile, single row on desktop */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {kpis.map((k) => (

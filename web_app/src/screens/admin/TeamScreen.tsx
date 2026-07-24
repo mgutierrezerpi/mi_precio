@@ -137,7 +137,7 @@ export function TeamScreen() {
 
   return (
     <CrmLayout active="Equipo" title="Equipo" subtitle="Gestioná quién accede a tu cuenta." searchPlaceholder="Buscar miembros…" searchValue={search} onSearchChange={setSearch}>
-      <div className="flex flex-col gap-5 p-4 md:p-8 lg:min-w-[980px]">
+      <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[980px]">
         {error && (
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm font-semibold text-[#B91C1C]">
             <span className="flex items-center gap-2"><Icon name="alert-triangle" size={16} /> {error}</span>
