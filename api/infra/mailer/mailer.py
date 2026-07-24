@@ -7,6 +7,7 @@ from infra.mailer.error import MailerError
 logger = logging.getLogger(__name__)
 
 FROM_EMAIL = "codes@miprecio.app"
+FROM_NAME = "MiPrecio"
 
 
 class Mailer:
@@ -29,10 +30,10 @@ class Mailer:
             logger.info(f"[MAILER] Email to {to}: {subject}\n{body}")
             return True
 
-        from sendgrid.helpers.mail import Mail
+        from sendgrid.helpers.mail import Email, Mail
 
         message = Mail(
-            from_email=FROM_EMAIL,
+            from_email=Email(FROM_EMAIL, FROM_NAME),
             to_emails=to,
             subject=subject,
             plain_text_content=body,
