@@ -18,6 +18,39 @@ class BillingError(Exception):
     """Raised when billing configuration or provider calls fail."""
 
 
+# Human-readable Spanish labels for Lemon Squeezy events/statuses so the
+# activity feed never surfaces raw snake_case codes to the user.
+_EVENT_ES = {
+    "subscription_created": "Suscripción iniciada",
+    "subscription_updated": "Suscripción actualizada",
+    "subscription_cancelled": "Suscripción cancelada",
+    "subscription_resumed": "Suscripción reanudada",
+    "subscription_expired": "Suscripción vencida",
+    "subscription_paused": "Suscripción pausada",
+    "subscription_unpaused": "Suscripción reactivada",
+    "subscription_payment_success": "Pago confirmado",
+    "subscription_payment_failed": "Pago rechazado",
+    "subscription_payment_recovered": "Pago recuperado",
+    "subscription_plan_changed": "Plan actualizado",
+}
+
+
+def _plan_es(plan: str | None) -> str | None:
+    if not plan:
+        return None
+    return "Gratis" if plan == "free" else plan.capitalize()
+
+
+def activity_summary(event_name: str, plan: str | None = None) -> str:
+    """Turn a Lemon Squeezy event into a friendly Spanish activity line.
+
+    This is the stored fallback; the frontend rebuilds the same line per-locale
+    from the activity `action` + `meta` (event/plan/status)."""
+    label = _EVENT_ES.get(event_name, event_name.replace("_", " ").capitalize())
+    plan_name = _plan_es(plan)
+    return f"{label} · plan {plan_name}" if plan_name else label
+
+
 def _parse_dt(value: str | None) -> datetime | None:
     if not value:
         return None

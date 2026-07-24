@@ -48,7 +48,8 @@ def sync_manual_subscription_endpoint(
         raise HTTPException(status_code=400, detail=str(exc))
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    activity.record(data.tenant_id, "billing.manual_sync", f"Sincronizó plan {tenant.plan} ({data.status})",
+    plan_es = "Gratis" if tenant.plan == "free" else tenant.plan.capitalize()
+    activity.record(data.tenant_id, "billing.manual_sync", f"Plan sincronizado · plan {plan_es}",
                     meta={"plan": tenant.plan, "status": data.status})
     return TenantView.render(tenant)
 
@@ -70,7 +71,8 @@ async def lemonsqueezy_webhook_endpoint(request: Request):
         custom = payload.get("meta", {}).get("custom_data") or attrs.get("custom_data") or {}
         tenant = billing.sync_subscription_from_attributes(attrs, tenant_id=custom.get("tenant_id"))
         if tenant:
-            activity.record(tenant.id, "billing.webhook", f"Lemon Squeezy: {event_name} ({tenant.billing_status})",
-                            meta={"status": tenant.billing_status or ""})
+            summary = billing.activity_summary(event_name, plan=tenant.plan)
+            activity.record(tenant.id, "billing.webhook", summary,
+                            meta={"event": event_name or "", "plan": tenant.plan, "status": tenant.billing_status or ""})
 
     return {"ok": True}
