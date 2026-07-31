@@ -31,6 +31,15 @@ def ensure_columns():
             db.execute_sql("ALTER TABLE lists ADD COLUMN slug VARCHAR(255)")
         if "kind" not in list_columns:
             db.execute_sql("ALTER TABLE lists ADD COLUMN kind VARCHAR(20) NOT NULL DEFAULT 'product'")
+        # Per-list appearance overrides; NULL means "inherit the tenant default".
+        for col, ddl in [
+            ("design", "design VARCHAR(32)"),
+            ("hero_color", "hero_color VARCHAR(9)"),
+            ("bg_url", "bg_url TEXT"),
+            ("bg_overlay", "bg_overlay INTEGER"),
+        ]:
+            if col not in list_columns:
+                db.execute_sql(f"ALTER TABLE lists ADD COLUMN {ddl}")
 
     product_columns = _columns("products")
     if product_columns is not None:

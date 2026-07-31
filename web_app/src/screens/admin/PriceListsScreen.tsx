@@ -7,6 +7,8 @@ import { fetchLists, createList, updateList, deleteList, createItem, deleteItem,
 import { fetchProducts, selectProducts } from '../../store/slices/productsSlice'
 import type { PriceList, Product } from '../../types'
 import api from '../../services/api'
+import { useT } from '../../lib/i18n'
+import { ListAppearanceFields, hasOwnAppearance, type ListAppearance } from '../../components/appearance/ListAppearanceFields'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { QrCode } from './crm/QrCode'
@@ -281,6 +283,8 @@ function QrModal({ list, url, qrValue, onClose }: { list: PriceList; url: string
 /* ── Create wizard / edit modal ──────────────────────────────────── */
 function ListModal({ list, tenantId, products, onClose }: { list: PriceList | null; tenantId?: string; products: Product[]; onClose: () => void }) {
   const dispatch = useAppDispatch()
+  const t = useT()
+  const tenant = useAppSelector(selectTenant)
   const editing = !!list
   const [step, setStep] = useState(1)
   const [name, setName] = useState(list?.name ?? '')
@@ -291,6 +295,15 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [prodSearch, setProdSearch] = useState('')
   const [saving, setSaving] = useState(false)
+  // Per-list appearance overrides. Null fields inherit the tenant's defaults,
+  // so a list only carries what the user deliberately changed here.
+  const [appearance, setAppearance] = useState<ListAppearance>({
+    design: list?.design ?? null,
+    heroColor: list?.heroColor ?? null,
+    bgUrl: list?.bgUrl ?? null,
+    bgOverlay: list?.bgOverlay ?? null,
+  })
+  const [showAppearance, setShowAppearance] = useState(false)
   const versionId = useRef<string | undefined>(undefined)
   const [loadedItems, setLoadedItems] = useState<{ id: string; name: string; productId: string | null }[]>([])
 
@@ -373,13 +386,13 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
     setSaving(true)
     try {
       if (editing) {
-        await dispatch(updateList({ listId: list!.id, data: { name: name.trim(), slug: slug.trim() || undefined, published, showOnIndex: principal, kind } }))
+        await dispatch(updateList({ listId: list!.id, data: { name: name.trim(), slug: slug.trim() || undefined, published, showOnIndex: principal, kind, ...appearance } }))
         if (versionId.current) await syncItems(versionId.current)
       } else if (tenantId) {
         const res = await dispatch(createList({ tenantId, name: name.trim(), kind }))
         if (createList.fulfilled.match(res) && res.payload) {
           const vid = res.payload.versions?.[0]?.id
-          await dispatch(updateList({ listId: res.payload.id, data: { slug: slug.trim() || undefined, published, showOnIndex: principal } }))
+          await dispatch(updateList({ listId: res.payload.id, data: { slug: slug.trim() || undefined, published, showOnIndex: principal, ...appearance } }))
           if (vid) await syncItems(vid)
         }
       }
@@ -388,11 +401,13 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
     } finally { setSaving(false) }
   }
 
-  const panelWidth = step === 2 ? 'max-w-[560px]' : 'max-w-[440px]'
+  const panelWidth = step === 2 ? 'max-w-[560px]' : showAppearance ? 'max-w-[720px]' : 'max-w-[440px]'
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1E1B4B]/60 p-4 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className={`dash w-full ${panelWidth} animate-scale-in rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 font-sans shadow-[0_30px_80px_-20px_rgba(15,23,42,0.5)]`}>
+      {/* max-h + scroll: with the appearance block open the panel is taller
+          than the viewport, and the footer buttons must stay reachable. */}
+      <div className={`dash max-h-[90vh] w-full ${panelWidth} animate-scale-in overflow-y-auto rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 font-sans shadow-[0_30px_80px_-20px_rgba(15,23,42,0.5)]`}>
         <div className="mb-5 flex items-center justify-between">
           <div className="flex flex-col">
             <h3 className="text-lg font-extrabold text-[var(--dash-text)]">{step === 1 ? (editing ? 'Editar lista' : 'Nueva lista') : 'Elegí los productos'}</h3>
@@ -434,6 +449,40 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
               </label>
               <ToggleRow label="Publicar lista" desc="Visible con link y QR para tus clientes." value={published} onToggle={() => setPublished((v) => !v)} />
               <ToggleRow label="Marcar como principal" desc="Se muestra primero en tu página pública." value={principal} onToggle={() => setPrincipal((v) => !v)} />
+
+              {/* Appearance overrides, collapsed by default so creating a list
+                  stays a two-field job. */}
+              <button
+                type="button"
+                onClick={() => setShowAppearance((v) => !v)}
+                className="flex items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] p-3.5 text-left hover:bg-[var(--dash-soft)]"
+              >
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-[13px] font-bold text-[var(--dash-text)]">{t('list.appearance.title')}</span>
+                  <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+                    {hasOwnAppearance(appearance) ? t('list.appearance.custom') : t('list.appearance.inherit')}
+                  </span>
+                </span>
+                <Icon name="chevron-down" size={16} className={`shrink-0 text-[var(--dash-muted)] transition-transform ${showAppearance ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showAppearance && (
+                <div className="flex flex-col gap-4">
+                  <p className="text-[11px] font-medium text-[var(--dash-muted)]">{t('list.appearance.subtitle')}</p>
+                  <ListAppearanceFields
+                    t={t}
+                    value={appearance}
+                    onChange={(patch) => setAppearance((a) => ({ ...a, ...patch }))}
+                    accent={tenant?.brandColor ?? '#7C3AED'}
+                    inherited={{
+                      design: tenant?.listDesign ?? 'store',
+                      heroColor: tenant?.listHeroColor ?? null,
+                      bgUrl: tenant?.listBgUrl ?? null,
+                      bgOverlay: tenant?.listBgOverlay ?? false,
+                    }}
+                  />
+                </div>
+              )}
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={onClose} className="flex h-11 items-center rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">Cancelar</button>
