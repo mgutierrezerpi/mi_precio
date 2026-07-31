@@ -102,7 +102,8 @@ def get_or_create_user(email: str) -> UserResult:
         subdomain = f"{base}-{counter}"[:63]
         counter += 1
 
-    tenant = Tenant.create(name=name, subdomain=subdomain)
+    # Brand-new signup: gate the CRM until the owner picks a plan (plans_context).
+    tenant = Tenant.create(name=name, subdomain=subdomain, plan_gate=True)
     # First user of a brand-new tenant owns it.
     user = User.create(email=email, tenant=tenant, name=name, role="owner")
     return UserResult(user, True)

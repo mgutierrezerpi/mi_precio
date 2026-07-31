@@ -3,6 +3,7 @@
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from lib import decode_token
+from lib.ctx import plans_context
 
 security = HTTPBearer(auto_error=False)
 
@@ -32,6 +33,23 @@ def require_roles(*allowed: str):
         return current_user
 
     return dependency
+
+
+def require_active_plan(current_user: dict = Depends(get_current_user)) -> dict:
+    """Block CRM data endpoints while the tenant still has to pick a plan.
+
+    The frontend routes gated tenants to the plan screen, but the session lives
+    in localStorage, so the block has to be enforced here too. Endpoints needed
+    to *get out* of the gate stay open: auth, /users/me, reading the tenant,
+    plan info, changing the plan, checkout, and deleting the account."""
+
+    tenant_id = current_user.get("tenant_id")
+    if tenant_id and plans_context.plan_required(tenant_id):
+        raise HTTPException(
+            status_code=402,
+            detail={"code": "plan_required", "message": plans_context.PLAN_REQUIRED_MESSAGE},
+        )
+    return current_user
 
 
 # Catalog/CRM writes: owners, admins and editors. Viewers are read-only.

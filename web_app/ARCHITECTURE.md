@@ -136,9 +136,24 @@ interface Item {
 | `/` | HomeScreen | Landing page |
 | `/menu` | MenuScreen | Public menu view |
 | `/login` | LoginScreen | Admin login |
+| `/planes` | ChoosePlanScreen | Blocking plan selection for new signups (see below) |
 | `/admin` | DashboardScreen | Admin dashboard |
 | `/admin/lists` | ListsScreen | Manage price lists |
 | `/admin/items` | ItemsScreen | Manage menu items |
+
+### Plan gate
+
+Accounts created after paid onboarding shipped carry `tenant.planGate`. While they
+have no paid plan, `selectNeedsPlan` is true and:
+
+- `AdminExperienceLayout` redirects `/admin/*` to `/planes`
+- `AuthCard` / `HomeScreen` send a fresh login to `/planes` instead of the panel
+- any API call answered with `402 { code: "plan_required" }` re-reads the tenant
+  and bounces to `/planes` (`setPlanRequiredHandler` in `App.tsx`)
+
+The gate lifts as soon as the plan is not `free` — via the Lemon Squeezy checkout,
+or immediately when `billingEnabled` is false (local dev, no gateway). Tenants
+created before the gate have `planGate` false and are never blocked.
 
 ## Components
 

@@ -13,6 +13,7 @@ import { ReportsScreen } from './screens/admin/ReportsScreen'
 import { TeamScreen } from './screens/admin/TeamScreen'
 import { SupportScreen } from './screens/admin/SupportScreen'
 import { AdminDashboardRoute, AdminListsRoute, AdminProductsRoute, AdminSettingsRoute } from './screens/admin/AdminRouteSwitches'
+import { ChoosePlanScreen } from './screens/onboarding/ChoosePlanScreen'
 
 export const router = createBrowserRouter([
   // Public routes
@@ -35,6 +36,11 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <HomeScreen />,
+  },
+  // Blocking plan selection: where a new signup lands until it has a plan.
+  {
+    path: '/planes',
+    element: <ChoosePlanScreen />,
   },
   // Admin routes
   {
