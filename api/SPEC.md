@@ -592,6 +592,27 @@ def get_products_controller() -> ProductsController:
 /api/v1
 ```
 
+### Plan gate
+
+Tenants created after paid onboarding shipped are flagged with `tenant.plan_gate`.
+While such a tenant is still on `free`, `plans_context.plan_required()` is true and
+the `require_active_plan` dependency answers CRM endpoints with:
+
+```json
+HTTP 402 { "detail": { "code": "plan_required", "message": "Elegí un plan…" } }
+```
+
+Applied to the lists, versions, items, products, categories, customers, import,
+notifications, support and team routers, plus the tenant stats/activity/update
+endpoints. Deliberately left open so a blocked owner can get out: `/auth/*`,
+`/users/me`, `GET /tenants/{id}`, `GET|PATCH /tenants/{id}/plan`,
+`POST /billing/checkouts` and `DELETE /tenants/{id}`.
+
+The gate lifts as soon as the plan is not `free` (Lemon Squeezy webhook, or the
+immediate `PATCH` fallback when `BILLING_ENABLED=false`). It closes again if a
+subscription ends, since billing drops the plan back to `free`. Tenants created
+before the flag existed default to `plan_gate = false` and are never blocked.
+
 ### Endpoints
 
 #### Health

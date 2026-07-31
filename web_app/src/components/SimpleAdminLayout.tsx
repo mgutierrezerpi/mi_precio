@@ -1,17 +1,22 @@
 import { useEffect } from 'react'
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Navigate, Outlet } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import { refreshCurrentUser, selectAdminUiMode, selectIsAuthenticated, selectTenant, updateCurrentUser } from '../store/slices/authSlice'
+import { refreshCurrentUser, selectAdminUiMode, selectIsAuthenticated, selectNeedsPlan, selectTenant, updateCurrentUser } from '../store/slices/authSlice'
 import { useT } from '../lib/i18n'
 
 export function AdminExperienceLayout() {
   const dispatch = useAppDispatch()
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const needsPlan = useAppSelector(selectNeedsPlan)
   const mode = useAppSelector(selectAdminUiMode)
 
   useEffect(() => {
     if (isAuthenticated) dispatch(refreshCurrentUser())
   }, [dispatch, isAuthenticated])
+
+  // No plan, no CRM. The API enforces the same rule (require_active_plan), this
+  // just keeps the user on the plan screen instead of an empty panel.
+  if (needsPlan) return <Navigate to="/planes" replace />
 
   if (mode === 'full') return <Outlet />
   return <SimpleAdminLayout mode={mode} />

@@ -22,6 +22,16 @@ export function setAuthErrorHandler(callback: AuthErrorCallback | null) {
   onAuthError = callback
 }
 
+/** Fired when the API refuses a request because the tenant still owes us a plan
+ *  (HTTP 402 + `plan_required`). Safety net for sessions that slipped past the
+ *  route guard — e.g. a tab left open when the subscription expired. */
+type PlanRequiredCallback = () => void
+let onPlanRequired: PlanRequiredCallback | null = null
+
+export function setPlanRequiredHandler(callback: PlanRequiredCallback | null) {
+  onPlanRequired = callback
+}
+
 function snakeToCamel(str: string): string {
   return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
 }
@@ -95,7 +105,12 @@ class ApiService {
           onAuthError()
         }
         const errorData = await response.json().catch(() => ({}))
-        return { error: errorData.detail || `Error ${response.status}` }
+        // `detail` is a plain string everywhere except the plan gate, which
+        // sends { code, message } so it can be told apart from plan-limit 402s.
+        const detail = errorData.detail
+        if (response.status === 402 && detail?.code === 'plan_required') onPlanRequired?.()
+        const message = typeof detail === 'string' ? detail : detail?.message
+        return { error: message || `Error ${response.status}` }
       }
 
       const data = await response.json()

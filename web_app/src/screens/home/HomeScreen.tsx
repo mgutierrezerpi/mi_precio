@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
-import { selectIsAuthenticated } from '../../store/slices/authSlice'
+import { selectIsAuthenticated, selectNeedsPlan } from '../../store/slices/authSlice'
 import { AuthModal } from '../../components/AuthModal'
 import { PLANS } from '../../lib/plans'
 
@@ -52,13 +52,14 @@ const faqs = [
 /* ── Page ─────────────────────────────────────────────────────── */
 export function HomeScreen() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const needsPlan = useAppSelector(selectNeedsPlan)
   const navigate = useNavigate()
   const location = useLocation()
   const [authOpen, setAuthOpen] = useState(location.pathname === '/login' && !isAuthenticated)
 
   const openAuth: OpenAuth = () => {
     if (isAuthenticated) {
-      navigate('/admin')
+      navigate(needsPlan ? '/planes' : '/admin')
       return
     }
     setAuthOpen(true)
@@ -75,7 +76,7 @@ export function HomeScreen() {
   // Already-logged-in users hitting /login (e.g. from the static landing's
   // "Iniciar sesión" link, which can't know the session) go straight to the panel.
   if (isAuthenticated && location.pathname === '/login') {
-    return <Navigate to="/admin" replace />
+    return <Navigate to={needsPlan ? '/planes' : '/admin'} replace />
   }
 
   return (

@@ -8,6 +8,8 @@ export interface PlanInfo {
   usage: { products: number; lists: number; members: number }
   /** When false there is no payment gateway, so plan changes apply immediately. */
   billingEnabled?: boolean
+  /** True while the tenant still has to pick a plan before the CRM opens up. */
+  planRequired?: boolean
   billing?: {
     provider: string | null
     customer_id: string | null
@@ -30,6 +32,9 @@ export interface Tenant {
   subdomain: string
   currency: string
   plan: PlanId
+  /** Signed up after paid onboarding shipped: no plan, no CRM. Absent on
+   *  sessions stored before this field existed (treated as not gated). */
+  planGate?: boolean
   logoUrl: string | null
   brandColor: string | null
   description: string | null

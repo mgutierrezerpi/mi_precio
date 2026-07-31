@@ -221,6 +221,20 @@ const DICT: Record<string, Entry> = {
   'bill.pendingShort': { es: 'Pendiente', en: 'Pending', pt: 'Pendente' },
   // Plan names, prices and feature copy now live in lib/plans (shared with the landing).
 
+  // ── Plan gate (blocking screen shown to new signups) ────────────
+  'gate.title': { es: 'Elegí tu plan para empezar', en: 'Choose your plan to get started', pt: 'Escolha seu plano para começar' },
+  'gate.subtitle': { es: 'Creamos la cuenta «{name}». Activá un plan y entrás al panel.', en: 'We created the “{name}” account. Activate a plan and you’re in.', pt: 'Criamos a conta “{name}”. Ative um plano e entre no painel.' },
+  'gate.trialNote': { es: 'Arrancás con la prueba gratis. Cancelás cuando quieras.', en: 'You start with the free trial. Cancel anytime.', pt: 'Você começa com o teste grátis. Cancele quando quiser.' },
+  'gate.choose': { es: 'Empezar prueba', en: 'Start trial', pt: 'Começar teste' },
+  'gate.opening': { es: 'Abriendo…', en: 'Opening…', pt: 'Abrindo…' },
+  'gate.confirming': { es: 'Estamos confirmando tu pago. Puede tardar unos segundos…', en: 'We’re confirming your payment. This can take a few seconds…', pt: 'Estamos confirmando seu pagamento. Pode levar alguns segundos…' },
+  'gate.recheck': { es: 'Ya pagué, verificar', en: 'I paid, check again', pt: 'Já paguei, verificar' },
+  'gate.rechecking': { es: 'Verificando…', en: 'Checking…', pt: 'Verificando…' },
+  'gate.recheckEmpty': { es: 'Todavía no nos llegó la confirmación del pago. Si acabás de pagar, esperá unos segundos y volvé a probar.', en: 'We haven’t received the payment confirmation yet. If you just paid, wait a few seconds and try again.', pt: 'Ainda não recebemos a confirmação do pagamento. Se você acabou de pagar, aguarde alguns segundos e tente de novo.' },
+  'gate.ownerOnly': { es: 'Solo el dueño de la cuenta puede activar el plan. Pedile que lo haga para poder entrar.', en: 'Only the account owner can activate the plan. Ask them to do it so you can get in.', pt: 'Apenas o dono da conta pode ativar o plano. Peça a ele para que você possa entrar.' },
+  'gate.expired': { es: 'Tu suscripción terminó. Elegí un plan para volver a entrar.', en: 'Your subscription ended. Choose a plan to get back in.', pt: 'Sua assinatura terminou. Escolha um plano para voltar.' },
+  'gate.logout': { es: 'Salir', en: 'Log out', pt: 'Sair' },
+
   'set.delete.subtitle': { es: 'Acción permanente e irreversible.', en: 'Permanent and irreversible action.', pt: 'Ação permanente e irreversível.' },
   'set.delete.warning': { es: 'Se eliminará tu cuenta «{name}» con todos sus productos, listas, clientes, ventas y miembros del equipo. Esta acción no se puede deshacer.', en: 'Your account “{name}” will be deleted with all its products, lists, customers, sales and team members. This cannot be undone.', pt: 'Sua conta “{name}” será excluída com todos os produtos, listas, clientes, vendas e membros da equipe. Isso não pode ser desfeito.' },
   'set.delete.confirm': { es: 'Escribí «{keyword}» para confirmar', en: 'Type “{keyword}” to confirm', pt: 'Digite “{keyword}” para confirmar' },

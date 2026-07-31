@@ -30,6 +30,22 @@ class PlanLimitError(Exception):
     """Raised when an action would exceed the tenant's plan limit (HTTP 402)."""
 
 
+# Shown on the blocking plan screen when a gated tenant has no paid plan yet.
+PLAN_REQUIRED_MESSAGE = "Elegí un plan para empezar a usar Mi Precio."
+
+
+def plan_required(tenant_id: str) -> bool:
+    """True when the tenant must pick a paid plan before using the CRM.
+
+    Only tenants created after the paid onboarding shipped carry `plan_gate`;
+    for them "free" means "signup not finished" (or "subscription expired",
+    since the billing webhook drops an ended subscription back to free)."""
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant or not getattr(tenant, "plan_gate", False):
+        return False
+    return normalize_plan(getattr(tenant, "plan", "free")) == "free"
+
+
 def normalize_plan(plan: str | None) -> str:
     if plan == "pyme":
         return "plus"
@@ -54,7 +70,14 @@ def plan_info(tenant_id: str) -> dict:
     plan = normalize_plan(getattr(tenant, "plan", "free")) if tenant else "free"
     # When billing is disabled there is no payment gateway, so the UI switches
     # plans immediately via PATCH instead of opening a checkout.
-    info = {"plan": plan, "limits": PLANS[plan], "usage": _usage(tenant_id), "billing_enabled": settings.billing_enabled}
+    info = {
+        "plan": plan,
+        "limits": PLANS[plan],
+        "usage": _usage(tenant_id),
+        "billing_enabled": settings.billing_enabled,
+        # Lets the plan screen poll for the checkout/webhook to land.
+        "plan_required": plan_required(tenant_id),
+    }
     if tenant:
         info["billing"] = {
             "provider": tenant.billing_provider,

@@ -8,6 +8,8 @@ class TenantView(BaseView):
     subdomain: str
     currency: str = "UYU"
     plan: str = "free"
+    # True when this tenant must pick a plan before the CRM opens up.
+    plan_gate: bool = False
     logo_url: str | None = None
     brand_color: str | None = None
     description: str | None = None
@@ -35,6 +37,7 @@ class TenantView(BaseView):
             subdomain=tenant.subdomain,
             currency=g("currency", "UYU") or "UYU",
             plan=g("plan", "free") or "free",
+            plan_gate=bool(g("plan_gate", False)),
             logo_url=g("logo_url"),
             brand_color=g("brand_color"),
             description=g("description"),
