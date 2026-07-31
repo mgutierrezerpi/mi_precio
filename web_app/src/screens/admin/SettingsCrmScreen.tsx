@@ -625,7 +625,7 @@ function SubscriptionPanel({ t, info, isOwner, tenantId, onChanged }: {
       )}
 
       {isOwner ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--dash-divider)] pt-3.5">
           {billing?.portalUrl && (
             <a href={billing.portalUrl} target="_blank" rel="noreferrer"
               className="flex h-10 items-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
@@ -644,9 +644,12 @@ function SubscriptionPanel({ t, info, isOwner, tenantId, onChanged }: {
               {busy === 'resume' ? t('bill.sub.resuming') : t('bill.sub.resume')}
             </button>
           ) : !confirming ? (
+            // Destructive but not primary: outlined in red, same size as the
+            // other actions, and pushed to the right so it never reads as the
+            // default thing to do here.
             <button type="button" onClick={() => { setConfirming(true); setError(null) }}
-              className="flex h-10 items-center rounded-xl px-4 text-[13px] font-bold text-[#EF4444] hover:bg-[var(--tone-red-bg)]">
-              {t('bill.sub.cancel')}
+              className="ml-auto flex h-10 items-center gap-2 rounded-xl border border-[#EF4444]/40 px-4 text-[13px] font-bold text-[#EF4444] transition hover:border-[#EF4444] hover:bg-[var(--tone-red-bg)]">
+              <Icon name="circle-x" size={15} /> {t('bill.sub.cancel')}
             </button>
           ) : (
             <div className="flex w-full flex-col gap-2 rounded-xl border border-[#EF4444]/40 bg-[var(--tone-red-bg)] p-3.5">
@@ -767,8 +770,6 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
     <>
       <SectionHeader t={t} title={t('set.sec.billing')} subtitle={t('set.billing.subtitle')} canManage={false} />
 
-      <SubscriptionPanel t={t} info={info} isOwner={isOwner} tenantId={tenantId} onChanged={refresh} />
-
       {error && (
         <div className="flex items-center gap-2 rounded-2xl border border-[var(--tone-red-fg)]/40 bg-[var(--tone-red-bg)] px-4 py-3 text-sm font-semibold text-[var(--tone-red-fg)]">
           <Icon name="alert-triangle" size={16} /> {error}
@@ -851,6 +852,10 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
       <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
         <Icon name="tags" size={15} /> {t('bill.paymentNote')}
       </div>
+
+      {/* Last: managing (and cancelling) what you already have comes after
+          seeing the plans, the same way "delete account" closes Settings. */}
+      <SubscriptionPanel t={t} info={info} isOwner={isOwner} tenantId={tenantId} onChanged={refresh} />
     </>
   )
 }
