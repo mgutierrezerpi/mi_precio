@@ -26,6 +26,11 @@ class PriceListView(BaseView):
     published: bool
     show_on_index: bool
     kind: str = "product"
+    # Per-list appearance; null means "inherit the tenant default".
+    design: str | None = None
+    hero_color: str | None = None
+    bg_url: str | None = None
+    bg_overlay: bool | None = None
     item_count: int = 0
     created_at: datetime
     updated_at: datetime

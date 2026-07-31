@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from lib.ctx import team, activity, plans
 from lib.ctx.team_context import TeamError
 from lib.ctx.plans_context import PlanLimitError
-from controllers.deps import get_current_user, require_admin
+from controllers.deps import get_current_user, require_active_plan, require_admin
 from controllers.input_types import InviteMember, UpdateMember
 from views import DeletedView, UserView, InvitationView
 from models import User
@@ -13,6 +13,11 @@ from tasks import send_invitation_email
 
 router = APIRouter(tags=["team"])
 logger = logging.getLogger(__name__)
+
+# Team management is CRM data, so it's closed while the tenant owes us a plan.
+# `/users/me` stays open: the app needs it to know who is sitting in front of
+# the plan screen.
+plan_gated = [Depends(require_active_plan)]
 
 
 class UpdateCurrentUser(BaseModel):
@@ -47,22 +52,22 @@ def update_current_user_endpoint(data: UpdateCurrentUser, current_user: dict = D
     return UserView.render(user)
 
 
-@router.get("/tenants/{tenant_id}/members")
+@router.get("/tenants/{tenant_id}/members", dependencies=plan_gated)
 def list_members_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
     return UserView.render_many(team.list_members(tenant_id))
 
 
-@router.get("/tenants/{tenant_id}/members/stats")
+@router.get("/tenants/{tenant_id}/members/stats", dependencies=plan_gated)
 def member_stats_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
     return team.member_stats(tenant_id)
 
 
-@router.get("/tenants/{tenant_id}/invitations")
+@router.get("/tenants/{tenant_id}/invitations", dependencies=plan_gated)
 def list_invitations_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
     return InvitationView.render_many(team.list_invitations(tenant_id))
 
 
-@router.post("/tenants/{tenant_id}/members", status_code=201)
+@router.post("/tenants/{tenant_id}/members", status_code=201, dependencies=plan_gated)
 def invite_member_endpoint(tenant_id: str, data: InviteMember, current_user: dict = Depends(require_admin)):
     try:
         plans.assert_can_add(tenant_id, "members")
@@ -82,7 +87,7 @@ def invite_member_endpoint(tenant_id: str, data: InviteMember, current_user: dic
     return InvitationView.render(invite)
 
 
-@router.patch("/tenants/{tenant_id}/members/{user_id}")
+@router.patch("/tenants/{tenant_id}/members/{user_id}", dependencies=plan_gated)
 def update_member_endpoint(tenant_id: str, user_id: str, data: UpdateMember, current_user: dict = Depends(require_admin)):
     try:
         user = team.update_member(tenant_id, user_id, data.role, data.simple_admin_ui, data.admin_ui_mode)
@@ -95,7 +100,7 @@ def update_member_endpoint(tenant_id: str, user_id: str, data: UpdateMember, cur
     return UserView.render(user)
 
 
-@router.delete("/tenants/{tenant_id}/members/{user_id}")
+@router.delete("/tenants/{tenant_id}/members/{user_id}", dependencies=plan_gated)
 def remove_member_endpoint(tenant_id: str, user_id: str, current_user: dict = Depends(require_admin)):
     try:
         user = team.remove_member(tenant_id, user_id, current_user.get("sub"))
@@ -107,7 +112,7 @@ def remove_member_endpoint(tenant_id: str, user_id: str, current_user: dict = De
     return DeletedView()
 
 
-@router.delete("/tenants/{tenant_id}/invitations/{invitation_id}")
+@router.delete("/tenants/{tenant_id}/invitations/{invitation_id}", dependencies=plan_gated)
 def cancel_invitation_endpoint(tenant_id: str, invitation_id: str, current_user: dict = Depends(require_admin)):
     if not team.cancel_invitation(tenant_id, invitation_id):
         raise HTTPException(status_code=404, detail="Invitation not found")

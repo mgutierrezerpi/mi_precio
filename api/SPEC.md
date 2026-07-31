@@ -592,6 +592,48 @@ def get_products_controller() -> ProductsController:
 /api/v1
 ```
 
+### Plan gate
+
+Tenants created after paid onboarding shipped are flagged with `tenant.plan_gate`.
+While such a tenant is still on `free`, `plans_context.plan_required()` is true and
+the `require_active_plan` dependency answers CRM endpoints with:
+
+```json
+HTTP 402 { "detail": { "code": "plan_required", "message": "Elegí un plan…" } }
+```
+
+Applied to the lists, versions, items, products, categories, customers, import,
+notifications, support and team routers, plus the tenant stats/activity/update
+endpoints. Deliberately left open so a blocked owner can get out: `/auth/*`,
+`/users/me`, `GET /tenants/{id}`, `GET|PATCH /tenants/{id}/plan`,
+`POST /billing/checkouts` and `DELETE /tenants/{id}`.
+
+The gate lifts as soon as the plan is not `free` (Lemon Squeezy webhook, or the
+immediate `PATCH` fallback when `BILLING_ENABLED=false`). It closes again if a
+subscription ends, since billing drops the plan back to `free`. Tenants created
+before the flag existed default to `plan_gate = false` and are never blocked.
+
+### Public-list appearance
+
+The look of a public list resolves field by field:
+
+```
+PriceList.design | hero_color | bg_url | bg_overlay   (per-list override, nullable)
+        ↓ when null
+Tenant.list_design | list_hero_color | list_bg_url | list_bg_overlay   (business default)
+```
+
+`PATCH /lists/{id}` accepts the four override fields; sending `null` clears one
+so the list goes back to inheriting (`lists_context.update_list` treats them as
+the only clearable fields — everything else keeps its value when sent as null).
+Valid design ids and the hex-colour rule live in
+`controllers/input_types/appearance.py`, shared by `UpdateList` and
+`UpdateTenant`.
+
+`PublicListView` carries the overrides so the public page can resolve the
+cascade. Only a URL targeting a single list applies them; `/p/{subdomain}`
+merges every published list into one view and stays on the business default.
+
 ### Endpoints
 
 #### Health

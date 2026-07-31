@@ -189,6 +189,14 @@ export const selectSimpleAdminUi = (state: { auth: AuthState }) => selectAdminUi
 export const selectMediumAdminUi = (state: { auth: AuthState }) => selectAdminUiMode(state) === 'medium'
 export const selectFullAdminUi = (state: { auth: AuthState }) => selectAdminUiMode(state) === 'full'
 
+/** True while the tenant has to pick a plan before the CRM opens up: gated
+ *  signup with no paid plan (either never chosen, or the subscription ended and
+ *  billing dropped it back to free). Mirrors plans_context.plan_required. */
+export const tenantNeedsPlan = (tenant: Tenant | null | undefined) =>
+  !!tenant?.planGate && (tenant.plan ?? 'free') === 'free'
+
+export const selectNeedsPlan = (state: { auth: AuthState }) => tenantNeedsPlan(state.auth.tenant)
+
 // Role-based permissions. Sessions stored before roles existed default to "owner".
 const roleOf = (state: { auth: AuthState }) => state.auth.user?.role ?? 'owner'
 // Can create/edit/delete catalog & CRM data (owners, admins, editors). Viewers are read-only.

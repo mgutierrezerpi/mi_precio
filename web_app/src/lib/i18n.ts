@@ -138,7 +138,7 @@ const DICT: Record<string, Entry> = {
   'set.brand.previewCat': { es: 'Catálogo público', en: 'Public catalog', pt: 'Catálogo público' },
 
   'set.design.title': { es: 'Diseño de la lista', en: 'List design', pt: 'Design da lista' },
-  'set.design.subtitle': { es: 'Elegí cómo se ve tu lista pública. El diseño se aplica a todas tus listas.', en: 'Choose how your public list looks. The design applies to all your lists.', pt: 'Escolha como sua lista pública aparece. O design se aplica a todas as suas listas.' },
+  'set.design.subtitle': { es: 'Es el diseño por defecto: lo usan las listas que no eligieron uno propio.', en: 'This is the default design: used by every list that hasn’t picked its own.', pt: 'É o design padrão: usado por toda lista que não escolheu o seu.' },
   'set.design.store.name': { es: 'Tienda', en: 'Store', pt: 'Loja' },
   'set.design.store.desc': { es: 'Catálogo tipo e-commerce con fotos, filtros y carrito.', en: 'E-commerce catalog with photos, filters and cart.', pt: 'Catálogo tipo e-commerce com fotos, filtros e carrinho.' },
   'set.design.classic.name': { es: 'Lista clásica', en: 'Classic list', pt: 'Lista clássica' },
@@ -157,6 +157,17 @@ const DICT: Record<string, Entry> = {
   'set.design.catalog.desc': { es: 'Header oscuro y grilla de productos con fotos.', en: 'Dark header and product grid with photos.', pt: 'Cabeçalho escuro e grade de produtos com fotos.' },
   'set.design.tech.name': { es: 'Tech', en: 'Tech', pt: 'Tech' },
   'set.design.tech.desc': { es: 'Oscuro y moderno, con grilla y precios monoespaciados.', en: 'Dark and modern, with a grid and monospaced prices.', pt: 'Escuro e moderno, com grade e preços monoespaçados.' },
+  // ── Per-list appearance (overrides of the tenant defaults) ──────
+  'list.appearance.title': { es: 'Apariencia de esta lista', en: 'This list’s appearance', pt: 'Aparência desta lista' },
+  'list.appearance.subtitle': { es: 'Personalizá cómo se ve esta lista. Lo que no cambies usa lo del comercio.', en: 'Customize how this list looks. Anything you leave alone uses the business defaults.', pt: 'Personalize como esta lista aparece. O que você não mudar usa o padrão do negócio.' },
+  'list.appearance.designSub': { es: 'Sólo para esta lista. Las demás no cambian.', en: 'For this list only. The others are unaffected.', pt: 'Só para esta lista. As outras não mudam.' },
+  'list.appearance.inherit': { es: 'El del comercio', en: 'Business default', pt: 'O padrão do negócio' },
+  'list.appearance.inheritDesc': { es: 'Usa el diseño configurado en Marca y apariencia.', en: 'Uses the design set in Brand & appearance.', pt: 'Usa o design definido em Marca e aparência.' },
+  'list.appearance.useTenant': { es: 'Usar el del comercio', en: 'Use business default', pt: 'Usar o padrão do negócio' },
+  'list.appearance.bgInherited': { es: 'Heredado del comercio.', en: 'Inherited from the business.', pt: 'Herdado do negócio.' },
+  'list.appearance.applyTo': { es: 'Personalizar', en: 'Customize', pt: 'Personalizar' },
+  'list.appearance.tenantDefault': { es: 'Todas las listas (por defecto)', en: 'All lists (default)', pt: 'Todas as listas (padrão)' },
+  'list.appearance.custom': { es: 'Personalizada', en: 'Custom', pt: 'Personalizada' },
   'set.bg.title': { es: 'Imagen de fondo', en: 'Background image', pt: 'Imagem de fundo' },
   'set.bg.subtitle': { es: 'Se muestra detrás de tu lista pública, en cualquier diseño.', en: 'Shown behind your public list, in any design.', pt: 'Aparece atrás da sua lista pública, em qualquer design.' },
   'set.bg.upload': { es: 'Subir imagen', en: 'Upload image', pt: 'Enviar imagem' },
@@ -220,6 +231,20 @@ const DICT: Record<string, Entry> = {
   'bill.pending': { es: 'Seleccionaste {plan}. Estamos esperando la confirmación de Lemon Squeezy.', en: 'You selected {plan}. Waiting for Lemon Squeezy confirmation.', pt: 'Você selecionou {plan}. Aguardando a confirmação do Lemon Squeezy.' },
   'bill.pendingShort': { es: 'Pendiente', en: 'Pending', pt: 'Pendente' },
   // Plan names, prices and feature copy now live in lib/plans (shared with the landing).
+
+  // ── Plan gate (blocking screen shown to new signups) ────────────
+  'gate.title': { es: 'Elegí tu plan para empezar', en: 'Choose your plan to get started', pt: 'Escolha seu plano para começar' },
+  'gate.subtitle': { es: 'Creamos la cuenta «{name}». Activá un plan y entrás al panel.', en: 'We created the “{name}” account. Activate a plan and you’re in.', pt: 'Criamos a conta “{name}”. Ative um plano e entre no painel.' },
+  'gate.trialNote': { es: 'Arrancás con la prueba gratis. Cancelás cuando quieras.', en: 'You start with the free trial. Cancel anytime.', pt: 'Você começa com o teste grátis. Cancele quando quiser.' },
+  'gate.choose': { es: 'Empezar prueba', en: 'Start trial', pt: 'Começar teste' },
+  'gate.opening': { es: 'Abriendo…', en: 'Opening…', pt: 'Abrindo…' },
+  'gate.confirming': { es: 'Estamos confirmando tu pago. Puede tardar unos segundos…', en: 'We’re confirming your payment. This can take a few seconds…', pt: 'Estamos confirmando seu pagamento. Pode levar alguns segundos…' },
+  'gate.recheck': { es: 'Ya pagué, verificar', en: 'I paid, check again', pt: 'Já paguei, verificar' },
+  'gate.rechecking': { es: 'Verificando…', en: 'Checking…', pt: 'Verificando…' },
+  'gate.recheckEmpty': { es: 'Todavía no nos llegó la confirmación del pago. Si acabás de pagar, esperá unos segundos y volvé a probar.', en: 'We haven’t received the payment confirmation yet. If you just paid, wait a few seconds and try again.', pt: 'Ainda não recebemos a confirmação do pagamento. Se você acabou de pagar, aguarde alguns segundos e tente de novo.' },
+  'gate.ownerOnly': { es: 'Solo el dueño de la cuenta puede activar el plan. Pedile que lo haga para poder entrar.', en: 'Only the account owner can activate the plan. Ask them to do it so you can get in.', pt: 'Apenas o dono da conta pode ativar o plano. Peça a ele para que você possa entrar.' },
+  'gate.expired': { es: 'Tu suscripción terminó. Elegí un plan para volver a entrar.', en: 'Your subscription ended. Choose a plan to get back in.', pt: 'Sua assinatura terminou. Escolha um plano para voltar.' },
+  'gate.logout': { es: 'Salir', en: 'Log out', pt: 'Sair' },
 
   'set.delete.subtitle': { es: 'Acción permanente e irreversible.', en: 'Permanent and irreversible action.', pt: 'Ação permanente e irreversível.' },
   'set.delete.warning': { es: 'Se eliminará tu cuenta «{name}» con todos sus productos, listas, clientes, ventas y miembros del equipo. Esta acción no se puede deshacer.', en: 'Your account “{name}” will be deleted with all its products, lists, customers, sales and team members. This cannot be undone.', pt: 'Sua conta “{name}” será excluída com todos os produtos, listas, clientes, vendas e membros da equipe. Isso não pode ser desfeito.' },

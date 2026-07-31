@@ -11,6 +11,8 @@ import {
   selectIsAuthenticated,
   clearAuthError,
   resetCodeFlow,
+  selectNeedsPlan,
+  tenantNeedsPlan,
 } from '../store/slices/authSlice'
 
 /* ── Inline icons (lucide-style) ──────────────────────────────── */
@@ -101,6 +103,7 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
   const codeSent = useAppSelector(selectCodeSent)
   const pendingEmail = useAppSelector(selectPendingEmail)
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const needsPlan = useAppSelector(selectNeedsPlan)
 
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
@@ -112,12 +115,13 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
     }
   }, [codeSent, searchParams])
 
-  // Redirect if already authenticated.
+  // Redirect if already authenticated. Accounts that still owe us a plan go to
+  // the plan screen instead of the panel.
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/admin', { replace: true })
+      navigate(needsPlan ? '/planes' : '/admin', { replace: true })
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, needsPlan, navigate])
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -131,7 +135,8 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
 
     const result = await dispatch(verifyCode({ email: pendingEmail!, code }))
     if (verifyCode.fulfilled.match(result)) {
-      navigate('/admin')
+      // A brand-new signup has no plan yet: send it to pick one.
+      navigate(tenantNeedsPlan(result.payload.tenant) ? '/planes' : '/admin')
     }
   }
 

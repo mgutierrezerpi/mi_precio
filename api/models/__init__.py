@@ -31,6 +31,15 @@ def ensure_columns():
             db.execute_sql("ALTER TABLE lists ADD COLUMN slug VARCHAR(255)")
         if "kind" not in list_columns:
             db.execute_sql("ALTER TABLE lists ADD COLUMN kind VARCHAR(20) NOT NULL DEFAULT 'product'")
+        # Per-list appearance overrides; NULL means "inherit the tenant default".
+        for col, ddl in [
+            ("design", "design VARCHAR(32)"),
+            ("hero_color", "hero_color VARCHAR(9)"),
+            ("bg_url", "bg_url TEXT"),
+            ("bg_overlay", "bg_overlay INTEGER"),
+        ]:
+            if col not in list_columns:
+                db.execute_sql(f"ALTER TABLE lists ADD COLUMN {ddl}")
 
     product_columns = _columns("products")
     if product_columns is not None:
@@ -71,6 +80,8 @@ def ensure_columns():
     if tenant_columns is not None:
         for col, ddl in [
             ("plan", "plan VARCHAR(16) NOT NULL DEFAULT 'free'"),
+            # Default 0: existing tenants are grandfathered in, only new signups are gated.
+            ("plan_gate", "plan_gate INTEGER NOT NULL DEFAULT 0"),
             ("billing_provider", "billing_provider VARCHAR(32)"),
             ("billing_customer_id", "billing_customer_id VARCHAR(64)"),
             ("billing_subscription_id", "billing_subscription_id VARCHAR(64)"),

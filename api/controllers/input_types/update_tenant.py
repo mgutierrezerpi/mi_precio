@@ -1,6 +1,8 @@
 from pydantic import BaseModel, field_validator
 import re
 
+from controllers.input_types.appearance import validate_design, validate_hex_color
+
 
 class UpdateTenant(BaseModel):
     name: str | None = None
@@ -40,27 +42,14 @@ class UpdateTenant(BaseModel):
     @field_validator("brand_color")
     @classmethod
     def validate_brand_color(cls, v: str | None) -> str | None:
-        if v is None or v == "":
-            return None
-        if not re.match(r"^#[0-9a-fA-F]{6}$", v):
-            raise ValueError("Brand color must be a hex value like #7C3AED")
-        return v.upper()
+        return validate_hex_color(v, "Brand color")
 
     @field_validator("list_hero_color")
     @classmethod
     def validate_list_hero_color(cls, v: str | None) -> str | None:
-        if v is None or v == "":
-            return None
-        if not re.match(r"^#[0-9a-fA-F]{6}$", v):
-            raise ValueError("Hero color must be a hex value like #7C3AED")
-        return v.upper()
+        return validate_hex_color(v, "Hero color")
 
     @field_validator("list_design")
     @classmethod
     def validate_list_design(cls, v: str | None) -> str | None:
-        if v is None or v == "":
-            return None
-        allowed = {"store", "classic", "nordic", "fine", "modern", "photo", "cards", "catalog", "tech"}
-        if v not in allowed:
-            raise ValueError(f"list_design must be one of {sorted(allowed)}")
-        return v
+        return validate_design(v)

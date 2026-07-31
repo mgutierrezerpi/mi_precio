@@ -1,14 +1,19 @@
 from fastapi import APIRouter, HTTPException, Depends
 from config import settings
 from lib.ctx import identity, analytics, activity, plans
-from controllers.deps import get_current_user, require_admin, require_owner
+from controllers.deps import get_current_user, require_active_plan, require_admin, require_owner
 from controllers.input_types import CreateTenant, UpdateTenant, UpdatePlan
 from views import TenantView, ActivityView, DeletedView
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
+# CRM data on this router, closed while the tenant owes us a plan. Reading the
+# tenant, reading/changing the plan and deleting the account stay open so a
+# gated owner can still get out of the plan screen.
+plan_gated = [Depends(require_active_plan)]
 
-@router.get("/{tenant_id}/stats/visits")
+
+@router.get("/{tenant_id}/stats/visits", dependencies=plan_gated)
 def visit_stats_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
     return analytics.visit_stats(tenant_id)
 
@@ -36,22 +41,22 @@ def update_plan_endpoint(tenant_id: str, data: UpdatePlan, current_user: dict = 
     return TenantView.render(tenant)
 
 
-@router.get("/{tenant_id}/stats/reports")
+@router.get("/{tenant_id}/stats/reports", dependencies=plan_gated)
 def reports_endpoint(tenant_id: str, days: int = 30, current_user: dict = Depends(get_current_user)):
     return analytics.reports(tenant_id, days)
 
 
-@router.get("/{tenant_id}/activity")
+@router.get("/{tenant_id}/activity", dependencies=plan_gated)
 def list_activity_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
     return ActivityView.render_many(activity.list_activity(tenant_id))
 
 
-@router.get("")
+@router.get("", dependencies=plan_gated)
 def list_tenants_endpoint(current_user: dict = Depends(get_current_user)):
     return TenantView.render_many(identity.list_tenants())
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, dependencies=plan_gated)
 def create_tenant_endpoint(data: CreateTenant, current_user: dict = Depends(get_current_user)):
     tenant = identity.create_tenant(data.name, data.subdomain)
     if not tenant:
@@ -67,7 +72,7 @@ def get_tenant_endpoint(tenant_id: str, current_user: dict = Depends(get_current
     return TenantView.render(tenant)
 
 
-@router.patch("/{tenant_id}")
+@router.patch("/{tenant_id}", dependencies=plan_gated)
 def update_tenant_endpoint(tenant_id: str, data: UpdateTenant, current_user: dict = Depends(require_admin)):
     try:
         tenant = identity.update_tenant(tenant_id, **data.model_dump(exclude_unset=True))

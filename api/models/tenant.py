@@ -10,6 +10,11 @@ class Tenant(BaseModel):
     # Subscription plan: free | micro | plus | pro (limits enforced in plans_context).
     plan = CharField(max_length=16, default="free")
 
+    # Signups from the paid-onboarding era must pick a plan before using the CRM
+    # (see plans_context.plan_required). Defaults to False so tenants created
+    # before the gate existed keep their access untouched.
+    plan_gate = BooleanField(default=False)
+
     # Billing provider state. Lemon Squeezy is the first provider, but these
     # columns stay generic enough for manual fallback and future migration.
     billing_provider = CharField(max_length=32, null=True)

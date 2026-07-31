@@ -1,7 +1,7 @@
 import re
 import unicodedata
 
-from peewee import CharField, BooleanField, ForeignKeyField
+from peewee import BooleanField, CharField, ForeignKeyField, TextField
 from models.base import BaseModel
 from models.tenant import Tenant
 
@@ -37,6 +37,14 @@ class PriceList(BaseModel):
     show_on_index = BooleanField(default=False, index=True)
     # "product" lists show add-to-cart on the public page; "service" lists don't.
     kind = CharField(max_length=20, default="product")
+
+    # Per-list appearance. Every field is optional and falls back to the
+    # tenant-wide default (Tenant.list_design / list_hero_color / list_bg_*), so
+    # a list only overrides what it explicitly sets.
+    design = CharField(max_length=32, null=True)
+    hero_color = CharField(max_length=9, null=True)
+    bg_url = TextField(null=True)
+    bg_overlay = BooleanField(null=True)
 
     class Meta:
         table_name = "lists"
