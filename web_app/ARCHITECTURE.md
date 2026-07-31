@@ -171,6 +171,22 @@ and `bgOverlay`; `null` on a list means "inherit". `ListAppearanceFields`
 single list — the index route merges all published lists and keeps the business
 default.
 
+### Subscription panel
+
+`SubscriptionPanel` (bottom of Settings → Plan y facturación) shows the state,
+dates and card from `PlanInfo.billing`, plus the provider portal links and the
+cancel / resume actions (`api.cancelSubscription` / `resumeSubscription`,
+owner-only). It renders nothing when the account never subscribed.
+
+Cancelling is at the end of the paid period: `status: "cancelled"` still means
+"paid plan, access until `endsAt`", so the panel reads "access until X" and
+offers Resume instead of treating the account as downgraded. The plan only
+drops to `free` on `expired`, which is what the plan gate then blocks on.
+
+`PlanInfo.billing` keys are **camelCase** — `api.request` camelizes every
+response key. Declaring them snake_case is what silently broke the portal link
+before, and the type made it invisible to TS.
+
 ## Components
 
 ### Layout Components
