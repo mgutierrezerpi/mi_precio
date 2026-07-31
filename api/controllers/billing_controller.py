@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from config import settings
 from controllers.deps import require_owner
-from controllers.input_types import CreateCheckout, ManualSubscriptionSync
+from controllers.input_types import CreateCheckout, ManualSubscriptionSync, SubscriptionAction
 from lib.ctx import activity, billing_context as billing
 from views import TenantView
 
@@ -24,6 +24,42 @@ def create_checkout_endpoint(data: CreateCheckout, current_user: dict = Depends(
     except billing.BillingError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return {"url": url}
+
+
+@router.post("/cancellations")
+def cancel_subscription_endpoint(data: SubscriptionAction, current_user: dict = Depends(require_owner)):
+    """Cancel at the end of the paid period — access stays until `ends_at`."""
+    if current_user.get("tenant_id") != data.tenant_id:
+        raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+    try:
+        tenant = billing.cancel_subscription(data.tenant_id)
+    except billing.BillingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    activity.record(tenant.id, "billing.cancelled", "Suscripción cancelada",
+                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                    entity_type="tenant", entity_id=tenant.id,
+                    meta={"plan": tenant.plan, "status": tenant.billing_status or ""})
+    return TenantView.render(tenant)
+
+
+@router.post("/resumptions")
+def resume_subscription_endpoint(data: SubscriptionAction, current_user: dict = Depends(require_owner)):
+    """Undo a cancellation that has not lapsed yet."""
+    if current_user.get("tenant_id") != data.tenant_id:
+        raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+    try:
+        tenant = billing.resume_subscription(data.tenant_id)
+    except billing.BillingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    activity.record(tenant.id, "billing.resumed", "Suscripción reanudada",
+                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
+                    entity_type="tenant", entity_id=tenant.id,
+                    meta={"plan": tenant.plan, "status": tenant.billing_status or ""})
+    return TenantView.render(tenant)
 
 
 @router.post("/manual-subscriptions")

@@ -2,6 +2,11 @@
 
 export type PlanId = 'free' | 'micro' | 'plus' | 'pro'
 
+/** Lemon Squeezy subscription states we surface. `cancelled` still has access
+ *  until `endsAt`; `expired` is when the plan actually drops back to free. */
+export type BillingStatus =
+  | 'on_trial' | 'active' | 'paid' | 'past_due' | 'unpaid' | 'cancelled' | 'expired' | 'paused'
+
 export interface PlanInfo {
   plan: PlanId
   limits: { products: number | null; lists: number | null; members: number | null }
@@ -10,19 +15,22 @@ export interface PlanInfo {
   billingEnabled?: boolean
   /** True while the tenant still has to pick a plan before the CRM opens up. */
   planRequired?: boolean
+  /** camelCase: `api.request` camelizes every response key. Declaring these in
+   *  snake_case used to silently break every read (the portal link never
+   *  rendered) because the type lied and TS could not catch it. */
   billing?: {
     provider: string | null
-    customer_id: string | null
-    subscription_id: string | null
-    variant_id: string | null
-    status: string | null
-    renews_at: string | null
-    ends_at: string | null
-    trial_ends_at: string | null
-    portal_url: string | null
-    update_payment_url: string | null
-    card_brand: string | null
-    card_last_four: string | null
+    customerId: string | null
+    subscriptionId: string | null
+    variantId: string | null
+    status: BillingStatus | null
+    renewsAt: string | null
+    endsAt: string | null
+    trialEndsAt: string | null
+    portalUrl: string | null
+    updatePaymentUrl: string | null
+    cardBrand: string | null
+    cardLastFour: string | null
   }
 }
 
