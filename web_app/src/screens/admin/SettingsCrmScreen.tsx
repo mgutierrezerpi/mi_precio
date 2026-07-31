@@ -146,13 +146,19 @@ type Ctx = {
   t: TFn
 }
 
-function SectionHeader({ t, title, subtitle, onSave, saving, saved, canManage }: { t: TFn; title: string; subtitle: string; onSave?: () => void; saving?: boolean; saved?: boolean; canManage: boolean }) {
+function SectionHeader({ t, title, subtitle, onSave, saving, saved, canManage, autosave }: { t: TFn; title: string; subtitle: string; onSave?: () => void; saving?: boolean; saved?: boolean; canManage: boolean; autosave?: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-col gap-1">
         <h3 className="text-[20px] font-extrabold text-[var(--dash-text)]">{title}</h3>
         <p className="text-xs font-medium text-[var(--dash-muted)]">{subtitle}</p>
       </div>
+      {/* Autosaved sections show status instead of a save button. */}
+      {autosave && canManage && (saving || saved) && (
+        <span className={`shrink-0 text-xs font-bold ${saving ? 'text-[var(--dash-muted)]' : 'text-[var(--tone-green-fg)]'}`}>
+          {saving ? t('common.saving') : t('common.saved')}
+        </span>
+      )}
       {onSave && canManage && (
         <button type="button" onClick={onSave} disabled={saving} className={`flex h-10 items-center rounded-xl px-5 text-sm font-bold text-white disabled:opacity-60 ${gradient}`}>
           {saving ? t('common.saving') : saved ? t('common.saved') : t('common.save')}
@@ -355,6 +361,21 @@ function BrandSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) 
   const [bgOverlay, setBgOverlay] = useState<boolean>(tenant?.listBgOverlay ?? false)
   const bgFileRef = useRef<HTMLInputElement>(null)
 
+  // Autosave color / hero color / description: no save button in this section.
+  // `save` is re-created on every parent render, so keep it in a ref to avoid
+  // re-firing the effect on unrelated re-renders.
+  const saveRef = useRef(save)
+  saveRef.current = save
+  const skipFirst = useRef(true)
+  useEffect(() => {
+    if (!canManage) return
+    if (skipFirst.current) { skipFirst.current = false; return }
+    const id = setTimeout(() => {
+      void saveRef.current({ brandColor: color, description: description.trim() || null, listHeroColor: heroColor }, 'brand')
+    }, 500)
+    return () => clearTimeout(id)
+  }, [color, heroColor, description, canManage])
+
   const pickDesign = (d: ListDesign) => {
     setDesign(d)
     if (canManage) save({ listDesign: d }, 'design')
@@ -375,7 +396,7 @@ function BrandSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) 
   return (
     <>
       <SectionHeader t={t} title={t('set.sec.brand')} subtitle={t('set.brand.subtitle')} canManage={canManage}
-        onSave={() => save({ brandColor: color, description: description.trim() || null, listHeroColor: heroColor }, 'brand')} saving={savingKey === 'brand'} saved={savedKey === 'brand'} />
+        autosave saving={savingKey === 'brand'} saved={savedKey === 'brand'} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Field label={t('set.brand.color')}>
