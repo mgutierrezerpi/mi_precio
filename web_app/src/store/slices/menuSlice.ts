@@ -49,7 +49,7 @@ export const createList = createAsyncThunk(
 
 export const updateList = createAsyncThunk(
   'menu/updateList',
-  async ({ listId, data }: { listId: string; data: { name?: string; slug?: string; published?: boolean; showOnIndex?: boolean; kind?: 'product' | 'service' } }, { rejectWithValue }) => {
+  async ({ listId, data }: { listId: string; data: Parameters<typeof api.updateList>[1] }, { rejectWithValue }) => {
     const response = await api.updateList(listId, data)
     if (response.error) return rejectWithValue(response.error)
     return response.data

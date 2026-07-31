@@ -155,6 +155,22 @@ The gate lifts as soon as the plan is not `free` — via the Lemon Squeezy check
 or immediately when `billingEnabled` is false (local dev, no gateway). Tenants
 created before the gate have `planGate` false and are never blocked.
 
+### List appearance
+
+Each list may override the business defaults for `design`, `heroColor`, `bgUrl`
+and `bgOverlay`; `null` on a list means "inherit". `ListAppearanceFields`
+(`components/appearance/`) renders those controls and is shared by both editors:
+
+- **Configuración → Marca y apariencia** — a "Personalizar" select switches
+  between the tenant defaults and one list; edits autosave to whichever is
+  selected.
+- **Listas de precios → editar lista** — a collapsed "Apariencia de esta lista"
+  block, saved with the rest of the list.
+
+`MenuScreen` resolves the cascade per field, and only when the URL targets a
+single list — the index route merges all published lists and keeps the business
+default.
+
 ## Components
 
 ### Layout Components

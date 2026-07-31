@@ -613,6 +613,27 @@ immediate `PATCH` fallback when `BILLING_ENABLED=false`). It closes again if a
 subscription ends, since billing drops the plan back to `free`. Tenants created
 before the flag existed default to `plan_gate = false` and are never blocked.
 
+### Public-list appearance
+
+The look of a public list resolves field by field:
+
+```
+PriceList.design | hero_color | bg_url | bg_overlay   (per-list override, nullable)
+        ↓ when null
+Tenant.list_design | list_hero_color | list_bg_url | list_bg_overlay   (business default)
+```
+
+`PATCH /lists/{id}` accepts the four override fields; sending `null` clears one
+so the list goes back to inheriting (`lists_context.update_list` treats them as
+the only clearable fields — everything else keeps its value when sent as null).
+Valid design ids and the hex-colour rule live in
+`controllers/input_types/appearance.py`, shared by `UpdateList` and
+`UpdateTenant`.
+
+`PublicListView` carries the overrides so the public page can resolve the
+cascade. Only a URL targeting a single list applies them; `/p/{subdomain}`
+merges every published list into one view and stays on the business default.
+
 ### Endpoints
 
 #### Health

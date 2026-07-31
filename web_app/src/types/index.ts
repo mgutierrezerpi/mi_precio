@@ -65,6 +65,11 @@ export interface PriceList {
   published: boolean
   showOnIndex: boolean
   kind: ListKind
+  /** Per-list appearance. `null` inherits the tenant's `list*` defaults. */
+  design: ListDesign | null
+  heroColor: string | null
+  bgUrl: string | null
+  bgOverlay: boolean | null
   itemCount: number
   createdAt: string
   updatedAt: string

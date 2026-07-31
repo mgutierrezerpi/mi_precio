@@ -14,6 +14,11 @@ interface PublicList {
   name: string
   slug: string | null
   kind?: 'product' | 'service'
+  // Per-list appearance overrides; null falls back to the tenant's defaults.
+  design?: ListDesign | null
+  heroColor?: string | null
+  bgUrl?: string | null
+  bgOverlay?: boolean | null
   version: ListVersion & { items: Item[] }
 }
 interface PublicMenuData {
@@ -185,12 +190,18 @@ export function MenuScreen() {
     )
   }
 
-  // The public list design is chosen by the business (Settings → Brand & appearance)
-  // and applies to every list. The old per-visitor simple/full toggle is gone.
-  const design: ListDesign = tenant.listDesign ?? 'store'
+  // Appearance falls back field by field: this list's own override → the
+  // business default (Settings → Brand & appearance). Only a URL that targets
+  // one list (/p/sub/slug, or its QR) takes that list's own look; the index
+  // page merges every published list, so it stays on the business default even
+  // when there happens to be a single list.
+  const skin = listId ? list : null
+  const design: ListDesign = skin?.design ?? tenant.listDesign ?? 'store'
   const cartT = cartThemeFor(design)
-  const hasBg = !!tenant.listBgUrl
-  const heroColor = tenant.listHeroColor || accent
+  const bgUrl = skin?.bgUrl ?? tenant.listBgUrl
+  const bgOverlay = skin?.bgUrl ? !!skin.bgOverlay : !!tenant.listBgOverlay
+  const hasBg = !!bgUrl
+  const heroColor = skin?.heroColor || tenant.listHeroColor || accent
   const edition = String(list?.version?.versionNumber ?? 1).padStart(3, '0')
   const designProps: DesignProps = {
     tenant, C, accent, brandGradient, heroColor, t, money, currency, updated, monthYear,
@@ -213,8 +224,8 @@ export function MenuScreen() {
         <div className="relative">
           {/* Optional background image, with an optional brand-color filter on top. */}
           {hasBg && (
-            <div className="pointer-events-none fixed inset-0" style={{ zIndex: 0, backgroundImage: `url(${tenant.listBgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
-              {tenant.listBgOverlay && <div className="absolute inset-0" style={{ background: accent, opacity: 0.5, mixBlendMode: 'multiply' }} />}
+            <div className="pointer-events-none fixed inset-0" style={{ zIndex: 0, backgroundImage: `url(${bgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+              {bgOverlay && <div className="absolute inset-0" style={{ background: accent, opacity: 0.5, mixBlendMode: 'multiply' }} />}
             </div>
           )}
           <div className="relative" style={{ zIndex: 1 }}>

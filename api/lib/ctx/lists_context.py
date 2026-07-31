@@ -42,9 +42,14 @@ def update_list(list_id: str, **updates) -> PriceList | None:
     if updates.get("slug"):
         updates["slug"] = unique_list_slug(price_list.tenant_id, updates["slug"], price_list.id)
 
+    # Appearance overrides are nullable on purpose: sending null clears them so
+    # the list goes back to inheriting the tenant default. The rest keep their
+    # current value rather than being blanked out.
+    clearable = {"design", "hero_color", "bg_url", "bg_overlay"}
     for key, value in updates.items():
-        if value is not None:
-            setattr(price_list, key, value)
+        if value is None and key not in clearable:
+            continue
+        setattr(price_list, key, value)
     price_list.save()
 
     # Also update all versions' published status to match

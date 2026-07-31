@@ -1,4 +1,4 @@
-import type { Tenant, PriceList, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role, NotificationsData, NotifPrefs, PlanInfo, PlanId, User, AdminUiMode } from '../types'
+import type { Tenant, PriceList, ListDesign, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role, NotificationsData, NotifPrefs, PlanInfo, PlanId, User, AdminUiMode } from '../types'
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
@@ -209,17 +209,22 @@ class ApiService {
     })
   }
 
-  async updateList(listId: string, data: { name?: string; slug?: string; published?: boolean; showOnIndex?: boolean; kind?: 'product' | 'service' }): Promise<ApiResponse<PriceList>> {
-    return this.request(`/lists/${listId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        name: data.name,
-        slug: data.slug,
-        published: data.published,
-        show_on_index: data.showOnIndex,
-        kind: data.kind,
-      }),
-    })
+  async updateList(
+    listId: string,
+    data: {
+      name?: string; slug?: string; published?: boolean; showOnIndex?: boolean; kind?: 'product' | 'service'
+      // Appearance overrides: `null` clears one and falls back to the tenant's.
+      design?: ListDesign | null; heroColor?: string | null; bgUrl?: string | null; bgOverlay?: boolean | null
+    },
+  ): Promise<ApiResponse<PriceList>> {
+    // Only send the keys actually provided — the API distinguishes "absent"
+    // (leave as is) from an explicit null (clear the override).
+    const map: Record<string, string> = { showOnIndex: 'show_on_index', heroColor: 'hero_color', bgUrl: 'bg_url', bgOverlay: 'bg_overlay' }
+    const body: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(data)) {
+      if (v !== undefined) body[map[k] ?? k] = v
+    }
+    return this.request(`/lists/${listId}`, { method: 'PATCH', body: JSON.stringify(body) })
   }
 
   async deleteList(listId: string): Promise<ApiResponse<{ deleted: boolean }>> {
