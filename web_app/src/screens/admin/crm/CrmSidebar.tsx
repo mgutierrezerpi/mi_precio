@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '../../../hooks/useTheme'
 import { useAppSelector } from '../../../store/hooks'
@@ -15,38 +16,49 @@ const NEXT_PLAN: Partial<Record<PlanId, PlanId>> = { free: 'micro', micro: 'plus
 // `id` is the stable (Spanish) key screens pass as CrmLayout `active`; `tKey` is the display label.
 const navMain: { icon: IconName; id: string; tKey: string; label: string; to?: string; badge?: string }[] = [
   { icon: 'layout-dashboard', id: 'Overview', tKey: 'nav.home', label: 'Resumen', to: '/admin' },
-  { icon: 'list-checks', id: 'Lists', tKey: 'nav.lists', label: 'Listas', to: '/admin/lists' },
-  { icon: 'package', id: 'Products', tKey: 'nav.products', label: 'Productos', to: '/admin/items' },
-  { icon: 'users', id: 'Customers', tKey: 'nav.customers', label: 'Clientes', to: '/admin/clientes' },
-  { icon: 'package', id: 'Stock', tKey: 'nav.products', label: 'Stock', to: '/admin/items' },
+  { icon: 'package', id: 'Productos', tKey: 'nav.products', label: 'Productos', to: '/admin/items' },
+  { icon: 'list-checks', id: 'Listas de precios', tKey: 'nav.lists', label: 'Listas', to: '/admin/lists' },
+  { icon: 'qr-code', id: 'Códigos QR', tKey: 'nav.qr', label: 'Códigos QR', to: '/admin/qr' },
+  { icon: 'users', id: 'Clientes', tKey: 'nav.customers', label: 'Clientes', to: '/admin/clientes' },
+  { icon: 'bar-chart', id: 'Reportes', tKey: 'nav.reports', label: 'Reportes', to: '/admin/reportes' },
 ]
 const navSettings: { icon: IconName; id: string; tKey: string; label: string; to?: string }[] = [
-  { icon: 'settings', id: 'Settings', tKey: 'nav.settings', label: 'Configuración', to: '/admin/settings' },
+  { icon: 'user-plus', id: 'Equipo', tKey: 'nav.team', label: 'Equipo', to: '/admin/equipo' },
+  { icon: 'settings', id: 'Configuración', tKey: 'nav.settings', label: 'Configuración', to: '/admin/settings' },
+  { icon: 'life-buoy', id: 'Soporte', tKey: 'nav.support', label: 'Soporte', to: '/admin/soporte' },
 ]
 
-function NavItem({ icon, label, to, badge, active, onNavigate }: { icon: IconName; label: string; to?: string; badge?: string; active: boolean; onNavigate?: () => void }) {
+function NavItem({ icon, label, to, badge, active, onNavigate, collapsed }: { icon: IconName; label: string; to?: string; badge?: string; active: boolean; onNavigate?: () => void; collapsed?: boolean }) {
   const inner = (
     <>
       <Icon name={icon} className={active ? 'text-white' : 'text-[var(--dash-muted)]'} />
-      <span className={`flex-1 text-sm ${active ? 'font-bold text-white' : 'font-semibold text-[var(--dash-text2)]'}`}>{label}</span>
-      {badge && (
+      {!collapsed && <span className={`flex-1 text-sm ${active ? 'font-bold text-white' : 'font-semibold text-[var(--dash-text2)]'}`}>{label}</span>}
+      {badge && !collapsed && (
         active
           ? <span className="rounded-[10px] bg-white/20 px-2 py-0.5 text-[11px] font-bold text-white">{badge}</span>
           : <span className="rounded-[10px] px-2 py-0.5 text-[11px] font-bold" style={tone('violet')}>{badge}</span>
       )}
     </>
   )
-  const cls = `flex h-9 items-center gap-2 rounded-[7px] px-3 ${active ? 'bg-[#2A1C66] text-white' : 'hover:bg-[var(--dash-soft)]'}`
+  const cls = `flex h-9 items-center gap-2 rounded-[8px] ${collapsed ? 'justify-center px-0' : 'px-3'} ${active ? 'bg-[#2A1C66] text-white' : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`
   return to ? <Link to={to} onClick={onNavigate} className={cls}>{inner}</Link> : <button type="button" className={`${cls} w-full text-left`}>{inner}</button>
 }
 
 /** Shared CRM sidebar. `active` matches a nav item's stable id.
  *  Static column on desktop; slide-in drawer (controlled by `open`) below lg. */
-export function CrmSidebar({ active, open = false, onClose }: { active: string; open?: boolean; onClose?: () => void }) {
+export function CrmSidebar({ active, open = false, collapsed = false, onToggle, onClose }: { active: string; open?: boolean; collapsed?: boolean; onToggle?: () => void; onClose?: () => void }) {
   const { isDark } = useTheme()
   const t = useT()
   const tenant = useAppSelector(selectTenant)
   const nextPlan = tenant ? NEXT_PLAN[tenant.plan] : undefined
+  const [linkCopied, setLinkCopied] = useState(false)
+  const copyPublicLink = () => {
+    if (!tenant) return
+    const publicUrl = `${window.location.origin}/p/${tenant.subdomain || 'mi-negocio'}`
+    navigator.clipboard?.writeText(publicUrl)
+    setLinkCopied(true)
+    window.setTimeout(() => setLinkCopied(false), 1800)
+  }
   return (
     <>
       {/* Drawer backdrop (mobile only) — always mounted so it can fade in/out. */}
@@ -57,30 +69,33 @@ export function CrmSidebar({ active, open = false, onClose }: { active: string; 
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[220px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[#120A26] p-4 transition-transform duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[248px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[#100922] p-3 transition-[width,transform] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${collapsed ? 'lg:w-[72px]' : ''} ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <Link to="/" onClick={onClose} className="flex items-center">
-          <img src={isDark ? '/miprecio-logo-white-pencil.webp' : '/miprecio-logo-pencil.webp'} alt="MiPrecio" className="h-8 w-auto" />
-        </Link>
-        <div className="mt-3 flex h-[47px] items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[#17102D] px-3">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#2A1C66] text-[11px] font-extrabold text-[#C4B5FD]">MP</span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-bold text-white">MiPrecio</p>
-            <p className="truncate text-[10px] text-[var(--dash-muted)]">{t('side.crm')}</p>
-          </div>
-          <Icon name="chevron-down" size={14} className="text-[var(--dash-muted)]" />
+        <div className={`relative flex h-10 items-center ${collapsed ? 'justify-center' : 'justify-between px-2'}`}>
+          {!collapsed && <Link to="/" onClick={onClose} className="flex min-w-0 items-center gap-2.5">
+            <img src={isDark ? '/miprecio-logo-white-pencil.webp' : '/miprecio-logo-pencil.webp'} alt="MiPrecio" className="h-7 w-auto max-w-[150px] object-contain object-left" />
+          </Link>}
+          <button type="button" onClick={onToggle} aria-label={collapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'} title={collapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'} className={`absolute hidden h-7 w-7 items-center justify-center rounded-md text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-text)] lg:flex ${collapsed ? 'left-1/2 -translate-x-1/2' : 'right-0'}`}>
+            <Icon name={collapsed ? 'chevrons-right' : 'chevrons-left'} size={16} />
+          </button>
         </div>
+        {tenant && <button type="button" onClick={copyPublicLink} title={linkCopied ? 'Enlace copiado' : 'Copiar enlace público'} aria-label={linkCopied ? 'Enlace copiado' : 'Copiar enlace público'} className={`btn btn-sm mt-1 flex h-9 items-center rounded-lg bg-[var(--dash-soft)] text-xs font-bold text-[var(--dash-link)] hover:opacity-90 ${collapsed ? 'justify-center px-0' : 'justify-center gap-2'}`}>
+          <Icon name={linkCopied ? 'circle-check' : 'link-2'} size={15} />
+          {!collapsed && (linkCopied ? 'Enlace copiado' : 'Copiar enlace público')}
+        </button>}
+        {/* Business switcher intentionally stays hidden until memberships are
+            supported. A User currently belongs to exactly one tenant. */}
 
-        <p className="mt-4 mb-1 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">PRINCIPAL</p>
-        {navMain.map((item) => <NavItem key={item.id} icon={item.icon} to={item.to} badge={item.badge} label={item.label} active={item.id === active} onNavigate={onClose} />)}
+        {!collapsed && <p className="mt-5 mb-1 px-3 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">PRINCIPAL</p>}
+        {navMain.map((item) => <NavItem key={item.id} icon={item.icon} to={item.to} badge={item.badge} label={item.label} active={item.id === active} onNavigate={onClose} collapsed={collapsed} />)}
 
-        <p className="mb-1 mt-3 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">SETTINGS</p>
-        {navSettings.map((item) => <NavItem key={item.id} icon={item.icon} to={item.to} label={item.label} active={item.id === active} onNavigate={onClose} />)}
+        {!collapsed && <p className="mb-1 mt-5 px-3 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">AJUSTES</p>}
+        {navSettings.map((item) => <NavItem key={item.id} icon={item.icon} to={item.to} label={item.label} active={item.id === active} onNavigate={onClose} collapsed={collapsed} />)}
 
         <div className="flex-1" />
 
         {/* Upsell to the next plan up; hidden once the tenant is on the top plan (pro). */}
-        {nextPlan && tenant && (
+        {nextPlan && tenant && !collapsed && (
           <div className={`flex flex-col gap-2 rounded-xl p-4 text-white shadow-[0_12px_28px_-8px_rgba(124,58,237,0.6)] ${gradient}`}>
             <div className="flex items-center justify-between gap-2">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">{t('side.planTag', { plan: planById(tenant.plan).name })}</p>

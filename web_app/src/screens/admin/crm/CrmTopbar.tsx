@@ -29,16 +29,17 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
         type="button"
         onClick={onMenu}
         aria-label="Abrir menú"
+        title="Abrir menú"
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80 lg:hidden"
       >
         <Icon name="menu" />
       </button>
       <div className="flex min-w-0 flex-col gap-0.5">
-        <h1 className="truncate text-sm font-bold text-[var(--dash-text)] md:text-[15px]">{title}</h1>
-        <p className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{subtitle}</p>
+        <h1 className="truncate text-[15px] font-bold text-[var(--dash-text)] md:text-base">{title}</h1>
+        <p className="truncate text-xs font-medium text-[var(--dash-muted)]">{subtitle}</p>
       </div>
       <div className="flex-1" />
-      <label className="hidden h-9 w-[220px] items-center gap-2 rounded-[8px] border border-[var(--dash-border)] bg-[#11111A] px-3 lg:flex">
+      <label className="input input-sm dash-search hidden h-9 w-[220px] items-center gap-2 rounded-[8px] px-3 lg:flex">
         <Icon name="search" size={16} className="text-[var(--dash-muted)]" />
         <input
           placeholder={searchPlaceholder}
