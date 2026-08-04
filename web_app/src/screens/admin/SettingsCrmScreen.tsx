@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectTenant, setTenant, selectUser, selectIsAdmin, selectIsOwner, logout, updateCurrentUser } from '../../store/slices/authSlice'
-import type { AdminUiMode, Tenant, Role, NotifPrefs, PlanId, PlanInfo, PriceList } from '../../types'
+import { selectTenant, setTenant, selectUser, selectIsAdmin, selectIsOwner, logout } from '../../store/slices/authSlice'
+import type { Tenant, Role, NotifPrefs, PlanId, PlanInfo, PriceList } from '../../types'
 import api from '../../services/api'
 import { useT, type TFn } from '../../lib/i18n'
 import { PLANS, planById } from '../../lib/plans'
@@ -108,7 +108,7 @@ export function SettingsCrmContent({ simple = false }: { simple?: boolean }) {
           {active === 'brand' && <BrandSection {...ctx} />}
           {active === 'notifications' && <NotificationsSection t={t} tenantId={tenant?.id} />}
           {active === 'region' && <RegionSection {...ctx} />}
-          {active === 'security' && <SecuritySection t={t} user={user} onUiModeChange={(adminUiMode) => dispatch(updateCurrentUser({ adminUiMode }))} onLogout={() => dispatch(logout())} />}
+          {active === 'security' && <SecuritySection t={t} user={user} onLogout={() => dispatch(logout())} />}
           {active === 'billing' && <BillingSection t={t} tenant={tenant} isOwner={isOwner} />}
           {/* Datos fiscales: oculta por ahora (ver array `sections`). Para reactivar, descomentá: */}
           {/* {active === 'tax' && <TaxSection {...ctx} />} */}
@@ -500,8 +500,7 @@ function RegionSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx)
 }
 
 /* ── 4. Security ─────────────────────────────────────────────────────── */
-function SecuritySection({ t, user, onUiModeChange, onLogout }: { t: TFn; user: { email: string; role: Role; name: string; simpleAdminUi?: boolean; adminUiMode?: AdminUiMode } | null; onUiModeChange: (adminUiMode: AdminUiMode) => void; onLogout: () => void }) {
-  const mode = user?.adminUiMode ?? (user?.simpleAdminUi ? 'simple' : 'full')
+function SecuritySection({ t, user, onLogout }: { t: TFn; user: { email: string; role: Role; name: string } | null; onLogout: () => void }) {
   return (
     <>
       <SectionHeader t={t} title={t('set.sec.security')} subtitle={t('set.security.subtitle')} canManage={false} />
@@ -512,17 +511,7 @@ function SecuritySection({ t, user, onUiModeChange, onLogout }: { t: TFn; user: 
         <Row label={t('set.security.email')} value={user?.email ?? '—'} />
         <Row label={t('set.security.role')} value={user ? t(`role.${user.role}`) : '—'} />
       </div>
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--dash-border)] p-4">
-        <div className="flex flex-col gap-1">
-          <span className="text-[13px] font-bold text-[var(--dash-text)]">Modo de administración</span>
-          <span className="text-[11px] font-medium text-[var(--dash-muted)]">Simple, medio o completo según el nivel de detalle que quieras ver.</span>
-        </div>
-        <select value={mode} disabled={!user} onChange={(e) => onUiModeChange(e.target.value as AdminUiMode)} className="h-10 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-[13px] font-bold text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]">
-          <option value="simple">Simple</option>
-          <option value="medium">Medio</option>
-          <option value="full">Completo</option>
-        </select>
-      </div>
+
       <div>
         <button type="button" onClick={onLogout} className="flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold" style={tone('red')}>
           <Icon name="log-out" size={16} /> {t('set.security.logout')}

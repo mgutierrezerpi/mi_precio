@@ -96,8 +96,6 @@ def update_member(
     tenant_id: str,
     user_id: str,
     role: str | None = None,
-    simple_admin_ui: bool | None = None,
-    admin_ui_mode: str | None = None,
 ) -> User:
     """Update editable member fields. At least one field must be provided."""
     user = User.get_or_none(User.id == user_id, User.tenant == tenant_id)
@@ -111,16 +109,7 @@ def update_member(
             raise TeamError("No se puede cambiar el rol del dueño")
         user.role = role
         changed = True
-    if simple_admin_ui is not None:
-        user.simple_admin_ui = bool(simple_admin_ui)
-        user.admin_ui_mode = "simple" if user.simple_admin_ui else "full"
-        changed = True
-    if admin_ui_mode is not None:
-        if admin_ui_mode not in ("simple", "medium", "full"):
-            raise TeamError("Modo inválido")
-        user.admin_ui_mode = admin_ui_mode
-        user.simple_admin_ui = admin_ui_mode == "simple"
-        changed = True
+
     if not changed:
         raise TeamError("No hay cambios para guardar")
     user.save()

@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+
 from lib.ctx import team, activity, plans
 from lib.ctx.team_context import TeamError
 from lib.ctx.plans_context import PlanLimitError
@@ -20,9 +20,6 @@ logger = logging.getLogger(__name__)
 plan_gated = [Depends(require_active_plan)]
 
 
-class UpdateCurrentUser(BaseModel):
-    simple_admin_ui: bool | None = None
-    admin_ui_mode: str | None = None
 
 
 @router.get("/users/me")
@@ -33,23 +30,6 @@ def get_current_user_endpoint(current_user: dict = Depends(get_current_user)):
     return UserView.render(user)
 
 
-@router.patch("/users/me")
-def update_current_user_endpoint(data: UpdateCurrentUser, current_user: dict = Depends(get_current_user)):
-    user = User.get_or_none(User.id == current_user.get("sub"))
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    if data.simple_admin_ui is None and data.admin_ui_mode is None:
-        raise HTTPException(status_code=400, detail="No hay cambios para guardar")
-    if data.admin_ui_mode is not None:
-        if data.admin_ui_mode not in ("simple", "medium", "full"):
-            raise HTTPException(status_code=400, detail="Modo inválido")
-        user.admin_ui_mode = data.admin_ui_mode
-        user.simple_admin_ui = data.admin_ui_mode == "simple"
-    elif data.simple_admin_ui is not None:
-        user.simple_admin_ui = bool(data.simple_admin_ui)
-        user.admin_ui_mode = "simple" if user.simple_admin_ui else "full"
-    user.save()
-    return UserView.render(user)
 
 
 @router.get("/tenants/{tenant_id}/members", dependencies=plan_gated)
@@ -90,7 +70,7 @@ def invite_member_endpoint(tenant_id: str, data: InviteMember, current_user: dic
 @router.patch("/tenants/{tenant_id}/members/{user_id}", dependencies=plan_gated)
 def update_member_endpoint(tenant_id: str, user_id: str, data: UpdateMember, current_user: dict = Depends(require_admin)):
     try:
-        user = team.update_member(tenant_id, user_id, data.role, data.simple_admin_ui, data.admin_ui_mode)
+        user = team.update_member(tenant_id, user_id, data.role)
     except TeamError as e:
         raise HTTPException(status_code=400, detail=str(e))
     if data.role is not None:

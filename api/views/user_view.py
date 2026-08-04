@@ -8,8 +8,7 @@ class UserView(BaseView):
     tenant_id: str
     role: str
     name: str
-    simple_admin_ui: bool = False
-    admin_ui_mode: str = "full"
+
     created_at: datetime
     updated_at: datetime
     last_seen_at: datetime | None = None
@@ -22,8 +21,7 @@ class UserView(BaseView):
             tenant_id=user.tenant_id,
             role=user.role or "owner",
             name=user.name or user.email.split("@")[0],
-            simple_admin_ui=bool(getattr(user, "simple_admin_ui", False)),
-            admin_ui_mode=getattr(user, "admin_ui_mode", None) or ("simple" if getattr(user, "simple_admin_ui", False) else "full"),
+
             created_at=user.created_at,
             updated_at=user.updated_at,
             last_seen_at=getattr(user, "last_seen_at", None),

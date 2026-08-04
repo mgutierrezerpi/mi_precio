@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
-import type { AdminUiMode, Tenant, User, LoadingState } from '../../types'
+import type { Tenant, User, LoadingState } from '../../types'
 import api from '../../services/api'
 
 const AUTH_STORAGE_KEY = 'auth_state'
@@ -78,14 +78,7 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   return null
 })
 
-export const updateCurrentUser = createAsyncThunk(
-  'auth/updateCurrentUser',
-  async ({ simpleAdminUi, adminUiMode }: { simpleAdminUi?: boolean; adminUiMode?: AdminUiMode }, { rejectWithValue }) => {
-    const response = await api.updateCurrentUser({ simpleAdminUi, adminUiMode })
-    if (response.error || !response.data) return rejectWithValue(response.error || 'Error')
-    return response.data
-  }
-)
+
 
 export const refreshCurrentUser = createAsyncThunk(
   'auth/refreshCurrentUser',
@@ -162,10 +155,7 @@ const authSlice = createSlice({
         state.pendingEmail = null
         state.codeSent = false
       })
-      .addCase(updateCurrentUser.fulfilled, (state, action) => {
-        state.user = action.payload
-        saveAuthState(state.user, state.tenant)
-      })
+
       .addCase(refreshCurrentUser.fulfilled, (state, action) => {
         state.user = action.payload
         saveAuthState(state.user, state.tenant)
@@ -184,10 +174,7 @@ export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.isLo
 export const selectAuthError = (state: { auth: AuthState }) => state.auth.error
 export const selectCodeSent = (state: { auth: AuthState }) => state.auth.codeSent
 export const selectPendingEmail = (state: { auth: AuthState }) => state.auth.pendingEmail
-export const selectAdminUiMode = (state: { auth: AuthState }): AdminUiMode => state.auth.user?.adminUiMode ?? (state.auth.user?.simpleAdminUi ? 'simple' : 'full')
-export const selectSimpleAdminUi = (state: { auth: AuthState }) => selectAdminUiMode(state) === 'simple'
-export const selectMediumAdminUi = (state: { auth: AuthState }) => selectAdminUiMode(state) === 'medium'
-export const selectFullAdminUi = (state: { auth: AuthState }) => selectAdminUiMode(state) === 'full'
+
 
 /** True while the tenant has to pick a plan before the CRM opens up: gated
  *  signup with no paid plan (either never chosen, or the subscription ended and

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectTenant, selectUser, setUser } from '../../store/slices/authSlice'
+import { useAppSelector } from '../../store/hooks'
+import { selectTenant, selectUser } from '../../store/slices/authSlice'
 import api from '../../services/api'
-import type { AdminUiMode, TeamMember, Invitation, MemberStats, Role } from '../../types'
+import type { TeamMember, Invitation, MemberStats, Role } from '../../types'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { tone, gradient, type Tone } from './crm/theme'
@@ -10,7 +10,7 @@ import { tone, gradient, type Tone } from './crm/theme'
 /* ── Role metadata ───────────────────────────────────────────────────── */
 const ROLE_LABEL: Record<Role, string> = { owner: 'Dueño', admin: 'Admin', editor: 'Editor', viewer: 'Lector' }
 const ROLE_TONE: Record<Role, Tone> = { owner: 'violet', admin: 'sky', editor: 'green', viewer: 'slate' }
-const UI_MODE_LABEL: Record<AdminUiMode, string> = { simple: 'Simple', medium: 'Medio', full: 'Completa' }
+
 // Roles an owner/admin can assign (never "owner").
 const ASSIGNABLE: Role[] = ['admin', 'editor', 'viewer']
 const ROLE_PERMS: { role: Role; desc: string }[] = [
@@ -47,7 +47,7 @@ function lastSeen(iso: string | null): { label: string; active: boolean } {
 
 /* ── Screen ──────────────────────────────────────────────────────────── */
 export function TeamScreen() {
-  const dispatch = useAppDispatch()
+
   const tenant = useAppSelector(selectTenant)
   const me = useAppSelector(selectUser)
   const myRole: Role = me?.role ?? 'owner'
@@ -107,18 +107,7 @@ export function TeamScreen() {
     else { setError(null); void refresh() }
   }
 
-  const uiModeOf = (m: TeamMember): AdminUiMode => m.adminUiMode ?? (m.simpleAdminUi ? 'simple' : 'full')
 
-  const changeUiMode = async (m: TeamMember, adminUiMode: AdminUiMode) => {
-    if (!tenant?.id) return
-    const res = await api.updateMember(tenant.id, m.id, { adminUiMode })
-    if (res.error) setError(res.error)
-    else {
-      setError(null)
-      if (res.data && me?.id === res.data.id) dispatch(setUser(res.data))
-      void refresh()
-    }
-  }
 
   const remove = async (m: TeamMember) => {
     if (!tenant?.id) return
@@ -170,7 +159,7 @@ export function TeamScreen() {
             <div className="flex min-w-[640px] items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="flex-1">Miembro</span>
               <span className="w-[150px]">Rol</span>
-              <span className="w-[130px]">UI</span>
+
               <span className="w-[130px]">Último acceso</span>
               <span className="w-[90px]">Estado</span>
               {canManage && <span className="w-[70px] text-right">Acción</span>}
@@ -202,17 +191,7 @@ export function TeamScreen() {
                       <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(ROLE_TONE[m.role])}>{ROLE_LABEL[m.role]}</span>
                     )}
                   </span>
-                  <span className="w-[130px]">
-                    {canManage ? (
-                      <select value={uiModeOf(m)} onChange={(e) => changeUiMode(m, e.target.value as AdminUiMode)} className="h-8 w-[112px] rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-[12px] font-bold text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]">
-                        <option value="simple">Simple</option>
-                        <option value="medium">Medio</option>
-                        <option value="full">Completa</option>
-                      </select>
-                    ) : (
-                      <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(uiModeOf(m) === 'simple' ? 'green' : uiModeOf(m) === 'medium' ? 'amber' : 'slate')}>{UI_MODE_LABEL[uiModeOf(m)]}</span>
-                    )}
-                  </span>
+
                   <span className="w-[130px] text-xs font-medium text-[var(--dash-muted)]">{seen.label}</span>
                   <span className="w-[90px]"><span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(seen.active ? 'green' : 'slate')}>{seen.active ? 'Activo' : 'Inactivo'}</span></span>
                   {canManage && (
