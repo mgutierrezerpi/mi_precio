@@ -213,6 +213,37 @@ input, textarea, select, button, a {
   --tone-purple-bg: #F3E8FF; --tone-purple-fg: #A855F7;
 }
 
+/* DaisyUI is the component baseline for the CRM. Keep the Pencil palette as
+   the source of truth instead of allowing framework defaults to recolor it. */
+.dash .btn {
+  min-height: 36px;
+  border: 0;
+  box-shadow: none;
+  text-transform: none;
+}
+
+.dash .btn.dash-primary {
+  background: linear-gradient(135deg, #7C3AED 0%, #C026D3 100%);
+  color: #FFFFFF;
+}
+
+.dash .input.dash-search {
+  border-color: var(--dash-border);
+  background: #11111A;
+  color: var(--dash-text);
+  box-shadow: none;
+}
+
+.dash .card.dash-card {
+  border: 1px solid var(--dash-border);
+  background: #17102D;
+  box-shadow: none;
+}
+
+.dash .card.dash-card.dash-featured {
+  background: linear-gradient(135deg, #2A1C66 0%, #17102D 100%);
+}
+
 [data-theme="dark"] .dash {
   --dash-bg: #0E071D;
   --dash-surface: #160D2D;
