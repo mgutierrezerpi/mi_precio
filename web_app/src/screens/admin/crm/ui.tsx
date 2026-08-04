@@ -146,7 +146,7 @@ export function UserMenu() {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-10 items-center gap-2.5 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] py-1 pl-1 pr-1 transition hover:opacity-80 lg:pr-3"
+        className="flex h-10 items-center gap-2.5 rounded-[10px] border border-transparent bg-[var(--dash-soft)] py-1 pl-1 pr-1 transition hover:opacity-80 lg:pr-3"
       >
         <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white ${gradient}`}>{initials}</span>
         <span className="hidden max-w-[160px] flex-col items-start leading-tight lg:flex">

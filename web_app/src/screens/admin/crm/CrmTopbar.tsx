@@ -16,10 +16,11 @@ interface CrmTopbarProps {
   actions?: React.ReactNode
   /** Opens the mobile navigation drawer (hamburger). */
   onMenu?: () => void
+  hideContext?: boolean
 }
 
 /** Shared CRM topbar: title + search + theme toggle + notifications + user menu. */
-export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions, onMenu }: CrmTopbarProps) {
+export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions, onMenu, hideContext }: CrmTopbarProps) {
   const { isDark, toggleTheme } = useTheme()
   const t = useT()
 
@@ -30,14 +31,14 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
         onClick={onMenu}
         aria-label="Abrir menú"
         title="Abrir menú"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80 lg:hidden"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-transparent bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80 lg:hidden"
       >
         <Icon name="menu" />
       </button>
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <h1 className="truncate text-[15px] font-bold text-[var(--dash-text)] md:text-base">{title}</h1>
-        <p className="truncate text-xs font-medium text-[var(--dash-muted)]">{subtitle}</p>
-      </div>
+      {!hideContext && <div className="flex min-w-0 flex-col gap-0.5">
+        <h1 className="truncate text-base font-bold text-[var(--dash-text)] md:text-[17px]">{title}</h1>
+        <p className="truncate text-[13px] font-medium text-[var(--dash-muted)]">{subtitle}</p>
+      </div>}
       <div className="flex-1" />
       <label className="input input-sm dash-search hidden h-9 w-[220px] items-center gap-2 rounded-[8px] px-3 lg:flex">
         <Icon name="search" size={16} className="text-[var(--dash-muted)]" />
@@ -53,7 +54,7 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
       <button
         type="button"
         onClick={toggleTheme}
-        className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] hover:opacity-80"
+        className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-transparent bg-[var(--dash-soft)] hover:opacity-80"
         title={isDark ? t('top.lightMode') : t('top.darkMode')}
       >
         <Icon name={isDark ? 'sun' : 'moon'} className={isDark ? 'text-[#FBBF24]' : 'text-[var(--dash-text2)]'} />

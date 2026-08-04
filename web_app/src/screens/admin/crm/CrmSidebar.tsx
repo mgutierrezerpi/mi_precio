@@ -71,7 +71,7 @@ export function CrmSidebar({ active, open = false, collapsed = false, onToggle, 
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-[248px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[#100922] p-3 transition-[width,transform] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${collapsed ? 'lg:w-[72px]' : ''} ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <div className={`relative flex h-10 items-center ${collapsed ? 'justify-center' : 'justify-between px-2'}`}>
+        <div className="relative flex h-10 items-center justify-center px-2">
           {!collapsed && <Link to="/" onClick={onClose} className="flex min-w-0 items-center gap-2.5">
             <img src={isDark ? '/miprecio-logo-white-pencil.webp' : '/miprecio-logo-pencil.webp'} alt="MiPrecio" className="h-7 w-auto max-w-[150px] object-contain object-left" />
           </Link>}

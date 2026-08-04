@@ -71,7 +71,7 @@ export function NotificationsBell() {
         type="button"
         onClick={toggle}
         title={t('notif.title')}
-        className="relative flex h-10 w-10 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] hover:opacity-80"
+        className="relative flex h-10 w-10 items-center justify-center rounded-[10px] border border-transparent bg-[var(--dash-soft)] hover:opacity-80"
       >
         <Icon name="bell" className="text-[var(--dash-text2)]" />
         {unread > 0 && (
