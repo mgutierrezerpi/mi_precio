@@ -92,24 +92,24 @@ export function DashboardScreen() {
   return (
     <CrmLayout
       active="Overview"
-      title="Workspace / Overview"
-      subtitle="Tuesday, July 7, 2026"
-      searchPlaceholder="Search workspace"
+      title="Espacio de trabajo / Resumen"
+      subtitle="Martes, 7 de julio de 2026"
+      searchPlaceholder="Buscar en el espacio de trabajo"
       searchValue={search}
       onSearchChange={setSearch}
       onSearchSubmit={(q) => navigate(q.trim() ? `/admin/items?q=${encodeURIComponent(q.trim())}` : '/admin/items')}
-      actions={<button type="button" onClick={goLists} className={`hidden h-9 items-center rounded-lg px-4 text-[11px] font-bold text-white lg:flex ${gradient}`}>Create list</button>}
+      actions={<button type="button" onClick={goLists} className={`hidden h-9 items-center rounded-lg px-4 text-[11px] font-bold text-white lg:flex ${gradient}`}>Crear lista</button>}
     >
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
         <section className="flex h-[60px] flex-col justify-center gap-1">
-          <h2 className="text-[26px] font-bold leading-none text-[#F8F7FF]">Overview</h2>
-          <p className="text-xs text-[#9694A6]">A quick read on your lists, catalog, and customers.</p>
+          <h2 className="text-[26px] font-bold leading-none text-[#F8F7FF]">Resumen</h2>
+          <p className="text-xs text-[#9694A6]">Una vista rápida de tus listas, catálogo y clientes.</p>
         </section>
 
         <section className="flex flex-col gap-4 xl:flex-row">
           <div className={`flex min-h-[192px] flex-1 flex-col justify-center gap-2 rounded-xl px-6 py-8 text-white sm:flex-row sm:items-center sm:justify-between ${gradient}`}>
             <div className="flex max-w-[420px] flex-col gap-2">
-              <p className="text-[11px] font-semibold text-[#E9D5FF]">Share your catalog</p>
+              <p className="text-[11px] font-semibold text-[#E9D5FF]">Compartí tu catálogo</p>
               <h3 className="text-[22px] font-bold leading-tight">Compartí tu catálogo en un escaneo.</h3>
               <p className="text-xs leading-relaxed text-[#E9D5FF]">Generá códigos QR personalizados con tu logo y actualizalos sin reimprimir.</p>
               <button type="button" onClick={goQr} className="mt-1 flex h-[38px] w-fit items-center gap-2 rounded-full bg-white px-4 text-[11px] font-bold text-[#7C3AED]"><Icon name="qr-code" size={15} /> Crear QR</button>
@@ -120,9 +120,9 @@ export function DashboardScreen() {
         </section>
 
         <section className="grid min-h-[80px] grid-cols-1 gap-4 md:grid-cols-3">
-          <OverviewMetric label="List views" value={listViews.toLocaleString()} detail="+18.2% this month" />
-          <OverviewMetric label="Product clicks" value={productClicks.toLocaleString()} detail="+9.4% this month" onClick={goProducts} />
-          <OverviewMetric label="Engagement rate" value={engagement} detail="+2.1 pts this month" onClick={goLists} />
+          <OverviewMetric label="Visitas a listas" value={listViews.toLocaleString()} detail="+18,2% este mes" />
+          <OverviewMetric label="Clics en productos" value={productClicks.toLocaleString()} detail="+9,4% este mes" onClick={goProducts} />
+          <OverviewMetric label="Tasa de interacción" value={engagement} detail="+2,1 pts este mes" onClick={goLists} />
         </section>
 
         <EngagementChart values={{ listViews, productClicks, shares, engagement }} />
@@ -136,8 +136,8 @@ function OverviewMetric({ label, value, detail, onClick = () => undefined, featu
 }
 
 function EngagementChart({ values }: { values: { listViews: number; productClicks: number; shares: number; engagement: string } }) {
-  const rows = [['List views', values.listViews.toLocaleString(), 92], ['Product clicks', values.productClicks.toLocaleString(), 62], ['Shares', values.shares.toLocaleString(), 42], ['Conversions', values.engagement, 27]] as const
-  return <section className="flex min-h-[300px] flex-1 flex-col gap-4 rounded-[10px] bg-[#17102D] p-4"><div className="flex h-[38px] items-start justify-between"><div className="flex flex-col gap-1"><h3 className="text-sm font-bold text-[#F8F7FF]">Engagement over time</h3><p className="text-[10px] text-[#9694A6]">Views, clicks, and list activity over the last 30 days.</p></div><button type="button" className="h-[30px] rounded-md bg-[#1C1730] px-2.5 text-[10px] font-semibold text-[#C4B5FD]">Last 30 days</button></div><div className="flex flex-1 flex-col justify-center gap-3 px-0 sm:px-2">{rows.map(([label, value, width]) => <div key={label} className="flex h-[34px] items-center gap-3"><span className="w-[92px] shrink-0 text-[11px] text-[#B7B3C5]">{label}</span><div className="h-2.5 flex-1 rounded-full bg-[#1C1B2A]"><div className="h-full rounded-full bg-[#6C43E8]" style={{ width: `${width}%` }} /></div><span className="w-12 text-right text-[11px] font-semibold text-[#F8F7FF]">{value}</span></div>)}</div></section>
+  const rows = [['Visitas a listas', values.listViews.toLocaleString(), 92], ['Clics en productos', values.productClicks.toLocaleString(), 62], ['Compartidos', values.shares.toLocaleString(), 42], ['Conversiones', values.engagement, 27]] as const
+  return <section className="flex min-h-[300px] flex-1 flex-col gap-4 rounded-[10px] bg-[#17102D] p-4"><div className="flex h-[38px] items-start justify-between"><div className="flex flex-col gap-1"><h3 className="text-sm font-bold text-[#F8F7FF]">Interacción en el tiempo</h3><p className="text-[10px] text-[#9694A6]">Visitas, clics y actividad de listas durante los últimos 30 días.</p></div><button type="button" className="h-[30px] rounded-md bg-[#1C1730] px-2.5 text-[10px] font-semibold text-[#C4B5FD]">Últimos 30 días</button></div><div className="flex flex-1 flex-col justify-center gap-3 px-0 sm:px-2">{rows.map(([label, value, width]) => <div key={label} className="flex h-[34px] items-center gap-3"><span className="w-[92px] shrink-0 text-[11px] text-[#B7B3C5]">{label}</span><div className="h-2.5 flex-1 rounded-full bg-[#1C1B2A]"><div className="h-full rounded-full bg-[#6C43E8]" style={{ width: `${width}%` }} /></div><span className="w-12 text-right text-[11px] font-semibold text-[#F8F7FF]">{value}</span></div>)}</div></section>
 }
 
 /** Public list URL + today's visits. Shown in the welcome row (full) or inline with the KPIs (compact). */

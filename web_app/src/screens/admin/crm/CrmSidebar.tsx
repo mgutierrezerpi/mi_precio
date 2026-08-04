@@ -14,14 +14,14 @@ const NEXT_PLAN: Partial<Record<PlanId, PlanId>> = { free: 'micro', micro: 'plus
 
 // `id` is the stable (Spanish) key screens pass as CrmLayout `active`; `tKey` is the display label.
 const navMain: { icon: IconName; id: string; tKey: string; label: string; to?: string; badge?: string }[] = [
-  { icon: 'layout-dashboard', id: 'Overview', tKey: 'nav.home', label: 'Overview', to: '/admin' },
-  { icon: 'list-checks', id: 'Lists', tKey: 'nav.lists', label: 'Lists', to: '/admin/lists' },
-  { icon: 'package', id: 'Products', tKey: 'nav.products', label: 'Products', to: '/admin/items' },
-  { icon: 'users', id: 'Customers', tKey: 'nav.customers', label: 'Customers', to: '/admin/clientes' },
+  { icon: 'layout-dashboard', id: 'Overview', tKey: 'nav.home', label: 'Resumen', to: '/admin' },
+  { icon: 'list-checks', id: 'Lists', tKey: 'nav.lists', label: 'Listas', to: '/admin/lists' },
+  { icon: 'package', id: 'Products', tKey: 'nav.products', label: 'Productos', to: '/admin/items' },
+  { icon: 'users', id: 'Customers', tKey: 'nav.customers', label: 'Clientes', to: '/admin/clientes' },
   { icon: 'package', id: 'Stock', tKey: 'nav.products', label: 'Stock', to: '/admin/items' },
 ]
 const navSettings: { icon: IconName; id: string; tKey: string; label: string; to?: string }[] = [
-  { icon: 'settings', id: 'Settings', tKey: 'nav.settings', label: 'Settings', to: '/admin/settings' },
+  { icon: 'settings', id: 'Settings', tKey: 'nav.settings', label: 'Configuración', to: '/admin/settings' },
 ]
 
 function NavItem({ icon, label, to, badge, active, onNavigate }: { icon: IconName; label: string; to?: string; badge?: string; active: boolean; onNavigate?: () => void }) {
@@ -71,7 +71,7 @@ export function CrmSidebar({ active, open = false, onClose }: { active: string; 
           <Icon name="chevron-down" size={14} className="text-[var(--dash-muted)]" />
         </div>
 
-        <p className="mt-4 mb-1 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">MAIN</p>
+        <p className="mt-4 mb-1 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">PRINCIPAL</p>
         {navMain.map((item) => <NavItem key={item.id} icon={item.icon} to={item.to} badge={item.badge} label={item.label} active={item.id === active} onNavigate={onClose} />)}
 
         <p className="mb-1 mt-3 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">SETTINGS</p>
