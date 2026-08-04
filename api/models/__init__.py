@@ -9,111 +9,78 @@ from models.product import Product as Product
 from models.category import Category as Category
 from models.page_view import PageView as PageView
 from models.customer import Customer as Customer
-from models.lead import Lead as Lead
 from models.order import Order as Order
 from models.order_item import OrderItem as OrderItem
 from models.activity import Activity as Activity
 from models.invitation import Invitation as Invitation
 from models.push_subscription import PushSubscription as PushSubscription
-from models.tenant_membership import TenantMembership as TenantMembership
 
 # Resolve deferred foreign key
 Item.list_version.set_model(ListVersion)
 
 
 def create_tables():
-    db.create_tables(
-        [
-            Tenant,
-            User,
-            AuthCode,
-            PriceList,
-            ListVersion,
-            Item,
-            Product,
-            Category,
-            PageView,
-            Customer,
-            Lead,
-            Order,
-            OrderItem,
-            Activity,
-            Invitation,
-            PushSubscription,
-            TenantMembership,
-        ]
-    )
+    db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item, Product, Category, PageView, Customer, Order, OrderItem, Activity, Invitation, PushSubscription])
     ensure_columns()
-    ensure_memberships()
 
 
 def ensure_columns():
-    _ensure_list_columns()
-    _ensure_product_columns()
-    _ensure_optional_columns()
-    _ensure_item_columns()
-    _ensure_tenant_columns()
-    _ensure_user_columns()
-
-
-def _ensure_list_columns():
-    _add_missing_columns(
-        "lists",
-        [
-            ("slug", "slug VARCHAR(255)"),
-            ("kind", "kind VARCHAR(20) NOT NULL DEFAULT 'product'"),
+    list_columns = _columns("lists")
+    if list_columns is not None:
+        if "slug" not in list_columns:
+            db.execute_sql("ALTER TABLE lists ADD COLUMN slug VARCHAR(255)")
+        if "kind" not in list_columns:
+            db.execute_sql("ALTER TABLE lists ADD COLUMN kind VARCHAR(20) NOT NULL DEFAULT 'product'")
+        # Per-list appearance overrides; NULL means "inherit the tenant default".
+        for col, ddl in [
             ("design", "design VARCHAR(32)"),
             ("hero_color", "hero_color VARCHAR(9)"),
             ("bg_url", "bg_url TEXT"),
             ("bg_overlay", "bg_overlay INTEGER"),
-            ("parent_list_id", "parent_list_id VARCHAR(32)"),
-            ("variant_type", "variant_type VARCHAR(20)"),
-            ("customer_id", "customer_id VARCHAR(32)"),
-            ("starts_at", "starts_at DATETIME"),
-            ("ends_at", "ends_at DATETIME"),
-        ],
-    )
+        ]:
+            if col not in list_columns:
+                db.execute_sql(f"ALTER TABLE lists ADD COLUMN {ddl}")
 
+    product_columns = _columns("products")
+    if product_columns is not None:
+        if "available" not in product_columns:
+            db.execute_sql("ALTER TABLE products ADD COLUMN available INTEGER NOT NULL DEFAULT 1")
+        if "image_thumb_url" not in product_columns:
+            db.execute_sql("ALTER TABLE products ADD COLUMN image_thumb_url TEXT")
+        if "stock" in product_columns:
+            # Stock-by-quantity was replaced by the `available` boolean.
+            db.execute_sql("ALTER TABLE products DROP COLUMN stock")
 
-def _ensure_product_columns():
-    columns = _columns("products")
-    if columns is None:
-        return
-    _add_missing_columns(
-        "products",
-        [
-            ("available", "available INTEGER NOT NULL DEFAULT 1"),
-            ("image_thumb_url", "image_thumb_url TEXT"),
-        ],
-    )
-    if "stock" in columns:
-        db.execute_sql("ALTER TABLE products DROP COLUMN stock")
+    page_view_columns = _columns("page_views")
+    if page_view_columns is not None and "source" not in page_view_columns:
+        db.execute_sql("ALTER TABLE page_views ADD COLUMN source VARCHAR(16) NOT NULL DEFAULT 'link'")
 
+    activity_columns = _columns("activities")
+    if activity_columns is not None and "meta" not in activity_columns:
+        db.execute_sql("ALTER TABLE activities ADD COLUMN meta TEXT")
 
-def _ensure_optional_columns():
-    _add_missing_columns(
-        "page_views", [("source", "source VARCHAR(16) NOT NULL DEFAULT 'link'")]
-    )
-    _add_missing_columns("activities", [("meta", "meta TEXT")])
-    _add_missing_columns("customers", [("rut", "rut VARCHAR(32)")])
-    _add_missing_columns("orders", [("reference", "reference VARCHAR(64)")])
+    item_columns = _columns("items")
+    if item_columns is not None:
+        if "product_id" not in item_columns:
+            db.execute_sql("ALTER TABLE items ADD COLUMN product_id VARCHAR(32)")
+        if "image_thumb_url" not in item_columns:
+            db.execute_sql("ALTER TABLE items ADD COLUMN image_thumb_url VARCHAR(500)")
 
+    if db.table_exists("customers"):
+        customer_columns = [column.name for column in db.get_columns("customers")]
+        if "rut" not in customer_columns:
+            db.execute_sql("ALTER TABLE customers ADD COLUMN rut VARCHAR(32)")
 
-def _ensure_item_columns():
-    _add_missing_columns(
-        "items",
-        [
-            ("product_id", "product_id VARCHAR(32)"),
-            ("image_thumb_url", "image_thumb_url VARCHAR(500)"),
-        ],
-    )
+    if db.table_exists("orders"):
+        order_columns = [column.name for column in db.get_columns("orders")]
+        if "reference" not in order_columns:
+            db.execute_sql("ALTER TABLE orders ADD COLUMN reference VARCHAR(64)")
 
-
-def _ensure_tenant_columns():
-    _add_missing_columns(
-        "tenants",
-        [
+    tenant_columns = _columns("tenants")
+    if tenant_columns is not None:
+        for col, ddl in [
             ("plan", "plan VARCHAR(16) NOT NULL DEFAULT 'free'"),
+            # Default 0: existing tenants are grandfathered in, only new signups are gated.
             ("plan_gate", "plan_gate INTEGER NOT NULL DEFAULT 0"),
             ("billing_provider", "billing_provider VARCHAR(32)"),
             ("billing_customer_id", "billing_customer_id VARCHAR(64)"),
@@ -131,10 +98,7 @@ def _ensure_tenant_columns():
             ("billing_order_id", "billing_order_id VARCHAR(64)"),
             ("billing_sync_started_at", "billing_sync_started_at DATETIME"),
             ("billing_sync_next_at", "billing_sync_next_at DATETIME"),
-            (
-                "billing_sync_attempts",
-                "billing_sync_attempts INTEGER NOT NULL DEFAULT 0",
-            ),
+            ("billing_sync_attempts", "billing_sync_attempts INTEGER NOT NULL DEFAULT 0"),
             ("logo_url", "logo_url TEXT"),
             ("brand_color", "brand_color VARCHAR(9)"),
             ("description", "description TEXT"),
@@ -142,60 +106,37 @@ def _ensure_tenant_columns():
             ("list_bg_url", "list_bg_url TEXT"),
             ("list_bg_overlay", "list_bg_overlay INTEGER NOT NULL DEFAULT 0"),
             ("list_hero_color", "list_hero_color VARCHAR(9)"),
-            ("social_instagram", "social_instagram TEXT"),
-            ("social_facebook", "social_facebook TEXT"),
-            ("social_tiktok", "social_tiktok TEXT"),
-            ("social_website", "social_website TEXT"),
-            ("social_whatsapp", "social_whatsapp VARCHAR(20)"),
-            ("leads_enabled", "leads_enabled INTEGER NOT NULL DEFAULT 0"),
             ("language", "language VARCHAR(5) NOT NULL DEFAULT 'es'"),
             ("timezone", "timezone VARCHAR(64) NOT NULL DEFAULT 'America/Montevideo'"),
             ("delivery_enabled", "delivery_enabled INTEGER NOT NULL DEFAULT 0"),
-            ("marketplace_enabled", "marketplace_enabled INTEGER NOT NULL DEFAULT 1"),
-            ("marketplace_latitude", "marketplace_latitude VARCHAR(32)"),
-            ("marketplace_longitude", "marketplace_longitude VARCHAR(32)"),
-            ("business_category", "business_category VARCHAR(32)"),
             ("legal_name", "legal_name VARCHAR(255)"),
             ("tax_id", "tax_id VARCHAR(32)"),
             ("address", "address TEXT"),
-        ],
-    )
+        ]:
+            if col not in tenant_columns:
+                db.execute_sql(f"ALTER TABLE tenants ADD COLUMN {ddl}")
 
+    user_columns = _columns("users")
+    if user_columns is not None:
+        if "name" not in user_columns:
+            db.execute_sql("ALTER TABLE users ADD COLUMN name VARCHAR(255)")
+        if "role" not in user_columns:
+            # Existing single-user tenants are their own owners.
+            db.execute_sql("ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'owner'")
+        # These fields belonged to the removed per-user admin UI modes. Older
+        # local databases may still have them as NOT NULL columns, which makes
+        # inserts fail even though the current User model no longer provides
+        # values for them.
+        for legacy_column in ("simple_admin_ui", "admin_ui_mode"):
+            if legacy_column in user_columns:
+                db.execute_sql(f'ALTER TABLE users DROP COLUMN "{legacy_column}"')
+        if "last_seen_at" not in user_columns:
+            db.execute_sql("ALTER TABLE users ADD COLUMN last_seen_at DATETIME")
+        if "notif_prefs" not in user_columns:
+            db.execute_sql("ALTER TABLE users ADD COLUMN notif_prefs TEXT")
+        if "notifications_seen_at" not in user_columns:
+            db.execute_sql("ALTER TABLE users ADD COLUMN notifications_seen_at DATETIME")
 
-def _ensure_user_columns():
-    columns = _columns("users")
-    if columns is None:
-        return
-    _add_missing_columns(
-        "users",
-        [
-            ("name", "name VARCHAR(255)"),
-            ("role", "role VARCHAR(20) NOT NULL DEFAULT 'owner'"),
-            ("last_seen_at", "last_seen_at DATETIME"),
-            ("notif_prefs", "notif_prefs TEXT"),
-            ("notifications_seen_at", "notifications_seen_at DATETIME"),
-        ],
-    )
-    for column in ("simple_admin_ui", "admin_ui_mode"):
-        if column in columns:
-            db.execute_sql(f'ALTER TABLE users DROP COLUMN "{column}"')
-
-
-def _add_missing_columns(table_name: str, columns_to_add: list[tuple[str, str]]):
-    columns = _columns(table_name)
-    if columns is None:
-        return
-    for name, ddl in columns_to_add:
-        if name not in columns:
-            db.execute_sql(f"ALTER TABLE {table_name} ADD COLUMN {ddl}")
-
-
-def ensure_memberships():
-    """Backfill the legacy one-tenant user relationship into memberships."""
-    for user in User.select():
-        TenantMembership.get_or_create(
-            user=user, tenant=user.tenant, defaults={"role": user.role or "owner"}
-        )
 
 
 def _columns(table_name: str) -> list[str] | None:

@@ -16,7 +16,7 @@ def test_expire_ended_subscriptions_downgrades_paid_tenants(db):
         billing_ends_at=datetime.utcnow() - timedelta(minutes=1),
     )
 
-    assert len(billing.expire_ended_subscriptions()) == 1
+    assert billing.expire_ended_subscriptions() == 1
 
     tenant = Tenant.get_by_id(tenant.id)
     assert tenant.plan == "free"
@@ -33,19 +33,15 @@ def test_expire_ended_subscriptions_keeps_future_subscription(db):
         billing_ends_at=datetime.utcnow() + timedelta(days=1),
     )
 
-    assert len(billing.expire_ended_subscriptions()) == 0
+    assert billing.expire_ended_subscriptions() == 0
 
     tenant = Tenant.get_by_id(tenant.id)
     assert tenant.plan == "plus"
     assert tenant.billing_status == "active"
 
 
-def test_pending_subscription_poll_uses_provider_state_and_clears_backstop(
-    db, monkeypatch
-):
-    tenant = Tenant.create(
-        name="Shop", subdomain="shop", currency="UYU", plan_gate=True
-    )
+def test_pending_subscription_poll_uses_provider_state_and_clears_backstop(db, monkeypatch):
+    tenant = Tenant.create(name="Shop", subdomain="shop", currency="UYU", plan_gate=True)
     User.create(email="owner@shop.com", tenant=tenant, role="owner")
     started = datetime.utcnow() - timedelta(seconds=11)
     monkeypatch.setattr(billing.settings, "lemonsqueezy_store_id", "store")
@@ -58,19 +54,15 @@ def test_pending_subscription_poll_uses_provider_state_and_clears_backstop(
         billing,
         "_lemonsqueezy_get",
         lambda path, params: {
-            "data": [
-                {
-                    "id": "subscription-1",
-                    "attributes": {
-                        "variant_id": "micro-variant",
-                        "status": "on_trial",
-                        "created_at": (started + timedelta(seconds=1))
-                        .replace(tzinfo=timezone.utc)
-                        .isoformat(),
-                        "trial_ends_at": "2026-08-18T00:00:00Z",
-                    },
-                }
-            ],
+            "data": [{
+                "id": "subscription-1",
+                "attributes": {
+                    "variant_id": "micro-variant",
+                    "status": "on_trial",
+                    "created_at": (started + timedelta(seconds=1)).replace(tzinfo=timezone.utc).isoformat(),
+                    "trial_ends_at": "2026-08-18T00:00:00Z",
+                },
+            }],
         },
     )
 
@@ -85,9 +77,7 @@ def test_pending_subscription_poll_uses_provider_state_and_clears_backstop(
 
 
 def test_pending_subscription_poll_backoff_increases(db, monkeypatch):
-    tenant = Tenant.create(
-        name="Shop", subdomain="shop", currency="UYU", plan_gate=True
-    )
+    tenant = Tenant.create(name="Shop", subdomain="shop", currency="UYU", plan_gate=True)
     User.create(email="owner@shop.com", tenant=tenant, role="owner")
     now = datetime.utcnow()
     monkeypatch.setattr(billing.settings, "lemonsqueezy_store_id", "store")

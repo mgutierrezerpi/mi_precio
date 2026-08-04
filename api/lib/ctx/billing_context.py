@@ -18,23 +18,6 @@ class BillingError(Exception):
     """Raised when billing configuration or provider calls fail."""
 
 
-def is_expired(tenant_id: str) -> bool:
-    """Whether the tenant is already in the expired state (before a sync runs)."""
-    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    return bool(tenant and tenant.billing_status == "expired")
-
-
-def expiry_notice_target(tenant_id: str) -> tuple[str, str] | None:
-    """(owner email, tenant name) to warn that the storefront went offline."""
-    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    if not tenant:
-        return None
-    owner = User.get_or_none((User.tenant == tenant_id) & (User.role == "owner"))
-    if not owner or not owner.email:
-        return None
-    return owner.email, tenant.name
-
-
 # Human-readable Spanish labels for Lemon Squeezy events/statuses so the
 # activity feed never surfaces raw snake_case codes to the user.
 _EVENT_ES = {
@@ -123,38 +106,10 @@ def variant_for_plan(plan: str) -> str:
     raise BillingError("Only paid plans can create Lemon Squeezy checkouts")
 
 
-def _ls_request(method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Call the Lemon Squeezy API and return the decoded JSON body."""
-    if not settings.lemonsqueezy_api_key:
-        raise BillingError("Lemon Squeezy is not configured")
-    body = json.dumps(payload).encode("utf-8") if payload is not None else None
-    req = request.Request(
-        f"https://api.lemonsqueezy.com/v1/{path.lstrip('/')}",
-        data=body,
-        method=method,
-        headers={
-            "Accept": "application/vnd.api+json",
-            "Content-Type": "application/vnd.api+json",
-            "Authorization": f"Bearer {settings.lemonsqueezy_api_key}",
-        },
-    )
-    try:
-        with request.urlopen(req, timeout=10) as res:
-            raw = res.read().decode("utf-8")
-    except error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise BillingError(f"Lemon Squeezy {method} {path} failed: {detail}") from exc
-    except OSError as exc:
-        raise BillingError(f"Lemon Squeezy {method} {path} request failed") from exc
-    return json.loads(raw) if raw else {}
-
-
 def verify_lemonsqueezy_signature(raw_body: bytes, signature: str | None) -> bool:
     if not settings.lemonsqueezy_webhook_secret or not signature:
         return False
-    digest = hmac.new(
-        settings.lemonsqueezy_webhook_secret.encode("utf-8"), raw_body, hashlib.sha256
-    ).hexdigest()
+    digest = hmac.new(settings.lemonsqueezy_webhook_secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(digest, signature)
 
 
@@ -211,14 +166,31 @@ def create_checkout(
                 "product_options": product_options,
             },
             "relationships": {
-                "store": {
-                    "data": {"type": "stores", "id": settings.lemonsqueezy_store_id}
-                },
+                "store": {"data": {"type": "stores", "id": settings.lemonsqueezy_store_id}},
                 "variant": {"data": {"type": "variants", "id": variant_id}},
             },
         }
     }
-    data = _ls_request("POST", "checkouts", payload)
+    body = json.dumps(payload).encode("utf-8")
+    req = request.Request(
+        "https://api.lemonsqueezy.com/v1/checkouts",
+        data=body,
+        method="POST",
+        headers={
+            "Accept": "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+            "Authorization": f"Bearer {settings.lemonsqueezy_api_key}",
+        },
+    )
+    try:
+        with request.urlopen(req, timeout=10) as res:
+            data = json.loads(res.read().decode("utf-8"))
+    except error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise BillingError(f"Lemon Squeezy checkout failed: {detail}") from exc
+    except OSError as exc:
+        raise BillingError("Lemon Squeezy checkout request failed") from exc
+
     checkout = data.get("data", {})
     url = checkout.get("attributes", {}).get("url")
     if not url:
@@ -261,9 +233,7 @@ def _schedule_next_sync(tenant: Tenant, now: datetime) -> int:
     return delay
 
 
-def poll_pending_subscription(
-    tenant_id: str, now: datetime | None = None
-) -> dict[str, Any]:
+def poll_pending_subscription(tenant_id: str, now: datetime | None = None) -> dict[str, Any]:
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant or not tenant.billing_sync_started_at:
         return {"status": "skipped"}
@@ -279,10 +249,7 @@ def poll_pending_subscription(
 
     current = now or datetime.utcnow()
     if tenant.billing_sync_next_at and tenant.billing_sync_next_at > current:
-        return {
-            "status": "waiting",
-            "delay": int((tenant.billing_sync_next_at - current).total_seconds()),
-        }
+        return {"status": "waiting", "delay": int((tenant.billing_sync_next_at - current).total_seconds())}
 
     owner = User.get_or_none((User.tenant == tenant) & (User.role == "owner"))
     if not owner or not owner.email or not tenant.billing_variant_id:
@@ -293,9 +260,7 @@ def poll_pending_subscription(
         "filter[variant_id]": str(tenant.billing_variant_id),
         "page[size]": "100",
     }
-    payload = _lemonsqueezy_get(
-        "subscriptions", {**base_params, "filter[user_email]": owner.email}
-    )
+    payload = _lemonsqueezy_get("subscriptions", {**base_params, "filter[user_email]": owner.email})
     items = payload.get("data", [])
     if not items:
         # The buyer can use a different email in the hosted checkout. Fall
@@ -305,21 +270,15 @@ def poll_pending_subscription(
         recent = []
         for item in candidates:
             created_at = _parse_dt((item.get("attributes") or {}).get("created_at"))
-            if created_at and created_at.replace(
-                tzinfo=None
-            ) >= tenant.billing_sync_started_at - timedelta(minutes=2):
-                if (item.get("attributes") or {}).get(
-                    "status"
-                ) in ACTIVE_SUBSCRIPTION_STATUSES:
+            if created_at and created_at.replace(tzinfo=None) >= tenant.billing_sync_started_at - timedelta(minutes=2):
+                if (item.get("attributes") or {}).get("status") in ACTIVE_SUBSCRIPTION_STATUSES:
                     recent.append(item)
         items = recent if len(recent) == 1 else []
 
     for item in items:
         attrs = item.get("attributes") or {}
         created_at = _parse_dt(attrs.get("created_at"))
-        if created_at and created_at.replace(
-            tzinfo=None
-        ) < tenant.billing_sync_started_at - timedelta(minutes=2):
+        if created_at and created_at.replace(tzinfo=None) < tenant.billing_sync_started_at - timedelta(minutes=2):
             continue
         if attrs.get("status") not in ACTIVE_SUBSCRIPTION_STATUSES:
             continue
@@ -328,10 +287,7 @@ def poll_pending_subscription(
         if synced:
             clear_subscription_sync(synced)
             synced.save()
-            return {
-                "status": "active",
-                "subscription_id": synced.billing_subscription_id,
-            }
+            return {"status": "active", "subscription_id": synced.billing_subscription_id}
 
     return {"status": "pending", "delay": _schedule_next_sync(tenant, current)}
 
@@ -354,40 +310,24 @@ def reconcile_checkout_order(tenant_id: str, order_id: str) -> dict[str, Any]:
     if attrs.get("status") != "paid":
         return {"status": "pending"}
     order_created = _parse_dt(attrs.get("created_at"))
-    if (
-        tenant.billing_sync_started_at
-        and order_created
-        and order_created.replace(tzinfo=None)
-        < tenant.billing_sync_started_at - timedelta(minutes=2)
-    ):
+    if tenant.billing_sync_started_at and order_created and order_created.replace(tzinfo=None) < tenant.billing_sync_started_at - timedelta(minutes=2):
         return {"status": "invalid"}
-    if tenant.billing_variant_id and str(item.get("variant_id")) != str(
-        tenant.billing_variant_id
-    ):
+    if tenant.billing_variant_id and str(item.get("variant_id")) != str(tenant.billing_variant_id):
         return {"status": "invalid"}
 
     tenant.billing_order_id = str(order_id)
     tenant.save()
-    subscriptions = _lemonsqueezy_get(f"orders/{order_id}/subscriptions", {}).get(
-        "data", []
-    )
+    subscriptions = _lemonsqueezy_get(f"orders/{order_id}/subscriptions", {}).get("data", [])
     for subscription in subscriptions:
         subscription_attrs = subscription.get("attributes") or {}
         if subscription_attrs.get("status") not in ACTIVE_SUBSCRIPTION_STATUSES:
             continue
-        subscription_attrs["id"] = subscription.get("id") or subscription_attrs.get(
-            "id"
-        )
-        synced = sync_subscription_from_attributes(
-            subscription_attrs, tenant_id=tenant.id
-        )
+        subscription_attrs["id"] = subscription.get("id") or subscription_attrs.get("id")
+        synced = sync_subscription_from_attributes(subscription_attrs, tenant_id=tenant.id)
         if synced:
             clear_subscription_sync(synced)
             synced.save()
-            return {
-                "status": "active",
-                "subscription_id": synced.billing_subscription_id,
-            }
+            return {"status": "active", "subscription_id": synced.billing_subscription_id}
     return {"status": "pending"}
 
 
@@ -404,102 +344,14 @@ def due_pending_subscription_ids(now: datetime | None = None) -> list[str]:
     ]
 
 
-def defer_pending_subscription(
-    tenant_id: str, now: datetime | None = None
-) -> dict[str, Any]:
+def defer_pending_subscription(tenant_id: str, now: datetime | None = None) -> dict[str, Any]:
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant or not tenant.billing_sync_started_at:
         return {"status": "skipped"}
-    return {
-        "status": "pending",
-        "delay": _schedule_next_sync(tenant, now or datetime.utcnow()),
-    }
+    return {"status": "pending", "delay": _schedule_next_sync(tenant, now or datetime.utcnow())}
 
 
-def _cancel_without_gateway(tenant_id: str) -> Tenant | None:
-    """Local dev (`BILLING_ENABLED=false`) has no provider to call, so mimic the
-    "cancel now, keep access until the period ends" behaviour on our own row.
-    The Huey backstop (`expire_ended_subscriptions`) drops it to free later."""
-    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    if not tenant:
-        raise BillingError("Tenant not found")
-    if tenant.plan == "free":
-        raise BillingError("Esta cuenta no tiene una suscripción activa.")
-    tenant.billing_status = "cancelled"
-    tenant.billing_ends_at = tenant.billing_ends_at or tenant.billing_renews_at or (datetime.utcnow() + timedelta(days=30))
-    tenant.billing_renews_at = None
-    tenant.save()
-    return tenant
-
-
-def _resume_without_gateway(tenant_id: str) -> Tenant | None:
-    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    if not tenant:
-        raise BillingError("Tenant not found")
-    if tenant.billing_status != "cancelled":
-        raise BillingError("Esta suscripción no está cancelada.")
-    tenant.billing_status = "active"
-    tenant.billing_renews_at = tenant.billing_ends_at
-    tenant.billing_ends_at = None
-    tenant.save()
-    return tenant
-
-
-def _subscription_of(tenant_id: str) -> tuple[Tenant, str]:
-    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    if not tenant:
-        raise BillingError("Tenant not found")
-    if tenant.billing_provider != "lemonsqueezy" or not tenant.billing_subscription_id:
-        raise BillingError("Esta cuenta no tiene una suscripción de Lemon Squeezy para gestionar.")
-    return tenant, tenant.billing_subscription_id
-
-
-def cancel_subscription(tenant_id: str) -> Tenant | None:
-    """Cancel at the end of the paid period.
-
-    Lemon Squeezy keeps the subscription usable until `ends_at` and only then
-    fires `subscription_expired`, which drops the tenant back to free. We sync
-    the response straight away so the UI shows "cancelled, active until X"
-    without waiting for the webhook.
-    """
-    if not settings.billing_enabled:
-        return _cancel_without_gateway(tenant_id)
-    tenant, subscription_id = _subscription_of(tenant_id)
-    if tenant.billing_status in ("cancelled", "expired"):
-        return tenant
-    data = _ls_request("DELETE", f"subscriptions/{subscription_id}")
-    attrs = data.get("data", {}).get("attributes", {})
-    if not attrs:
-        raise BillingError("Lemon Squeezy did not return the cancelled subscription")
-    attrs.setdefault("id", subscription_id)
-    return sync_subscription_from_attributes(attrs, tenant_id=tenant_id)
-
-
-def resume_subscription(tenant_id: str) -> Tenant | None:
-    """Undo a cancellation that has not lapsed yet (`cancelled` → `active`)."""
-    if not settings.billing_enabled:
-        return _resume_without_gateway(tenant_id)
-    tenant, subscription_id = _subscription_of(tenant_id)
-    if tenant.billing_status == "expired":
-        raise BillingError("La suscripción ya venció. Elegí un plan para volver a activarla.")
-    payload = {
-        "data": {
-            "type": "subscriptions",
-            "id": str(subscription_id),
-            "attributes": {"cancelled": False},
-        }
-    }
-    data = _ls_request("PATCH", f"subscriptions/{subscription_id}", payload)
-    attrs = data.get("data", {}).get("attributes", {})
-    if not attrs:
-        raise BillingError("Lemon Squeezy did not return the resumed subscription")
-    attrs.setdefault("id", subscription_id)
-    return sync_subscription_from_attributes(attrs, tenant_id=tenant_id)
-
-
-def sync_subscription_from_attributes(
-    attrs: dict[str, Any], tenant_id: str | None = None
-) -> Tenant | None:
+def sync_subscription_from_attributes(attrs: dict[str, Any], tenant_id: str | None = None) -> Tenant | None:
     tenant_id = tenant_id or attrs.get("custom_data", {}).get("tenant_id")
     if not tenant_id:
         return None
@@ -513,9 +365,7 @@ def sync_subscription_from_attributes(
 
     tenant.billing_provider = "lemonsqueezy"
     tenant.billing_customer_id = str(attrs.get("customer_id") or "") or None
-    tenant.billing_subscription_id = (
-        str(attrs.get("id") or attrs.get("subscription_id") or "") or None
-    )
+    tenant.billing_subscription_id = str(attrs.get("id") or attrs.get("subscription_id") or "") or None
     tenant.billing_variant_id = str(variant_id or "") or None
     tenant.billing_status = status
     tenant.billing_renews_at = _parse_dt(attrs.get("renews_at"))
@@ -565,25 +415,20 @@ def sync_manual_subscription(
     return tenant
 
 
-def expire_ended_subscriptions(now: datetime | None = None) -> list[str]:
+def expire_ended_subscriptions(now: datetime | None = None) -> int:
     """Downgrade tenants whose paid subscription end date has passed.
 
     Webhooks should normally perform this immediately. The worker uses this as a
     backstop for missed manual updates or delayed provider webhooks.
-
-    Returns the ids it expired so the caller can notify them. Expiring takes the
-    public page offline (`plans.live_list_allowance` drops to zero), which is not
-    something an owner should discover from a customer.
     """
     cutoff = now or datetime.utcnow()
-    condition = (
-        (Tenant.billing_ends_at.is_null(False))
-        & (Tenant.billing_ends_at <= cutoff)
-        & (Tenant.billing_status != "expired")
-        & (Tenant.plan != "free")
+    query = (
+        Tenant.update(plan="free", billing_status="expired")
+        .where(
+            (Tenant.billing_ends_at.is_null(False))
+            & (Tenant.billing_ends_at <= cutoff)
+            & (Tenant.billing_status != "expired")
+            & (Tenant.plan != "free")
+        )
     )
-    # Collect before updating: the same condition no longer matches afterwards.
-    expired = [tenant.id for tenant in Tenant.select(Tenant.id).where(condition)]
-    if expired:
-        Tenant.update(plan="free", billing_status="expired").where(condition).execute()
-    return expired
+    return query.execute()

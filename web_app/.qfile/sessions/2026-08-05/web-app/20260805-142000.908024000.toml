@@ -1,0 +1,15 @@
+[record]
+kind = "session"
+created_at = "2026-08-05T14:20:00.908024000Z"
+
+[session]
+id = "default"
+workspace = "/Users/matiasgutierrez/Develop/mi_precio/web_app"
+subject = "web-app"
+
+[hook]
+event = "LegacyMigration"
+provider = "legacy"
+
+[content]
+outcome = "On the Códigos QR page, the QR canvas must be forced to fill its wrapper with !h-full !w-full because qrRender pixel-snapping can otherwise leave large visual whitespace; use margin=2 and no card QR wrapper padding for a tighter presentation."

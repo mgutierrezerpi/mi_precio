@@ -1,0 +1,15 @@
+[record]
+kind = "session"
+created_at = "2026-08-10T12:55:30.147197000Z"
+
+[session]
+id = "default"
+workspace = "/Users/matiasgutierrez/Develop/mi_precio/web_app"
+subject = "web-app"
+
+[hook]
+event = "LegacyMigration"
+provider = "legacy"
+
+[content]
+outcome = "La página Pantry ahora guarda productos editoriales en content.products; nombres y descripciones tienen campos inline independientes por índice, preservando sus valores por defecto y evitando confundirlos con el body general."

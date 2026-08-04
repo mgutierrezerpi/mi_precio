@@ -20,17 +20,7 @@ const CONFIRM_POLL_MS = 3000
 const CONFIRM_POLL_TRIES = 20
 
 const CheckIcon = ({ size = 14 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="3"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="m5 12 5 5L20 7" />
   </svg>
 )
@@ -75,9 +65,7 @@ export function ChoosePlanScreen() {
   /** "Ya pagué": ask the API again, and say so when the payment still isn't
    *  there — otherwise the button looks broken. */
   const recheck = async () => {
-    setChecking(true)
-    setNoPaymentYet(false)
-    setConfirming(false)
+    setChecking(true); setNoPaymentYet(false); setConfirming(false)
     const unlocked = await check()
     setChecking(false)
     if (!unlocked) setNoPaymentYet(true)
@@ -86,19 +74,14 @@ export function ChoosePlanScreen() {
   // Coming back from the checkout: LemonSqueezy redirects here with the plan.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const { checkout_plan: returned, order_id: orderId } =
-      Object.fromEntries(params)
+    const returned = params.get('checkout_plan')
     if (!returned) return
-    setReturnedOrderId(orderId ?? null)
+    setReturnedOrderId(params.get('order_id'))
     setConfirming(true)
     params.delete('checkout_plan')
     params.delete('order_id')
     const qs = params.toString()
-    window.history.replaceState(
-      null,
-      '',
-      `${window.location.pathname}${qs ? `?${qs}` : ''}`
-    )
+    window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`)
   }, [])
 
   useEffect(() => {
@@ -106,9 +89,7 @@ export function ChoosePlanScreen() {
     void api.reconcileCheckout(tenantId, returnedOrderId).then(() => check())
   }, [check, returnedOrderId, tenantId])
 
-  useEffect(() => {
-    void check()
-  }, [check])
+  useEffect(() => { void check() }, [check])
 
   // While confirming, poll until the webhook lands (or we give up and let the
   // user retry by hand).
@@ -117,10 +98,7 @@ export function ChoosePlanScreen() {
     pollsLeft.current = CONFIRM_POLL_TRIES
     const id = setInterval(() => {
       pollsLeft.current -= 1
-      if (pollsLeft.current <= 0) {
-        setConfirming(false)
-        return
-      }
+      if (pollsLeft.current <= 0) { setConfirming(false); return }
       void check()
     }, CONFIRM_POLL_MS)
     return () => clearInterval(id)
@@ -132,18 +110,14 @@ export function ChoosePlanScreen() {
 
   const choosePlan = async (plan: PlanId) => {
     if (!tenantId) return
-    setChoosing(plan)
-    setError(null)
+    setChoosing(plan); setError(null)
 
     // No payment gateway configured (local dev): activate the plan right away
     // so the whole flow is testable without Lemon Squeezy credentials.
     if (!info?.billingEnabled) {
       const res = await api.updatePlan(tenantId, plan)
       setChoosing(null)
-      if (!res.data) {
-        setError(res.error || 'No se pudo activar el plan.')
-        return
-      }
+      if (!res.data) { setError(res.error || 'No se pudo activar el plan.'); return }
       await check()
       return
     }
@@ -168,11 +142,7 @@ export function ChoosePlanScreen() {
     <div className="min-h-screen bg-gradient-to-b from-[#F5F3FF] to-white px-4 py-10 font-sans sm:px-6 sm:py-14">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <header className="flex items-center justify-between gap-4">
-          <img
-            src="/miprecio-logo-pencil.webp"
-            alt="Mi Precio"
-            className="h-9 w-auto"
-          />
+          <img src="/miprecio-logo-pencil.webp" alt="Mi Precio" className="h-9 w-auto" />
           <button
             type="button"
             onClick={handleLogout}
@@ -187,9 +157,7 @@ export function ChoosePlanScreen() {
             {t('gate.title')}
           </h1>
           <p className="text-[15px] font-medium text-[#64748B]">
-            {expired
-              ? t('gate.expired')
-              : t('gate.subtitle', { name: tenant?.name || '' })}
+            {expired ? t('gate.expired') : t('gate.subtitle', { name: tenant?.name || '' })}
           </p>
         </div>
 
@@ -219,25 +187,17 @@ export function ChoosePlanScreen() {
                   className={`flex flex-col gap-3 rounded-3xl border bg-white p-6 shadow-[0_18px_50px_-30px_rgba(30,27,75,0.4)] ${plan.popular ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/15' : 'border-[#E2E8F0]'}`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[17px] font-extrabold text-[#0F172A]">
-                      {plan.name}
-                    </span>
+                    <span className="text-[17px] font-extrabold text-[#0F172A]">{plan.name}</span>
                     {plan.popular && (
                       <span className="shrink-0 rounded-full bg-[#F5F3FF] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#7C3AED]">
                         {t('bill.recommended')}
                       </span>
                     )}
                   </div>
-                  <p className="text-[12px] font-medium leading-relaxed text-[#64748B]">
-                    {plan.description}
-                  </p>
+                  <p className="text-[12px] font-medium leading-relaxed text-[#64748B]">{plan.description}</p>
                   <div className="flex items-end gap-1.5">
-                    <span className="text-[30px] font-black leading-none text-[#0F172A]">
-                      {plan.price}
-                    </span>
-                    <span className="pb-0.5 text-[12px] font-semibold text-[#94A3B8]">
-                      {plan.cadence}
-                    </span>
+                    <span className="text-[30px] font-black leading-none text-[#0F172A]">{plan.price}</span>
+                    <span className="pb-0.5 text-[12px] font-semibold text-[#94A3B8]">{plan.cadence}</span>
                   </div>
                   {plan.trialLabel && (
                     <span className="w-fit rounded-full bg-[#ECFDF5] px-2.5 py-1 text-[11px] font-bold text-[#047857]">
@@ -246,13 +206,8 @@ export function ChoosePlanScreen() {
                   )}
                   <ul className="flex flex-col gap-2 border-t border-[#F1F5F9] pt-4">
                     {plan.features.map((f) => (
-                      <li
-                        key={f}
-                        className="flex items-center gap-2 text-[13px]"
-                      >
-                        <span className="text-[#10B981]">
-                          <CheckIcon />
-                        </span>
+                      <li key={f} className="flex items-center gap-2 text-[13px]">
+                        <span className="text-[#10B981]"><CheckIcon /></span>
                         <span className="font-medium text-[#475569]">{f}</span>
                       </li>
                     ))}
@@ -263,18 +218,14 @@ export function ChoosePlanScreen() {
                     onClick={() => choosePlan(plan.id)}
                     className="mt-auto flex h-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] text-[14px] font-bold text-white shadow-[0_12px_24px_-8px_rgba(124,58,237,0.5)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {choosing === plan.id
-                      ? t('gate.opening')
-                      : t('gate.choose')}
+                    {choosing === plan.id ? t('gate.opening') : t('gate.choose')}
                   </button>
                 </div>
               ))}
             </div>
 
             <div className="flex flex-col items-center gap-2">
-              <p className="text-center text-[12px] font-medium text-[#94A3B8]">
-                {t('gate.trialNote')}
-              </p>
+              <p className="text-center text-[12px] font-medium text-[#94A3B8]">{t('gate.trialNote')}</p>
               <button
                 type="button"
                 disabled={checking}

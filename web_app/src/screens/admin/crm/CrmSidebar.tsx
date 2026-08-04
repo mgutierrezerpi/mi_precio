@@ -1,361 +1,52 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '../../../hooks/useTheme'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 import { selectTenant } from '../../../store/slices/authSlice'
-import { fetchLists, selectLists } from '../../../store/slices/menuSlice'
 import type { PlanId } from '../../../types'
 import { planById } from '../../../lib/plans'
 import { useT } from '../../../lib/i18n'
-import { markQrShared } from '../../../lib/onboardingTour'
 import { Icon, type IconName } from './ui'
 import { tone, gradient } from './theme'
 
 // Plans cheapest → most expensive; the upsell card points to the next tier up.
 // 'pro' is the top plan, so it has no upgrade and the card is hidden.
-const NEXT_PLAN: Partial<Record<PlanId, PlanId>> = {
-  free: 'micro',
-  micro: 'plus',
-  plus: 'pro',
-}
+const NEXT_PLAN: Partial<Record<PlanId, PlanId>> = { free: 'micro', micro: 'plus', plus: 'pro' }
 
 // `id` is the stable (Spanish) key screens pass as CrmLayout `active`; `tKey` is the display label.
-// `tour` marks the item as an anchor for the onboarding spotlight (lib/onboardingTour).
-const navMain: {
-  icon: IconName
-  id: string
-  tKey: string
-  label: string
-  to?: string
-  badge?: string
-  tour?: string
-}[] = [
-  {
-    icon: 'layout-dashboard',
-    id: 'Overview',
-    tKey: 'nav.home',
-    label: 'Resumen',
-    to: '/admin',
-  },
-  {
-    icon: 'list-checks',
-    id: 'Listas de precios',
-    tKey: 'nav.lists',
-    label: 'Listas',
-    to: '/admin/lists',
-    tour: 'nav-lists',
-  },
-  {
-    icon: 'package',
-    id: 'Productos',
-    tKey: 'nav.products',
-    label: 'Productos',
-    to: '/admin/items',
-    tour: 'nav-products',
-  },
-  {
-    icon: 'qr-code',
-    id: 'Códigos QR',
-    tKey: 'nav.qr',
-    label: 'Códigos QR',
-    to: '/admin/qr',
-    tour: 'nav-qr',
-  },
-  {
-    icon: 'users',
-    id: 'Clientes',
-    tKey: 'nav.customers',
-    label: 'Clientes',
-    to: '/admin/clientes',
-  },
-  {
-    icon: 'user-plus',
-    id: 'Leads',
-    tKey: 'leads.title',
-    label: 'Leads',
-    to: '/admin/leads',
-  },
-  {
-    icon: 'bar-chart',
-    id: 'Reportes',
-    tKey: 'nav.reports',
-    label: 'Reportes',
-    to: '/admin/reportes',
-  },
+const navMain: { icon: IconName; id: string; tKey: string; label: string; to?: string; badge?: string }[] = [
+  { icon: 'layout-dashboard', id: 'Overview', tKey: 'nav.home', label: 'Overview', to: '/admin' },
+  { icon: 'list-checks', id: 'Lists', tKey: 'nav.lists', label: 'Lists', to: '/admin/lists' },
+  { icon: 'package', id: 'Products', tKey: 'nav.products', label: 'Products', to: '/admin/items' },
+  { icon: 'users', id: 'Customers', tKey: 'nav.customers', label: 'Customers', to: '/admin/clientes' },
+  { icon: 'package', id: 'Stock', tKey: 'nav.products', label: 'Stock', to: '/admin/items' },
 ]
-const navSettings: {
-  icon: IconName
-  id: string
-  tKey: string
-  label: string
-  to?: string
-  tour?: string
-}[] = [
-  {
-    icon: 'user-plus',
-    id: 'Equipo',
-    tKey: 'nav.team',
-    label: 'Equipo',
-    to: '/admin/equipo',
-  },
-  {
-    icon: 'settings',
-    id: 'Configuración',
-    tKey: 'nav.settings',
-    label: 'Configuración',
-    to: '/admin/settings',
-    tour: 'nav-settings',
-  },
-  {
-    icon: 'life-buoy',
-    id: 'Soporte',
-    tKey: 'nav.support',
-    label: 'Soporte',
-    to: '/admin/soporte',
-    tour: 'nav-support',
-  },
+const navSettings: { icon: IconName; id: string; tKey: string; label: string; to?: string }[] = [
+  { icon: 'settings', id: 'Settings', tKey: 'nav.settings', label: 'Settings', to: '/admin/settings' },
 ]
 
-function NavItem({
-  icon,
-  label,
-  to,
-  badge,
-  active,
-  onNavigate,
-  collapsed,
-  tour,
-}: {
-  icon: IconName
-  label: string
-  to?: string
-  badge?: string
-  active: boolean
-  onNavigate?: () => void
-  collapsed?: boolean
-  tour?: string
-}) {
+function NavItem({ icon, label, to, badge, active, onNavigate }: { icon: IconName; label: string; to?: string; badge?: string; active: boolean; onNavigate?: () => void }) {
   const inner = (
     <>
-      <Icon
-        name={icon}
-        className={active ? 'text-[var(--dash-sidebar-active-text)]' : 'text-[var(--dash-muted)]'}
-      />
-      {!collapsed && (
-        <span
-          className={`flex-1 text-sm ${active ? 'font-bold text-[var(--dash-sidebar-active-text)]' : 'font-semibold text-[var(--dash-text2)]'}`}
-        >
-          {label}
-        </span>
+      <Icon name={icon} className={active ? 'text-white' : 'text-[var(--dash-muted)]'} />
+      <span className={`flex-1 text-sm ${active ? 'font-bold text-white' : 'font-semibold text-[var(--dash-text2)]'}`}>{label}</span>
+      {badge && (
+        active
+          ? <span className="rounded-[10px] bg-white/20 px-2 py-0.5 text-[11px] font-bold text-white">{badge}</span>
+          : <span className="rounded-[10px] px-2 py-0.5 text-[11px] font-bold" style={tone('violet')}>{badge}</span>
       )}
-      {badge &&
-        !collapsed &&
-        (active ? (
-          <span className="rounded-[10px] bg-[var(--dash-sidebar-badge)] px-2 py-0.5 text-[11px] font-bold text-[var(--dash-sidebar-active-text)]">
-            {badge}
-          </span>
-        ) : (
-          <span
-            className="rounded-[10px] px-2 py-0.5 text-[11px] font-bold"
-            style={tone('violet')}
-          >
-            {badge}
-          </span>
-        ))}
     </>
   )
-  const cls = `flex h-9 items-center gap-2 rounded-[8px] ${collapsed ? 'justify-center px-0' : 'px-3'} ${active ? 'bg-[var(--dash-sidebar-active)] text-[var(--dash-sidebar-active-text)]' : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`
-  return to ? (
-    <Link to={to} onClick={onNavigate} className={cls} data-tour={tour}>
-      {inner}
-    </Link>
-  ) : (
-    <button type="button" className={`${cls} w-full text-left`} data-tour={tour}>
-      {inner}
-    </button>
-  )
-}
-
-function SidebarHeader({
-  collapsed,
-  isDark,
-  onClose,
-  onToggle,
-  t,
-}: {
-  collapsed: boolean
-  isDark: boolean
-  onClose?: () => void
-  onToggle?: () => void
-  t: ReturnType<typeof useT>
-}) {
-  const toggleLabel = collapsed
-    ? t('side.expandSidebar')
-    : t('side.collapseSidebar')
-  return (
-    <div className="relative flex h-10 items-center justify-center px-2">
-      {!collapsed && (
-        <Link
-          to="/"
-          onClick={onClose}
-          className="relative flex min-w-0 items-center gap-2.5"
-        >
-          <img
-            src={
-              isDark
-                ? '/miprecio-logo-white-pencil.webp'
-                : '/miprecio-logo-pencil.webp'
-            }
-            alt="MiPrecio"
-            className="h-8 w-auto max-w-[150px] object-contain object-left"
-          />
-          <span
-            aria-hidden
-            className="pointer-events-none absolute bottom-0 left-[30%] right-0 h-[25%] bg-[var(--dash-sidebar)]"
-          />
-        </Link>
-      )}
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-label={toggleLabel}
-        title={toggleLabel}
-        className={`absolute hidden h-7 w-7 items-center justify-center rounded-md text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-text)] lg:flex ${collapsed ? 'left-1/2 -translate-x-1/2' : 'right-0'}`}
-      >
-        <Icon name={collapsed ? 'chevrons-right' : 'chevrons-left'} size={16} />
-      </button>
-    </div>
-  )
-}
-
-function PublicListAction({
-  collapsed,
-  hasMainList,
-  linkCopied,
-  onClose,
-  onCopy,
-  t,
-}: {
-  collapsed: boolean
-  hasMainList: boolean
-  linkCopied: boolean
-  onClose?: () => void
-  onCopy: () => void
-  t: ReturnType<typeof useT>
-}) {
-  const label = linkCopied ? t('side.linkCopied') : t('side.copyPublicLink')
-  const className = `btn btn-sm mt-1 flex h-9 items-center rounded-lg bg-[var(--dash-soft)] text-xs font-bold text-[var(--dash-link)] hover:opacity-90 ${collapsed ? 'justify-center px-0' : 'justify-center gap-2'}`
-  if (hasMainList)
-    return (
-      <button
-        type="button"
-        onClick={onCopy}
-        title={label}
-        aria-label={label}
-        className={className}
-        data-tour="share-link"
-      >
-        <Icon name={linkCopied ? 'circle-check' : 'link-2'} size={15} />
-        {!collapsed && label}
-      </button>
-    )
-  return (
-    <Link
-      to="/admin/lists?new=1"
-      onClick={onClose}
-      title={t('side.createMainList')}
-      aria-label={t('side.createMainList')}
-      className={className}
-      data-tour="share-link"
-    >
-      <Icon name="list-plus" size={15} />
-      {!collapsed && t('side.createMainList')}
-    </Link>
-  )
-}
-
-function SidebarNav({
-  active,
-  collapsed,
-  items,
-  onClose,
-  title,
-  t,
-}: {
-  active: string
-  collapsed: boolean
-  items: {
-    icon: IconName
-    id: string
-    tKey: string
-    to?: string
-    badge?: string
-    tour?: string
-  }[]
-  onClose?: () => void
-  title: string
-  t: ReturnType<typeof useT>
-}) {
-  return (
-    <>
-      {!collapsed && (
-        <p className="mb-1 mt-5 px-3 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">
-          {title}
-        </p>
-      )}
-      {items.map((item) => (
-        <NavItem
-          key={item.id}
-          icon={item.icon}
-          to={item.to}
-          badge={item.badge}
-          label={t(item.tKey)}
-          active={item.id === active}
-          onNavigate={onClose}
-          collapsed={collapsed}
-          tour={item.tour}
-        />
-      ))}
-    </>
-  )
+  const cls = `flex h-9 items-center gap-2 rounded-[7px] px-3 ${active ? 'bg-[#2A1C66] text-white' : 'hover:bg-[var(--dash-soft)]'}`
+  return to ? <Link to={to} onClick={onNavigate} className={cls}>{inner}</Link> : <button type="button" className={`${cls} w-full text-left`}>{inner}</button>
 }
 
 /** Shared CRM sidebar. `active` matches a nav item's stable id.
  *  Static column on desktop; slide-in drawer (controlled by `open`) below lg. */
-export function CrmSidebar({
-  active,
-  open = false,
-  collapsed = false,
-  onToggle,
-  onClose,
-}: {
-  active: string
-  open?: boolean
-  collapsed?: boolean
-  onToggle?: () => void
-  onClose?: () => void
-}) {
+export function CrmSidebar({ active, open = false, onClose }: { active: string; open?: boolean; onClose?: () => void }) {
   const { isDark } = useTheme()
   const t = useT()
-  const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
-  const lists = useAppSelector(selectLists)
-  const mainList = lists.find((list) => list.showOnIndex)
   const nextPlan = tenant ? NEXT_PLAN[tenant.plan] : undefined
-  const [linkCopied, setLinkCopied] = useState(false)
-
-  useEffect(() => {
-    if (tenant?.id) dispatch(fetchLists(tenant.id))
-  }, [dispatch, tenant?.id])
-
-  const copyPublicLink = () => {
-    if (!tenant || !mainList) return
-    const publicUrl = `${window.location.origin}/p/${tenant.subdomain || 'mi-negocio'}/${mainList.slug || mainList.id}`
-    navigator.clipboard?.writeText(publicUrl)
-    markQrShared(tenant.id)
-    setLinkCopied(true)
-    window.setTimeout(() => setLinkCopied(false), 1800)
-  }
   return (
     <>
       {/* Drawer backdrop (mobile only) — always mounted so it can fade in/out. */}
@@ -366,71 +57,38 @@ export function CrmSidebar({
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[248px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[var(--dash-sidebar)] p-3 transition-[width,transform] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${collapsed ? 'lg:w-[72px]' : ''} ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[220px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[#120A26] p-4 transition-transform duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <SidebarHeader
-          collapsed={collapsed}
-          isDark={isDark}
-          onClose={onClose}
-          onToggle={onToggle}
-          t={t}
-        />
-        {tenant && (
-          <PublicListAction
-            collapsed={collapsed}
-            hasMainList={!!mainList}
-            linkCopied={linkCopied}
-            onClose={onClose}
-            onCopy={copyPublicLink}
-            t={t}
-          />
-        )}
-        {/* Business switcher intentionally stays hidden until memberships are
-            supported. A User currently belongs to exactly one tenant. */}
+        <Link to="/" onClick={onClose} className="flex items-center">
+          <img src={isDark ? '/miprecio-logo-white-pencil.webp' : '/miprecio-logo-pencil.webp'} alt="MiPrecio" className="h-8 w-auto" />
+        </Link>
+        <div className="mt-3 flex h-[47px] items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[#17102D] px-3">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#2A1C66] text-[11px] font-extrabold text-[#C4B5FD]">MP</span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold text-white">MiPrecio</p>
+            <p className="truncate text-[10px] text-[var(--dash-muted)]">{t('side.crm')}</p>
+          </div>
+          <Icon name="chevron-down" size={14} className="text-[var(--dash-muted)]" />
+        </div>
 
-        <SidebarNav
-          active={active}
-          collapsed={collapsed}
-          items={navMain}
-          onClose={onClose}
-          title={t('side.main')}
-          t={t}
-        />
-        <SidebarNav
-          active={active}
-          collapsed={collapsed}
-          items={navSettings}
-          onClose={onClose}
-          title={t('side.settings')}
-          t={t}
-        />
+        <p className="mt-4 mb-1 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">MAIN</p>
+        {navMain.map((item) => <NavItem key={item.id} icon={item.icon} to={item.to} badge={item.badge} label={item.label} active={item.id === active} onNavigate={onClose} />)}
+
+        <p className="mb-1 mt-3 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">SETTINGS</p>
+        {navSettings.map((item) => <NavItem key={item.id} icon={item.icon} to={item.to} label={item.label} active={item.id === active} onNavigate={onClose} />)}
 
         <div className="flex-1" />
 
         {/* Upsell to the next plan up; hidden once the tenant is on the top plan (pro). */}
-        {nextPlan && tenant && !collapsed && (
-          <div
-            className={`flex flex-col gap-3 rounded-lg p-4 text-white shadow-[0_12px_28px_-8px_rgba(124,58,237,0.6)] ${gradient}`}
-          >
+        {nextPlan && tenant && (
+          <div className={`flex flex-col gap-2 rounded-xl p-4 text-white shadow-[0_12px_28px_-8px_rgba(124,58,237,0.6)] ${gradient}`}>
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">
-                {t('side.planTag', { plan: planById(tenant.plan).name })}
-              </p>
-              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white">
-                Micro
-              </span>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">{t('side.planTag', { plan: planById(tenant.plan).name })}</p>
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white">Micro</span>
             </div>
-            <p className="text-base font-extrabold">
-              {t('side.upgradeTitle', { plan: planById(nextPlan).name })}
-            </p>
-            <p className="text-xs font-medium leading-snug text-[#E0E7FF]">
-              {t(`side.upgradeDesc.${nextPlan}`)}
-            </p>
-            <Link
-              to="/admin/settings?section=billing"
-              onClick={onClose}
-              className="mt-0 flex h-9 items-center justify-center rounded-lg bg-white text-[13px] font-bold text-[#7C3AED] hover:bg-violet-50"
-            >
+            <p className="text-base font-extrabold">{t('side.upgradeTitle', { plan: planById(nextPlan).name })}</p>
+            <p className="text-xs font-medium leading-snug text-[#E0E7FF]">{t(`side.upgradeDesc.${nextPlan}`)}</p>
+            <Link to="/admin/settings?section=billing" onClick={onClose} className="mt-1 flex h-9 items-center justify-center rounded-[10px] bg-white text-[13px] font-bold text-[#7C3AED] hover:bg-violet-50">
               {t('side.viewPlans')}
             </Link>
           </div>
