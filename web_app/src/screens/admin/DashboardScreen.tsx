@@ -94,11 +94,11 @@ export function DashboardScreen() {
       active="Overview"
       title="Espacio de trabajo / Resumen"
       subtitle="Martes, 7 de julio de 2026"
+      hideContext
       searchPlaceholder="Buscar en el espacio de trabajo"
       searchValue={search}
       onSearchChange={setSearch}
       onSearchSubmit={(q) => navigate(q.trim() ? `/admin/items?q=${encodeURIComponent(q.trim())}` : '/admin/items')}
-      actions={<button type="button" onClick={goLists} className="btn btn-sm dash-primary hidden h-9 items-center rounded-lg px-4 text-[12px] font-bold lg:flex">Crear lista</button>}
     >
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
         <section className="flex h-[60px] flex-col justify-center gap-1">
@@ -107,12 +107,12 @@ export function DashboardScreen() {
         </section>
 
         <section className="flex flex-col gap-4 xl:flex-row">
-          <div className={`flex min-h-[208px] flex-1 flex-col justify-center gap-4 rounded-xl p-4 text-white sm:flex-row sm:items-center sm:justify-between ${gradient}`}>
+          <div className={`flex min-h-[208px] flex-1 flex-col justify-center gap-4 rounded-xl p-5 text-white sm:flex-row sm:items-center sm:justify-between ${gradient}`}>
             <div className="flex max-w-[420px] flex-col gap-2">
-              <p className="text-xs font-semibold text-[#E9D5FF]">Compartí tu catálogo</p>
-              <h3 className="text-2xl font-bold leading-tight">Compartí tu catálogo en un escaneo.</h3>
-              <p className="text-[13px] leading-relaxed text-[#E9D5FF]">Generá códigos QR personalizados con tu logo y actualizalos sin reimprimir.</p>
-              <button type="button" onClick={goQr} className="btn btn-sm mt-1 flex h-[38px] w-fit items-center gap-2 rounded-full bg-white px-4 text-xs font-bold text-[#7C3AED]"><Icon name="qr-code" size={15} /> Crear QR</button>
+              <p className="text-[13px] font-semibold text-[#E9D5FF]">Compartí tu catálogo</p>
+              <h3 className="text-[26px] font-bold leading-tight">Compartí tu catálogo en un escaneo.</h3>
+              <p className="text-sm leading-relaxed text-[#E9D5FF]">Generá códigos QR personalizados con tu logo y actualizalos sin reimprimir.</p>
+              <button type="button" onClick={goQr} className="btn btn-sm mt-1 flex h-10 w-fit items-center gap-2 rounded-full bg-white px-5 text-[13px] font-bold text-[#7C3AED]"><Icon name="qr-code" size={16} /> Crear QR</button>
             </div>
             <button type="button" onClick={goQr} title="Ver códigos QR" className="flex h-[156px] w-[156px] shrink-0 items-center justify-center self-center rounded-[14px] bg-white p-2"><QrCode value={qrUrl} size={148} margin={2} fg="#111827" logoUrl={FAVICON} className="h-full w-full object-contain" /></button>
           </div>
@@ -132,32 +132,32 @@ export function DashboardScreen() {
 }
 
 function OverviewMetric({ label, value, detail, onClick = () => undefined, featured }: { label: string; value: string; detail: string; onClick?: () => void; featured?: boolean }) {
-  return <button type="button" onClick={onClick} className={`card dash-card flex min-h-[80px] flex-col justify-center gap-1 rounded-[10px] px-4 text-left ${featured ? 'dash-featured' : ''}`}><span className="text-[11px] font-semibold text-[#9694A6]">{label}</span><span className="text-[22px] font-bold leading-none text-[#F8F7FF]">{value}</span><span className="text-[11px] text-[#8E8B9C]">{detail}</span></button>
+  return <button type="button" onClick={onClick} className={`card dash-card flex min-h-[80px] flex-col justify-center gap-1 rounded-[10px] p-5 text-left ${featured ? 'dash-featured' : ''}`}><span className="text-xs font-semibold text-[#9694A6]">{label}</span><span className="text-2xl font-bold leading-none text-[#F8F7FF]">{value}</span><span className="text-xs text-[#8E8B9C]">{detail}</span></button>
 }
 
 function EngagementChart({ values }: { values: { listViews: number; productClicks: number; shares: number; engagement: string } }) {
   const rows = [['Visitas a listas', values.listViews.toLocaleString(), values.listViews > 0 ? 92 : 0], ['Clics en productos', values.productClicks.toLocaleString(), values.productClicks > 0 ? 62 : 0], ['Compartidos', values.shares.toLocaleString(), values.shares > 0 ? 42 : 0], ['Conversiones', values.engagement, values.engagement !== '0.0%' ? 27 : 0]] as const
-  return <section className="card dash-card flex min-h-[300px] flex-1 flex-col gap-4 rounded-[10px] p-4"><div className="flex h-[38px] items-start justify-between"><div className="flex flex-col gap-1"><h3 className="text-base font-bold text-[#F8F7FF]">Interacción en el tiempo</h3><p className="text-xs text-[#9694A6]">Visitas, clics y actividad de listas durante los últimos 30 días.</p></div><button type="button" className="btn btn-sm h-[30px] rounded-md bg-[#1C1730] px-2.5 text-[11px] font-semibold text-[#C4B5FD]">Últimos 30 días</button></div><div className="flex flex-1 flex-col justify-center gap-3 px-0 sm:px-2">{rows.map(([label, value, width]) => <div key={label} className="flex h-[34px] items-center gap-3"><span className="w-[110px] shrink-0 text-xs text-[#B7B3C5]">{label}</span><div className="h-2.5 flex-1 rounded-full bg-[#1C1B2A]"><div className="h-full rounded-full bg-[#6C43E8]" style={{ width: `${width}%` }} /></div><span className="w-12 text-right text-xs font-semibold text-[#F8F7FF]">{value}</span></div>)}</div></section>
+  return <section className="card dash-card flex min-h-[300px] flex-1 flex-col gap-4 rounded-[10px] p-5"><div className="flex h-[38px] items-start justify-between"><div className="flex flex-col gap-1"><h3 className="text-lg font-bold text-[#F8F7FF]">Interacción en el tiempo</h3><p className="text-[13px] text-[#9694A6]">Visitas, clics y actividad de listas durante los últimos 30 días.</p></div><button type="button" className="btn btn-sm h-8 rounded-md bg-[#1C1730] px-3 text-xs font-semibold text-[#C4B5FD]">Últimos 30 días</button></div><div className="flex flex-1 flex-col justify-center gap-3 px-0 sm:px-2">{rows.map(([label, value, width]) => <div key={label} className="flex h-9 items-center gap-3"><span className="w-[120px] shrink-0 text-[13px] text-[#B7B3C5]">{label}</span><div className="h-2.5 flex-1 rounded-full bg-[#1C1B2A]"><div className="h-full rounded-full bg-[#6C43E8]" style={{ width: `${width}%` }} /></div><span className="w-12 text-right text-[13px] font-semibold text-[#F8F7FF]">{value}</span></div>)}</div></section>
 }
 
 /** Public list URL + today's visits. Shown in the welcome row (full) or inline with the KPIs (compact). */
 function PublicListCard({ urlDisplay, onCopy, copied, visits, compact, className = '' }: { urlDisplay: string; onCopy: () => void; copied: boolean; visits: VisitStats | null; compact?: boolean; className?: string }) {
   return (
-    <div className={`flex flex-col rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] gap-3 p-4 ${className}`}>
-      {!compact && <p className="text-lg font-extrabold text-[var(--dash-text)]">Tu lista pública</p>}
+    <div className={`flex flex-col rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] gap-3 p-5 ${className}`}>
+      {!compact && <p className="text-xl font-extrabold text-[var(--dash-text)]">Tu lista pública</p>}
       <button type="button" onClick={onCopy} title="Copiar enlace" className="flex h-10 items-center gap-2 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 text-left text-[var(--dash-link)] hover:opacity-90">
         <Icon name="link-2" size={16} />
-        <span className="flex-1 truncate text-[13px] font-semibold">{urlDisplay}</span>
+        <span className="flex-1 truncate text-sm font-semibold">{urlDisplay}</span>
         <Icon name={copied ? 'circle-check' : 'copy'} size={16} />
       </button>
       <div className="flex flex-col gap-2">
         <div className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 text-[var(--dash-text2)]">
           <Icon name="eye" size={14} className="text-[var(--dash-link)]" />
-          <span className="text-xs font-bold">Hoy: {visits?.today ?? 0}</span>
+          <span className="text-[13px] font-bold">Hoy: {visits?.today ?? 0}</span>
         </div>
         <div className="flex h-10 w-full items-center gap-2 rounded-[10px] px-3" style={tone((visits?.changePct ?? 0) >= 0 ? 'green' : 'red')}>
           <Icon name="trending-up" size={14} className={(visits?.changePct ?? 0) < 0 ? 'scale-y-[-1]' : ''} />
-          <span className="text-xs font-bold">{(visits?.changePct ?? 0) >= 0 ? '+' : ''}{visits?.changePct ?? 0}% vs ayer</span>
+          <span className="text-[13px] font-bold">{(visits?.changePct ?? 0) >= 0 ? '+' : ''}{visits?.changePct ?? 0}% vs ayer</span>
         </div>
       </div>
     </div>
