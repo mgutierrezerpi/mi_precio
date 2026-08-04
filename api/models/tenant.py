@@ -1,4 +1,4 @@
-from peewee import BooleanField, CharField, DateTimeField, TextField
+from peewee import BooleanField, CharField, DateTimeField, IntegerField, TextField
 from models.base import BaseModel
 
 
@@ -29,6 +29,11 @@ class Tenant(BaseModel):
     billing_update_payment_url = TextField(null=True)
     billing_card_brand = CharField(max_length=32, null=True)
     billing_card_last_four = CharField(max_length=8, null=True)
+    billing_checkout_id = CharField(max_length=64, null=True)
+    billing_order_id = CharField(max_length=64, null=True)
+    billing_sync_started_at = DateTimeField(null=True)
+    billing_sync_next_at = DateTimeField(null=True)
+    billing_sync_attempts = IntegerField(default=0)
 
     # Brand & appearance (shown on the public price-list page)
     logo_url = TextField(null=True)        # data URL or hosted URL

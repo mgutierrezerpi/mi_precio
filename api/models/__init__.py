@@ -94,6 +94,11 @@ def ensure_columns():
             ("billing_update_payment_url", "billing_update_payment_url TEXT"),
             ("billing_card_brand", "billing_card_brand VARCHAR(32)"),
             ("billing_card_last_four", "billing_card_last_four VARCHAR(8)"),
+            ("billing_checkout_id", "billing_checkout_id VARCHAR(64)"),
+            ("billing_order_id", "billing_order_id VARCHAR(64)"),
+            ("billing_sync_started_at", "billing_sync_started_at DATETIME"),
+            ("billing_sync_next_at", "billing_sync_next_at DATETIME"),
+            ("billing_sync_attempts", "billing_sync_attempts INTEGER NOT NULL DEFAULT 0"),
             ("logo_url", "logo_url TEXT"),
             ("brand_color", "brand_color VARCHAR(9)"),
             ("description", "description TEXT"),
@@ -118,6 +123,13 @@ def ensure_columns():
         if "role" not in user_columns:
             # Existing single-user tenants are their own owners.
             db.execute_sql("ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'owner'")
+        # These fields belonged to the removed per-user admin UI modes. Older
+        # local databases may still have them as NOT NULL columns, which makes
+        # inserts fail even though the current User model no longer provides
+        # values for them.
+        for legacy_column in ("simple_admin_ui", "admin_ui_mode"):
+            if legacy_column in user_columns:
+                db.execute_sql(f'ALTER TABLE users DROP COLUMN "{legacy_column}"')
         if "last_seen_at" not in user_columns:
             db.execute_sql("ALTER TABLE users ADD COLUMN last_seen_at DATETIME")
         if "notif_prefs" not in user_columns:

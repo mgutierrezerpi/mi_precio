@@ -214,17 +214,17 @@ input, textarea, select, button, a {
 }
 
 [data-theme="dark"] .dash {
-  --dash-bg: #0F0823;
-  --dash-surface: #1A0F36;
-  --dash-border: #2E1065;
-  --dash-divider: #2E1065;
-  --dash-soft: #241452;
-  --dash-soft-border: #3B1F77;
-  --dash-table-head: #241452;
+  --dash-bg: #0E071D;
+  --dash-surface: #160D2D;
+  --dash-border: #33205B;
+  --dash-divider: #291746;
+  --dash-soft: #21133F;
+  --dash-soft-border: #482673;
+  --dash-table-head: #1D1138;
   --dash-text: #FFFFFF;
   --dash-text2: #CBD5E1;
-  --dash-muted: #8A7BB0;
-  --dash-link: #C4B5FD;
+  --dash-muted: #9281B7;
+  --dash-link: #D5B8FF;
 
   --tone-violet-bg: #3B1F77; --tone-violet-fg: #C4B5FD;
   --tone-sky-bg: #0C4A6E;    --tone-sky-fg: #7DD3FC;

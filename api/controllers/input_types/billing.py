@@ -17,3 +17,8 @@ class ManualSubscriptionSync(BaseModel):
     variant_id: str | None = None
     renews_at: datetime | None = None
     ends_at: datetime | None = None
+
+
+class ReconcileCheckout(BaseModel):
+    tenant_id: str
+    order_id: str

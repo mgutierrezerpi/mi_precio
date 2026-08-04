@@ -41,10 +41,13 @@ def _with_db(task):
 
 @huey.task(retries=2, retry_delay=30)
 def run_billing_maintenance() -> dict[str, int]:
-    """Expire ended subscriptions and prune stale auth codes."""
+    """Resume due billing lookups, expire subscriptions, and prune auth codes."""
 
     expired_subscriptions = _with_db(billing.expire_ended_subscriptions)
     pruned_codes = _with_db(auth.prune_expired_codes)
+    pending_ids = _with_db(billing.due_pending_subscription_ids)
+    for tenant_id in pending_ids:
+        check_pending_billing.schedule((tenant_id,), delay=0)
 
     if expired_subscriptions:
         logger.info("Expired %s ended billing subscriptions", expired_subscriptions)
@@ -54,7 +57,19 @@ def run_billing_maintenance() -> dict[str, int]:
     return {
         "expired_subscriptions": expired_subscriptions,
         "pruned_codes": pruned_codes,
+        "pending_billing_checks": len(pending_ids),
     }
+
+
+@huey.task(retries=2, retry_delay=30)
+def check_pending_billing(tenant_id: str) -> dict[str, object]:
+    """Poll a checkout with exponential backoff until its webhook arrives."""
+
+    try:
+        return _with_db(lambda: billing.poll_pending_subscription(tenant_id))
+    except billing.BillingError:
+        logger.warning("Billing lookup failed for tenant %s; deferring with backoff", tenant_id)
+        return _with_db(lambda: billing.defer_pending_subscription(tenant_id))
 
 
 @huey.task(retries=2, retry_delay=30)

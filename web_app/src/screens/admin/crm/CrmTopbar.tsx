@@ -24,7 +24,7 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
   const t = useT()
 
   return (
-    <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 md:gap-4 md:px-8">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[var(--dash-border)] bg-[var(--dash-bg)] px-4 md:gap-4 md:px-10">
       <button
         type="button"
         onClick={onMenu}
@@ -33,12 +33,12 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
       >
         <Icon name="menu" />
       </button>
-      <div className="flex min-w-0 flex-col">
-        <h1 className="truncate text-lg font-extrabold text-[var(--dash-text)] md:text-xl">{title}</h1>
-        <p className="truncate text-xs font-medium text-[var(--dash-muted)]">{subtitle}</p>
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <h1 className="truncate text-sm font-bold text-[var(--dash-text)] md:text-[15px]">{title}</h1>
+        <p className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{subtitle}</p>
       </div>
       <div className="flex-1" />
-      <label className="hidden h-10 w-[320px] items-center gap-2.5 rounded-xl bg-[var(--dash-soft)] px-3 lg:flex">
+      <label className="hidden h-9 w-[220px] items-center gap-2 rounded-[8px] border border-[var(--dash-border)] bg-[#11111A] px-3 lg:flex">
         <Icon name="search" size={16} className="text-[var(--dash-muted)]" />
         <input
           placeholder={searchPlaceholder}

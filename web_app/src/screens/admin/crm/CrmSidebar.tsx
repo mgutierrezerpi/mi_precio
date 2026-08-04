@@ -13,18 +13,15 @@ import { tone, gradient } from './theme'
 const NEXT_PLAN: Partial<Record<PlanId, PlanId>> = { free: 'micro', micro: 'plus', plus: 'pro' }
 
 // `id` is the stable (Spanish) key screens pass as CrmLayout `active`; `tKey` is the display label.
-const navMain: { icon: IconName; id: string; tKey: string; to?: string; badge?: string }[] = [
-  { icon: 'layout-dashboard', id: 'Inicio', tKey: 'nav.home', to: '/admin' },
-  { icon: 'package', id: 'Productos', tKey: 'nav.products', to: '/admin/items' },
-  { icon: 'list-checks', id: 'Listas de precios', tKey: 'nav.lists', to: '/admin/lists' },
-  { icon: 'qr-code', id: 'Códigos QR', tKey: 'nav.qr', to: '/admin/qr' },
-  { icon: 'users', id: 'Clientes', tKey: 'nav.customers', to: '/admin/clientes' },
-  { icon: 'bar-chart', id: 'Reportes', tKey: 'nav.reports', to: '/admin/reportes' },
+const navMain: { icon: IconName; id: string; tKey: string; label: string; to?: string; badge?: string }[] = [
+  { icon: 'layout-dashboard', id: 'Overview', tKey: 'nav.home', label: 'Overview', to: '/admin' },
+  { icon: 'list-checks', id: 'Lists', tKey: 'nav.lists', label: 'Lists', to: '/admin/lists' },
+  { icon: 'package', id: 'Products', tKey: 'nav.products', label: 'Products', to: '/admin/items' },
+  { icon: 'users', id: 'Customers', tKey: 'nav.customers', label: 'Customers', to: '/admin/clientes' },
+  { icon: 'package', id: 'Stock', tKey: 'nav.products', label: 'Stock', to: '/admin/items' },
 ]
-const navSettings: { icon: IconName; id: string; tKey: string; to?: string }[] = [
-  { icon: 'user-plus', id: 'Equipo', tKey: 'nav.team', to: '/admin/equipo' },
-  { icon: 'settings', id: 'Configuración', tKey: 'nav.settings', to: '/admin/settings' },
-  { icon: 'life-buoy', id: 'Soporte', tKey: 'nav.support', to: '/admin/soporte' },
+const navSettings: { icon: IconName; id: string; tKey: string; label: string; to?: string }[] = [
+  { icon: 'settings', id: 'Settings', tKey: 'nav.settings', label: 'Settings', to: '/admin/settings' },
 ]
 
 function NavItem({ icon, label, to, badge, active, onNavigate }: { icon: IconName; label: string; to?: string; badge?: string; active: boolean; onNavigate?: () => void }) {
@@ -39,7 +36,7 @@ function NavItem({ icon, label, to, badge, active, onNavigate }: { icon: IconNam
       )}
     </>
   )
-  const cls = `flex h-11 items-center gap-3 rounded-xl px-3.5 ${active ? `text-white shadow-[0_6px_14px_-4px_rgba(124,58,237,0.4)] ${gradient}` : 'hover:bg-[var(--dash-soft)]'}`
+  const cls = `flex h-9 items-center gap-2 rounded-[7px] px-3 ${active ? 'bg-[#2A1C66] text-white' : 'hover:bg-[var(--dash-soft)]'}`
   return to ? <Link to={to} onClick={onNavigate} className={cls}>{inner}</Link> : <button type="button" className={`${cls} w-full text-left`}>{inner}</button>
 }
 
@@ -60,25 +57,35 @@ export function CrmSidebar({ active, open = false, onClose }: { active: string; 
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[260px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 transition-transform duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[220px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[#120A26] p-4 transition-transform duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <Link to="/" onClick={onClose} className="flex items-center">
-          <img src={isDark ? '/miprecio-logo-white-pencil.webp' : '/miprecio-logo-pencil.webp'} alt="MiPrecio" className="h-12 w-auto" />
+          <img src={isDark ? '/miprecio-logo-white-pencil.webp' : '/miprecio-logo-pencil.webp'} alt="MiPrecio" className="h-8 w-auto" />
         </Link>
-        <p className="mt-5 text-xs font-medium text-[var(--dash-muted)]">{t('side.crm')}</p>
+        <div className="mt-3 flex h-[47px] items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[#17102D] px-3">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#2A1C66] text-[11px] font-extrabold text-[#C4B5FD]">MP</span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold text-white">MiPrecio</p>
+            <p className="truncate text-[10px] text-[var(--dash-muted)]">{t('side.crm')}</p>
+          </div>
+          <Icon name="chevron-down" size={14} className="text-[var(--dash-muted)]" />
+        </div>
 
-        <p className="mt-5 mb-1 text-[11px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">{t('side.main')}</p>
-        {navMain.map((item) => <NavItem key={item.id} icon={item.icon} to={item.to} badge={item.badge} label={t(item.tKey)} active={item.id === active} onNavigate={onClose} />)}
+        <p className="mt-4 mb-1 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">MAIN</p>
+        {navMain.map((item) => <NavItem key={item.id} icon={item.icon} to={item.to} badge={item.badge} label={item.label} active={item.id === active} onNavigate={onClose} />)}
 
-        <p className="mb-1 mt-3 text-[11px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">{t('side.settings')}</p>
-        {navSettings.map((item) => <NavItem key={item.id} icon={item.icon} to={item.to} label={t(item.tKey)} active={item.id === active} onNavigate={onClose} />)}
+        <p className="mb-1 mt-3 text-[10px] font-bold tracking-[0.15em] text-[var(--dash-muted)]">SETTINGS</p>
+        {navSettings.map((item) => <NavItem key={item.id} icon={item.icon} to={item.to} label={item.label} active={item.id === active} onNavigate={onClose} />)}
 
         <div className="flex-1" />
 
         {/* Upsell to the next plan up; hidden once the tenant is on the top plan (pro). */}
         {nextPlan && tenant && (
-          <div className={`flex flex-col gap-2 rounded-2xl p-4 text-white shadow-[0_10px_24px_-6px_rgba(124,58,237,0.5)] ${gradient}`}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">{t('side.planTag', { plan: planById(tenant.plan).name })}</p>
+          <div className={`flex flex-col gap-2 rounded-xl p-4 text-white shadow-[0_12px_28px_-8px_rgba(124,58,237,0.6)] ${gradient}`}>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">{t('side.planTag', { plan: planById(tenant.plan).name })}</p>
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white">Micro</span>
+            </div>
             <p className="text-base font-extrabold">{t('side.upgradeTitle', { plan: planById(nextPlan).name })}</p>
             <p className="text-xs font-medium leading-snug text-[#E0E7FF]">{t(`side.upgradeDesc.${nextPlan}`)}</p>
             <Link to="/admin/settings?section=billing" onClick={onClose} className="mt-1 flex h-9 items-center justify-center rounded-[10px] bg-white text-[13px] font-bold text-[#7C3AED] hover:bg-violet-50">

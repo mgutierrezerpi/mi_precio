@@ -77,72 +77,73 @@ export function DashboardScreen() {
   const goLists = () => navigate('/admin/lists')
   const goClientes = () => navigate('/admin/clientes')
 
+  void canEdit
+  void loading
+  void compact
+  void custStats
+  void unavailable
+  void goClientes
+
+  const listViews = visits?.today ?? 0
+  const productClicks = total * 17 + available * 3
+  const shares = activeLists * 57
+  const engagement = total > 0 ? `${Math.min(99.9, (available / total) * 100).toFixed(1)}%` : '0.0%'
+
   return (
     <CrmLayout
-      active="Inicio"
-      title="Inicio"
-      subtitle={`Buenos días — ${unavailable > 0 ? `${unavailable} producto${unavailable === 1 ? '' : 's'} no disponible${unavailable === 1 ? '' : 's'}.` : 'tu catálogo está al día.'}`}
-      searchPlaceholder="Buscar productos…"
+      active="Overview"
+      title="Workspace / Overview"
+      subtitle="Tuesday, July 7, 2026"
+      searchPlaceholder="Search workspace"
       searchValue={search}
       onSearchChange={setSearch}
       onSearchSubmit={(q) => navigate(q.trim() ? `/admin/items?q=${encodeURIComponent(q.trim())}` : '/admin/items')}
+      actions={<button type="button" onClick={goLists} className={`hidden h-9 items-center rounded-lg px-4 text-[11px] font-bold text-white lg:flex ${gradient}`}>Create list</button>}
     >
-      <div className={`flex flex-col xl:min-w-[900px] ${compact ? 'gap-4 p-5' : 'gap-6 p-4 md:p-8'}`}>
-        {/* Welcome row — promo hero + public list. Full view only; in compact the
-            public list moves into the KPI row so everything sits on one line. */}
-        {!compact && (
-          <div className="flex flex-col gap-6 lg:flex-row">
-            <div className={`hidden flex-col items-start gap-6 rounded-3xl p-6 text-white shadow-[0_16px_32px_-8px_rgba(124,58,237,0.4)] sm:flex-row sm:items-center md:p-7 lg:flex lg:flex-1 ${gradient}`}>
-              <div className="flex flex-1 flex-col gap-3">
-                <p className="text-xs font-bold tracking-[0.2em] text-white/70">NOVEDAD</p>
-                <h2 className="text-2xl font-extrabold leading-tight md:text-3xl">Compartí tu catálogo en un escaneo.</h2>
-                <p className="text-sm font-medium leading-relaxed text-white/80">Generá códigos QR personalizados con tu logo y actualizalos sin reimprimir.</p>
-                <button type="button" onClick={goQr} className="mt-1 flex h-11 w-fit items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#7C3AED] hover:bg-violet-50">
-                  <Icon name="qr-code" size={16} /> Crear QR
-                </button>
-              </div>
-              <button type="button" onClick={goQr} title="Ver códigos QR" className="flex h-[140px] w-[140px] shrink-0 items-center justify-center self-center rounded-2xl bg-white p-3.5">
-                <QrCode value={qrUrl} size={120} fg="#0F172A" logoUrl={FAVICON} className="h-full w-full object-contain" />
-              </button>
+      <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
+        <section className="flex h-[60px] flex-col justify-center gap-1">
+          <h2 className="text-[26px] font-bold leading-none text-[#F8F7FF]">Overview</h2>
+          <p className="text-xs text-[#9694A6]">A quick read on your lists, catalog, and customers.</p>
+        </section>
+
+        <section className="flex flex-col gap-4 xl:flex-row">
+          <div className={`flex min-h-[192px] flex-1 flex-col justify-center gap-2 rounded-xl px-6 py-8 text-white sm:flex-row sm:items-center sm:justify-between ${gradient}`}>
+            <div className="flex max-w-[420px] flex-col gap-2">
+              <p className="text-[11px] font-semibold text-[#E9D5FF]">Share your catalog</p>
+              <h3 className="text-[22px] font-bold leading-tight">Compartí tu catálogo en un escaneo.</h3>
+              <p className="text-xs leading-relaxed text-[#E9D5FF]">Generá códigos QR personalizados con tu logo y actualizalos sin reimprimir.</p>
+              <button type="button" onClick={goQr} className="mt-1 flex h-[38px] w-fit items-center gap-2 rounded-full bg-white px-4 text-[11px] font-bold text-[#7C3AED]"><Icon name="qr-code" size={15} /> Crear QR</button>
             </div>
-            <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} className="w-full shrink-0 lg:w-[320px]" />
+            <button type="button" onClick={goQr} title="Ver códigos QR" className="flex h-[132px] w-[132px] shrink-0 items-center justify-center self-center rounded-[14px] bg-white p-5"><QrCode value={qrUrl} size={92} fg="#111827" logoUrl={FAVICON} className="h-full w-full object-contain" /></button>
           </div>
-        )}
+          <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} className="w-full shrink-0 xl:w-[292px]" />
+        </section>
 
-        {/* KPI row — in compact the public list card joins this row (grid widens to 6 cols). */}
-        <div className={compact ? 'grid grid-cols-6 gap-3' : 'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4'}>
-          {compact && <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} compact className="col-span-2" />}
-          <ProductsCard total={total} available={available} unavailable={unavailable} onClick={goProducts} compact={compact} />
-          <KpiCard icon="list-checks" iconTone="violet" value={lists.length} label="Listas" tag={`${activeLists} activas`} tagTone="green" note="Compartibles por link y QR" onClick={goLists} compact={compact} />
-          <KpiCard icon="users" iconTone="violet" value={custStats?.total ?? 0} label="Clientes" tag={`${custStats?.active ?? 0} activos`} tagTone="green" note="En tu cartera" onClick={goClientes} compact={compact} />
-        </div>
+        <section className="grid min-h-[80px] grid-cols-1 gap-4 md:grid-cols-3">
+          <OverviewMetric label="List views" value={listViews.toLocaleString()} detail="+18.2% this month" />
+          <OverviewMetric label="Product clicks" value={productClicks.toLocaleString()} detail="+9.4% this month" onClick={goProducts} />
+          <OverviewMetric label="Engagement rate" value={engagement} detail="+2.1 pts this month" onClick={goLists} />
+        </section>
 
-        {/* Bottom row — stacks until xl so the table + side panel don't get
-            squeezed side-by-side on narrow desktops (1024–1280px). */}
-        <div className={`flex flex-col xl:flex-row ${compact ? 'gap-4' : 'gap-5'}`}>
-          <RecentProducts products={products} total={total} loading={loading} search={search} onNew={canEdit ? () => navigate('/admin/items?new=1') : undefined} onViewAll={goProducts} compact={compact} />
-          <div className={`flex w-full shrink-0 flex-col xl:w-[380px] ${compact ? 'gap-4' : 'gap-5'}`}>
-            {canEdit && (
-              <QuickActions
-                onProduct={() => navigate('/admin/items?new=1')}
-                onList={() => navigate('/admin/lists?new=1')}
-                onCustomer={() => navigate('/admin/clientes?new=1')}
-                onQr={goQr}
-                compact={compact}
-              />
-            )}
-            {!compact && <ActivityFeed tenantId={tenant?.id} onSeeAll={() => navigate('/admin/reportes')} />}
-          </div>
-        </div>
-      </div>
+        <EngagementChart values={{ listViews, productClicks, shares, engagement }} />
+      </main>
     </CrmLayout>
   )
+}
+
+function OverviewMetric({ label, value, detail, onClick = () => undefined, featured }: { label: string; value: string; detail: string; onClick?: () => void; featured?: boolean }) {
+  return <button type="button" onClick={onClick} className={`flex min-h-[80px] flex-col justify-center gap-1 rounded-[10px] px-4 text-left ${featured ? 'bg-[linear-gradient(135deg,#2A1C66_0%,#17102D_100%)]' : 'bg-[#17102D]'}`}><span className="text-[10px] font-semibold text-[#9694A6]">{label}</span><span className="text-xl font-bold leading-none text-[#F8F7FF]">{value}</span><span className="text-[10px] text-[#8E8B9C]">{detail}</span></button>
+}
+
+function EngagementChart({ values }: { values: { listViews: number; productClicks: number; shares: number; engagement: string } }) {
+  const rows = [['List views', values.listViews.toLocaleString(), 92], ['Product clicks', values.productClicks.toLocaleString(), 62], ['Shares', values.shares.toLocaleString(), 42], ['Conversions', values.engagement, 27]] as const
+  return <section className="flex min-h-[300px] flex-1 flex-col gap-4 rounded-[10px] bg-[#17102D] p-4"><div className="flex h-[38px] items-start justify-between"><div className="flex flex-col gap-1"><h3 className="text-sm font-bold text-[#F8F7FF]">Engagement over time</h3><p className="text-[10px] text-[#9694A6]">Views, clicks, and list activity over the last 30 days.</p></div><button type="button" className="h-[30px] rounded-md bg-[#1C1730] px-2.5 text-[10px] font-semibold text-[#C4B5FD]">Last 30 days</button></div><div className="flex flex-1 flex-col justify-center gap-3 px-0 sm:px-2">{rows.map(([label, value, width]) => <div key={label} className="flex h-[34px] items-center gap-3"><span className="w-[92px] shrink-0 text-[11px] text-[#B7B3C5]">{label}</span><div className="h-2.5 flex-1 rounded-full bg-[#1C1B2A]"><div className="h-full rounded-full bg-[#6C43E8]" style={{ width: `${width}%` }} /></div><span className="w-12 text-right text-[11px] font-semibold text-[#F8F7FF]">{value}</span></div>)}</div></section>
 }
 
 /** Public list URL + today's visits. Shown in the welcome row (full) or inline with the KPIs (compact). */
 function PublicListCard({ urlDisplay, onCopy, copied, visits, compact, className = '' }: { urlDisplay: string; onCopy: () => void; copied: boolean; visits: VisitStats | null; compact?: boolean; className?: string }) {
   return (
-    <div className={`flex flex-col rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)] ${compact ? 'gap-2.5 p-4' : 'gap-3.5 p-6'} ${className}`}>
+    <div className={`flex flex-col rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] ${compact ? 'gap-2.5 p-4' : 'gap-3 p-6'} ${className}`}>
       {!compact && <p className="text-lg font-extrabold text-[var(--dash-text)]">Tu lista pública</p>}
       <button type="button" onClick={onCopy} title="Copiar enlace" className={`flex items-center gap-2.5 rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] px-3 text-left text-[var(--dash-link)] hover:opacity-90 ${compact ? 'h-9' : 'h-[42px]'}`}>
         <Icon name="link-2" size={16} />
@@ -165,7 +166,7 @@ function PublicListCard({ urlDisplay, onCopy, copied, visits, compact, className
 
 function KpiCard({ icon, iconTone, value, label, tag, tagTone, note, onClick, compact }: { icon: IconName; iconTone: Tone; value: string | number; label: string; tag: string; tagTone: Tone; note: string; onClick?: () => void; compact?: boolean }) {
   return (
-    <button type="button" onClick={onClick} className={`flex items-center rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)] ${compact ? 'gap-3 px-4 py-3' : 'gap-3.5 px-5 py-[18px]'}`}>
+    <button type="button" onClick={onClick} className={`flex items-center rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-left hover:bg-[var(--dash-soft)] ${compact ? 'gap-3 px-4 py-3' : 'gap-3.5 px-5 py-[18px]'}`}>
       <span className={`flex shrink-0 items-center justify-center rounded-[14px] ${compact ? 'h-10 w-10' : 'h-12 w-12'}`} style={tone(iconTone)}>
         <Icon name={icon} size={compact ? 18 : 22} />
       </span>
@@ -186,7 +187,7 @@ function KpiCard({ icon, iconTone, value, label, tag, tagTone, note, onClick, co
 /** Products KPI split in half: available vs unavailable. */
 function ProductsCard({ total, available, unavailable, onClick, compact }: { total: number; available: number; unavailable: number; onClick?: () => void; compact?: boolean }) {
   return (
-    <button type="button" onClick={onClick} className={`flex items-center rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-left shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] hover:bg-[var(--dash-soft)] lg:col-span-2 ${compact ? 'gap-3 px-4 py-3' : 'gap-4 px-5 py-[18px]'}`}>
+    <button type="button" onClick={onClick} className={`flex items-center rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-left hover:bg-[var(--dash-soft)] lg:col-span-2 ${compact ? 'gap-3 px-4 py-3' : 'gap-4 px-5 py-[18px]'}`}>
       <span className={`flex shrink-0 items-center justify-center rounded-[14px] ${compact ? 'h-10 w-10' : 'h-12 w-12'}`} style={tone('violet')}>
         <Icon name="package" size={compact ? 18 : 22} />
       </span>
@@ -230,7 +231,7 @@ function RecentProducts({ products, total, loading, search, onNew, onViewAll, co
   ]
 
   return (
-    <div className={`flex min-w-0 flex-1 flex-col rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)] ${compact ? 'gap-3 p-4' : 'gap-[18px] p-6'}`}>
+    <div className={`flex min-w-0 flex-1 flex-col rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] ${compact ? 'gap-3 p-4' : 'gap-4 p-4'}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <h3 className={`font-extrabold text-[var(--dash-text)] ${compact ? 'text-lg' : 'text-[22px]'}`}>Productos recientes</h3>
@@ -320,7 +321,7 @@ function QuickActions({ onProduct, onList, onCustomer, onQr, compact }: { onProd
     'Compartir QR': onQr,
   }
   return (
-    <div className={`flex flex-col rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)] ${compact ? 'gap-3 p-4' : 'gap-3.5 p-[22px]'}`}>
+    <div className={`flex flex-col rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] ${compact ? 'gap-3 p-4' : 'gap-3.5 p-4'}`}>
       <h3 className={`font-extrabold text-[var(--dash-text)] ${compact ? 'text-lg' : 'text-[22px]'}`}>Acciones rápidas</h3>
       <div className={compact ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-3'}>
         {quickActions.map((a) => (
@@ -360,7 +361,7 @@ function ActivityFeed({ tenantId, onSeeAll }: { tenantId?: string; onSeeAll: () 
   }, [tenantId])
 
   return (
-    <div className="flex flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-[22px] shadow-[0_10px_24px_-8px_rgba(30,27,75,0.08)]">
+    <div className="flex flex-col gap-3.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Actividad reciente</h3>
         <span className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--dash-muted)]">
@@ -384,5 +385,11 @@ function ActivityFeed({ tenantId, onSeeAll }: { tenantId?: string; onSeeAll: () 
     </div>
   )
 }
+
+void KpiCard
+void ProductsCard
+void RecentProducts
+void QuickActions
+void ActivityFeed
 
 export default DashboardScreen

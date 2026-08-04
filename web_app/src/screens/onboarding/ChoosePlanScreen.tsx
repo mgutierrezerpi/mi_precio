@@ -44,6 +44,7 @@ export function ChoosePlanScreen() {
   const [confirming, setConfirming] = useState(false)
   const [checking, setChecking] = useState(false)
   const [noPaymentYet, setNoPaymentYet] = useState(false)
+  const [returnedOrderId, setReturnedOrderId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const tenantId = tenant?.id
   const pollsLeft = useRef(CONFIRM_POLL_TRIES)
@@ -75,11 +76,18 @@ export function ChoosePlanScreen() {
     const params = new URLSearchParams(window.location.search)
     const returned = params.get('checkout_plan')
     if (!returned) return
+    setReturnedOrderId(params.get('order_id'))
     setConfirming(true)
     params.delete('checkout_plan')
+    params.delete('order_id')
     const qs = params.toString()
     window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`)
   }, [])
+
+  useEffect(() => {
+    if (!tenantId || !returnedOrderId) return
+    void api.reconcileCheckout(tenantId, returnedOrderId).then(() => check())
+  }, [check, returnedOrderId, tenantId])
 
   useEffect(() => { void check() }, [check])
 
@@ -114,7 +122,7 @@ export function ChoosePlanScreen() {
       return
     }
 
-    const redirectUrl = `${window.location.origin}/planes?checkout_plan=${plan}`
+    const redirectUrl = `${window.location.origin}/planes?checkout_plan=${plan}&order_id=[order_id]`
     const res = await api.createCheckout(tenantId, plan, redirectUrl)
     setChoosing(null)
     if (res.data?.url) window.location.assign(res.data.url)

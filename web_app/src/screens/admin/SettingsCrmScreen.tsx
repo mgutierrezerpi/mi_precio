@@ -551,6 +551,13 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
     if (!pendingKey) return
     const params = new URLSearchParams(window.location.search)
     const returnedPlan = params.get('checkout_plan') as PlanId | null
+    const orderId = params.get('order_id')
+    if (orderId && tenantId) {
+      void api.reconcileCheckout(tenantId, orderId).then(() => api.getPlan(tenantId).then((res) => {
+        if (res.data) setInfo(res.data)
+      }))
+      params.delete('order_id')
+    }
     if (returnedPlan && PLANS.some((plan) => plan.id === returnedPlan)) {
       sessionStorage.setItem(pendingKey, returnedPlan)
       setPendingPlan(returnedPlan)
@@ -561,7 +568,7 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
     }
     const storedPlan = sessionStorage.getItem(pendingKey) as PlanId | null
     setPendingPlan(storedPlan && PLANS.some((plan) => plan.id === storedPlan) ? storedPlan : null)
-  }, [pendingKey])
+  }, [pendingKey, tenantId])
 
   const current = info?.plan ?? tenant?.plan ?? 'free'
   const visiblePlan = pendingPlan ?? current
@@ -593,7 +600,7 @@ function BillingSection({ t, tenant, isOwner }: { t: TFn; tenant: Tenant | null;
     }
 
     // Billing enabled: open the Lemon Squeezy checkout.
-    const redirectUrl = `${window.location.origin}/admin/settings?section=billing&checkout_plan=${plan}`
+    const redirectUrl = `${window.location.origin}/admin/settings?section=billing&checkout_plan=${plan}&order_id=[order_id]`
     const res = await api.createCheckout(tenant.id, plan, redirectUrl)
     setChanging(null)
     if (res.data?.url) {

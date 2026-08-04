@@ -3,4 +3,6 @@ export type Tone = 'violet' | 'sky' | 'blue' | 'green' | 'amber' | 'orange' | 'r
 
 export const tone = (t: Tone) => ({ backgroundColor: `var(--tone-${t}-bg)`, color: `var(--tone-${t}-fg)` })
 
-export const gradient = 'bg-[linear-gradient(45deg,#7C3AED_0%,#A855F7_100%)]'
+// Accent treatment from the Stripe Dashboard Dark POC: cool violet into a
+// slightly warmer magenta, used for active navigation and primary actions.
+export const gradient = 'bg-[linear-gradient(135deg,#7C3AED_0%,#C026D3_100%)]'

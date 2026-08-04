@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from config import settings
 from controllers.deps import require_owner
-from controllers.input_types import CreateCheckout, ManualSubscriptionSync
+from controllers.input_types import CreateCheckout, ManualSubscriptionSync, ReconcileCheckout
 from lib.ctx import activity, billing_context as billing
+from tasks import check_pending_billing
 from views import TenantView
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -14,7 +15,7 @@ def create_checkout_endpoint(data: CreateCheckout, current_user: dict = Depends(
     if current_user.get("tenant_id") != data.tenant_id:
         raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
     try:
-        url = billing.create_checkout(
+        checkout = billing.create_checkout(
             data.tenant_id,
             data.plan,
             email=current_user.get("email"),
@@ -23,7 +24,9 @@ def create_checkout_endpoint(data: CreateCheckout, current_user: dict = Depends(
         )
     except billing.BillingError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    return {"url": url}
+    billing.begin_subscription_sync(data.tenant_id, checkout.get("checkout_id"), data.plan)
+    check_pending_billing.schedule((data.tenant_id,), delay=10)
+    return {"url": checkout["url"]}
 
 
 @router.post("/manual-subscriptions")
@@ -52,6 +55,17 @@ def sync_manual_subscription_endpoint(
     activity.record(data.tenant_id, "billing.manual_sync", f"Plan sincronizado · plan {plan_es}",
                     meta={"plan": tenant.plan, "status": data.status})
     return TenantView.render(tenant)
+
+
+@router.post("/reconcile-checkout")
+def reconcile_checkout_endpoint(data: ReconcileCheckout, current_user: dict = Depends(require_owner)):
+    if current_user.get("tenant_id") != data.tenant_id:
+        raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+    try:
+        result = billing.reconcile_checkout_order(data.tenant_id, data.order_id)
+    except billing.BillingError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    return result
 
 
 @router.post("/lemon-squeezy/webhook")

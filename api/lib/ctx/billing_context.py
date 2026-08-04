@@ -5,12 +5,12 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
-from urllib import request, error
+from urllib import error, parse, request
 
 from config import settings
-from models import Tenant
+from models import Tenant, User
 from lib.ctx import plans
 
 
@@ -34,6 +34,9 @@ _EVENT_ES = {
     "subscription_plan_changed": "Plan actualizado",
 }
 
+PENDING_SYNC_DELAYS = (10, 20, 40, 80, 160, 320, 640, 900)
+ACTIVE_SUBSCRIPTION_STATUSES = {"active", "on_trial", "paused", "past_due"}
+
 
 def _plan_es(plan: str | None) -> str | None:
     if not plan:
@@ -55,6 +58,23 @@ def _parse_dt(value: str | None) -> datetime | None:
     if not value:
         return None
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _lemonsqueezy_get(path: str, params: dict[str, str]) -> dict[str, Any]:
+    query = parse.urlencode(params)
+    req = request.Request(
+        f"https://api.lemonsqueezy.com/v1/{path}?{query}",
+        method="GET",
+        headers={
+            "Accept": "application/vnd.api+json",
+            "Authorization": f"Bearer {settings.lemonsqueezy_api_key}",
+        },
+    )
+    try:
+        with request.urlopen(req, timeout=10) as res:
+            return json.loads(res.read().decode("utf-8"))
+    except (error.HTTPError, error.URLError, TimeoutError, OSError) as exc:
+        raise BillingError("Lemon Squeezy subscription lookup failed") from exc
 
 
 def _variant_to_plan() -> dict[str, str]:
@@ -116,7 +136,7 @@ def create_checkout(
     email: str | None = None,
     name: str | None = None,
     redirect_url: str | None = None,
-) -> str:
+) -> dict[str, str]:
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant:
         raise BillingError("Tenant not found")
@@ -171,10 +191,164 @@ def create_checkout(
     except OSError as exc:
         raise BillingError("Lemon Squeezy checkout request failed") from exc
 
-    url = data.get("data", {}).get("attributes", {}).get("url")
+    checkout = data.get("data", {})
+    url = checkout.get("attributes", {}).get("url")
     if not url:
         raise BillingError("Lemon Squeezy did not return a checkout URL")
-    return url
+    return {"url": url, "checkout_id": str(checkout.get("id") or "")}
+
+
+def begin_subscription_sync(tenant_id: str, checkout_id: str | None, plan: str) -> None:
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant:
+        return
+    now = datetime.utcnow()
+    tenant.billing_provider = "lemonsqueezy"
+    tenant.billing_variant_id = str(variant_for_plan(plan)) or None
+    tenant.billing_checkout_id = checkout_id or None
+    tenant.billing_order_id = None
+    tenant.billing_sync_started_at = now
+    tenant.billing_sync_next_at = now + timedelta(seconds=PENDING_SYNC_DELAYS[0])
+    tenant.billing_sync_attempts = 0
+    tenant.billing_status = "checkout_pending"
+    tenant.save()
+
+
+def clear_subscription_sync(tenant: Tenant) -> None:
+    tenant.billing_checkout_id = None
+    tenant.billing_order_id = None
+    tenant.billing_sync_started_at = None
+    tenant.billing_sync_next_at = None
+    tenant.billing_sync_attempts = 0
+
+
+def _schedule_next_sync(tenant: Tenant, now: datetime) -> int:
+    attempt = int(tenant.billing_sync_attempts or 0)
+    delay = PENDING_SYNC_DELAYS[min(attempt, len(PENDING_SYNC_DELAYS) - 1)]
+    tenant.billing_sync_attempts = attempt + 1
+    tenant.billing_sync_next_at = now + timedelta(seconds=delay)
+    if attempt >= len(PENDING_SYNC_DELAYS) - 1:
+        tenant.billing_sync_next_at = None
+    tenant.save()
+    return delay
+
+
+def poll_pending_subscription(tenant_id: str, now: datetime | None = None) -> dict[str, Any]:
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant or not tenant.billing_sync_started_at:
+        return {"status": "skipped"}
+    if tenant.plan != "free":
+        clear_subscription_sync(tenant)
+        tenant.save()
+        return {"status": "active"}
+
+    if tenant.billing_order_id:
+        result = reconcile_checkout_order(tenant.id, tenant.billing_order_id)
+        if result["status"] == "active":
+            return result
+
+    current = now or datetime.utcnow()
+    if tenant.billing_sync_next_at and tenant.billing_sync_next_at > current:
+        return {"status": "waiting", "delay": int((tenant.billing_sync_next_at - current).total_seconds())}
+
+    owner = User.get_or_none((User.tenant == tenant) & (User.role == "owner"))
+    if not owner or not owner.email or not tenant.billing_variant_id:
+        return {"status": "pending", "delay": _schedule_next_sync(tenant, current)}
+
+    base_params = {
+        "filter[store_id]": str(settings.lemonsqueezy_store_id),
+        "filter[variant_id]": str(tenant.billing_variant_id),
+        "page[size]": "100",
+    }
+    payload = _lemonsqueezy_get("subscriptions", {**base_params, "filter[user_email]": owner.email})
+    items = payload.get("data", [])
+    if not items:
+        # The buyer can use a different email in the hosted checkout. Fall
+        # back to recent subscriptions for this variant, but only auto-link a
+        # single candidate so two simultaneous checkouts cannot cross tenants.
+        candidates = _lemonsqueezy_get("subscriptions", base_params).get("data", [])
+        recent = []
+        for item in candidates:
+            created_at = _parse_dt((item.get("attributes") or {}).get("created_at"))
+            if created_at and created_at.replace(tzinfo=None) >= tenant.billing_sync_started_at - timedelta(minutes=2):
+                if (item.get("attributes") or {}).get("status") in ACTIVE_SUBSCRIPTION_STATUSES:
+                    recent.append(item)
+        items = recent if len(recent) == 1 else []
+
+    for item in items:
+        attrs = item.get("attributes") or {}
+        created_at = _parse_dt(attrs.get("created_at"))
+        if created_at and created_at.replace(tzinfo=None) < tenant.billing_sync_started_at - timedelta(minutes=2):
+            continue
+        if attrs.get("status") not in ACTIVE_SUBSCRIPTION_STATUSES:
+            continue
+        attrs["id"] = item.get("id") or attrs.get("id")
+        synced = sync_subscription_from_attributes(attrs, tenant_id=tenant.id)
+        if synced:
+            clear_subscription_sync(synced)
+            synced.save()
+            return {"status": "active", "subscription_id": synced.billing_subscription_id}
+
+    return {"status": "pending", "delay": _schedule_next_sync(tenant, current)}
+
+
+def reconcile_checkout_order(tenant_id: str, order_id: str) -> dict[str, Any]:
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant:
+        return {"status": "missing"}
+    if tenant.plan != "free":
+        clear_subscription_sync(tenant)
+        tenant.save()
+        return {"status": "active"}
+
+    order_payload = _lemonsqueezy_get(f"orders/{order_id}", {"include": "order-items"})
+    order = order_payload.get("data") or {}
+    attrs = order.get("attributes") or {}
+    item = attrs.get("first_order_item") or {}
+    if str(attrs.get("store_id")) != str(settings.lemonsqueezy_store_id):
+        return {"status": "invalid"}
+    if attrs.get("status") != "paid":
+        return {"status": "pending"}
+    order_created = _parse_dt(attrs.get("created_at"))
+    if tenant.billing_sync_started_at and order_created and order_created.replace(tzinfo=None) < tenant.billing_sync_started_at - timedelta(minutes=2):
+        return {"status": "invalid"}
+    if tenant.billing_variant_id and str(item.get("variant_id")) != str(tenant.billing_variant_id):
+        return {"status": "invalid"}
+
+    tenant.billing_order_id = str(order_id)
+    tenant.save()
+    subscriptions = _lemonsqueezy_get(f"orders/{order_id}/subscriptions", {}).get("data", [])
+    for subscription in subscriptions:
+        subscription_attrs = subscription.get("attributes") or {}
+        if subscription_attrs.get("status") not in ACTIVE_SUBSCRIPTION_STATUSES:
+            continue
+        subscription_attrs["id"] = subscription.get("id") or subscription_attrs.get("id")
+        synced = sync_subscription_from_attributes(subscription_attrs, tenant_id=tenant.id)
+        if synced:
+            clear_subscription_sync(synced)
+            synced.save()
+            return {"status": "active", "subscription_id": synced.billing_subscription_id}
+    return {"status": "pending"}
+
+
+def due_pending_subscription_ids(now: datetime | None = None) -> list[str]:
+    current = now or datetime.utcnow()
+    return [
+        tenant.id
+        for tenant in Tenant.select(Tenant.id).where(
+            (Tenant.billing_sync_started_at.is_null(False))
+            & (Tenant.billing_sync_next_at.is_null(False))
+            & (Tenant.billing_sync_next_at <= current)
+            & (Tenant.plan == "free")
+        )
+    ]
+
+
+def defer_pending_subscription(tenant_id: str, now: datetime | None = None) -> dict[str, Any]:
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant or not tenant.billing_sync_started_at:
+        return {"status": "skipped"}
+    return {"status": "pending", "delay": _schedule_next_sync(tenant, now or datetime.utcnow())}
 
 
 def sync_subscription_from_attributes(attrs: dict[str, Any], tenant_id: str | None = None) -> Tenant | None:
@@ -208,6 +382,7 @@ def sync_subscription_from_attributes(attrs: dict[str, Any], tenant_id: str | No
     elif provider_plan:
         tenant.plan = provider_plan
 
+    clear_subscription_sync(tenant)
     tenant.save()
     return tenant
 
@@ -235,6 +410,7 @@ def sync_manual_subscription(
     tenant.billing_status = status
     tenant.billing_renews_at = renews_at
     tenant.billing_ends_at = ends_at
+    clear_subscription_sync(tenant)
     tenant.save()
     return tenant
 

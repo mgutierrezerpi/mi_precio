@@ -181,6 +181,13 @@ class ApiService {
     })
   }
 
+  async reconcileCheckout(tenantId: string, orderId: string): Promise<ApiResponse<{ status: string; subscriptionId?: string }>> {
+    return this.request('/billing/reconcile-checkout', {
+      method: 'POST',
+      body: JSON.stringify({ tenant_id: tenantId, order_id: orderId }),
+    })
+  }
+
   // Support (Zoho Desk ticket). Requester identity comes from the JWT server-side.
   async createSupportTicket(
     subject: string,
