@@ -10,11 +10,8 @@ __pycache__/
 .ruff_cache/
 *.sqlite
 *.db
-# SQLite WAL sidecars: the patterns above don't match them (no .db/.sqlite suffix)
 *.db-shm
 *.db-wal
-*.sqlite-shm
-*.sqlite-wal
 dogfood-output/
 
 # Marketing: piezas finales (PNG/MP4 pesados). Se generan desde marketing/<mes>/fuente/
