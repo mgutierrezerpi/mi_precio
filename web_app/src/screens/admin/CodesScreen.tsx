@@ -61,34 +61,40 @@ export function CodesScreen() {
       active="Códigos QR"
       title="Códigos QR"
       subtitle="Compartí tu catálogo con un escaneo."
+      hideContext
       searchPlaceholder="Buscar QR…"
       searchValue={search}
       onSearchChange={setSearch}
     >
-      <div className="flex flex-col gap-6 p-4 md:p-8 xl:min-w-[900px] xl:flex-row">
+      <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[900px]">
+        <section className="flex min-h-[60px] flex-col justify-center gap-1">
+          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Códigos QR</h1>
+          <p className="text-[13px] text-[#9694A6]">Compartí tu catálogo con un escaneo.</p>
+        </section>
+        <div className="flex flex-col gap-4 xl:flex-row">
         {/* QR grid */}
         <div className="flex flex-1 flex-col gap-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-1">
-              <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Mis QR</h3>
-              <p className="text-xs font-medium text-[var(--dash-muted)]">Un código por cada lista publicada. Descargalos o compartilos.</p>
+              <h2 className="text-lg font-bold text-[var(--dash-text)]">Mis QR</h2>
+              <p className="text-[13px] text-[var(--dash-muted)]">Un código por cada lista publicada.</p>
             </div>
             {canEdit && (
-              <button type="button" onClick={() => navigate('/admin/lists')} className={`flex h-9 items-center gap-2 rounded-full px-4 text-xs font-bold text-white shadow-[0_8px_18px_-6px_rgba(124,58,237,0.5)] ${gradient}`}>
+              <button type="button" onClick={() => navigate('/admin/lists')} className={`flex h-9 items-center gap-2 rounded-lg px-4 text-[13px] font-bold text-white ${gradient}`}>
                 <Icon name="plus" size={15} /> Nueva lista
               </button>
             )}
           </div>
 
           {filtered.length === 0 ? (
-            <div className="flex h-56 flex-col items-center justify-center gap-3 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] text-center">
+            <div className="flex min-h-[208px] flex-col items-center justify-center gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 text-center">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-[var(--dash-link)]" style={{ backgroundColor: 'var(--tone-violet-bg)' }}><Icon name="qr-code" size={24} /></span>
               <p className="text-sm font-semibold text-[var(--dash-text)]">{lists.length === 0 ? 'Creá una lista para generar su QR' : 'Sin resultados'}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((l) => (
-                <div key={l.id} className="flex flex-col gap-3 rounded-[20px] border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.2)]">
+                <div key={l.id} className="flex flex-col gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
                   <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-2xl bg-white p-2">
                     <QrCode value={qrUrlOf(l)} size={128} fg={color} logoUrl={logoUrl} className="h-full w-full object-contain" />
                   </div>
@@ -108,7 +114,7 @@ export function CodesScreen() {
         </div>
 
         {/* Customization panel */}
-        <div className="flex w-full shrink-0 flex-col gap-4 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)] lg:w-[300px]">
+        <div className="flex w-full shrink-0 flex-col gap-4 self-start rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 lg:w-[300px]">
           <div className="flex flex-col gap-1">
             <h3 className="text-lg font-extrabold text-[var(--dash-text)]">Personalizá tu QR</h3>
             <p className="text-xs font-medium text-[var(--dash-muted)]">El estilo se aplica a todos tus códigos.</p>
@@ -140,7 +146,8 @@ export function CodesScreen() {
             <Icon name="download" size={15} /> Descargar SVG
           </button>
         </div>
-      </div>
+        </div>
+      </main>
     </CrmLayout>
   )
 }

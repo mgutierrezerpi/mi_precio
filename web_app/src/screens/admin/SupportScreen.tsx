@@ -47,11 +47,15 @@ export function SupportScreen() {
   const reset = () => { setTicketId(null); setError(null) }
 
   return (
-    <CrmLayout active="Soporte" title="Soporte" subtitle="¿Necesitás ayuda? Abrí un ticket y te respondemos por email.">
-      <div className="mx-auto flex max-w-[820px] flex-col gap-5 p-4 md:p-8">
+    <CrmLayout active="Soporte" title="Soporte" subtitle="¿Necesitás ayuda? Abrí un ticket y te respondemos por email." hideContext>
+      <main className="mx-auto flex min-h-full w-full max-w-[820px] flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
+        <section className="flex min-h-[60px] flex-col justify-center gap-1">
+          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Soporte</h1>
+          <p className="text-[13px] text-[#9694A6]">¿Necesitás ayuda? Abrí un ticket y te respondemos por email.</p>
+        </section>
         {/* Success */}
         {ticketId !== null ? (
-          <div className="flex flex-col items-center gap-3 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-8 text-center shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 text-center">
             <span className="flex h-14 w-14 items-center justify-center rounded-full" style={tone('green')}><Icon name="circle-check" size={28} /></span>
             <h3 className="text-xl font-extrabold text-[var(--dash-text)]">¡Ticket enviado!</h3>
             <p className="max-w-[440px] text-sm font-medium text-[var(--dash-text2)]">
@@ -63,7 +67,7 @@ export function SupportScreen() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+          <div className="flex flex-col gap-5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5">
             {error && (
               <div className="flex items-center gap-2 rounded-2xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm font-semibold text-[#B91C1C]">
                 <Icon name="alert-triangle" size={16} /> {error}
@@ -126,7 +130,7 @@ export function SupportScreen() {
             </div>
           </div>
         )}
-      </div>
+      </main>
     </CrmLayout>
   )
 }

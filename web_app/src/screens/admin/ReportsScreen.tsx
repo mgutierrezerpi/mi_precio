@@ -5,7 +5,7 @@ import type { Activity } from '../../types'
 import api, { type ReportData } from '../../services/api'
 import { formatPrice } from './crm/productFormat'
 import { CrmLayout } from './crm/CrmLayout'
-import { Icon, type IconName } from './crm/ui'
+import { Icon } from './crm/ui'
 import { ActivityRow } from './crm/activity'
 import { tone, gradient, type Tone } from './crm/theme'
 
@@ -48,52 +48,33 @@ export function ReportsScreen() {
   // (avoids a synchronous setState in the effect, and shows the spinner on range switch).
   const loading = data?.days !== days
 
-  const kpis = useMemo(() => {
-    const k = data?.kpis
-    return [
-      { icon: 'eye' as IconName, iconTone: 'violet' as Tone, value: fmtInt(k?.visits ?? 0), label: 'Visitas', note: 'Total acumulado' },
-      { icon: 'qr-code' as IconName, iconTone: 'sky' as Tone, value: fmtInt(k?.qrScans ?? 0), label: 'Escaneos QR', note: 'Total acumulado' },
-      { icon: 'users' as IconName, iconTone: 'green' as Tone, value: fmtInt(k?.customers ?? 0), label: 'Clientes', note: 'En tu cartera' },
-      { icon: 'trending-up' as IconName, iconTone: 'rose' as Tone, value: k ? formatPrice(k.revenue) : '$ 0', label: 'Ingresos', note: 'Ventas cobradas' },
-    ]
-  }, [data])
-
   const periodVisits = useMemo(
     () => (data?.series ?? []).reduce((acc, d) => acc + d.link + d.qr, 0),
     [data],
   )
 
   return (
-    <CrmLayout active="Reportes" title="Reportes" subtitle="Medí el rendimiento de tu catálogo." searchPlaceholder="Buscar…">
-      <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[980px]">
-        {/* KPI row */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {kpis.map((k) => (
-            <div key={k.label} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)]">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(k.iconTone)}><Icon name={k.icon} size={22} /></span>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex items-end gap-2"><span className="truncate text-[22px] font-black leading-none text-[var(--dash-text)]">{k.value}</span><span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">{k.label}</span></div>
-                <span className="mt-1 truncate text-[11px] font-medium text-[var(--dash-muted)]">{k.note}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-5 xl:flex-row">
+    <CrmLayout active="Reportes" title="Reportes" subtitle="Medí el rendimiento de tu catálogo." hideContext searchPlaceholder="Buscar…">
+      <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[980px]">
+        <section className="flex min-h-[60px] flex-col justify-center gap-1">
+          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Reportes</h1>
+          <p className="text-[13px] text-[#9694A6]">Medí el rendimiento de tu catálogo.</p>
+        </section>
+        <div className="flex flex-col gap-4">
           {/* Bar chart */}
-          <div className="flex flex-1 flex-col gap-5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <section className="flex min-h-[390px] flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 md:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <div className="flex flex-col gap-1">
-                <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Visitas y escaneos · Últimos {days} días</h3>
-                <p className="text-xs font-medium text-[var(--dash-muted)]">{fmtInt(periodVisits)} aperturas de tus listas públicas en el período.</p>
+                <h2 className="text-lg font-bold text-[var(--dash-text)]">Visitas y escaneos</h2>
+                <p className="text-[13px] text-[var(--dash-muted)]">{fmtInt(periodVisits)} aperturas en los últimos {days} días.</p>
               </div>
-              <div className="flex w-full items-center gap-1.5 rounded-xl bg-[var(--dash-soft)] p-1 sm:w-auto sm:shrink-0">
+              <div className="flex w-full items-center gap-1 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] p-1 sm:w-auto sm:shrink-0">
                 {RANGES.map((r) => (
                   <button
                     key={r.days}
                     type="button"
                     onClick={() => setDays(r.days)}
-                    className={`flex h-8 flex-1 items-center justify-center rounded-lg px-3 text-xs font-bold sm:flex-none ${days === r.days ? `text-white ${gradient}` : 'text-[var(--dash-text2)]'}`}
+                    className={`flex h-8 flex-1 items-center justify-center rounded-md px-3 text-xs font-bold sm:flex-none ${days === r.days ? `text-white ${gradient}` : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`}
                   >
                     {r.label}
                   </button>
@@ -107,17 +88,17 @@ export function ReportsScreen() {
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#7C3AED]" /> Link directo</span>
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#0EA5E9]" /> Código QR</span>
             </div>
-          </div>
+          </section>
 
-          {/* Right column */}
-          <div className="flex w-full shrink-0 flex-col gap-5 xl:w-[320px]">
+          {/* Secondary reports */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             <TopProducts data={data} loading={loading} />
             <Channels data={data} loading={loading} />
           </div>
         </div>
 
         <ActivityLog tenantId={tenant?.id} />
-      </div>
+      </main>
     </CrmLayout>
   )
 }
@@ -140,7 +121,7 @@ function ActivityLog({ tenantId }: { tenantId?: string }) {
   }, [tenantId])
 
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+    <div className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Actividad reciente</h3>
         <span className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--dash-muted)]">
@@ -214,7 +195,7 @@ function TopProducts({ data, loading }: { data: ReportData | null; loading: bool
   const max = Math.max(1, ...items.map((p) => p.units))
 
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+    <div className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
       <h3 className="text-[16px] font-extrabold text-[var(--dash-text)]">Productos más vendidos</h3>
       {loading ? (
         <p className="py-6 text-center text-xs font-medium text-[var(--dash-muted)]">Cargando…</p>
@@ -251,7 +232,7 @@ function Channels({ data, loading }: { data: ReportData | null; loading: boolean
   }, [rows, total])
 
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+    <div className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
       <h3 className="text-[16px] font-extrabold text-[var(--dash-text)]">Por canal</h3>
       {loading ? (
         <p className="py-6 text-center text-xs font-medium text-[var(--dash-muted)]">Cargando…</p>

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
-import type { Customer, CustomerStats, Order, Product } from '../../types'
+import type { Customer, Order, Product } from '../../types'
 import api from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
@@ -61,7 +61,6 @@ export function CustomersScreen() {
   )
 
   const [customers, setCustomers] = useState<Customer[]>([])
-  const [stats, setStats] = useState<CustomerStats | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -73,19 +72,17 @@ export function CustomersScreen() {
   const tenantId = tenant?.id
   const refresh = useCallback(async () => {
     if (!tenantId) return
-    const [cs, st] = await Promise.all([api.getCustomers(tenantId), api.getCustomerStats(tenantId)])
+    const cs = await api.getCustomers(tenantId)
     if (cs.data) setCustomers(cs.data)
-    if (st.data) setStats(st.data)
     setLoading(false)
   }, [tenantId])
 
   useEffect(() => {
     if (!tenantId) return
     let cancelled = false
-    Promise.all([api.getCustomers(tenantId), api.getCustomerStats(tenantId), api.getProducts(tenantId)]).then(([cs, st, ps]) => {
+    Promise.all([api.getCustomers(tenantId), api.getProducts(tenantId)]).then(([cs, ps]) => {
       if (cancelled) return
       if (cs.data) setCustomers(cs.data)
-      if (st.data) setStats(st.data)
       if (ps.data) setProducts(ps.data)
       setLoading(false)
     })
@@ -104,39 +101,27 @@ export function CustomersScreen() {
     await refresh()
   }
 
-  const kpis: { icon: IconName; iconTone: Tone; value: number; label: string; note: string }[] = [
-    { icon: 'users', iconTone: 'violet', value: stats?.total ?? 0, label: 'Total clientes', note: 'En tu cartera' },
-    { icon: 'circle-check', iconTone: 'green', value: stats?.active ?? 0, label: 'Activos', note: 'Compraron este mes' },
-    { icon: 'user-plus', iconTone: 'sky', value: stats?.new ?? 0, label: 'Nuevos', note: 'Últimos 30 días' },
-    { icon: 'trending-up', iconTone: 'rose', value: stats?.recurring ?? 0, label: 'Recurrentes', note: '3+ compras' },
-  ]
-
   return (
-    <CrmLayout active="Clientes" title="Clientes" subtitle="Gestioná tu cartera de clientes." searchPlaceholder="Buscar clientes…" searchValue={search} onSearchChange={setSearch}>
-      <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[980px]">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {kpis.map((k) => (
-            <div key={k.label} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)]">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(k.iconTone)}><Icon name={k.icon} size={22} /></span>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex items-end gap-2"><span className="text-[26px] font-black leading-none text-[var(--dash-text)]">{k.value}</span><span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">{k.label}</span></div>
-                <span className="mt-1 truncate text-[11px] font-medium text-[var(--dash-muted)]">{k.note}</span>
-              </div>
+    <CrmLayout active="Clientes" title="Clientes" subtitle="Gestioná tu cartera de clientes." hideContext searchPlaceholder="Buscar clientes…" searchValue={search} onSearchChange={setSearch}>
+      <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[980px]">
+        <section className="flex min-h-[60px] flex-col justify-center gap-1">
+          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Clientes</h1>
+          <p className="text-[13px] text-[#9694A6]">Gestioná tu cartera de clientes.</p>
+        </section>
+        <div className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-lg font-bold text-[var(--dash-text)]">Clientes</h2>
+              <p className="text-[13px] text-[var(--dash-muted)]">{customers.length} cliente{customers.length === 1 ? '' : 's'} en tu cartera.</p>
             </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-[18px] rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Clientes</h3>
+            <div className="flex items-center gap-2">
               <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={tone('violet')}>{customers.length} totales</span>
+              {canEdit && <button type="button" onClick={() => setShowNew(true)} className={`flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-bold text-white ${gradient}`}><Icon name="plus" size={16} /> Nuevo cliente</button>}
             </div>
-            {canEdit && <button type="button" onClick={() => setShowNew(true)} className={`flex h-[38px] items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] ${gradient}`}><Icon name="plus" size={16} /> Nuevo cliente</button>}
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-[var(--dash-border)]">
-            <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+          <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
+            <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="flex-1">Cliente</span>
               <span className="w-[150px]">Teléfono</span>
               <span className="w-[120px]">Última compra</span>
@@ -158,7 +143,7 @@ export function CustomersScreen() {
               filtered.map((c, i) => {
                 const st = statusOf(c)
                 return (
-                  <div key={c.id} role="button" tabIndex={0} onClick={() => setOpenId(c.id)} onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(c.id) }} className={`flex w-full min-w-[720px] cursor-pointer items-center gap-3 bg-[var(--dash-surface)] px-[18px] py-3 text-left hover:bg-[var(--dash-soft)] ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                    <div key={c.id} role="button" tabIndex={0} onClick={() => setOpenId(c.id)} onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(c.id) }} className={`flex w-full min-w-[720px] cursor-pointer items-center gap-3 bg-[var(--dash-surface)] px-5 py-4 text-left hover:bg-[var(--dash-soft)] ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
                     <div className="flex flex-1 items-center gap-3">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={tone(avatarTone(c.name))}>{initials(c.name)}</span>
                       <div className="flex min-w-0 flex-col">
@@ -191,7 +176,7 @@ export function CustomersScreen() {
             )}
           </div>
         </div>
-      </div>
+      </main>
 
       {showNew && tenant?.id && (
         <CustomerModal tenantId={tenant.id} onClose={() => setShowNew(false)} onSaved={(id) => { setShowNew(false); void refresh(); setOpenId(id) }} />

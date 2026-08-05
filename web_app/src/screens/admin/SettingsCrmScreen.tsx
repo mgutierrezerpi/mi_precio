@@ -41,8 +41,14 @@ export function SettingsCrmScreen() {
   const t = useT()
 
   return (
-    <CrmLayout active="Configuración" title={t('nav.settings')} subtitle={t('set.subtitle')} searchPlaceholder={t('common.search')}>
-      <SettingsCrmContent />
+    <CrmLayout active="Configuración" title={t('nav.settings')} subtitle={t('set.subtitle')} hideContext searchPlaceholder={t('common.search')}>
+      <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
+        <section className="flex min-h-[60px] flex-col justify-center gap-1">
+          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">{t('nav.settings')}</h1>
+          <p className="text-[13px] text-[#9694A6]">{t('set.subtitle')}</p>
+        </section>
+        <SettingsCrmContent />
+      </main>
     </CrmLayout>
   )
 }
@@ -76,9 +82,9 @@ export function SettingsCrmContent({ simple = false }: { simple?: boolean }) {
   const ctx = { tenant, canManage, save, savingKey, savedKey, t }
 
   return (
-      <div className={simple ? 'flex w-full flex-col gap-4 md:flex-row md:gap-6' : 'flex flex-col gap-6 p-4 md:p-8 xl:min-w-[900px] lg:flex-row'}>
+      <div className={simple ? 'flex w-full flex-col gap-4 md:flex-row md:gap-6' : 'flex w-full flex-col gap-4 xl:min-w-[900px] lg:flex-row'}>
         {/* Sub-nav */}
-        <div className={simple ? 'flex w-full shrink-0 flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)] md:w-[240px]' : 'flex w-full shrink-0 lg:w-[240px] flex-col gap-1 self-start rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.18)]'}>
+        <div className={simple ? 'flex w-full shrink-0 flex-col gap-1 self-start rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 md:w-[240px]' : 'flex w-full shrink-0 flex-col gap-1 self-start rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3 lg:w-[240px]'}>
           {sections.map((s) => (
             <button
               key={s.key}
@@ -92,7 +98,7 @@ export function SettingsCrmContent({ simple = false }: { simple?: boolean }) {
         </div>
 
         {/* Panel */}
-        <div className={simple ? 'flex min-w-0 flex-1 flex-col gap-5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)] sm:p-7' : 'flex flex-1 flex-col gap-5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-7 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]'}>
+        <div className={simple ? 'flex min-w-0 flex-1 flex-col gap-5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 sm:p-5' : 'flex min-w-0 flex-1 flex-col gap-5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5'}>
           {error && (
             <div className="flex items-center gap-2 rounded-2xl border border-[var(--tone-red-fg)]/40 bg-[var(--tone-red-bg)] px-4 py-3 text-sm font-semibold text-[var(--tone-red-fg)]">
               <Icon name="alert-triangle" size={16} /> {error}

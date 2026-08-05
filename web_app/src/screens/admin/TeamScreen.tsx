@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppSelector } from '../../store/hooks'
 import { selectTenant, selectUser } from '../../store/slices/authSlice'
 import api from '../../services/api'
-import type { TeamMember, Invitation, MemberStats, Role } from '../../types'
+import type { TeamMember, Invitation, Role } from '../../types'
 import { CrmLayout } from './crm/CrmLayout'
-import { Icon, type IconName } from './crm/ui'
+import { Icon } from './crm/ui'
 import { tone, gradient, type Tone } from './crm/theme'
 
 /* ── Role metadata ───────────────────────────────────────────────────── */
@@ -55,7 +55,6 @@ export function TeamScreen() {
 
   const [members, setMembers] = useState<TeamMember[]>([])
   const [invites, setInvites] = useState<Invitation[]>([])
-  const [stats, setStats] = useState<MemberStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [showInvite, setShowInvite] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -64,36 +63,26 @@ export function TeamScreen() {
   const tenantId = tenant?.id
   const refresh = useCallback(async () => {
     if (!tenantId) return
-    const [m, i, s] = await Promise.all([
+    const [m, i] = await Promise.all([
       api.getMembers(tenantId),
       api.getInvitations(tenantId),
-      api.getMemberStats(tenantId),
     ])
     if (m.data) setMembers(m.data)
     if (i.data) setInvites(i.data)
-    if (s.data) setStats(s.data)
     setLoading(false)
   }, [tenantId])
 
   useEffect(() => {
     if (!tenantId) return
     let cancelled = false
-    Promise.all([api.getMembers(tenantId), api.getInvitations(tenantId), api.getMemberStats(tenantId)]).then(([m, i, s]) => {
+    Promise.all([api.getMembers(tenantId), api.getInvitations(tenantId)]).then(([m, i]) => {
       if (cancelled) return
       if (m.data) setMembers(m.data)
       if (i.data) setInvites(i.data)
-      if (s.data) setStats(s.data)
       setLoading(false)
     })
     return () => { cancelled = true }
   }, [tenantId])
-
-  const kpis = useMemo(() => [
-    { icon: 'users' as IconName, iconTone: 'violet' as Tone, value: stats?.members ?? 0, label: 'Miembros', note: 'En tu equipo' },
-    { icon: 'circle-check' as IconName, iconTone: 'green' as Tone, value: stats?.active ?? 0, label: 'Activos', note: `Últimos ${ACTIVE_WINDOW_DAYS} días` },
-    { icon: 'user-plus' as IconName, iconTone: 'amber' as Tone, value: stats?.pending ?? 0, label: 'Invitaciones', note: 'Pendientes' },
-    { icon: 'settings' as IconName, iconTone: 'sky' as Tone, value: stats?.roles ?? 0, label: 'Roles', note: 'En uso' },
-  ], [stats])
 
   const shown = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -125,8 +114,12 @@ export function TeamScreen() {
   }
 
   return (
-    <CrmLayout active="Equipo" title="Equipo" subtitle="Gestioná quién accede a tu cuenta." searchPlaceholder="Buscar miembros…" searchValue={search} onSearchChange={setSearch}>
-      <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[980px]">
+    <CrmLayout active="Equipo" title="Equipo" subtitle="Gestioná quién accede a tu cuenta." hideContext searchPlaceholder="Buscar miembros…" searchValue={search} onSearchChange={setSearch}>
+      <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[980px]">
+        <section className="flex min-h-[60px] flex-col justify-center gap-1">
+          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Equipo</h1>
+          <p className="text-[13px] text-[#9694A6]">Gestioná quién accede a tu cuenta.</p>
+        </section>
         {error && (
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm font-semibold text-[#B91C1C]">
             <span className="flex items-center gap-2"><Icon name="alert-triangle" size={16} /> {error}</span>
@@ -134,29 +127,16 @@ export function TeamScreen() {
           </div>
         )}
 
-        {/* KPIs */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {kpis.map((k) => (
-            <div key={k.label} className="flex items-center gap-3.5 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 py-[18px] shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)]">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(k.iconTone)}><Icon name={k.icon} size={22} /></span>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex items-end gap-2"><span className="text-[26px] font-black leading-none text-[var(--dash-text)]">{k.value}</span><span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">{k.label}</span></div>
-                <span className="mt-1 truncate text-[11px] font-medium text-[var(--dash-muted)]">{k.note}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
         {/* Members */}
-        <div className="flex flex-col gap-[18px] rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+        <div className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
           <div className="flex items-center justify-between">
             <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Miembros del equipo</h3>
             {canManage && (
               <button type="button" onClick={() => setShowInvite(true)} className={`flex h-[38px] items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] ${gradient}`}><Icon name="plus" size={16} /> Invitar miembro</button>
             )}
           </div>
-          <div className="overflow-x-auto rounded-2xl border border-[var(--dash-border)]">
-            <div className="flex min-w-[640px] items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+          <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
+            <div className="flex min-w-[640px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="flex-1">Miembro</span>
               <span className="w-[150px]">Rol</span>
 
@@ -174,7 +154,7 @@ export function TeamScreen() {
               const editable = canManage && !isOwner && !isYou
               const seen = lastSeen(m.lastSeenAt)
               return (
-                <div key={m.id} className={`flex min-w-[640px] items-center gap-3 bg-[var(--dash-surface)] px-[18px] py-3 ${idx > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                <div key={m.id} className={`flex min-w-[640px] items-center gap-3 bg-[var(--dash-surface)] px-5 py-4 ${idx > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
                   <div className="flex flex-1 items-center gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={tone(avatarTone(m.email))}>{initials(m.name || m.email)}</span>
                     <div className="flex min-w-0 flex-col">
@@ -209,7 +189,7 @@ export function TeamScreen() {
 
         {/* Bottom: permissions + pending invites */}
         <div className="flex flex-col gap-5 lg:flex-row">
-          <div className="flex flex-1 flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+          <div className="flex flex-1 flex-col gap-3.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
             <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Permisos por rol</h3>
             {ROLE_PERMS.map((r) => (
               <div key={r.role} className="flex items-center gap-3">
@@ -218,7 +198,7 @@ export function TeamScreen() {
               </div>
             ))}
           </div>
-          <div className="flex w-full shrink-0 flex-col gap-3.5 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)] lg:w-[380px]">
+          <div className="flex w-full shrink-0 flex-col gap-3.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 lg:w-[380px]">
             <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Invitaciones pendientes</h3>
             {loading ? (
               <p className="py-4 text-center text-xs font-medium text-[var(--dash-muted)]">Cargando…</p>
@@ -236,7 +216,7 @@ export function TeamScreen() {
             )}
           </div>
         </div>
-      </div>
+      </main>
 
       {showInvite && tenant?.id && (
         <InviteModal tenantId={tenant.id} onClose={() => setShowInvite(false)} onInvited={() => { setShowInvite(false); void refresh() }} />
