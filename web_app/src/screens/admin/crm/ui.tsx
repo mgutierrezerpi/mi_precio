@@ -146,21 +146,21 @@ export function UserMenu() {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-10 items-center gap-2.5 rounded-[10px] border border-transparent bg-[var(--dash-soft)] py-1 pl-1 pr-1 transition hover:opacity-80 lg:pr-3"
+        className="flex h-10 items-center gap-2.5 rounded-[10px] border border-transparent bg-[var(--dash-soft)] py-1.5 pl-2 pr-2 transition hover:opacity-80 lg:pr-3.5"
       >
-        <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white ${gradient}`}>{initials}</span>
-        <span className="hidden max-w-[160px] flex-col items-start leading-tight lg:flex">
-          <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{name}</span>
-          <span className="truncate text-[11px] font-semibold text-[var(--dash-link)]">{plan}</span>
+        <span className={`flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold text-white ${gradient}`}>{initials}</span>
+        <span className="hidden max-w-[145px] flex-col items-start leading-tight lg:flex">
+          <span className="truncate text-xs font-bold text-[var(--dash-text)]">{name}</span>
+          <span className="truncate text-[10px] font-semibold text-[var(--dash-link)]">{plan}</span>
         </span>
         <Icon name="chevron-down" size={14} className={`hidden text-[var(--dash-muted)] transition-transform duration-200 lg:block ${open ? 'rotate-180' : ''}`} />
       </button>
 
       <div
         role="menu"
-        className={`absolute right-0 top-[calc(100%+8px)] z-50 w-60 origin-top-right rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-1.5 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.3)] transition-all duration-200 ease-out ${open ? 'scale-100 opacity-100 translate-y-0' : 'pointer-events-none -translate-y-1 scale-95 opacity-0'}`}
+        className={`absolute right-0 top-[calc(100%+8px)] z-50 w-64 origin-top-right rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-2.5 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.3)] transition-all duration-200 ease-out ${open ? 'scale-100 opacity-100 translate-y-0' : 'pointer-events-none -translate-y-1 scale-95 opacity-0'}`}
       >
-        <div className="flex items-center gap-3 px-3 py-2.5">
+        <div className="flex items-center gap-3 px-3.5 py-3">
           <span className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold text-white ${gradient}`}>{initials}</span>
           <div className="flex min-w-0 flex-col items-start gap-1 leading-tight">
             <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{name}</span>
@@ -172,7 +172,7 @@ export function UserMenu() {
           type="button"
           role="menuitem"
           onClick={handleLogout}
-          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-[#EF4444] transition-colors hover:bg-[var(--dash-soft)]"
+          className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[13px] font-semibold text-[#EF4444] transition-colors hover:bg-[var(--dash-soft)]"
         >
           <Icon name="log-out" size={16} /> {t('set.security.logout')}
         </button>

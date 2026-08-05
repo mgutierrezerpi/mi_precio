@@ -188,6 +188,7 @@ input, textarea, select, button, a {
    CRM Dashboard palette (light / dark)
    ========================================== */
 .dash {
+  --dash-radius: 10px;
   --dash-bg: #F5F3FF;
   --dash-surface: #FFFFFF;
   --dash-border: #E2E8F0;
@@ -211,6 +212,52 @@ input, textarea, select, button, a {
   --tone-rose-bg: #FCE7F3;   --tone-rose-fg: #EC4899;
   --tone-slate-bg: #F1F5F9;  --tone-slate-fg: #64748B;
   --tone-purple-bg: #F3E8FF; --tone-purple-fg: #A855F7;
+}
+
+/* One radius across admin controls. Toggles, checkboxes, and pagination keep
+   their intentionally different geometry. */
+.dash button:not([role="switch"]):not([role="checkbox"]):not(.dash-pagination),
+.dash a,
+.dash input,
+.dash select,
+.dash textarea {
+  border-radius: var(--dash-radius);
+}
+
+.dash button:not(:disabled),
+.dash a,
+.dash [role="button"],
+.dash [role="switch"],
+.dash [role="checkbox"] {
+  cursor: pointer;
+}
+
+.dash button:disabled {
+  cursor: not-allowed;
+}
+
+.dash-tooltip {
+  position: relative;
+}
+
+.dash-tooltip[data-tooltip]:not([data-tooltip=""]):hover::after {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 20;
+  width: max-content;
+  max-width: 240px;
+  padding: 7px 9px;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  background: var(--dash-text);
+  color: var(--dash-surface);
+  content: attr(data-tooltip);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  pointer-events: none;
+  transform: translateX(-50%);
 }
 
 /* DaisyUI is the component baseline for the CRM. Keep the Pencil palette as

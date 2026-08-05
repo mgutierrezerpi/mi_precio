@@ -93,12 +93,8 @@ export function PriceListsScreen() {
         </section>
 
         {/* Header + filters */}
-        <section className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-lg font-bold text-[var(--dash-text)]">Mis listas</h2>
-            <p className="text-[13px] text-[var(--dash-muted)]">{counts.all} lista{counts.all === 1 ? '' : 's'} en tu catálogo.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+        <section className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             {tabs.map((t) => (
               <button
                 key={t.key}
@@ -110,6 +106,8 @@ export function PriceListsScreen() {
                 <span className={`rounded-full px-1.5 py-px text-[10px] font-bold ${tab === t.key ? 'bg-white/20 text-white' : 'bg-[var(--dash-soft)] text-[var(--dash-text2)]'}`}>{t.count}</span>
               </button>
             ))}
+          </div>
+          <div className="flex items-center justify-center gap-2">
             {canEdit && (
               <button type="button" onClick={() => setModal({ open: true, list: null })} className={`flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-bold text-white ${gradient}`}>
                 <Icon name="plus" size={15} /> Nueva lista
@@ -128,11 +126,6 @@ export function PriceListsScreen() {
               <p className="text-lg font-bold text-[var(--dash-text)]">{lists.length > 0 ? 'Sin resultados' : 'Todavía no tenés listas'}</p>
               {lists.length === 0 && <p className="text-[13px] text-[var(--dash-muted)]">Creá una lista principal para compartir tu catálogo.</p>}
             </div>
-            {lists.length === 0 && canEdit && (
-              <button type="button" onClick={() => setModal({ open: true, list: null })} className={`flex h-10 items-center gap-1.5 rounded-[10px] px-4 text-[13px] font-bold text-white ${gradient}`}>
-                <Icon name="plus" size={16} /> Crear la primera
-              </button>
-            )}
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">

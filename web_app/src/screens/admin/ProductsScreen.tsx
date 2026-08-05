@@ -101,12 +101,6 @@ export function ProductsScreen() {
     return Array.from(map.values()).sort((a, b) => a.localeCompare(b))
   }, [products])
 
-  // KPIs from the full catalog.
-  const kpiCounts = useMemo(() => {
-    const available = products.filter((p) => p.available).length
-    return { total: products.length, available, unavailable: products.length - available }
-  }, [products])
-
   // Base = search + category + price filters.
   const base = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -207,15 +201,8 @@ export function ProductsScreen() {
 
         <div className="flex flex-col gap-4">
           {/* Header */}
-          <section className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2.5">
-                <h3 className="text-lg font-bold text-[var(--dash-text)]">Catálogo</h3>
-                <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={tone('violet')}>{kpiCounts.total} productos</span>
-              </div>
-              <p className="text-[13px] text-[var(--dash-muted)]">Editá precios y disponibilidad al instante.</p>
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
+          <section className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <FilterMenu
                 status={status} onStatus={(s) => resetTo(() => setStatus(s))}
                 priceMin={priceMin} priceMax={priceMax}
@@ -224,6 +211,8 @@ export function ProductsScreen() {
               />
               <CategoryDropdown value={category} options={categories} onChange={(v) => resetTo(() => setCategory(v))} />
               <SortMenu sort={sort} onSort={setSort} />
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <ExportMenu count={someSelected ? selected.size : visible.length} scoped={someSelected} onExcel={exportExcel} onPdf={exportPdf} />
               {canEdit && (
                 <button
@@ -270,7 +259,7 @@ export function ProductsScreen() {
             {loading ? (
               <div className="flex h-40 items-center justify-center text-sm font-medium text-[var(--dash-muted)]">Cargando productos…</div>
             ) : pageItems.length === 0 ? (
-              <EmptyState hasProducts={products.length > 0} onCreate={canEdit ? () => setModal({ open: true, product: null }) : undefined} />
+              <EmptyState hasProducts={products.length > 0} />
             ) : (
               pageItems.map((p, i) => {
                 return (
@@ -369,16 +358,11 @@ function AvailabilitySwitch({ value, onToggle }: { value: boolean; onToggle: () 
   )
 }
 
-function EmptyState({ hasProducts, onCreate }: { hasProducts: boolean; onCreate?: () => void }) {
+function EmptyState({ hasProducts }: { hasProducts: boolean }) {
   return (
     <div className="flex h-48 flex-col items-center justify-center gap-3 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-2xl" style={tone('violet')}><Icon name="package" size={24} /></span>
       <p className="text-sm font-semibold text-[var(--dash-text)]">{hasProducts ? 'Sin resultados para este filtro' : 'Todavía no tenés productos'}</p>
-      {!hasProducts && onCreate && (
-        <button type="button" onClick={onCreate} className={`flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}>
-          <Icon name="plus" size={16} /> Crear el primero
-        </button>
-      )}
     </div>
   )
 }
@@ -609,7 +593,7 @@ function RowMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => voi
 
 function PagerBtn({ icon, disabled, onClick }: { icon: IconName; disabled?: boolean; onClick: () => void }) {
   return (
-    <button type="button" disabled={disabled} onClick={onClick} className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] disabled:cursor-not-allowed disabled:opacity-40">
+    <button type="button" disabled={disabled} onClick={onClick} className="dash-pagination flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] disabled:cursor-not-allowed disabled:opacity-40">
       <Icon name={icon} size={13} />
     </button>
   )
@@ -617,7 +601,7 @@ function PagerBtn({ icon, disabled, onClick }: { icon: IconName; disabled?: bool
 
 function PagerNum({ n, active, onClick }: { n: number; active?: boolean; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className={`flex h-[30px] w-[30px] items-center justify-center rounded-lg text-xs font-bold ${active ? `text-white ${gradient}` : 'border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`}>
+    <button type="button" onClick={onClick} className={`dash-pagination flex h-[30px] w-[30px] items-center justify-center rounded-lg text-xs font-bold ${active ? `text-white ${gradient}` : 'border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`}>
       {n}
     </button>
   )
