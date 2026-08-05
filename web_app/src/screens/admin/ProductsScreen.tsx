@@ -255,7 +255,7 @@ export function ProductsScreen() {
           )}
 
           {/* Table */}
-          <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)]">
+          <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
             <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="w-9"><Checkbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={toggleSelectAll} /></span>
               <span className="flex-1">Producto</span>
