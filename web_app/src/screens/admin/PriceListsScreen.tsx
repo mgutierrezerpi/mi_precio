@@ -18,9 +18,6 @@ import { timeAgo, formatPrice, catTone, catIcon } from './crm/productFormat'
 type Tab = 'all' | 'active' | 'inactive'
 
 const FAVICON = '/miprecio-favicon.png'
-// The banner QR is illustrative: it opens the app home.
-const HOME_URL = `${window.location.origin}/`
-
 const slugOf = (l: PriceList) => l.slug || l.id
 const publicPath = (sub: string | undefined, l: PriceList) => `/p/${sub || ''}/${slugOf(l)}`
 const publicDisplay = (sub: string | undefined, l: PriceList) => `miprecio.app${publicPath(sub, l)}`
@@ -84,32 +81,22 @@ export function PriceListsScreen() {
       active="Listas de precios"
       title="Listas de precios"
       subtitle="Compartí precios distintos por cliente o canal."
+      hideContext
       searchPlaceholder="Buscar listas…"
       searchValue={search}
       onSearchChange={setSearch}
     >
-      <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[900px]">
-        {/* Banner */}
-        <div className={`flex flex-col gap-6 rounded-3xl p-6 text-white shadow-[0_16px_32px_-8px_rgba(124,58,237,0.4)] md:p-7 lg:flex-row lg:items-center ${gradient}`}>
-          <div className="flex flex-1 flex-col gap-3">
-            <h2 className="text-2xl font-extrabold leading-tight md:text-3xl">Compartí tu catálogo en un escaneo.</h2>
-            <p className="text-sm font-medium leading-relaxed text-white/80">Generá un link o un QR para cada lista y mantenelos siempre actualizados sin reimprimir.</p>
-            {canEdit && (
-              <button type="button" onClick={() => setModal({ open: true, list: null })} className="mt-1 flex h-11 w-fit items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#7C3AED] hover:bg-violet-50">
-                <Icon name="plus" size={16} /> Nueva lista
-              </button>
-            )}
-          </div>
-          <div className="flex h-[140px] w-[140px] shrink-0 items-center justify-center self-center rounded-2xl bg-white p-2.5 lg:self-auto">
-            <QrCode value={HOME_URL} size={120} fg="#0F172A" logoUrl={FAVICON} className="h-full w-full object-contain" />
-          </div>
-        </div>
+      <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[900px]">
+        <section className="flex min-h-[60px] flex-col justify-center gap-1">
+          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Listas</h1>
+          <p className="text-[13px] text-[#9694A6]">Compartí precios distintos por cliente o canal.</p>
+        </section>
 
         {/* Header + filters */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-1">
-            <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Mis listas</h3>
-            <p className="text-xs font-medium text-[var(--dash-muted)]">Compartí precios distintos por cliente o canal.</p>
+            <h2 className="text-lg font-bold text-[var(--dash-text)]">Mis listas</h2>
+            <p className="text-[13px] text-[var(--dash-muted)]">{counts.all} lista{counts.all === 1 ? '' : 's'} en tu catálogo.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {tabs.map((t) => (
@@ -117,24 +104,32 @@ export function PriceListsScreen() {
                 key={t.key}
                 type="button"
                 onClick={() => setTab(t.key)}
-                className={`flex h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold ${tab === t.key ? `text-white ${gradient}` : 'border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)]'}`}
+                className={`flex h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-bold ${tab === t.key ? `text-white ${gradient}` : 'border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`}
               >
                 {t.label}
                 <span className={`rounded-full px-1.5 py-px text-[10px] font-bold ${tab === t.key ? 'bg-white/20 text-white' : 'bg-[var(--dash-soft)] text-[var(--dash-text2)]'}`}>{t.count}</span>
               </button>
             ))}
+            {canEdit && (
+              <button type="button" onClick={() => setModal({ open: true, list: null })} className={`flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-bold text-white ${gradient}`}>
+                <Icon name="plus" size={15} /> Nueva lista
+              </button>
+            )}
           </div>
-        </div>
+        </section>
 
         {/* Rows */}
         {loading ? (
           <div className="flex h-40 items-center justify-center text-sm font-medium text-[var(--dash-muted)]">Cargando listas…</div>
         ) : filtered.length === 0 ? (
-          <div className="flex h-56 flex-col items-center justify-center gap-3 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl" style={tone('violet')}><Icon name="list-checks" size={24} /></span>
-            <p className="text-sm font-semibold text-[var(--dash-text)]">{lists.length > 0 ? 'Sin resultados' : 'Todavía no tenés listas'}</p>
+          <div className="flex min-h-[208px] flex-col items-center justify-center gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 text-center">
+            <span className={`flex h-10 w-10 items-center justify-center rounded-[10px] text-white ${gradient}`}><Icon name="list-plus" size={19} /></span>
+            <div className="flex flex-col gap-1">
+              <p className="text-lg font-bold text-[var(--dash-text)]">{lists.length > 0 ? 'Sin resultados' : 'Todavía no tenés listas'}</p>
+              {lists.length === 0 && <p className="text-[13px] text-[var(--dash-muted)]">Creá una lista principal para compartir tu catálogo.</p>}
+            </div>
             {lists.length === 0 && canEdit && (
-              <button type="button" onClick={() => setModal({ open: true, list: null })} className={`flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}>
+              <button type="button" onClick={() => setModal({ open: true, list: null })} className={`flex h-10 items-center gap-1.5 rounded-[10px] px-4 text-[13px] font-bold text-white ${gradient}`}>
                 <Icon name="plus" size={16} /> Crear la primera
               </button>
             )}
@@ -158,7 +153,7 @@ export function PriceListsScreen() {
             ))}
           </div>
         )}
-      </div>
+      </main>
 
       {modal.open && <ListModal key={modal.list?.id ?? 'new'} list={modal.list} tenantId={tenant?.id} products={availableProducts} onClose={() => setModal({ open: false, list: null })} />}
       {qr && <QrModal list={qr} url={publicDisplay(tenant?.subdomain, qr)} qrValue={publicUrl(tenant?.subdomain, qr)} onClose={() => setQr(null)} />}
@@ -175,20 +170,20 @@ function ListRow({ list, subdomain, canEdit, onEdit, onTogglePublished, onToggle
   const copy = () => { onCopy(); setCopied(true); setTimeout(() => setCopied(false), 1500) }
 
   return (
-    <div className="flex items-center gap-5 rounded-[20px] border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 shadow-[0_18px_50px_-22px_rgba(30,27,75,0.2)]">
-      <div className="flex min-w-0 flex-1 items-center gap-3.5">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone('violet')}><Icon name="list-checks" size={24} /></span>
+    <div className="flex items-center gap-4 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]" style={tone('violet')}><Icon name="list-checks" size={19} /></span>
         <div className="flex min-w-0 flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <h4 className="truncate text-[18px] font-extrabold text-[var(--dash-text)]">{list.name}</h4>
+            <h4 className="truncate text-base font-bold text-[var(--dash-text)]">{list.name}</h4>
             {list.showOnIndex && <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone('violet')}>Principal</span>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(list.published ? 'green' : 'amber')}>
+            <span className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold" style={tone(list.published ? 'green' : 'amber')}>
               <span className="h-1.5 w-1.5 rounded-full bg-current" /> {list.published ? 'Activa' : 'Borrador'}
             </span>
-            <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone('violet')}>{list.itemCount} producto{list.itemCount === 1 ? '' : 's'}</span>
-            <span className="rounded-full bg-[var(--dash-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--dash-text2)]">Actualizada {timeAgo(list.updatedAt)}</span>
+            <span className="rounded-lg px-2 py-1 text-[11px] font-bold" style={tone('violet')}>{list.itemCount} producto{list.itemCount === 1 ? '' : 's'}</span>
+            <span className="rounded-lg bg-[var(--dash-soft)] px-2 py-1 text-[11px] font-semibold text-[var(--dash-text2)]">Actualizada {timeAgo(list.updatedAt)}</span>
           </div>
         </div>
       </div>
@@ -204,9 +199,9 @@ function ListRow({ list, subdomain, canEdit, onEdit, onTogglePublished, onToggle
         </div>
       )}
 
-      <div className="flex shrink-0 items-center gap-2">
-        <button type="button" onClick={onQr} title="Código QR" className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="qr-code" size={16} /></button>
-        <button type="button" onClick={onOpen} title="Abrir lista pública" className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="share-2" size={16} /></button>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <button type="button" onClick={onQr} title="Código QR" className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="qr-code" size={15} /></button>
+        <button type="button" onClick={onOpen} title="Abrir lista pública" className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="share-2" size={15} /></button>
         {canEdit && <RowMenu list={list} onEdit={onEdit} onTogglePublished={onTogglePublished} onTogglePrincipal={onTogglePrincipal} onDelete={onDelete} />}
       </div>
     </div>

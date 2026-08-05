@@ -17,7 +17,7 @@ import { fetchLists, selectLists } from '../../store/slices/menuSlice'
 import type { PriceList, Product } from '../../types'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
-import { tone, gradient, type Tone } from './crm/theme'
+import { tone, gradient } from './crm/theme'
 import { catTone, catIcon, formatPrice, timeAgo, displayCategory, normalizeCategory } from './crm/productFormat'
 import api from '../../services/api'
 
@@ -107,7 +107,7 @@ export function ProductsScreen() {
     return { total: products.length, available, unavailable: products.length - available }
   }, [products])
 
-  // Base = search + category + price filters (drives chip counts).
+  // Base = search + category + price filters.
   const base = useMemo(() => {
     const q = search.trim().toLowerCase()
     const cat = category.trim().toLowerCase()
@@ -122,14 +122,6 @@ export function ProductsScreen() {
       return [p.name, p.sku, p.category].some((v) => v?.toLowerCase().includes(q))
     })
   }, [products, search, category, priceMin, priceMax])
-
-  const chipCounts = useMemo(() => ({
-    all: base.length,
-    available: base.filter((p) => p.available).length,
-    unavailable: base.filter((p) => !p.available).length,
-    nophoto: base.filter((p) => !p.imageUrl).length,
-    recent: Math.min(12, base.length),
-  }), [base])
 
   const visible = useMemo(() => {
     const arr = status === 'recent'
@@ -157,14 +149,6 @@ export function ProductsScreen() {
   const pageItems = visible.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   const resetTo = (fn: () => void) => { fn(); setPage(1) }
-
-  const filters: { key: Status; label: string; count: number }[] = [
-    { key: 'all', label: 'Todos', count: chipCounts.all },
-    { key: 'available', label: 'Disponibles', count: chipCounts.available },
-    { key: 'unavailable', label: 'No disponibles', count: chipCounts.unavailable },
-    { key: 'nophoto', label: 'Sin foto', count: chipCounts.nophoto },
-    { key: 'recent', label: 'Recientes', count: chipCounts.recent },
-  ]
 
   const handleDelete = (p: Product) => {
     if (window.confirm(`¿Eliminar “${p.name}”? Esta acción no se puede deshacer.`)) {
@@ -205,113 +189,74 @@ export function ProductsScreen() {
   const exportExcel = () => downloadExcel(exportScope(), tenant?.currency || 'UYU')
   const exportPdf = () => printPdf(exportScope(), tenant?.name || 'Catálogo', tenant?.currency || 'UYU')
 
-  const kpis: { icon: IconName; iconTone: Tone; value: number; label: string; note: string }[] = [
-    { icon: 'package', iconTone: 'violet', value: kpiCounts.total, label: 'Total productos', note: 'En tu catálogo' },
-    { icon: 'circle-check', iconTone: 'green', value: kpiCounts.available, label: 'Disponibles', note: 'Visibles para vender' },
-    { icon: 'circle-x', iconTone: 'red', value: kpiCounts.unavailable, label: 'No disponibles', note: 'Ocultos en tus listas' },
-    { icon: 'tags', iconTone: 'sky', value: categories.length, label: 'Categorías', note: 'En tu catálogo' },
-  ]
-
   return (
     <CrmLayout
       active="Productos"
       title="Productos"
       subtitle="Gestioná tu catálogo, precios y stock."
+      hideContext
       searchPlaceholder="Buscar producto, SKU, categoría…"
       searchValue={search}
       onSearchChange={(v) => resetTo(() => setSearch(v))}
     >
-      <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[980px]">
-        {/* KPIs — 2×2 on mobile, single row on desktop */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {kpis.map((k) => (
-            <div key={k.label} className="flex items-center gap-3 rounded-[18px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 py-4 shadow-[0_12px_30px_-12px_rgba(30,27,75,0.1)] sm:gap-3.5 sm:px-5 sm:py-[18px]">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]" style={tone(k.iconTone)}>
-                <Icon name={k.icon} size={22} />
-              </span>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex items-end gap-2">
-                  <span className="text-[26px] font-black leading-none text-[var(--dash-text)]">{k.value}</span>
-                  <span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">{k.label}</span>
-                </div>
-                <span className="mt-1 truncate text-[11px] font-medium text-[var(--dash-muted)]">{k.note}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+      <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[980px]">
+        <section className="flex min-h-[60px] flex-col justify-center gap-1">
+          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Productos</h1>
+          <p className="text-[13px] text-[#9694A6]">Gestioná tu catálogo, precios y stock.</p>
+        </section>
 
-        {/* Catalog card */}
-        <div className="flex flex-col gap-[18px] rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-6 shadow-[0_18px_50px_-18px_rgba(30,27,75,0.18)]">
+        <div className="flex flex-col gap-4">
           {/* Header */}
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <section className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2.5">
-                <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Catálogo</h3>
+                <h3 className="text-lg font-bold text-[var(--dash-text)]">Catálogo</h3>
                 <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={tone('violet')}>{kpiCounts.total} productos</span>
               </div>
-              <p className="text-xs font-medium text-[var(--dash-muted)]">Editá precios y disponibilidad al instante. Los cambios se reflejan en tus listas públicas.</p>
+              <p className="text-[13px] text-[var(--dash-muted)]">Editá precios y disponibilidad al instante.</p>
             </div>
-            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <FilterMenu
                 status={status} onStatus={(s) => resetTo(() => setStatus(s))}
                 priceMin={priceMin} priceMax={priceMax}
                 onPriceMin={(v) => resetTo(() => setPriceMin(v))} onPriceMax={(v) => resetTo(() => setPriceMax(v))}
                 onClear={clearFilters}
               />
+              <CategoryDropdown value={category} options={categories} onChange={(v) => resetTo(() => setCategory(v))} />
               <SortMenu sort={sort} onSort={setSort} />
               <ExportMenu count={someSelected ? selected.size : visible.length} scoped={someSelected} onExcel={exportExcel} onPdf={exportPdf} />
               {canEdit && (
                 <button
                   type="button"
                   onClick={() => setModal({ open: true, product: null })}
-                  className={`flex h-[38px] w-full items-center justify-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] lg:w-auto lg:justify-start ${gradient}`}
+                  className={`flex h-[38px] w-full items-center justify-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white lg:w-auto lg:justify-start ${gradient}`}
                 >
                   <Icon name="plus" size={16} /> Nuevo producto
                 </button>
               )}
             </div>
-          </div>
-
-          {/* Filter chips */}
-          <div className="flex flex-wrap items-center gap-2">
-            {filters.map((f) => {
-              const active = status === f.key
-              return (
-                <button
-                  key={f.key}
-                  type="button"
-                  onClick={() => resetTo(() => setStatus(f.key))}
-                  className={`flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-bold ${active ? `text-white ${gradient}` : 'border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)]'}`}
-                >
-                  {f.label}
-                  <span className={`rounded-full px-1.5 py-px text-[10px] font-bold ${active ? 'bg-white/20 text-white' : 'bg-[var(--dash-soft)] text-[var(--dash-text2)]'}`}>{f.count}</span>
-                </button>
-              )
-            })}
-            <div className="flex-1" />
-            <CategoryDropdown value={category} options={categories} onChange={(v) => resetTo(() => setCategory(v))} />
-          </div>
+          </section>
 
           {/* Bulk action bar */}
           {someSelected && (
-            <div className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 ${gradient} text-white`}>
-              <Icon name="circle-check" size={18} />
-              <span className="text-[13px] font-bold">{selected.size} seleccionado{selected.size === 1 ? '' : 's'}</span>
+            <div className="flex items-center gap-3 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3">
+              <Icon name="circle-check" size={18} className="text-[var(--dash-link)]" />
+              <span className="text-[13px] font-bold text-[var(--dash-text2)]">{selected.size} seleccionado{selected.size === 1 ? '' : 's'}</span>
               <div className="flex-1" />
               {canEdit && (
-                <button type="button" onClick={bulkDelete} className="flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-3 text-[13px] font-bold hover:bg-white/25">
+                <button type="button" onClick={bulkDelete} className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-[13px] font-bold text-[#F87171] hover:bg-white/10">
                   <Icon name="circle-x" size={15} /> Eliminar
                 </button>
               )}
-              <button type="button" onClick={clearSelection} className="flex h-8 items-center rounded-lg px-3 text-[13px] font-bold text-white/90 hover:bg-white/15">
+              <button type="button" onClick={clearSelection} className="flex h-8 items-center rounded-lg px-3 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-white/10">
                 Limpiar
               </button>
             </div>
           )}
 
           {/* Table */}
-          <div className="overflow-x-auto rounded-2xl border border-[var(--dash-border)]">
-            <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-[18px] py-3.5 text-[11px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+          <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)]">
+            <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="w-9"><Checkbox checked={allSelected} indeterminate={someSelected && !allSelected} onChange={toggleSelectAll} /></span>
               <span className="flex-1">Producto</span>
               <span className="w-[110px]">SKU</span>
@@ -329,15 +274,15 @@ export function ProductsScreen() {
             ) : (
               pageItems.map((p, i) => {
                 return (
-                  <div key={p.id} className={`flex min-w-[720px] items-center gap-3 px-[18px] py-3.5 ${selected.has(p.id) ? 'bg-[var(--dash-soft)]' : 'bg-[var(--dash-surface)]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                  <div key={p.id} className={`flex min-w-[720px] items-center gap-3 px-5 py-4 ${selected.has(p.id) ? 'bg-[var(--dash-soft)]' : 'bg-[var(--dash-surface)]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
                     <span className="w-9"><Checkbox checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} /></span>
                     <div className="flex flex-1 items-center gap-3">
                       {p.imageUrl
                         ? <img src={p.imageThumbUrl || p.imageUrl} alt={p.name} className="h-10 w-10 shrink-0 rounded-[10px] object-cover" />
                         : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]" style={tone(catTone(p.category))}><Icon name={catIcon(p.category)} size={20} /></span>}
                       <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{p.name}</span>
-                        <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{p.description || '—'}</span>
+                        <span className="truncate text-sm font-bold text-[var(--dash-text)]">{p.name}</span>
+                        <span className="truncate text-xs font-medium text-[var(--dash-muted)]">{p.description || '—'}</span>
                       </div>
                     </div>
                     <span className="w-[110px] text-xs font-semibold text-[var(--dash-text2)]">{p.sku || '—'}</span>
@@ -346,7 +291,7 @@ export function ProductsScreen() {
                         ? <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(catTone(p.category))}>{displayCategory(p.category)}</span>
                         : <span className="text-[11px] font-medium text-[var(--dash-muted)]">Sin categoría</span>}
                     </span>
-                    <span className="w-[110px] text-[13px] font-extrabold text-[var(--dash-text)]">{formatPrice(p.price)}</span>
+                    <span className="w-[110px] text-sm font-extrabold text-[var(--dash-text)]">{formatPrice(p.price)}</span>
                     <span className="w-[160px]">
                       {canEdit
                         ? <AvailabilitySwitch value={p.available} onToggle={() => dispatch(updateProduct({ productId: p.id, data: { available: !p.available } }))} />
@@ -378,7 +323,7 @@ export function ProductsScreen() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
       {modal.open && (
         <ProductModal
