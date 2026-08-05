@@ -135,13 +135,22 @@ export function PriceListsScreen() {
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {filtered.map((l) => (
+          <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
+            <div className="flex min-w-[760px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+              <span className="flex-1">Lista</span>
+              <span className="w-[120px]">Productos</span>
+              <span className="w-[120px]">Estado</span>
+              <span className="w-[130px]">Actualizada</span>
+              <span className="w-[220px]">Enlace público</span>
+              <span className="w-[104px]" />
+            </div>
+            {filtered.map((l, i) => (
               <ListRow
                 key={l.id}
                 list={l}
                 subdomain={tenant?.subdomain}
                 canEdit={canEdit}
+                first={i === 0}
                 onEdit={() => setModal({ open: true, list: l })}
                 onTogglePublished={() => togglePublished(l)}
                 onTogglePrincipal={() => togglePrincipal(l)}
@@ -162,15 +171,16 @@ export function PriceListsScreen() {
 }
 
 /* ── Row ─────────────────────────────────────────────────────────── */
-function ListRow({ list, subdomain, canEdit, onEdit, onTogglePublished, onTogglePrincipal, onDelete, onCopy, onQr, onOpen }: {
+function ListRow({ list, subdomain, canEdit, first, onEdit, onTogglePublished, onTogglePrincipal, onDelete, onCopy, onQr, onOpen }: {
   list: PriceList; subdomain?: string; canEdit: boolean
+  first?: boolean
   onEdit: () => void; onTogglePublished: () => void; onTogglePrincipal: () => void; onDelete: () => void; onCopy: () => void; onQr: () => void; onOpen: () => void
 }) {
   const [copied, setCopied] = useState(false)
   const copy = () => { onCopy(); setCopied(true); setTimeout(() => setCopied(false), 1500) }
 
   return (
-    <div className="flex items-center gap-4 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
+    <div className={`flex min-w-[760px] items-center gap-3 bg-[var(--dash-surface)] px-5 py-4 ${!first ? 'border-t border-[var(--dash-divider)]' : ''}`}>
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]" style={tone('violet')}><Icon name="list-checks" size={19} /></span>
         <div className="flex min-w-0 flex-col gap-1.5">
@@ -178,28 +188,27 @@ function ListRow({ list, subdomain, canEdit, onEdit, onTogglePublished, onToggle
             <h4 className="truncate text-base font-bold text-[var(--dash-text)]">{list.name}</h4>
             {list.showOnIndex && <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone('violet')}>Principal</span>}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold" style={tone(list.published ? 'green' : 'amber')}>
-              <span className="h-1.5 w-1.5 rounded-full bg-current" /> {list.published ? 'Activa' : 'Borrador'}
-            </span>
-            <span className="rounded-lg px-2 py-1 text-[11px] font-bold" style={tone('violet')}>{list.itemCount} producto{list.itemCount === 1 ? '' : 's'}</span>
-            <span className="rounded-lg bg-[var(--dash-soft)] px-2 py-1 text-[11px] font-semibold text-[var(--dash-text2)]">Actualizada {timeAgo(list.updatedAt)}</span>
-          </div>
         </div>
       </div>
 
-      {list.published && (
-        <div className="hidden shrink-0 flex-col gap-1.5 lg:flex">
-          <span className="text-[11px] font-bold tracking-wide text-[var(--dash-muted)]">URL</span>
-          <button type="button" onClick={copy} className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-[12px] font-semibold text-[var(--dash-link)]" style={tone('violet')}>
-            <Icon name="link-2" size={14} />
-            <span className="max-w-[220px] truncate">{publicDisplay(subdomain, list)}</span>
-            <Icon name={copied ? 'circle-check' : 'copy'} size={14} />
-          </button>
-        </div>
-      )}
+      <span className="w-[120px] text-sm font-semibold text-[var(--dash-text2)]">{list.itemCount}</span>
+      <span className="w-[120px]">
+        <span className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold" style={tone(list.published ? 'green' : 'amber')}>
+          <span className="h-1.5 w-1.5 rounded-full bg-current" /> {list.published ? 'Activa' : 'Borrador'}
+        </span>
+      </span>
+      <span className="w-[130px] text-xs font-medium text-[var(--dash-muted)]">{timeAgo(list.updatedAt)}</span>
+      <span className="w-[220px]">
+        {list.published
+          ? <button type="button" onClick={copy} className="flex max-w-full items-center gap-2 rounded-lg px-2 py-1 text-xs font-semibold text-[var(--dash-link)] hover:bg-[var(--dash-soft)]">
+              <Icon name="link-2" size={14} />
+              <span className="truncate">{publicDisplay(subdomain, list)}</span>
+              <Icon name={copied ? 'circle-check' : 'copy'} size={14} />
+            </button>
+          : <span className="text-xs text-[var(--dash-muted)]">No disponible</span>}
+      </span>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex w-[104px] shrink-0 items-center justify-end gap-1.5">
         <button type="button" onClick={onQr} title="Código QR" className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="qr-code" size={15} /></button>
         <button type="button" onClick={onOpen} title="Abrir lista pública" className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="share-2" size={15} /></button>
         {canEdit && <RowMenu list={list} onEdit={onEdit} onTogglePublished={onTogglePublished} onTogglePrincipal={onTogglePrincipal} onDelete={onDelete} />}
