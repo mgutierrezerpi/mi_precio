@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '../../../hooks/useTheme'
-import { useAppSelector } from '../../../store/hooks'
+import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { selectTenant } from '../../../store/slices/authSlice'
+import { fetchLists, selectLists } from '../../../store/slices/menuSlice'
 import type { PlanId } from '../../../types'
 import { planById } from '../../../lib/plans'
 import { useT } from '../../../lib/i18n'
@@ -49,12 +50,20 @@ function NavItem({ icon, label, to, badge, active, onNavigate, collapsed }: { ic
 export function CrmSidebar({ active, open = false, collapsed = false, onToggle, onClose }: { active: string; open?: boolean; collapsed?: boolean; onToggle?: () => void; onClose?: () => void }) {
   const { isDark } = useTheme()
   const t = useT()
+  const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
+  const lists = useAppSelector(selectLists)
+  const mainList = lists.find((list) => list.showOnIndex)
   const nextPlan = tenant ? NEXT_PLAN[tenant.plan] : undefined
   const [linkCopied, setLinkCopied] = useState(false)
+
+  useEffect(() => {
+    if (tenant?.id) dispatch(fetchLists(tenant.id))
+  }, [dispatch, tenant?.id])
+
   const copyPublicLink = () => {
-    if (!tenant) return
-    const publicUrl = `${window.location.origin}/p/${tenant.subdomain || 'mi-negocio'}`
+    if (!tenant || !mainList) return
+    const publicUrl = `${window.location.origin}/p/${tenant.subdomain || 'mi-negocio'}/${mainList.slug || mainList.id}`
     navigator.clipboard?.writeText(publicUrl)
     setLinkCopied(true)
     window.setTimeout(() => setLinkCopied(false), 1800)
@@ -79,10 +88,17 @@ export function CrmSidebar({ active, open = false, collapsed = false, onToggle, 
             <Icon name={collapsed ? 'chevrons-right' : 'chevrons-left'} size={16} />
           </button>
         </div>
-        {tenant && <button type="button" onClick={copyPublicLink} title={linkCopied ? 'Enlace copiado' : 'Copiar enlace público'} aria-label={linkCopied ? 'Enlace copiado' : 'Copiar enlace público'} className={`btn btn-sm mt-1 flex h-9 items-center rounded-lg bg-[var(--dash-soft)] text-xs font-bold text-[var(--dash-link)] hover:opacity-90 ${collapsed ? 'justify-center px-0' : 'justify-center gap-2'}`}>
-          <Icon name={linkCopied ? 'circle-check' : 'link-2'} size={15} />
-          {!collapsed && (linkCopied ? 'Enlace copiado' : 'Copiar enlace público')}
-        </button>}
+        {tenant && (mainList ? (
+          <button type="button" onClick={copyPublicLink} title={linkCopied ? 'Enlace copiado' : 'Copiar enlace público'} aria-label={linkCopied ? 'Enlace copiado' : 'Copiar enlace público'} className={`btn btn-sm mt-1 flex h-9 items-center rounded-lg bg-[var(--dash-soft)] text-xs font-bold text-[var(--dash-link)] hover:opacity-90 ${collapsed ? 'justify-center px-0' : 'justify-center gap-2'}`}>
+            <Icon name={linkCopied ? 'circle-check' : 'link-2'} size={15} />
+            {!collapsed && (linkCopied ? 'Enlace copiado' : 'Copiar enlace público')}
+          </button>
+        ) : (
+          <Link to="/admin/lists?new=1" onClick={onClose} title="Crear lista principal" aria-label="Crear lista principal" className={`btn btn-sm mt-1 flex h-9 items-center rounded-lg bg-[var(--dash-soft)] text-xs font-bold text-[var(--dash-link)] hover:opacity-90 ${collapsed ? 'justify-center px-0' : 'justify-center gap-2'}`}>
+            <Icon name="list-plus" size={15} />
+            {!collapsed && 'Crear lista principal'}
+          </Link>
+        ))}
         {/* Business switcher intentionally stays hidden until memberships are
             supported. A User currently belongs to exactly one tenant. */}
 

@@ -63,18 +63,19 @@ export function DashboardScreen() {
 
   const activeLists = useMemo(() => lists.filter((l) => l.published).length, [lists])
 
-  // Public URL points to the list marked as principal (or the first published one).
-  const principalList = useMemo(() => lists.find((l) => l.showOnIndex) || lists.find((l) => l.published) || null, [lists])
-  const listPath = `/p/${tenant?.subdomain || 'mi-negocio'}${principalList ? `/${principalList.slug || principalList.id}` : ''}`
-  const publicUrlDisplay = `miprecio.app${listPath}`
-  const publicUrlFull = `${window.location.origin}${listPath}`
-  const qrUrl = `${publicUrlFull}?src=qr` // tagged so scans are counted separately from link visits
+  // Only a list explicitly marked as principal gets a public link on the dashboard.
+  const principalList = useMemo(() => lists.find((l) => l.showOnIndex) || null, [lists])
+  const listPath = principalList ? `/p/${tenant?.subdomain || 'mi-negocio'}/${principalList.slug || principalList.id}` : ''
+  const publicUrlDisplay = principalList ? `miprecio.app${listPath}` : ''
+  const publicUrlFull = principalList ? `${window.location.origin}${listPath}` : ''
+  const qrUrl = principalList ? `${publicUrlFull}?src=qr` : window.location.origin
   const [copied, setCopied] = useState(false)
-  const copyUrl = () => { navigator.clipboard?.writeText(publicUrlFull); setCopied(true); setTimeout(() => setCopied(false), 1500) }
+  const copyUrl = () => { if (!publicUrlFull) return; navigator.clipboard?.writeText(publicUrlFull); setCopied(true); setTimeout(() => setCopied(false), 1500) }
 
   const goProducts = () => navigate('/admin/items')
   const goQr = () => navigate('/admin/qr')
   const goLists = () => navigate('/admin/lists')
+  const goCreateList = () => navigate('/admin/lists?new=1')
   const goClientes = () => navigate('/admin/clientes')
 
   void canEdit
@@ -116,7 +117,9 @@ export function DashboardScreen() {
             </div>
             <button type="button" onClick={goQr} title="Ver códigos QR" className="flex h-[156px] w-[156px] shrink-0 items-center justify-center self-center rounded-[14px] bg-white p-2"><QrCode value={qrUrl} size={148} margin={2} fg="#111827" logoUrl={FAVICON} className="h-full w-full object-contain" /></button>
           </div>
-          <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} className="w-full shrink-0 xl:w-[292px]" />
+          {principalList
+            ? <PublicListCard urlDisplay={publicUrlDisplay} onCopy={copyUrl} copied={copied} visits={visits} className="w-full shrink-0 xl:w-[292px]" />
+            : <CreateListCard onCreate={goCreateList} className="w-full shrink-0 xl:w-[292px]" />}
         </section>
 
         <section className="grid min-h-[80px] grid-cols-1 gap-4 md:grid-cols-3">
@@ -160,6 +163,25 @@ function PublicListCard({ urlDisplay, onCopy, copied, visits, compact, className
           <span className="text-[13px] font-bold">{(visits?.changePct ?? 0) >= 0 ? '+' : ''}{visits?.changePct ?? 0}% vs ayer</span>
         </div>
       </div>
+    </div>
+  )
+}
+
+function CreateListCard({ onCreate, className = '' }: { onCreate: () => void; className?: string }) {
+  return (
+    <div className={`flex min-h-[208px] flex-col justify-center gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 ${className}`}>
+      <div className="flex items-start gap-3">
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-white ${gradient}`}>
+          <Icon name="list-plus" size={19} />
+        </span>
+        <div className="flex min-w-0 flex-col gap-1">
+          <p className="text-lg font-bold text-[var(--dash-text)]">Tu lista pública</p>
+          <p className="text-[13px] leading-relaxed text-[var(--dash-muted)]">Creá una lista principal para compartir tu catálogo.</p>
+        </div>
+      </div>
+      <button type="button" onClick={onCreate} className={`flex h-10 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold text-white ${gradient}`}>
+        <Icon name="plus" size={16} /> Crear lista
+      </button>
     </div>
   )
 }
