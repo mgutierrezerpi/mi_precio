@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
+import { selectTenant } from '../../store/slices/authSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
 import type { PriceList } from '../../types'
 import { CrmLayout } from './crm/CrmLayout'
@@ -25,9 +24,7 @@ const QR_COLORS: { name: string; value: string }[] = [
 
 export function CodesScreen() {
   const dispatch = useAppDispatch()
-  const navigate = useNavigate()
   const tenant = useAppSelector(selectTenant)
-  const canEdit = useAppSelector(selectCanEdit)
   const lists = useAppSelector(selectLists)
 
   const [search, setSearch] = useState('')
@@ -67,25 +64,15 @@ export function CodesScreen() {
       onSearchChange={setSearch}
     >
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[900px]">
-        <section className="flex min-h-[60px] flex-col justify-center gap-1">
-          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Códigos QR</h1>
-          <p className="text-[13px] text-[#9694A6]">Compartí tu catálogo con un escaneo.</p>
+        <section className="flex min-h-[60px] items-end justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Códigos QR</h1>
+            <p className="text-[13px] text-[#9694A6]">Compartí tu catálogo con un escaneo.</p>
+          </div>
         </section>
         <div className="flex flex-col gap-4 xl:flex-row">
         {/* QR grid */}
         <div className="flex flex-1 flex-col gap-4">
-          <div className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-lg font-bold text-[var(--dash-text)]">Mis QR</h2>
-              <p className="text-[13px] text-[var(--dash-muted)]">Un código por cada lista publicada.</p>
-            </div>
-            {canEdit && (
-              <button type="button" onClick={() => navigate('/admin/lists')} className={`flex h-9 items-center gap-2 rounded-lg px-4 text-[13px] font-bold text-white ${gradient}`}>
-                <Icon name="plus" size={15} /> Nueva lista
-              </button>
-            )}
-          </div>
-
           {filtered.length === 0 ? (
             <div className="flex min-h-[208px] flex-col items-center justify-center gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 text-center">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-[var(--dash-link)]" style={{ backgroundColor: 'var(--tone-violet-bg)' }}><Icon name="qr-code" size={24} /></span>
@@ -139,12 +126,16 @@ export function CodesScreen() {
               <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${withLogo ? 'left-[22px]' : 'left-0.5'}`} />
             </button>
           </div>
-          <button type="button" onClick={() => void downloadQrPng(previewUrl, `qr-${sub}.png`, { fg: color, logoUrl })} className={`flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold text-white ${gradient}`}>
-            <Icon name="download" size={16} /> Descargar PNG
-          </button>
-          <button type="button" onClick={() => downloadQrSvg(previewUrl, `qr-${sub}.svg`, { fg: color })} className="flex h-10 items-center justify-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
-            <Icon name="download" size={15} /> Descargar SVG
-          </button>
+          <span className="dash-tooltip block" data-tooltip={lists.length === 0 ? 'Creá una lista para habilitar la descarga del QR.' : ''}>
+            <button type="button" disabled={lists.length === 0} onClick={() => void downloadQrPng(previewUrl, `qr-${sub}.png`, { fg: color, logoUrl })} className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 ${gradient}`}>
+              <Icon name="download" size={16} /> Descargar PNG
+            </button>
+          </span>
+          <span className="dash-tooltip block" data-tooltip={lists.length === 0 ? 'Creá una lista para habilitar la descarga del QR.' : ''}>
+            <button type="button" disabled={lists.length === 0} onClick={() => downloadQrSvg(previewUrl, `qr-${sub}.svg`, { fg: color })} className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] disabled:cursor-not-allowed disabled:opacity-40">
+              <Icon name="download" size={15} /> Descargar SVG
+            </button>
+          </span>
         </div>
         </div>
       </main>

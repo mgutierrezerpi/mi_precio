@@ -116,9 +116,14 @@ export function TeamScreen() {
   return (
     <CrmLayout active="Equipo" title="Equipo" subtitle="Gestioná quién accede a tu cuenta." hideContext searchPlaceholder="Buscar miembros…" searchValue={search} onSearchChange={setSearch}>
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[980px]">
-        <section className="flex min-h-[60px] flex-col justify-center gap-1">
-          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Equipo</h1>
-          <p className="text-[13px] text-[#9694A6]">Gestioná quién accede a tu cuenta.</p>
+        <section className="flex min-h-[60px] items-end justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Equipo</h1>
+            <p className="text-[13px] text-[#9694A6]">Gestioná quién accede a tu cuenta.</p>
+          </div>
+          {canManage && (
+            <button type="button" onClick={() => setShowInvite(true)} className={`flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}><Icon name="plus" size={16} /> Invitar miembro</button>
+          )}
         </section>
         {error && (
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-sm font-semibold text-[#B91C1C]">
@@ -128,13 +133,7 @@ export function TeamScreen() {
         )}
 
         {/* Members */}
-        <div className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[22px] font-extrabold text-[var(--dash-text)]">Miembros del equipo</h3>
-            {canManage && (
-              <button type="button" onClick={() => setShowInvite(true)} className={`flex h-[38px] items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)] ${gradient}`}><Icon name="plus" size={16} /> Invitar miembro</button>
-            )}
-          </div>
+        <div className="flex flex-col gap-4">
           <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
             <div className="flex min-w-[640px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="flex-1">Miembro</span>
@@ -201,9 +200,9 @@ export function TeamScreen() {
           <div className="flex w-full shrink-0 flex-col gap-3.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 lg:w-[380px]">
             <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Invitaciones pendientes</h3>
             {loading ? (
-              <p className="py-4 text-center text-xs font-medium text-[var(--dash-muted)]">Cargando…</p>
+              <p className="py-4 text-xs font-medium text-[var(--dash-muted)]">Cargando…</p>
             ) : invites.length === 0 ? (
-              <p className="py-4 text-center text-xs font-medium text-[var(--dash-muted)]">No hay invitaciones pendientes.</p>
+              <p className="py-4 text-xs font-medium text-[var(--dash-muted)]">No hay invitaciones pendientes.</p>
             ) : invites.map((inv) => (
               <div key={inv.id} className="flex items-center gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3.5 py-2.5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={tone('amber')}><Icon name="user-plus" size={16} /></span>

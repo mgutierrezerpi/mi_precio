@@ -104,22 +104,14 @@ export function CustomersScreen() {
   return (
     <CrmLayout active="Clientes" title="Clientes" subtitle="Gestioná tu cartera de clientes." hideContext searchPlaceholder="Buscar clientes…" searchValue={search} onSearchChange={setSearch}>
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[980px]">
-        <section className="flex min-h-[60px] flex-col justify-center gap-1">
-          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Clientes</h1>
-          <p className="text-[13px] text-[#9694A6]">Gestioná tu cartera de clientes.</p>
-        </section>
-        <div className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-lg font-bold text-[var(--dash-text)]">Clientes</h2>
-              <p className="text-[13px] text-[var(--dash-muted)]">{customers.length} cliente{customers.length === 1 ? '' : 's'} en tu cartera.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={tone('violet')}>{customers.length} totales</span>
-              {canEdit && <button type="button" onClick={() => setShowNew(true)} className={`flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-bold text-white ${gradient}`}><Icon name="plus" size={16} /> Nuevo cliente</button>}
-            </div>
+        <section className="flex min-h-[60px] items-end justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Clientes</h1>
+            <p className="text-[13px] text-[#9694A6]">Gestioná tu cartera de clientes.</p>
           </div>
-
+          {canEdit && <button type="button" onClick={() => setShowNew(true)} className={`flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}><Icon name="plus" size={16} /> Nuevo cliente</button>}
+        </section>
+        <div className="flex flex-col gap-4">
           <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
             <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="flex-1">Cliente</span>
@@ -135,9 +127,6 @@ export function CustomersScreen() {
             ) : filtered.length === 0 ? (
               <div className="flex h-40 flex-col items-center justify-center gap-3 text-center">
                 <p className="text-sm font-semibold text-[var(--dash-text)]">{customers.length === 0 ? 'Todavía no tenés clientes' : 'Sin resultados'}</p>
-                {customers.length === 0 && canEdit && (
-                  <button type="button" onClick={() => setShowNew(true)} className={`flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}><Icon name="plus" size={16} /> Agregar el primero</button>
-                )}
               </div>
             ) : (
               filtered.map((c, i) => {
