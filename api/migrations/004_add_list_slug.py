@@ -7,7 +7,9 @@ import peewee as pw
 
 
 def slugify_list_name(name: str) -> str:
-    normalized = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode("ascii")
+    normalized = (
+        unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode("ascii")
+    )
     slug = re.sub(r"[^a-z0-9]+", "_", normalized.lower()).strip("_")
     return slug or "lista"
 

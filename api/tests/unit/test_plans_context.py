@@ -46,7 +46,9 @@ def test_member_limit_counts_users_and_pending_invites(tenant):
         plans.assert_can_add(tenant.id, "members")
     # a pending invitation also counts toward the limit
     plans.set_plan(tenant.id, "plus")  # limit 5
-    Invitation.create(tenant=tenant, email="a@shop.com", role="editor", status="pending")
+    Invitation.create(
+        tenant=tenant, email="a@shop.com", role="editor", status="pending"
+    )
     assert plans.plan_info(tenant.id)["usage"]["members"] == 2
 
 

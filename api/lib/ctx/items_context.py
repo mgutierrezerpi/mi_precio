@@ -6,9 +6,7 @@ from models import ListVersion, Item
 def list_items(version_id: str) -> list[Item]:
     """Get all items for a version, ordered by position."""
     return list(
-        Item.select()
-        .where(Item.list_version == version_id)
-        .order_by(Item.position)
+        Item.select().where(Item.list_version == version_id).order_by(Item.position)
     )
 
 

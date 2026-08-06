@@ -9,7 +9,17 @@ import re
 
 # Visual templates for the public price list. Mirrors LIST_DESIGNS in
 # web_app/src/components/appearance/ListAppearanceFields.tsx — keep both in sync.
-LIST_DESIGNS = {"store", "classic", "nordic", "fine", "modern", "photo", "cards", "catalog", "tech"}
+LIST_DESIGNS = {
+    "store",
+    "classic",
+    "nordic",
+    "fine",
+    "modern",
+    "photo",
+    "cards",
+    "catalog",
+    "tech",
+}
 
 
 def validate_design(v: str | None) -> str | None:

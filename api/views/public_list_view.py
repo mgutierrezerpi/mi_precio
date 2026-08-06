@@ -29,5 +29,7 @@ class PublicListView(BaseView):
             hero_color=getattr(price_list, "hero_color", None),
             bg_url=getattr(price_list, "bg_url", None),
             bg_overlay=getattr(price_list, "bg_overlay", None),
-            version=ListVersionView.render(published.version, include_items=True, items=published.items),
+            version=ListVersionView.render(
+                published.version, include_items=True, items=published.items
+            ),
         )

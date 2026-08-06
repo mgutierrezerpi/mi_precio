@@ -15,7 +15,9 @@ def get_public_menu(subdomain: str):
 
 
 @router.post("/{subdomain}/view")
-def record_public_view(subdomain: str, list: str | None = None, source: str | None = None):
+def record_public_view(
+    subdomain: str, list: str | None = None, source: str | None = None
+):
     """Record a single visit to a tenant's public page (called once per open).
 
     `source` distinguishes QR scans ("qr") from direct/shared link visits.

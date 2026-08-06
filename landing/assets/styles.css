@@ -1,7 +1,14 @@
 :root {
   interpolate-size: allow-keywords;
   color-scheme: light;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
   background: #fff;
   color: #0f172a;
   font-synthesis: none;
@@ -160,7 +167,14 @@ svg.lucide {
   position: relative;
   overflow: hidden;
   color: #fff;
-  background: linear-gradient(135deg, #2e1065 0%, #5b21b6 30%, #7c3aed 60%, #a855f7 80%, #5b21b6 100%);
+  background: linear-gradient(
+    135deg,
+    #2e1065 0%,
+    #5b21b6 30%,
+    #7c3aed 60%,
+    #a855f7 80%,
+    #5b21b6 100%
+  );
   background-size: 220% 220%;
   animation: heroShift 18s ease-in-out infinite;
 }
@@ -609,7 +623,9 @@ svg.lucide {
   border-radius: 20px;
   background: #fff;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .feature-grid article:hover {
@@ -1273,7 +1289,9 @@ svg.lucide {
   border: 1px solid var(--line);
   border-radius: 16px;
   background: #f8fafc;
-  transition: border-color 220ms ease, background 220ms ease;
+  transition:
+    border-color 220ms ease,
+    background 220ms ease;
 }
 
 .faq-list details[open] {
@@ -1284,7 +1302,9 @@ svg.lucide {
 .faq-list details::details-content {
   height: 0;
   overflow: hidden;
-  transition: height 320ms ease, content-visibility 320ms ease allow-discrete;
+  transition:
+    height 320ms ease,
+    content-visibility 320ms ease allow-discrete;
 }
 
 .faq-list details[open]::details-content {

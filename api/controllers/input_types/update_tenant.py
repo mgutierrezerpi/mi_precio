@@ -32,7 +32,9 @@ class UpdateTenant(BaseModel):
             return v
         v = v.lower()
         if not re.match(r"^[a-z0-9-]+$", v):
-            raise ValueError("Subdomain can only contain lowercase letters, numbers, and hyphens")
+            raise ValueError(
+                "Subdomain can only contain lowercase letters, numbers, and hyphens"
+            )
         if len(v) < 3:
             raise ValueError("Subdomain must be at least 3 characters")
         if len(v) > 63:

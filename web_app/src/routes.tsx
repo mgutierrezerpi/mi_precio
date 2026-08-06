@@ -12,7 +12,12 @@ import { CustomersScreen } from './screens/admin/CustomersScreen'
 import { ReportsScreen } from './screens/admin/ReportsScreen'
 import { TeamScreen } from './screens/admin/TeamScreen'
 import { SupportScreen } from './screens/admin/SupportScreen'
-import { AdminDashboardRoute, AdminListsRoute, AdminProductsRoute, AdminSettingsRoute } from './screens/admin/AdminRouteSwitches'
+import {
+  AdminDashboardRoute,
+  AdminListsRoute,
+  AdminProductsRoute,
+  AdminSettingsRoute,
+} from './screens/admin/AdminRouteSwitches'
 import { ChoosePlanScreen } from './screens/onboarding/ChoosePlanScreen'
 
 export const router = createBrowserRouter([

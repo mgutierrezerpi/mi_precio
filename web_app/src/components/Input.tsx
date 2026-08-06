@@ -40,9 +40,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         />
         {(error || helperText) && (
           <p
-            className={`mt-1 text-sm ${
-              error ? 'text-red-600' : 'text-gray-500'
-            }`}
+            className={`mt-1 text-sm ${error ? 'text-red-600' : 'text-gray-500'}`}
           >
             {error || helperText}
           </p>

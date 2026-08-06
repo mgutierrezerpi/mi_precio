@@ -55,16 +55,18 @@ self.addEventListener('notificationclick', (event) => {
   const target = (event.notification.data as { url?: string })?.url || '/admin'
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      // Focus an existing app window if one is already open.
-      for (const client of clients) {
-        if ('focus' in client) {
-          void client.focus()
-          if ('navigate' in client) void client.navigate(target)
-          return
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clients) => {
+        // Focus an existing app window if one is already open.
+        for (const client of clients) {
+          if ('focus' in client) {
+            void client.focus()
+            if ('navigate' in client) void client.navigate(target)
+            return
+          }
         }
-      }
-      return self.clients.openWindow(target)
-    }),
+        return self.clients.openWindow(target)
+      })
   )
 })

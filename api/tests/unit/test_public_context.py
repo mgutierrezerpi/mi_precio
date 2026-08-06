@@ -56,8 +56,12 @@ def test_get_published_lists_falls_back_to_product_image(db):
 def test_get_published_lists_keeps_item_image_over_product(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
-    items.create_item(created.version.id, name="Pizza", price=150.0, image_url="http://img/item.jpg")
-    products.create_product(tenant.id, name="Pizza", price=150.0, image_url="http://img/product.jpg")
+    items.create_item(
+        created.version.id, name="Pizza", price=150.0, image_url="http://img/item.jpg"
+    )
+    products.create_product(
+        tenant.id, name="Pizza", price=150.0, image_url="http://img/product.jpg"
+    )
     lists.update_list(created.price_list.id, published=True)
     versions.update_version(created.version.id, published=True)
 
@@ -69,7 +73,9 @@ def test_get_published_lists_keeps_item_image_over_product(db):
 def test_get_published_lists_adds_missing_thumb_from_product(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
-    items.create_item(created.version.id, name="Pizza", price=150.0, image_url="http://img/item.webp")
+    items.create_item(
+        created.version.id, name="Pizza", price=150.0, image_url="http://img/item.webp"
+    )
     products.create_product(
         tenant.id,
         name="Pizza",

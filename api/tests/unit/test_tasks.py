@@ -24,7 +24,11 @@ def test_run_billing_maintenance_expires_billing_and_prunes_auth_codes(db):
     result = run_billing_maintenance.call_local()
 
     tenant = Tenant.get_by_id(tenant.id)
-    assert result == {"expired_subscriptions": 1, "pruned_codes": 1, "pending_billing_checks": 0}
+    assert result == {
+        "expired_subscriptions": 1,
+        "pruned_codes": 1,
+        "pending_billing_checks": 0,
+    }
     assert tenant.plan == "free"
     assert tenant.billing_status == "expired"
     assert AuthCode.select().count() == 0
@@ -38,7 +42,10 @@ def test_send_invitation_email_uses_login_link(monkeypatch, db):
         lambda **kwargs: sent.update(kwargs) or True,
     )
 
-    assert send_invitation_email.call_local("Editor@Shop.com", "editor", "Ferretería") is True
+    assert (
+        send_invitation_email.call_local("Editor@Shop.com", "editor", "Ferretería")
+        is True
+    )
 
     assert sent["to"] == "Editor@Shop.com"
     assert sent["subject"] == "Invitación a Ferretería en Mi Precio"

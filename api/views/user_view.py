@@ -21,7 +21,6 @@ class UserView(BaseView):
             tenant_id=user.tenant_id,
             role=role or getattr(user, "_team_role", None) or user.role or "owner",
             name=user.name or user.email.split("@")[0],
-
             created_at=user.created_at,
             updated_at=user.updated_at,
             last_seen_at=getattr(user, "last_seen_at", None),

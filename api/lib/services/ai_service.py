@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # Undetected Chrome - for Google Maps scraping
 try:
     import undetected_chromedriver as uc
+
     CHROME_AVAILABLE = True
 except ImportError:
     CHROME_AVAILABLE = False
@@ -24,6 +25,7 @@ except ImportError:
 @dataclass
 class MenuItem:
     """Represents a menu item extracted from a business page."""
+
     name: str
     price: float
     description: str | None = None
@@ -165,7 +167,9 @@ def _extract_from_google_maps(url: str, openai_client: OpenAI) -> list[dict]:
                     close_btn.click()
                     time.sleep(0.3)
                 except Exception:
-                    driver.find_element(By.TAG_NAME, "body").send_keys("\ue00c")  # Escape
+                    driver.find_element(By.TAG_NAME, "body").send_keys(
+                        "\ue00c"
+                    )  # Escape
                     time.sleep(0.3)
             except Exception as e:
                 logger.debug(f"[Browser] Error with image {i}: {e}")
@@ -182,7 +186,9 @@ def _extract_from_google_maps(url: str, openai_client: OpenAI) -> list[dict]:
         # Try to find and click on relevant results (menu pages, restaurant sites)
         # Prioritize results that match the location
         try:
-            results = driver.find_elements(By.CSS_SELECTOR, "article[data-testid='result']")
+            results = driver.find_elements(
+                By.CSS_SELECTOR, "article[data-testid='result']"
+            )
             logger.info(f"[Browser] Found {len(results)} search results")
 
             # Keywords to identify location matches
@@ -193,7 +199,9 @@ def _extract_from_google_maps(url: str, openai_client: OpenAI) -> list[dict]:
             scored_results = []
             for result in results:
                 try:
-                    link = result.find_element(By.CSS_SELECTOR, "a[data-testid='result-title-a']")
+                    link = result.find_element(
+                        By.CSS_SELECTOR, "a[data-testid='result-title-a']"
+                    )
                     href = link.get_attribute("href").lower()
                     text = result.text.lower()
 
@@ -221,7 +229,9 @@ def _extract_from_google_maps(url: str, openai_client: OpenAI) -> list[dict]:
 
             # Sort by score descending
             scored_results.sort(key=lambda x: x[0], reverse=True)
-            logger.info(f"[Browser] Scored results: {[(s[0], s[3][:50]) for s in scored_results[:5]]}")
+            logger.info(
+                f"[Browser] Scored results: {[(s[0], s[3][:50]) for s in scored_results[:5]]}"
+            )
 
             visited = 0
             for score, result, link, href in scored_results:
@@ -262,7 +272,9 @@ def _extract_from_google_maps(url: str, openai_client: OpenAI) -> list[dict]:
 
     # Convert screenshots to data URIs
     image_data_list = [f"data:image/png;base64,{s}" for s in screenshots]
-    logger.info(f"[Browser] Captured {len(screenshots)} screenshots, analyzing with GPT-4o...")
+    logger.info(
+        f"[Browser] Captured {len(screenshots)} screenshots, analyzing with GPT-4o..."
+    )
 
     # Use vision to extract menu items
     items_data = _extract_with_vision(openai_client, image_data_list, "")
@@ -282,7 +294,9 @@ def _fetch_page(url: str) -> tuple[str, str]:
 
     response = httpx.get(url, headers=headers, follow_redirects=True, timeout=30.0)
     response.raise_for_status()
-    logger.info(f"[Fetch] Response status: {response.status_code}, size: {len(response.text)} chars")
+    logger.info(
+        f"[Fetch] Response status: {response.status_code}, size: {len(response.text)} chars"
+    )
 
     html = response.text
     soup = BeautifulSoup(html, "html.parser")
@@ -324,6 +338,7 @@ def _extract_image_urls(html: str, base_url: str) -> list[str]:
             src = "https:" + src
         elif src.startswith("/"):
             from urllib.parse import urljoin
+
             src = urljoin(base_url, src)
         elif not src.startswith("http"):
             continue
@@ -394,9 +409,13 @@ def _parse_price(price_str: str | None) -> float:
         return 0.0
 
 
-def _extract_with_vision(client: OpenAI, image_data_list: list[str], text_content: str) -> list[dict]:
+def _extract_with_vision(
+    client: OpenAI, image_data_list: list[str], text_content: str
+) -> list[dict]:
     """Use GPT-4o vision to extract menu items from images."""
-    logger.info(f"[Vision] Starting GPT-4o vision analysis with {len(image_data_list)} images")
+    logger.info(
+        f"[Vision] Starting GPT-4o vision analysis with {len(image_data_list)} images"
+    )
 
     # Build content array with images
     content = []
@@ -404,22 +423,21 @@ def _extract_with_vision(client: OpenAI, image_data_list: list[str], text_conten
     # Add images first
     for img_data in image_data_list:
         if img_data.startswith("data:"):
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": img_data, "detail": "high"}
-            })
+            content.append(
+                {"type": "image_url", "image_url": {"url": img_data, "detail": "high"}}
+            )
         else:
             # Direct URL
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": img_data, "detail": "high"}
-            })
+            content.append(
+                {"type": "image_url", "image_url": {"url": img_data, "detail": "high"}}
+            )
 
     # Add text context
     text_excerpt = text_content[:5000] if text_content else ""
-    content.append({
-        "type": "text",
-        "text": f"""Analyze these images from a business page. Extract ALL menu items, products, or services with their prices.
+    content.append(
+        {
+            "type": "text",
+            "text": f"""Analyze these images from a business page. Extract ALL menu items, products, or services with their prices.
 
 Additional page text for context:
 {text_excerpt}
@@ -435,18 +453,14 @@ Rules:
 - If you see a menu board, menu card, or price list in the image, extract ALL items from it
 - Include items even if description is not available (set to null)
 - Return ONLY valid JSON array, no markdown or explanation
-- If no items found, return []"""
-    })
+- If no items found, return []""",
+        }
+    )
 
     logger.info("[Vision] Calling GPT-4o API...")
     response = client.chat.completions.create(
         model="gpt-4o",
-        messages=[
-            {
-                "role": "user",
-                "content": content
-            }
-        ],
+        messages=[{"role": "user", "content": content}],
         temperature=0.1,
         max_tokens=4000,
     )
@@ -468,7 +482,9 @@ Rules:
 
 def _extract_from_text(client: OpenAI, text_content: str) -> list[dict]:
     """Extract menu items from text content only."""
-    logger.info(f"[Text] Starting text extraction, input length: {len(text_content)} chars")
+    logger.info(
+        f"[Text] Starting text extraction, input length: {len(text_content)} chars"
+    )
 
     max_chars = 15000
     if len(text_content) > max_chars:
@@ -491,12 +507,9 @@ Return a JSON array of objects:
 Rules:
 - Only include items with both name AND price
 - Return ONLY valid JSON, no markdown
-- If no items found, return []"""
+- If no items found, return []""",
             },
-            {
-                "role": "user",
-                "content": f"Extract menu items:\n\n{text_content}"
-            }
+            {"role": "user", "content": f"Extract menu items:\n\n{text_content}"},
         ],
         temperature=0.1,
         max_tokens=4000,
@@ -572,11 +585,13 @@ def extract_menu_items(url: str) -> list[MenuItem]:
             name = item.get("name", "").strip()
             if name and name.lower() not in seen_names:
                 seen_names.add(name.lower())
-                items.append(MenuItem(
-                    name=name,
-                    price=_parse_price(item.get("price")),
-                    description=item.get("description"),
-                ))
+                items.append(
+                    MenuItem(
+                        name=name,
+                        price=_parse_price(item.get("price")),
+                        description=item.get("description"),
+                    )
+                )
 
     logger.info(f"[Extract] Extraction complete. Found {len(items)} unique items")
     return items
@@ -588,7 +603,9 @@ def extract_menu_from_images(image_urls: list[str]) -> list[MenuItem]:
 
     Useful when the user provides direct links to menu images.
     """
-    logger.info(f"[ExtractImages] Starting extraction from {len(image_urls)} image URLs")
+    logger.info(
+        f"[ExtractImages] Starting extraction from {len(image_urls)} image URLs"
+    )
 
     if not settings.openai_api_key:
         raise ValueError("OpenAI API key not configured")
@@ -610,11 +627,13 @@ def extract_menu_from_images(image_urls: list[str]) -> list[MenuItem]:
             name = item.get("name", "").strip()
             if name and name.lower() not in seen_names:
                 seen_names.add(name.lower())
-                items.append(MenuItem(
-                    name=name,
-                    price=_parse_price(item.get("price")),
-                    description=item.get("description"),
-                ))
+                items.append(
+                    MenuItem(
+                        name=name,
+                        price=_parse_price(item.get("price")),
+                        description=item.get("description"),
+                    )
+                )
 
     logger.info(f"[ExtractImages] Extraction complete. Found {len(items)} unique items")
     return items

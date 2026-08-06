@@ -9,7 +9,9 @@ router = APIRouter(prefix="/support", tags=["support"])
 
 
 @router.post("/tickets")
-def create_ticket_endpoint(data: CreateSupportTicket, current_user: dict = Depends(get_current_user)):
+def create_ticket_endpoint(
+    data: CreateSupportTicket, current_user: dict = Depends(get_current_user)
+):
     email = current_user.get("email")
     if not email:
         raise HTTPException(status_code=400, detail="Tu cuenta no tiene email asociado")

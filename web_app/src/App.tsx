@@ -3,7 +3,11 @@ import { Provider } from 'react-redux'
 import { RouterProvider } from 'react-router-dom'
 import { store } from './store'
 import { router } from './routes'
-import api, { setAuthErrorHandler, setConnectionErrorHandler, setPlanRequiredHandler } from './services/api'
+import api, {
+  setAuthErrorHandler,
+  setConnectionErrorHandler,
+  setPlanRequiredHandler,
+} from './services/api'
 import { logout, setTenant } from './store/slices/authSlice'
 import { ToastContainer, toast } from './components/Toast'
 
@@ -20,7 +24,9 @@ function App() {
       const now = Date.now()
       if (now - lastConnectionToastAt < 4000) return
       lastConnectionToastAt = now
-      toast.error('No se pudo conectar con el servidor. Reintentá en unos segundos.')
+      toast.error(
+        'No se pudo conectar con el servidor. Reintentá en unos segundos.'
+      )
     })
     // The API refused a request until the account has a plan: send them to the
     // plan screen instead of leaving a half-empty panel behind. Re-read the
@@ -33,9 +39,14 @@ function App() {
           if (res.data) store.dispatch(setTenant(res.data))
         })
       }
-      if (!window.location.pathname.startsWith('/planes')) router.navigate('/planes')
+      if (!window.location.pathname.startsWith('/planes'))
+        router.navigate('/planes')
     })
-    return () => { setAuthErrorHandler(null); setConnectionErrorHandler(null); setPlanRequiredHandler(null) }
+    return () => {
+      setAuthErrorHandler(null)
+      setConnectionErrorHandler(null)
+      setPlanRequiredHandler(null)
+    }
   }, [])
 
   return (

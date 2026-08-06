@@ -36,7 +36,7 @@ class Tenant(BaseModel):
     billing_sync_attempts = IntegerField(default=0)
 
     # Brand & appearance (shown on the public price-list page)
-    logo_url = TextField(null=True)        # data URL or hosted URL
+    logo_url = TextField(null=True)  # data URL or hosted URL
     brand_color = CharField(max_length=9, null=True)  # hex, e.g. #7C3AED
     description = TextField(null=True)
     # Visual template for the public price list: store | classic | nordic | fine | modern | photo | cards | catalog
@@ -56,7 +56,7 @@ class Tenant(BaseModel):
 
     # Tax / legal data
     legal_name = CharField(max_length=255, null=True)
-    tax_id = CharField(max_length=32, null=True)   # RUT / CUIT / etc.
+    tax_id = CharField(max_length=32, null=True)  # RUT / CUIT / etc.
     address = TextField(null=True)
 
     class Meta:

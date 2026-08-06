@@ -1,4 +1,11 @@
-from peewee import CharField, TextField, DecimalField, IntegerField, BooleanField, ForeignKeyField
+from peewee import (
+    CharField,
+    TextField,
+    DecimalField,
+    IntegerField,
+    BooleanField,
+    ForeignKeyField,
+)
 from models.base import BaseModel
 from models.tenant import Tenant
 

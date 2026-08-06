@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import authReducer, {
-  setUser,
-  setTenant,
-  clearAuthError,
-} from './authSlice'
+import authReducer, { setUser, setTenant, clearAuthError } from './authSlice'
 import type { User, Tenant } from '../../types'
 
 describe('authSlice', () => {

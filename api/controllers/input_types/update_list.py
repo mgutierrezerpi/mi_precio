@@ -9,6 +9,8 @@ class UpdateList(BaseModel):
     published: bool | None = None
     show_on_index: bool | None = None
     kind: str | None = None
+    # Assigning a parent turns an existing list into a nested special list.
+    parent_list_id: str | None = None
     # Per-list appearance. Null clears the override and falls back to the tenant.
     design: str | None = None
     hero_color: str | None = None

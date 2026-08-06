@@ -24,7 +24,12 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 
 /** Draws a crisp QR onto a canvas at the given pixel size. Returns a promise that
  *  resolves once an optional center logo has finished loading and been painted. */
-export async function drawQrToCanvas(canvas: HTMLCanvasElement, value: string, size: number, opts: QrRenderOptions = {}): Promise<void> {
+export async function drawQrToCanvas(
+  canvas: HTMLCanvasElement,
+  value: string,
+  size: number,
+  opts: QrRenderOptions = {}
+): Promise<void> {
   const fg = opts.fg ?? DEFAULTS.fg
   const bg = opts.bg ?? DEFAULTS.bg
   const margin = opts.margin ?? DEFAULTS.margin
@@ -52,7 +57,8 @@ export async function drawQrToCanvas(canvas: HTMLCanvasElement, value: string, s
   ctx.fillStyle = fg
   for (let y = 0; y < count; y++) {
     for (let x = 0; x < count; x++) {
-      if (modules[y][x]) ctx.fillRect((x + margin) * scale, (y + margin) * scale, scale, scale)
+      if (modules[y][x])
+        ctx.fillRect((x + margin) * scale, (y + margin) * scale, scale, scale)
     }
   }
 
@@ -102,14 +108,23 @@ function triggerDownload(href: string, filename: string): void {
 }
 
 /** Renders the QR offscreen and downloads it as a PNG. */
-export async function downloadQrPng(value: string, filename: string, opts: QrRenderOptions = {}, size = 1024): Promise<void> {
+export async function downloadQrPng(
+  value: string,
+  filename: string,
+  opts: QrRenderOptions = {},
+  size = 1024
+): Promise<void> {
   const canvas = document.createElement('canvas')
   await drawQrToCanvas(canvas, value, size, opts)
   triggerDownload(canvas.toDataURL('image/png'), filename)
 }
 
 /** Downloads the QR as a vector SVG (logo not embedded). */
-export function downloadQrSvg(value: string, filename: string, opts: QrRenderOptions = {}): void {
+export function downloadQrSvg(
+  value: string,
+  filename: string,
+  opts: QrRenderOptions = {}
+): void {
   const svg = qrToSvg(value, opts)
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
   triggerDownload(url, filename)

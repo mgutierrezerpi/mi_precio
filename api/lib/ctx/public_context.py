@@ -13,16 +13,23 @@ def get_published_lists(tenant: Tenant) -> list[PublishedList]:
     """
     product_details = _product_details(tenant.id)
     result = []
+    # Variants are intentionally excluded from the tenant-wide public catalog.
+    # They are shared through their own access flow, not discoverable beside the
+    # default price list.
     for price_list in PriceList.select().where(
-        (PriceList.tenant == tenant.id) & PriceList.published
-    ):
+        (PriceList.tenant == tenant.id)
+        & PriceList.published
+        & PriceList.parent_list.is_null(True)
+    ): 
         version = ListVersion.get_or_none(
             (ListVersion.list == price_list.id) & ListVersion.published
         )
         if version:
             items = list(version.items.order_by(Item.position))
             for item in items:
-                fallback = product_details.get(str(item.product_id)) or product_details.get(_norm_name(item.name))
+                fallback = product_details.get(
+                    str(item.product_id)
+                ) or product_details.get(_norm_name(item.name))
                 if fallback:
                     # Products are the source of truth for catalog-linked details.
                     item.description = fallback["description"]

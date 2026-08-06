@@ -1,6 +1,16 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import {
+  createSlice,
+  createAsyncThunk,
+  type ActionReducerMapBuilder,
+} from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
-import type { PriceList, Item, ListVersion, LoadingState } from '../../types'
+import type {
+  PriceList,
+  PriceListVariantType,
+  Item,
+  ListVersion,
+  LoadingState,
+} from '../../types'
 import api from '../../services/api'
 
 interface MenuState extends LoadingState {
@@ -40,8 +50,27 @@ export const fetchList = createAsyncThunk(
 
 export const createList = createAsyncThunk(
   'menu/createList',
-  async ({ tenantId, name, kind }: { tenantId: string; name: string; kind?: 'product' | 'service' }, { rejectWithValue }) => {
-    const response = await api.createList(tenantId, name, kind)
+  async (
+    {
+      tenantId,
+      name,
+      kind,
+      variant,
+    }: {
+      tenantId: string
+      name: string
+      kind?: 'product' | 'service'
+      variant?: {
+        parentListId: string
+        variantType: PriceListVariantType
+        customerId?: string
+        startsAt?: string
+        endsAt?: string
+      }
+    },
+    { rejectWithValue }
+  ) => {
+    const response = await api.createList(tenantId, name, kind, variant)
     if (response.error) return rejectWithValue(response.error)
     return response.data
   }
@@ -49,7 +78,13 @@ export const createList = createAsyncThunk(
 
 export const updateList = createAsyncThunk(
   'menu/updateList',
-  async ({ listId, data }: { listId: string; data: Parameters<typeof api.updateList>[1] }, { rejectWithValue }) => {
+  async (
+    {
+      listId,
+      data,
+    }: { listId: string; data: Parameters<typeof api.updateList>[1] },
+    { rejectWithValue }
+  ) => {
     const response = await api.updateList(listId, data)
     if (response.error) return rejectWithValue(response.error)
     return response.data
@@ -86,7 +121,13 @@ export const fetchVersion = createAsyncThunk(
 
 export const updateVersion = createAsyncThunk(
   'menu/updateVersion',
-  async ({ versionId, data }: { versionId: string; data: { name?: string; published?: boolean } }, { rejectWithValue }) => {
+  async (
+    {
+      versionId,
+      data,
+    }: { versionId: string; data: { name?: string; published?: boolean } },
+    { rejectWithValue }
+  ) => {
     const response = await api.updateVersion(versionId, data)
     if (response.error) return rejectWithValue(response.error)
     return response.data
@@ -105,7 +146,24 @@ export const fetchItems = createAsyncThunk(
 
 export const createItem = createAsyncThunk(
   'menu/createItem',
-  async ({ versionId, data }: { versionId: string; data: { name: string; price: number; description?: string; category?: string; imageUrl?: string; imageThumbUrl?: string; productId?: string } }, { rejectWithValue }) => {
+  async (
+    {
+      versionId,
+      data,
+    }: {
+      versionId: string
+      data: {
+        name: string
+        price: number
+        description?: string
+        category?: string
+        imageUrl?: string
+        imageThumbUrl?: string
+        productId?: string
+      }
+    },
+    { rejectWithValue }
+  ) => {
     const response = await api.createItem(versionId, data)
     if (response.error) return rejectWithValue(response.error)
     return response.data
@@ -114,7 +172,21 @@ export const createItem = createAsyncThunk(
 
 export const updateItem = createAsyncThunk(
   'menu/updateItem',
-  async ({ itemId, data }: { itemId: string; data: { name?: string; price?: number; description?: string; category?: string } }, { rejectWithValue }) => {
+  async (
+    {
+      itemId,
+      data,
+    }: {
+      itemId: string
+      data: {
+        name?: string
+        price?: number
+        description?: string
+        category?: string
+      }
+    },
+    { rejectWithValue }
+  ) => {
     const response = await api.updateItem(itemId, data)
     if (response.error) return rejectWithValue(response.error)
     return response.data
@@ -144,105 +216,106 @@ const menuSlice = createSlice({
       state.error = null
     },
   },
-  extraReducers: (builder) => {
-    builder
-      // fetchLists
-      .addCase(fetchLists.pending, (state) => {
-        state.isLoading = true
-        state.error = null
-      })
-      .addCase(fetchLists.fulfilled, (state, action) => {
-        state.isLoading = false
-        state.lists = action.payload ?? []
-      })
-      .addCase(fetchLists.rejected, (state, action) => {
-        state.isLoading = false
-        state.error = (action.payload as string) || 'Error al cargar listas'
-      })
-      // fetchList
-      .addCase(fetchList.fulfilled, (state, action) => {
-        state.currentList = action.payload ?? null
-      })
-      // createList
-      .addCase(createList.fulfilled, (state, action) => {
-        if (action.payload) state.lists.push(action.payload)
-      })
-      // updateList
-      .addCase(updateList.fulfilled, (state, action) => {
-        if (!action.payload) return
-        const index = state.lists.findIndex(l => l.id === action.payload!.id)
-        if (index !== -1) state.lists[index] = action.payload
-        if (state.currentList?.id === action.payload.id) {
-          state.currentList = action.payload
-        }
-      })
-      // deleteList
-      .addCase(deleteList.fulfilled, (state, action) => {
-        state.lists = state.lists.filter(l => l.id !== action.payload)
-        if (state.currentList?.id === action.payload) {
-          state.currentList = null
-        }
-      })
-      // fetchVersions
-      .addCase(fetchVersions.fulfilled, (state, action) => {
-        const versions = action.payload ?? []
-        if (versions.length > 0) {
-          state.currentVersion = versions[0]
-          if (versions[0].items) {
-            state.items = versions[0].items
-          }
-        }
-      })
-      // fetchVersion
-      .addCase(fetchVersion.fulfilled, (state, action) => {
-        state.currentVersion = action.payload ?? null
-        if (action.payload?.items) {
-          state.items = action.payload.items
-        }
-      })
-      // updateVersion
-      .addCase(updateVersion.fulfilled, (state, action) => {
-        if (action.payload && state.currentVersion?.id === action.payload.id) {
-          state.currentVersion = action.payload
-        }
-      })
-      // fetchItems
-      .addCase(fetchItems.pending, (state) => {
-        state.isLoading = true
-        state.error = null
-      })
-      .addCase(fetchItems.fulfilled, (state, action) => {
-        state.isLoading = false
-        state.items = action.payload ?? []
-      })
-      .addCase(fetchItems.rejected, (state, action) => {
-        state.isLoading = false
-        state.error = (action.payload as string) || 'Error al cargar ítems'
-      })
-      // createItem
-      .addCase(createItem.fulfilled, (state, action) => {
-        if (action.payload) state.items.push(action.payload)
-      })
-      // updateItem
-      .addCase(updateItem.fulfilled, (state, action) => {
-        if (!action.payload) return
-        const index = state.items.findIndex(i => i.id === action.payload!.id)
-        if (index !== -1) state.items[index] = action.payload
-      })
-      // deleteItem
-      .addCase(deleteItem.fulfilled, (state, action) => {
-        state.items = state.items.filter(i => i.id !== action.payload)
-      })
-  },
+  extraReducers: (builder) => addMenuCases(builder),
 })
 
-export const { setCurrentList, setCurrentVersion, clearError } = menuSlice.actions
+function addMenuCases(builder: ActionReducerMapBuilder<MenuState>) {
+  addListCases(builder)
+  addVersionCases(builder)
+  addItemCases(builder)
+}
+
+function addListCases(builder: ActionReducerMapBuilder<MenuState>) {
+  builder.addCase(fetchLists.pending, (state) => {
+    state.isLoading = true
+    state.error = null
+  })
+  builder.addCase(fetchLists.fulfilled, (state, action) => {
+    state.isLoading = false
+    state.lists = action.payload ?? []
+  })
+  builder.addCase(fetchLists.rejected, (state, action) => {
+    state.isLoading = false
+    state.error = (action.payload as string) || 'Error al cargar listas'
+  })
+  builder.addCase(fetchList.fulfilled, (state, action) => {
+    state.currentList = action.payload ?? null
+  })
+  builder.addCase(createList.fulfilled, (state, action) => {
+    if (action.payload) state.lists.push(action.payload)
+  })
+  builder.addCase(updateList.fulfilled, (state, action) => {
+    if (!action.payload) return
+    const index = state.lists.findIndex(
+      (list) => list.id === action.payload!.id
+    )
+    if (index !== -1) state.lists[index] = action.payload
+    if (state.currentList?.id === action.payload.id)
+      state.currentList = action.payload
+  })
+  builder.addCase(deleteList.fulfilled, (state, action) => {
+    state.lists = state.lists.filter((list) => list.id !== action.payload)
+    if (state.currentList?.id === action.payload) state.currentList = null
+  })
+}
+
+function addVersionCases(builder: ActionReducerMapBuilder<MenuState>) {
+  builder.addCase(fetchVersions.fulfilled, (state, action) => {
+    const versions = action.payload ?? []
+    if (versions.length > 0) {
+      state.currentVersion = versions[0]
+      if (versions[0].items) state.items = versions[0].items
+    }
+  })
+  builder.addCase(fetchVersion.fulfilled, (state, action) => {
+    state.currentVersion = action.payload ?? null
+    if (action.payload?.items) state.items = action.payload.items
+  })
+  builder.addCase(updateVersion.fulfilled, (state, action) => {
+    if (action.payload && state.currentVersion?.id === action.payload.id)
+      state.currentVersion = action.payload
+  })
+}
+
+function addItemCases(builder: ActionReducerMapBuilder<MenuState>) {
+  builder.addCase(fetchItems.pending, (state) => {
+    state.isLoading = true
+    state.error = null
+  })
+  builder.addCase(fetchItems.fulfilled, (state, action) => {
+    state.isLoading = false
+    state.items = action.payload ?? []
+  })
+  builder.addCase(fetchItems.rejected, (state, action) => {
+    state.isLoading = false
+    state.error = (action.payload as string) || 'Error al cargar ítems'
+  })
+  builder.addCase(createItem.fulfilled, (state, action) => {
+    if (action.payload) state.items.push(action.payload)
+  })
+  builder.addCase(updateItem.fulfilled, (state, action) => {
+    if (!action.payload) return
+    const index = state.items.findIndex(
+      (item) => item.id === action.payload!.id
+    )
+    if (index !== -1) state.items[index] = action.payload
+  })
+  builder.addCase(deleteItem.fulfilled, (state, action) => {
+    state.items = state.items.filter((item) => item.id !== action.payload)
+  })
+}
+
+export const { setCurrentList, setCurrentVersion, clearError } =
+  menuSlice.actions
 export default menuSlice.reducer
 
 // Selectors
 export const selectLists = (state: { menu: MenuState }) => state.menu.lists
-export const selectCurrentList = (state: { menu: MenuState }) => state.menu.currentList
-export const selectCurrentVersion = (state: { menu: MenuState }) => state.menu.currentVersion
+export const selectCurrentList = (state: { menu: MenuState }) =>
+  state.menu.currentList
+export const selectCurrentVersion = (state: { menu: MenuState }) =>
+  state.menu.currentVersion
 export const selectItems = (state: { menu: MenuState }) => state.menu.items
-export const selectIsLoading = (state: { menu: MenuState }) => state.menu.isLoading
+export const selectIsLoading = (state: { menu: MenuState }) =>
+  state.menu.isLoading
 export const selectError = (state: { menu: MenuState }) => state.menu.error

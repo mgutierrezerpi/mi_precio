@@ -9,7 +9,9 @@ router = APIRouter(tags=["notifications"])
 
 
 @router.get("/tenants/{tenant_id}/notifications")
-def list_notifications_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
+def list_notifications_endpoint(
+    tenant_id: str, current_user: dict = Depends(get_current_user)
+):
     # This endpoint is polled from the topbar bell on every admin screen, so use it
     # as a presence heartbeat to keep the member's "last seen" fresh.
     identity.touch_last_seen(current_user.get("sub"))
@@ -22,18 +24,27 @@ def list_notifications_endpoint(tenant_id: str, current_user: dict = Depends(get
 
 
 @router.patch("/tenants/{tenant_id}/notifications/prefs")
-def update_notif_prefs_endpoint(tenant_id: str, data: UpdateNotifPrefs, current_user: dict = Depends(get_current_user)):
-    prefs = notifications.update_prefs(current_user.get("sub"), data.model_dump(exclude_unset=True))
+def update_notif_prefs_endpoint(
+    tenant_id: str,
+    data: UpdateNotifPrefs,
+    current_user: dict = Depends(get_current_user),
+):
+    prefs = notifications.update_prefs(
+        current_user.get("sub"), data.model_dump(exclude_unset=True)
+    )
     return {"prefs": prefs}
 
 
 @router.post("/tenants/{tenant_id}/notifications/seen")
-def mark_notifications_seen_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
+def mark_notifications_seen_endpoint(
+    tenant_id: str, current_user: dict = Depends(get_current_user)
+):
     notifications.mark_seen(current_user.get("sub"))
     return {"ok": True}
 
 
 # --- Web Push (PWA desktop/mobile notifications) ---
+
 
 @router.get("/push/public-key")
 def push_public_key_endpoint(current_user: dict = Depends(get_current_user)):
@@ -43,15 +54,23 @@ def push_public_key_endpoint(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/tenants/{tenant_id}/push/subscribe")
-def push_subscribe_endpoint(tenant_id: str, data: PushSubscribe, current_user: dict = Depends(get_current_user)):
+def push_subscribe_endpoint(
+    tenant_id: str, data: PushSubscribe, current_user: dict = Depends(get_current_user)
+):
     # Bind the subscription to the caller's own identity from the token, never to
     # values taken from the path/body.
-    sub = push.subscribe(current_user.get("tenant_id"), current_user.get("sub"), data.model_dump())
+    sub = push.subscribe(
+        current_user.get("tenant_id"), current_user.get("sub"), data.model_dump()
+    )
     return {"ok": sub is not None}
 
 
 @router.post("/tenants/{tenant_id}/push/unsubscribe")
-def push_unsubscribe_endpoint(tenant_id: str, data: PushUnsubscribe, current_user: dict = Depends(get_current_user)):
+def push_unsubscribe_endpoint(
+    tenant_id: str,
+    data: PushUnsubscribe,
+    current_user: dict = Depends(get_current_user),
+):
     # Only let a user remove their own device subscriptions.
     push.unsubscribe(data.endpoint, current_user.get("sub"))
     return {"ok": True}

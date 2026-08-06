@@ -9,7 +9,9 @@ def test_create_item(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
 
-    item = items.create_item(created.version.id, name="Pizza", price=150.0, description="Delicious")
+    item = items.create_item(
+        created.version.id, name="Pizza", price=150.0, description="Delicious"
+    )
 
     assert item is not None
     assert item.name == "Pizza"
@@ -24,7 +26,9 @@ def test_create_item_with_product_id_links_and_view_exposes_it(db):
     created = lists.create_list(tenant.id, "Menu")
     product = products.create_product(tenant.id, name="Pizza", price=150)
 
-    item = items.create_item(created.version.id, name="Pizza", price=150, product_id=product.id)
+    item = items.create_item(
+        created.version.id, name="Pizza", price=150, product_id=product.id
+    )
 
     assert item.product_id == product.id
     # The view exposes the link so the list editor can match membership by id.
