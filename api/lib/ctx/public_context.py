@@ -1,65 +1,20 @@
 """Public context - public-facing operations."""
 
-from math import asin, cos, radians, sin, sqrt
-
 from models import PriceList, ListVersion, Item, Product, Tenant
-from lib.ctx import plans_context as plans
 from lib.ctx.identity_context import find_tenant_by_subdomain
 from lib.value_objects import PublishedList
 
 
-def live_list_ids(tenant: Tenant) -> list[str]:
-    """Ids of the published lists the tenant's plan actually allows on air.
-
-    Publishing is the owner's intent; the plan decides how much of that intent is
-    served. When a plan no longer covers everything that is published we keep the
-    oldest lists — the main catalogue is almost always the first one created, and
-    silently dropping it would be worse than dropping a recent addition.
-
-    Nothing is unpublished to make this true: paying again restores the whole
-    storefront on its own, with no republishing to do.
-    """
-    published = list(
-        PriceList.select(PriceList.id)
-        .where((PriceList.tenant == tenant.id) & PriceList.published)
-        .order_by(PriceList.created_at, PriceList.id)
-    )
-    allowance = plans.live_list_allowance(tenant)
-    if allowance is not None:
-        published = published[:allowance]
-    return [price_list.id for price_list in published]
-
-
-def get_published_lists(
-    tenant: Tenant, requested_list: str | None = None
-) -> list[PublishedList]:
-    """Get plan-allowed published lists with their versions and items.
+def get_published_lists(tenant: Tenant) -> list[PublishedList]:
+    """Get published lists with their published versions and items.
 
     Catalog-linked items inherit the current product description and image. A
     name-based fallback keeps older items working when they predate product IDs.
-    The tenant-wide index is capped by the plan; an explicitly shared list URL
-    remains reachable so existing QR codes and shared variants keep working.
     """
-    allowed = live_list_ids(tenant)
-    if not allowed:
-        return []
-
     product_details = _product_details(tenant.id)
-    conditions = [(PriceList.tenant == tenant.id), PriceList.published]
-    if requested_list:
-        # A directly shared variant remains reachable by its own URL. The plan
-        # allowance applies to the tenant-wide index, not to an explicit link.
-        conditions.append(
-            (PriceList.id == requested_list) | (PriceList.slug == requested_list)
-        )
-    else:
-        conditions.extend(
-            [PriceList.id << allowed, PriceList.parent_list.is_null(True)]
-        )
-
     result = []
-    for price_list in PriceList.select().where(*conditions).order_by(
-        PriceList.created_at, PriceList.id
+    for price_list in PriceList.select().where(
+        (PriceList.tenant == tenant.id) & PriceList.published
     ):
         version = ListVersion.get_or_none(
             (ListVersion.list == price_list.id) & ListVersion.published
@@ -67,9 +22,7 @@ def get_published_lists(
         if version:
             items = list(version.items.order_by(Item.position))
             for item in items:
-                fallback = product_details.get(
-                    str(item.product_id)
-                ) or product_details.get(_norm_name(item.name))
+                fallback = product_details.get(str(item.product_id)) or product_details.get(_norm_name(item.name))
                 if fallback:
                     # Products are the source of truth for catalog-linked details.
                     item.description = fallback["description"]
@@ -103,50 +56,6 @@ def _product_details(tenant_id: str) -> dict[str, dict[str, str | None]]:
 
 def _norm_name(name: str) -> str:
     return (name or "").strip().lower()
-
-
-def nearby_marketplace_tenants(
-    latitude: float | None = None,
-    longitude: float | None = None,
-    limit: int = 50,
-    category: str | None = None,
-):
-    """Return opted-in businesses, sorting by proximity when coordinates exist.
-
-    The data set is intentionally kept small and the distance calculation is
-    done here, avoiding database-specific geo extensions. Without visitor
-    coordinates, all opted-in businesses are returned without a distance.
-    """
-    candidates = Tenant.select().where(Tenant.marketplace_enabled)
-    if category:
-        candidates = candidates.where(Tenant.business_category == category)
-    results = []
-    for tenant in candidates:
-        if latitude is None or longitude is None:
-            distance = None
-        else:
-            try:
-                distance = round(
-                    _distance_km(
-                        latitude,
-                        longitude,
-                        float(tenant.marketplace_latitude),
-                        float(tenant.marketplace_longitude),
-                    ),
-                    1,
-                )
-            except (TypeError, ValueError):
-                distance = None
-        results.append((tenant, distance))
-    return sorted(results, key=lambda result: (result[1] is None, result[1] or 0))[:limit]
-
-
-def _distance_km(lat_a: float, lon_a: float, lat_b: float, lon_b: float) -> float:
-    """Great-circle distance in kilometres (Haversine formula)."""
-    d_lat = radians(lat_b - lat_a)
-    d_lon = radians(lon_b - lon_a)
-    a = sin(d_lat / 2) ** 2 + cos(radians(lat_a)) * cos(radians(lat_b)) * sin(d_lon / 2) ** 2
-    return 6371 * 2 * asin(sqrt(a))
 
 
 def get_tenant_by_subdomain(subdomain: str) -> Tenant | None:

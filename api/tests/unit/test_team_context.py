@@ -28,9 +28,7 @@ def tenant(db):
 
 @pytest.fixture
 def owner(tenant):
-    return User.create(
-        email="owner@shop.com", tenant=tenant, name="Owner", role="owner"
-    )
+    return User.create(email="owner@shop.com", tenant=tenant, name="Owner", role="owner")
 
 
 def test_invite_creates_pending_invitation(tenant, owner):
@@ -95,12 +93,8 @@ def test_update_role_and_remove_member(tenant, owner):
 
 
 def test_update_member_details(tenant, owner):
-    member = User.create(
-        email="m@shop.com", tenant=tenant, name="Member", role="editor"
-    )
-    updated = team.update_member(
-        tenant.id, member.id, role="admin", name="Nuevo nombre", email="New@Shop.com"
-    )
+    member = User.create(email="m@shop.com", tenant=tenant, name="Member", role="editor")
+    updated = team.update_member(tenant.id, member.id, role="admin", name="Nuevo nombre", email="New@Shop.com")
     assert updated.role == "admin"
     assert updated.name == "Nuevo nombre"
     assert updated.email == "new@shop.com"
@@ -113,13 +107,14 @@ def test_update_member_rejects_duplicate_email(tenant, owner):
 
 
 def test_update_member_allows_owner_details_but_not_role(tenant, owner):
-    updated = team.update_member(
-        tenant.id, owner.id, name="Nuevo dueño", email="new-owner@shop.com"
-    )
+    updated = team.update_member(tenant.id, owner.id, name="Nuevo dueño", email="new-owner@shop.com")
     assert updated.name == "Nuevo dueño"
     assert updated.email == "new-owner@shop.com"
     with pytest.raises(TeamError):
         team.update_member(tenant.id, owner.id, role="admin")
+
+
+
 
 
 def test_member_stats(tenant, owner):

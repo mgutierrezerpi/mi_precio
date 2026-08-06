@@ -22,6 +22,13 @@ export function setAuthErrorHandler(callback: AuthErrorCallback | null) {
   onAuthError = callback
 }
 
+type ConnectionErrorCallback = () => void
+let onConnectionError: ConnectionErrorCallback | null = null
+
+export function setConnectionErrorHandler(callback: ConnectionErrorCallback | null) {
+  onConnectionError = callback
+}
+
 /** Fired when the API refuses a request because the tenant still owes us a plan
  *  (HTTP 402 + `plan_required`). Safety net for sessions that slipped past the
  *  route guard — e.g. a tab left open when the subscription expired. */
@@ -83,7 +90,8 @@ class ApiService {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    allowReconnect = true,
   ): Promise<ApiResponse<T>> {
     const headers: HeadersInit = options.body instanceof FormData
       ? { ...options.headers }
@@ -116,6 +124,14 @@ class ApiService {
       const data = await response.json()
       return { data: transformKeys<T>(data) }
     } catch {
+      // GETs are safe to retry when the local API is restarting or briefly
+      // unavailable. Mutating requests are not retried to avoid duplicate work.
+      const method = (options.method ?? 'GET').toUpperCase()
+      if (allowReconnect && (method === 'GET' || method === 'HEAD')) {
+        await new Promise((resolve) => setTimeout(resolve, 800))
+        return this.request(endpoint, options, false)
+      }
+      onConnectionError?.()
       return { error: 'Error de conexión' }
     }
   }
@@ -138,6 +154,14 @@ class ApiService {
   // Tenant endpoints
   async getTenants(): Promise<ApiResponse<Tenant[]>> {
     return this.request('/tenants')
+  }
+
+  async createTenant(name: string, subdomain?: string): Promise<ApiResponse<Tenant>> {
+    return this.request('/tenants', { method: 'POST', body: JSON.stringify({ name, subdomain }) })
+  }
+
+  async switchTenant(tenantId: string): Promise<ApiResponse<AuthToken>> {
+    return this.request(`/tenants/${tenantId}/switch`, { method: 'POST' })
   }
 
   async getTenant(id: string): Promise<ApiResponse<Tenant>> {
@@ -306,8 +330,8 @@ class ApiService {
     return this.request(`/tenants/${tenantId}/stats/visits`)
   }
 
-  async getActivity(tenantId: string): Promise<ApiResponse<Activity[]>> {
-    return this.request(`/tenants/${tenantId}/activity`)
+  async getActivity(tenantId: string, limit = 20, offset = 0): Promise<ApiResponse<Activity[]>> {
+    return this.request(`/tenants/${tenantId}/activity?limit=${limit}&offset=${offset}`)
   }
 
   async getReports(tenantId: string, days = 30): Promise<ApiResponse<ReportData>> {
@@ -375,15 +399,15 @@ class ApiService {
     return this.request('/users/me')
   }
 
-  async updateMember(tenantId: string, userId: string, role: Role): Promise<ApiResponse<TeamMember>> {
+  async updateMember(tenantId: string, userId: string, data: { role?: Role; name?: string; email?: string }): Promise<ApiResponse<TeamMember>> {
     return this.request(`/tenants/${tenantId}/members/${userId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ role }),
+      body: JSON.stringify(data),
     })
   }
 
   async updateMemberRole(tenantId: string, userId: string, role: Role): Promise<ApiResponse<TeamMember>> {
-    return this.updateMember(tenantId, userId, role)
+    return this.updateMember(tenantId, userId, { role })
   }
 
   async removeMember(tenantId: string, userId: string): Promise<ApiResponse<{ deleted: boolean }>> {

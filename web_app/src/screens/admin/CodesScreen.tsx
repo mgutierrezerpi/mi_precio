@@ -7,7 +7,7 @@ import { CrmLayout } from './crm/CrmLayout'
 import { Icon } from './crm/ui'
 import { QrCode } from './crm/QrCode'
 import { gradient } from './crm/theme'
-import { downloadQrPng, downloadQrSvg } from '../../lib/qrRender'
+import { downloadQrPng, downloadQrSvg, QR_COLOR_STORAGE_PREFIX, DEFAULT_QR_COLOR } from '../../lib/qrRender'
 
 const FAVICON = '/miprecio-favicon.png'
 
@@ -28,8 +28,19 @@ export function CodesScreen() {
   const lists = useAppSelector(selectLists)
 
   const [search, setSearch] = useState('')
-  const [color, setColor] = useState(QR_COLORS[0].value)
+  const [color, setColor] = useState(DEFAULT_QR_COLOR)
   const [withLogo, setWithLogo] = useState(true)
+  const colorStorageKey = tenant?.id ? `${QR_COLOR_STORAGE_PREFIX}${tenant.id}` : null
+  const chooseColor = (value: string) => {
+    setColor(value)
+    if (colorStorageKey) localStorage.setItem(colorStorageKey, value)
+  }
+
+  useEffect(() => {
+    if (!colorStorageKey) return
+    const saved = localStorage.getItem(colorStorageKey)
+    if (saved && QR_COLORS.some((c) => c.value === saved)) setColor(saved)
+  }, [colorStorageKey])
   const [copied, setCopied] = useState<string | null>(null)
 
   useEffect(() => {
@@ -46,7 +57,9 @@ export function CodesScreen() {
     return q ? lists.filter((l) => l.name.toLowerCase().includes(q)) : lists
   }, [lists, search])
 
-  const logoUrl = withLogo ? FAVICON : null
+  // Use the business logo in the QR when one is configured. Keep the MiPrecio
+  // mark as a fallback so the center still has a recognizable brand.
+  const logoUrl = withLogo ? (tenant?.logoUrl || FAVICON) : null
   const previewUrl = filtered[0] ? qrUrlOf(filtered[0]) : lists[0] ? qrUrlOf(lists[0]) : `${window.location.origin}/p/${sub}?src=qr`
 
   const copy = (l: PriceList) => { navigator.clipboard?.writeText(urlOf(l)); setCopied(l.id); setTimeout(() => setCopied(null), 1500) }
@@ -63,30 +76,32 @@ export function CodesScreen() {
       searchValue={search}
       onSearchChange={setSearch}
     >
-      <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[900px]">
-        <section className="flex min-h-[60px] items-end justify-between gap-4">
+      <main className="flex min-h-full flex-col gap-6 px-4 py-6 md:px-10 md:py-8 xl:min-w-[900px]">
+        <section className="flex min-h-[56px] items-end justify-between gap-4">
           <div className="flex flex-col gap-1">
             <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Códigos QR</h1>
             <p className="text-[13px] text-[#9694A6]">Compartí tu catálogo con un escaneo.</p>
           </div>
         </section>
-        <div className="flex flex-col gap-4 xl:flex-row">
+        <div className="flex items-start flex-col gap-5 xl:flex-row">
         {/* QR grid */}
         <div className="flex flex-1 flex-col gap-4">
           {filtered.length === 0 ? (
-            <div className="flex min-h-[208px] flex-col items-center justify-center gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-[var(--dash-link)]" style={{ backgroundColor: 'var(--tone-violet-bg)' }}><Icon name="qr-code" size={24} /></span>
+            <div className="flex min-h-[208px] flex-col items-center justify-center gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--dash-link)]" style={{ backgroundColor: 'var(--tone-violet-bg)' }}><Icon name="qr-code" size={24} /></span>
               <p className="text-sm font-semibold text-[var(--dash-text)]">{lists.length === 0 ? 'Creá una lista para generar su QR' : 'Sin resultados'}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((l) => (
-                <div key={l.id} className="flex flex-col gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
-                  <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-2xl bg-white p-2">
-                    <QrCode value={qrUrlOf(l)} size={128} fg={color} logoUrl={logoUrl} className="h-full w-full object-contain" />
+                <div key={l.id} className="flex min-w-0 flex-col gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3">
+                  <div className="flex min-w-0 items-center justify-center text-center">
+                    <span className="block w-full whitespace-normal break-words text-[14px] font-bold leading-snug text-[var(--dash-text)]">{l.name}</span>
                   </div>
-                  <div className="flex flex-col items-center gap-0.5 text-center">
-                    <span className="truncate text-[14px] font-bold text-[var(--dash-text)]">{l.name}</span>
+                  <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-lg bg-white p-1">
+                    <QrCode value={qrUrlOf(l)} size={128} margin={2} fg={color} logoUrl={logoUrl} className="!h-full !w-full rounded-lg object-contain" />
+                  </div>
+                  <div className="flex min-w-0 flex-col items-center gap-0.5 text-center">
                     <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: l.published ? 'var(--tone-green-bg)' : 'var(--tone-amber-bg)', color: l.published ? 'var(--tone-green-fg)' : 'var(--tone-amber-fg)' }}>{l.published ? 'Activa' : 'Borrador'}</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
@@ -101,23 +116,23 @@ export function CodesScreen() {
         </div>
 
         {/* Customization panel */}
-        <div className="flex w-full shrink-0 flex-col gap-4 self-start rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 lg:w-[300px]">
+        <div className="flex w-full shrink-0 flex-col gap-4 self-start rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 xl:-mt-2 xl:sticky xl:top-6 lg:w-[300px]">
           <div className="flex flex-col gap-1">
             <h3 className="text-lg font-extrabold text-[var(--dash-text)]">Personalizá tu QR</h3>
             <p className="text-xs font-medium text-[var(--dash-muted)]">El estilo se aplica a todos tus códigos.</p>
           </div>
-          <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-2xl bg-white p-3">
-            <QrCode value={previewUrl} size={150} fg={color} logoUrl={logoUrl} className="h-full w-full object-contain" />
+          <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-lg bg-white p-1">
+            <QrCode value={previewUrl} size={128} margin={2} fg={color} logoUrl={logoUrl} className="!h-full !w-full rounded-lg object-contain" />
           </div>
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-bold text-[var(--dash-text2)]">Color</span>
             <div className="flex flex-wrap gap-2">
               {QR_COLORS.map((c) => (
-                <button key={c.value} type="button" onClick={() => setColor(c.value)} aria-label={c.name} title={c.name} className={`h-7 w-7 rounded-lg ${color === c.value ? 'ring-2 ring-offset-2 ring-offset-[var(--dash-surface)] ring-[var(--dash-link)]' : ''}`} style={{ backgroundColor: c.value }} />
+                <button key={c.value} type="button" onClick={() => chooseColor(c.value)} aria-label={c.name} title={c.name} className={`h-7 w-7 rounded-lg ${color === c.value ? 'ring-2 ring-offset-2 ring-offset-[var(--dash-surface)] ring-[var(--dash-link)]' : ''}`} style={{ backgroundColor: c.value }} />
               ))}
             </div>
           </div>
-          <div className="flex items-center justify-between rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3.5 py-3">
+          <div className="flex items-center justify-between overflow-hidden rounded-[12px] border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3 py-3">
             <div className="flex flex-col">
               <span className="text-[13px] font-bold text-[var(--dash-text)]">Logo en el centro</span>
               <span className="text-[11px] font-medium text-[var(--dash-muted)]">Mostrá tu marca en el QR.</span>
@@ -127,12 +142,12 @@ export function CodesScreen() {
             </button>
           </div>
           <span className="dash-tooltip block" data-tooltip={lists.length === 0 ? 'Creá una lista para habilitar la descarga del QR.' : ''}>
-            <button type="button" disabled={lists.length === 0} onClick={() => void downloadQrPng(previewUrl, `qr-${sub}.png`, { fg: color, logoUrl })} className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 ${gradient}`}>
+            <button type="button" disabled={lists.length === 0} onClick={() => void downloadQrPng(previewUrl, `qr-${sub}.png`, { fg: color, logoUrl })} className={`flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 ${gradient}`}>
               <Icon name="download" size={16} /> Descargar PNG
             </button>
           </span>
           <span className="dash-tooltip block" data-tooltip={lists.length === 0 ? 'Creá una lista para habilitar la descarga del QR.' : ''}>
-            <button type="button" disabled={lists.length === 0} onClick={() => downloadQrSvg(previewUrl, `qr-${sub}.svg`, { fg: color })} className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] disabled:cursor-not-allowed disabled:opacity-40">
+            <button type="button" disabled={lists.length === 0} onClick={() => downloadQrSvg(previewUrl, `qr-${sub}.svg`, { fg: color })} className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] disabled:cursor-not-allowed disabled:opacity-40">
               <Icon name="download" size={15} /> Descargar SVG
             </button>
           </span>
@@ -145,7 +160,7 @@ export function CodesScreen() {
 
 function CardBtn({ icon, title, onClick }: { icon: Parameters<typeof Icon>[0]['name']; title: string; onClick?: () => void }) {
   return (
-    <button type="button" title={title} onClick={onClick} className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
+    <button type="button" title={title} onClick={onClick} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
       <Icon name={icon} size={16} />
     </button>
   )

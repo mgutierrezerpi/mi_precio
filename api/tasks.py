@@ -74,14 +74,15 @@ def check_pending_billing(tenant_id: str) -> dict[str, object]:
 
 @huey.task(retries=2, retry_delay=30)
 def send_invitation_email(email: str, role: str, tenant_name: str) -> bool:
-    """Send the passwordless team invitation email."""
+    """Send the invitation with a one-time login link."""
 
-    invite_url = f"{settings.public_app_url.rstrip('/')}/login?{urlencode({'email': email})}"
+    code = _with_db(lambda: auth.create_code(email))
+    invite_url = f"{settings.public_app_url.rstrip('/')}/login?{urlencode({'email': email, 'code': code})}"
     body = (
         f"Te invitaron a unirte a {tenant_name} en Mi Precio con rol {role}.\n\n"
-        "Para aceptar la invitación, entrá con este mismo email y pedí tu código de acceso:\n"
+        "Para aceptar la invitación, abrí este enlace para iniciar sesión automáticamente:\n"
         f"{invite_url}\n\n"
-        "La invitación se activa automáticamente cuando iniciás sesión por primera vez."
+        "El enlace es de un solo uso y vence en 10 minutos."
     )
     mailer.send(
         to=email,

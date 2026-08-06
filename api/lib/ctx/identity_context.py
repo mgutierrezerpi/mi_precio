@@ -12,28 +12,20 @@ def list_tenants(user_id: str | None = None) -> list[Tenant]:
     user = User.get_or_none(User.id == user_id)
     if not user:
         return []
-    tenant_ids = TenantMembership.select(TenantMembership.tenant).where(
-        TenantMembership.user == user_id
-    )
-    return list(
-        Tenant.select().where(Tenant.id.in_(tenant_ids)).order_by(Tenant.name.asc())
-    )
+    tenant_ids = TenantMembership.select(TenantMembership.tenant).where(TenantMembership.user == user_id)
+    return list(Tenant.select().where(Tenant.id.in_(tenant_ids)).order_by(Tenant.name.asc()))
 
 
 def get_tenant(tenant_id: str) -> Tenant | None:
     return Tenant.get_or_none(Tenant.id == tenant_id)
 
 
-def create_tenant(
-    name: str, subdomain: str | None = None, owner_user_id: str | None = None
-) -> Tenant | None:
+def create_tenant(name: str, subdomain: str | None = None, owner_user_id: str | None = None) -> Tenant | None:
     name = name.strip()
     if not name:
         return None
     subdomain = (subdomain or name).lower().strip()
-    subdomain = "-".join(part for part in subdomain.replace("_", "-").split() if part)[
-        :63
-    ]
+    subdomain = "-".join(part for part in subdomain.replace("_", "-").split() if part)[:63]
     if not subdomain:
         return None
     if Tenant.select().where(Tenant.subdomain == subdomain).exists():
@@ -60,11 +52,9 @@ def update_tenant(tenant_id: str, **updates) -> Tenant | None:
     # Check subdomain uniqueness if being updated
     new_subdomain = updates.get("subdomain")
     if new_subdomain and new_subdomain != tenant.subdomain:
-        existing = (
-            Tenant.select()
-            .where((Tenant.subdomain == new_subdomain) & (Tenant.id != tenant_id))
-            .exists()
-        )
+        existing = Tenant.select().where(
+            (Tenant.subdomain == new_subdomain) & (Tenant.id != tenant_id)
+        ).exists()
         if existing:
             raise ValueError("Subdomain already in use")
 
@@ -90,10 +80,7 @@ def touch_last_seen(user_id: str, min_interval_seconds: int = 60) -> None:
     if not user:
         return
     now = datetime.utcnow()
-    if (
-        user.last_seen_at is None
-        or (now - user.last_seen_at).total_seconds() >= min_interval_seconds
-    ):
+    if user.last_seen_at is None or (now - user.last_seen_at).total_seconds() >= min_interval_seconds:
         user.last_seen_at = now
         user.save()
 
@@ -116,9 +103,7 @@ def get_or_create_user(email: str) -> UserResult:
             (Invitation.email == email) & (Invitation.status == "pending")
         )
         if invite:
-            TenantMembership.get_or_create(
-                user=user, tenant=invite.tenant, defaults={"role": invite.role}
-            )
+            TenantMembership.get_or_create(user=user, tenant=invite.tenant, defaults={"role": invite.role})
             invite.status = "accepted"
             invite.save()
         return UserResult(user, False)

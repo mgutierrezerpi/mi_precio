@@ -14,14 +14,16 @@ from models.order_item import OrderItem as OrderItem
 from models.activity import Activity as Activity
 from models.invitation import Invitation as Invitation
 from models.push_subscription import PushSubscription as PushSubscription
+from models.tenant_membership import TenantMembership as TenantMembership
 
 # Resolve deferred foreign key
 Item.list_version.set_model(ListVersion)
 
 
 def create_tables():
-    db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item, Product, Category, PageView, Customer, Order, OrderItem, Activity, Invitation, PushSubscription])
+    db.create_tables([Tenant, User, AuthCode, PriceList, ListVersion, Item, Product, Category, PageView, Customer, Order, OrderItem, Activity, Invitation, PushSubscription, TenantMembership])
     ensure_columns()
+    ensure_memberships()
 
 
 def ensure_columns():
@@ -136,6 +138,12 @@ def ensure_columns():
             db.execute_sql("ALTER TABLE users ADD COLUMN notif_prefs TEXT")
         if "notifications_seen_at" not in user_columns:
             db.execute_sql("ALTER TABLE users ADD COLUMN notifications_seen_at DATETIME")
+
+
+def ensure_memberships():
+    """Backfill the legacy one-tenant user relationship into memberships."""
+    for user in User.select():
+        TenantMembership.get_or_create(user=user, tenant=user.tenant, defaults={"role": user.role or "owner"})
 
 
 
