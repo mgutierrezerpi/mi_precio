@@ -613,6 +613,21 @@ immediate `PATCH` fallback when `BILLING_ENABLED=false`). It closes again if a
 subscription ends, since billing drops the plan back to `free`. Tenants created
 before the flag existed default to `plan_gate = false` and are never blocked.
 
+### Subscription management
+
+`POST /billing/cancellations` and `POST /billing/resumptions` (owner only, body
+`{tenant_id}`) cancel and un-cancel the tenant's own subscription.
+
+Cancelling is **at the end of the paid period**, never immediate: Lemon Squeezy
+keeps the subscription usable until `ends_at` and only then fires
+`subscription_expired`, which drops the plan to `free` (the Huey job
+`expire_ended_subscriptions` is the backstop if that webhook is missed). So a
+cancelled tenant keeps its plan, and `billing_status = "cancelled"` is what the
+UI turns into "access until X" plus a Resume button.
+
+With `BILLING_ENABLED=false` (local dev) there is no provider to call, so both
+operations run against our own row — same state transitions, no HTTP.
+
 ### Public-list appearance
 
 The look of a public list resolves field by field:
