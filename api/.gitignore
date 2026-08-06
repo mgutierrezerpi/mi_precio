@@ -38,4 +38,9 @@ build/
 *.db
 *.sqlite
 *.sqlite3
+# WAL sidecars (huey.db-wal, huey.db-shm): the patterns above don't match them
+*.db-shm
+*.db-wal
+*.sqlite-shm
+*.sqlite-wal
 db/
