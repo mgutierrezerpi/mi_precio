@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from peewee import fn
 
-from models import Tenant, PageView, Customer, Order, OrderItem, PriceList
+from models import Tenant, PageView, Customer, Order, OrderItem
 
 # Accepted traffic sources; anything else is normalized to "link".
 VALID_SOURCES = {"qr", "link"}
@@ -60,35 +60,20 @@ def visit_stats(tenant_id: str) -> dict:
     return {**overall, "qr": bucket(PageView.source == "qr")}
 
 
-def reports(tenant_id: str, days: int = 30, list_id: str | None = None) -> dict:
+def reports(tenant_id: str, days: int = 30) -> dict:
     """Aggregated analytics for the Reports screen: KPIs, a daily visit series,
-    the channel split (QR vs link) and the best-selling products.
-
-    When ``list_id`` is supplied, page-view metrics are scoped to that list.
-    Orders are not associated with a price list, so sales KPIs intentionally
-    remain workspace-wide rather than implying an inaccurate attribution.
-    """
+    the channel split (QR vs link) and the best-selling products."""
     days = max(1, min(days, 365))
-    if list_id and not PriceList.get_or_none(
-        (PriceList.id == list_id) & (PriceList.tenant == tenant_id)
-    ):
-        list_id = None
     now = datetime.utcnow()
     start_today = datetime(now.year, now.month, now.day)
     # Inclusive window of `days` days ending today (e.g. 30 → 29 days ago … today).
     window_start = start_today - timedelta(days=days - 1)
 
     # ── Page views in the window, bucketed per day and per channel ──────────
-    view_conditions = [
-        PageView.tenant == tenant_id,
-        PageView.created_at >= window_start,
-    ]
-    total_view_conditions = [PageView.tenant == tenant_id]
-    if list_id:
-        view_conditions.append(PageView.list_id == list_id)
-        total_view_conditions.append(PageView.list_id == list_id)
     views = list(
-        PageView.select(PageView.source, PageView.created_at).where(*view_conditions)
+        PageView.select(PageView.source, PageView.created_at).where(
+            PageView.tenant == tenant_id, PageView.created_at >= window_start
+        )
     )
 
     # One bucket per day so the series has no gaps even on days with no traffic.
@@ -115,10 +100,10 @@ def reports(tenant_id: str, days: int = 30, list_id: str | None = None) -> dict:
             day[key] += 1
 
     # ── KPIs ────────────────────────────────────────────────────────────────
-    visits_total = PageView.select().where(*total_view_conditions).count()
+    visits_total = PageView.select().where(PageView.tenant == tenant_id).count()
     qr_total = (
         PageView.select()
-        .where(*total_view_conditions, PageView.source == "qr")
+        .where(PageView.tenant == tenant_id, PageView.source == "qr")
         .count()
     )
     customers_total = Customer.select().where(Customer.tenant == tenant_id).count()
@@ -153,7 +138,6 @@ def reports(tenant_id: str, days: int = 30, list_id: str | None = None) -> dict:
 
     return {
         "days": days,
-        "list_id": list_id,
         "kpis": {
             "visits": visits_total,
             "qr_scans": qr_total,

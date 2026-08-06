@@ -78,7 +78,3 @@ def test_variants_are_hidden_from_the_public_catalog_index(db):
     visible = public.get_published_lists(tenant)
 
     assert [entry.price_list.id for entry in visible] == [parent.price_list.id]
-
-    direct_variant = public.get_published_lists(tenant, variant.price_list.slug)
-
-    assert [entry.price_list.id for entry in direct_variant] == [variant.price_list.id]

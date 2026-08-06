@@ -59,8 +59,6 @@ export const DICT_ANALYTICS: Record<string, TranslationEntry> = {
   'analytics.viewAllFeminine': { es: 'Ver todas', en: 'View all', pt: 'Ver todas' },
   'analytics.reports': { es: 'Reportes', en: 'Reports', pt: 'Relatórios' },
   'analytics.reportsSubtitle': { es: 'Medí el rendimiento de tu catálogo.', en: 'Measure your catalog performance.', pt: 'Meça o desempenho do seu catálogo.' },
-  'analytics.list': { es: 'Lista', en: 'List', pt: 'Lista' },
-  'analytics.allLists': { es: 'Todas las listas', en: 'All lists', pt: 'Todas as listas' },
   'analytics.search': { es: 'Buscar…', en: 'Search…', pt: 'Pesquisar…' },
   'analytics.days': { es: '{count} días', en: '{count} days', pt: '{count} dias' },
   'analytics.reportSections': { es: 'Secciones de reportes', en: 'Report sections', pt: 'Seções de relatórios' },

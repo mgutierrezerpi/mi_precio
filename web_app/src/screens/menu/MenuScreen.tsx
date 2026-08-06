@@ -3,13 +3,6 @@ import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
 import { getT, localeOf } from '../../lib/i18n'
-import {
-  useExportPdfWhenReady,
-  type ExportState,
-} from '../../hooks/useExportPdfWhenReady'
-import { pdfFileName } from '../../lib/exportListPdf'
-import { SocialLinks } from '../../components/SocialLinks'
-import { LeadForm } from '../../components/LeadForm'
 import type { Tenant, ListVersion, Item, ListDesign } from '../../types'
 import {
   lighten,
@@ -36,8 +29,6 @@ interface PublicList {
   name: string
   slug: string | null
   kind?: 'product' | 'service'
-  /** The shop's main list — whose look stands in when no single list is shown. */
-  showOnIndex?: boolean
   // Per-list appearance overrides; null falls back to the tenant's defaults.
   design?: ListDesign | null
   heroColor?: string | null
@@ -63,11 +54,6 @@ const BASE = {
   line: '#E5E2DC',
 }
 
-// Only for the "no such shop" dead end, where there is no tenant to brand with.
-// The white mark is the one that sits on the purple half.
-const MIPRECIO_LOGO_WHITE = '/miprecio-logo-white-pencil.webp'
-
-
 export function MenuScreen() {
   const { subdomain, listId } = useParams<{
     subdomain: string
@@ -75,9 +61,6 @@ export function MenuScreen() {
   }>()
   const [searchParams] = useSearchParams()
   const viewSource = searchParams.get('src') === 'qr' ? 'qr' : 'link'
-  // The CRM's "Exportar a PDF" opens the real list with ?pdf=1 rather than
-  // redrawing it: the sheet is then the design itself, not a copy that drifts.
-  const pdfMode = searchParams.get('pdf') === '1'
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [lists, setLists] = useState<PublicList[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -127,7 +110,7 @@ export function MenuScreen() {
       if (!subdomain) return
       setIsLoading(true)
       setError(null)
-      const response = (await api.getPublicMenu(subdomain, listId)) as {
+      const response = (await api.getPublicMenu(subdomain)) as {
         data?: PublicMenuData
         error?: string
       }
@@ -139,7 +122,7 @@ export function MenuScreen() {
       setIsLoading(false)
     }
     fetchPublicData()
-  }, [subdomain, listId])
+  }, [subdomain])
 
   useEffect(() => {
     // Only count a view once the tenant loaded fine. If a slug is given, it must
@@ -151,7 +134,7 @@ export function MenuScreen() {
     const last = recentViews.get(key)
     if (last && now - last < 3000) return
     recentViews.set(key, now)
-    api.recordPublicView(subdomain, listId ? displayLists[0]?.id : undefined, viewSource)
+    api.recordPublicView(subdomain, listId, viewSource)
   }, [
     subdomain,
     listId,
@@ -177,7 +160,7 @@ export function MenuScreen() {
       typeof price === 'number' ? price : parseFloat(price)
     )
   // Non-breaking space keeps the currency and the amount together on the same line.
-  const money = (price: string | number) => `${currency}\u00a0${fmt(price)}`
+  const money = (price: string | number) => `${currency} ${fmt(price)}`
 
   const norm = (s?: string | null) => (s?.trim() || 'Otros').toLowerCase()
   const disp = (s?: string | null) => {
@@ -259,33 +242,6 @@ export function MenuScreen() {
     setTimeout(() => setCopied(false), 1500)
   }
 
-  /** Records the cart's contact details as a lead.
-   *
-   *  Called on the way to WhatsApp, never in its place: whoever built a cart
-   *  is the warmest lead a shop gets, and today that contact evaporates every
-   *  time the WhatsApp message is composed but never actually sent.
-   *
-   *  Deliberately fire-and-forget. If this fails the order still goes through
-   *  — nobody loses a sale over a problem of ours. */
-  const rememberCartContact = () => {
-    if (!tenant?.leadsEnabled || !customer.name.trim()) return
-    const ordered = allItems
-      .filter((it) => cart[it.id])
-      .map((it) => `${cart[it.id]}× ${it.name}`)
-      .join(', ')
-    void api
-      .createLead(tenant.subdomain, {
-        name: customer.name,
-        phone: customer.phone,
-        email: customer.email,
-        message: ordered ? `Pedido: ${ordered}` : undefined,
-        listId: list?.id ?? null,
-        listName: list?.name ?? null,
-        source: 'cart',
-      })
-      .catch(() => {})
-  }
-
   // Compose a WhatsApp order message from the cart (no phone on file → opens the chooser).
   const waHref = useMemo(() => {
     const lines = allItems
@@ -312,13 +268,6 @@ export function MenuScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, allItems, cartTotal, customer])
 
-  // Called before the early returns below so the hook order never changes.
-  const exportState = useExportPdfWhenReady(
-    pdfMode && !isLoading && !error && !!tenant,
-    '.mp-public',
-    pdfFileName(tenant?.name, list?.name)
-  )
-
   if (isLoading)
     return (
       <div
@@ -328,77 +277,45 @@ export function MenuScreen() {
         <LoadingSpinner size="lg" />
       </div>
     )
-  // No such business. This is the only dead end where we know nothing about a
-  // shop, so it is the only one that may talk about MiPrecio.
-  // `error` is the API's raw `detail` — English, written for us, not for someone
-  // who just scanned a QR. It belongs in the console, never on screen.
   if (error || !tenant) {
-    if (error) console.warn('[public] %s: %s', subdomain, error)
-    // No shop to borrow an identity from, so this one is ours. It also doubles
-    // as a pitch: whoever got here already scans QR menus, which is the whole
-    // product. Sized to one viewport — a dead end nobody meant to open should
-    // never ask to be scrolled.
-    // Stacked on phones, side by side from md. The rows are 2fr/3fr rather than
-    // even: the message needs a couple of lines, the pitch needs room for a CTA,
-    // and on a 320px-tall half the CTA is what gets cut.
     return (
-      <div className="grid h-[100dvh] grid-rows-[2fr_3fr] overflow-hidden font-sans md:grid-cols-2 md:grid-rows-1">
-        {/* Why they are here. Its own half, so the pitch can never bury it. */}
-        {/* `overflow-y-auto`, not `hidden`: the page never scrolls, but on a very
-            short phone a half scrolls itself rather than clipping its CTA. */}
-        <div className="flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-6 text-center md:gap-6 md:px-8" style={{ background: BASE.bg }}>
-          {/* Sized to break in two. `text-balance` keeps the split even here and
-              degrades sanely for the longer en/pt strings. */}
-          <h1
-            className="text-[26px] font-extrabold leading-[1.1] sm:text-[30px] md:text-[46px] lg:text-[54px]"
-            style={{ color: BASE.ink, maxWidth: '16ch', textWrap: 'balance' }}
-          >
-            {t('pub.shopNotFound')}
-          </h1>
-          <p className="max-w-sm text-[13px] font-medium leading-relaxed sm:text-sm md:text-lg" style={{ color: BASE.muted }}>
-            {t('pub.shopNotFoundHint')}
-          </p>
-        </div>
-
-        {/* Ours to use: whoever reached this already scans QR menus. */}
-        <div
-          className="flex flex-col items-center justify-center gap-4 overflow-y-auto px-6 py-6 text-center text-white sm:gap-6 md:gap-11 md:px-8"
-          style={{ background: `linear-gradient(150deg, ${BASE.accent2} 0%, ${BASE.accent} 55%, ${lighten(BASE.accent, 0.3)} 100%)` }}
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 font-sans"
+        style={{ background: C.bg }}
+      >
+        <p className="text-sm font-medium" style={{ color: C.muted }}>
+          {error || t('pub.notFound')}
+        </p>
+        <Link
+          to="/"
+          className="text-sm font-bold hover:underline"
+          style={{ color: C.accent }}
         >
-          <img src={MIPRECIO_LOGO_WHITE} alt="MiPrecio" className="h-9 w-auto sm:h-12 md:h-20 lg:h-24" />
-
-          <div className="flex max-w-lg flex-col gap-2 md:gap-3">
-            <h2 className="text-[20px] font-extrabold leading-[1.15] sm:text-[24px] md:text-[36px] lg:text-[42px]">{t('pub.lpHeadline')}</h2>
-            <p className="text-xs font-medium leading-relaxed text-white/80 sm:text-[13px] md:text-base lg:text-lg">{t('pub.lpSub')}</p>
-          </div>
-
-          <ul className="flex flex-col gap-1.5 text-left sm:gap-2 md:gap-3">
-            {['pub.lpFeat1', 'pub.lpFeat2', 'pub.lpFeat3'].map((key) => (
-              <li key={key} className="flex items-center gap-2.5 text-xs font-semibold text-white/90 sm:text-[13px] md:gap-3 md:text-base lg:text-[17px]">
-                <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-white/20 sm:h-5 sm:w-5 md:h-7 md:w-7">
-                  <SIco name="check" size={12} />
-                </span>
-                {t(key)}
-              </li>
-            ))}
-          </ul>
-
-          <Link
-            to="/"
-            className="flex h-11 w-full max-w-xs items-center justify-center rounded-full bg-white text-[13px] font-bold shadow-[0_14px_30px_-12px_rgba(0,0,0,0.5)] sm:h-12 sm:text-sm md:h-14 md:max-w-sm md:text-base lg:h-16 lg:text-lg"
-            style={{ color: BASE.accent }}
-          >
-            {t('pub.lpCta')}
-          </Link>
-        </div>
+          {t('pub.backHome')}
+        </Link>
       </div>
     )
   }
-  // The slug matches no list we serve: renamed, unpublished, or held back by the
-  // plan. The shop exists, so send its customer to the rest of its catalogue —
-  // never to MiPrecio's landing, which sells them nothing they came for.
+  // A slug was requested but matches no published list (invalid, renamed, or
+  // unpublished): show "list not found" instead of the empty storefront shell.
   if (listId && displayLists.length === 0) {
-    return <ListNotFound tenant={tenant} lists={lists} t={t} accent={accent} brandGradient={brandGradient} />
+    return (
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 font-sans"
+        style={{ background: C.bg }}
+      >
+        <p className="text-sm font-medium" style={{ color: C.muted }}>
+          {t('pub.notFound')}
+        </p>
+        <Link
+          to="/"
+          className="text-sm font-bold hover:underline"
+          style={{ color: C.accent }}
+        >
+          {t('pub.backHome')}
+        </Link>
+      </div>
+    )
   }
 
   // Appearance falls back field by field: this list's own override → the
@@ -414,19 +331,11 @@ export function MenuScreen() {
   const hasBg = !!bgUrl
   const heroColor = skin?.heroColor || tenant.listHeroColor || accent
   const edition = String(list?.version?.versionNumber ?? 1).padStart(3, '0')
-  // On the public list the accent IS the hero colour. It already falls back to
-  // the brand colour when the shop set none, so nothing changes for shops that
-  // never picked one — but a shop that did was getting a design split between
-  // two colours: badges and rules on the brand colour, everything else on the
-  // hero. One accent per page, chosen by the shop.
-  const listAccent = heroColor
-  const designC = { ...C, accent: listAccent, accent2: listAccent }
-  const designGradient = `linear-gradient(135deg, ${listAccent} 0%, ${lighten(listAccent, 0.42)} 100%)`
   const designProps: DesignProps = {
     tenant,
-    C: designC,
-    accent: listAccent,
-    brandGradient: designGradient,
+    C,
+    accent,
+    brandGradient,
     heroColor,
     t,
     money,
@@ -446,22 +355,19 @@ export function MenuScreen() {
     isService,
     listName: list?.name ?? null,
     edition,
-    listId: list?.id ?? null,
     taxId: tenant.taxId,
     hasBg,
   }
 
   return (
     <div
-      className="mp-public min-h-screen font-sans"
+      className="min-h-screen font-sans"
       style={{
         background: C.bg,
         color: C.ink,
         fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
       }}
     >
-      {pdfMode && <ExportOverlay state={exportState} accent={accent} />}
-
       {/* Tint the page scrollbar with the tenant's brand color while this public list is shown. */}
       <style>{`
         html { scrollbar-color: ${accent} transparent; }
@@ -521,7 +427,6 @@ export function MenuScreen() {
                 shareLink={shareLink}
                 copied={copied}
                 waHref={waHref}
-                onOrder={rememberCartContact}
                 list={list}
                 norm={norm}
                 isService={isService}
@@ -566,7 +471,6 @@ export function MenuScreen() {
           customer={customer}
           setCustomer={setCustomer}
           waHref={waHref}
-          onOrder={rememberCartContact}
           norm={norm}
           onBack={() => setShowCart(false)}
         />
@@ -646,98 +550,6 @@ export function MenuScreen() {
   )
 }
 
-/** Dead end on a shop's own link or QR: the list is gone, the shop is not.
- *
- *  Reached by a renamed or unpublished list, and — since plan limits apply to
- *  what is already published — by every list the current plan no longer serves.
- *  The reader is the shop's customer standing at a table with a phone, so this
- *  wears the shop's own storefront skin and offers the shop's other lists. When
- *  there are none (an expired subscription takes the whole storefront down) it
- *  says so plainly rather than advertising MiPrecio to someone who came for a
- *  menu.
- *
- *  No single list is being shown, so the look comes from the shop's main list
- *  (`showOnIndex`) and falls back field by field to the business defaults — the
- *  same cascade the storefront uses. A shop on the dark "tech" or "fine"
- *  template gets a dark dead end, not a white card that reads as another site. */
-function ListNotFound({ tenant, lists, t, accent, brandGradient }: {
-  tenant: Tenant
-  lists: PublicList[]
-  t: ReturnType<typeof getT>
-  accent: string
-  brandGradient: string
-}) {
-  const onBrand = readableOn(accent)
-  const main = lists.find((l) => l.showOnIndex) ?? lists[0] ?? null
-  const design: ListDesign = main?.design ?? tenant.listDesign ?? 'store'
-  const skin = cartThemeFor(design)
-  const heroColor = main?.heroColor || tenant.listHeroColor || accent
-  const bgUrl = main?.bgUrl ?? tenant.listBgUrl
-  const bgOverlay = main?.bgUrl ? !!main.bgOverlay : !!tenant.listBgOverlay
-
-  return (
-    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 py-12 font-sans" style={{ background: skin.bg }}>
-      {bgUrl && (
-        <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: `url(${bgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-          {bgOverlay && <div className="absolute inset-0" style={{ background: accent, opacity: 0.5, mixBlendMode: 'multiply' }} />}
-        </div>
-      )}
-
-      <div className="relative flex flex-col items-center gap-3 text-center">
-        {tenant.logoUrl
-          ? <img src={tenant.logoUrl} alt={tenant.name} className="h-16 w-16 rounded-2xl object-cover" />
-          : (
-            <span className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-extrabold" style={{ background: brandGradient, color: onBrand }}>
-              {tenant.name.slice(0, 2).toUpperCase()}
-            </span>
-          )}
-        <h1 className="text-xl font-extrabold" style={{ color: skin.ink }}>{tenant.name}</h1>
-      </div>
-
-      <div className="relative flex w-full max-w-sm flex-col gap-4">
-        <p className="text-center text-sm font-medium" style={{ color: skin.body }}>
-          {lists.length > 0 ? t('pub.listGone') : t('pub.catalogUnavailable')}
-        </p>
-
-        {lists.length > 0 ? (
-          <>
-            <p className="text-center text-xs font-bold uppercase tracking-wide" style={{ color: skin.muted }}>{t('pub.listGoneOthers')}</p>
-            <div className="flex flex-col gap-2">
-              {lists.map((l) => {
-                const count = l.version?.items?.length ?? 0
-                return (
-                  <Link
-                    key={l.id}
-                    to={`/p/${tenant.subdomain}/${l.slug || l.id}`}
-                    className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 transition-transform active:scale-[0.99]"
-                    style={{ background: skin.surface, border: `1px solid ${skin.line}`, color: skin.ink }}
-                  >
-                    <span className="truncate text-sm font-bold">{l.name}</span>
-                    <span className="shrink-0 text-xs font-semibold" style={{ color: skin.muted }}>
-                      {count} {t(count === 1 ? 'pub.product' : 'pub.products')}
-                    </span>
-                  </Link>
-                )
-              })}
-            </div>
-            <Link
-              to={`/p/${tenant.subdomain}`}
-              className="mt-1 flex h-12 items-center justify-center rounded-full text-sm font-bold"
-              style={{ background: heroColor, color: readableOn(heroColor) }}
-            >
-              {t('pub.seeCatalog')}
-            </Link>
-          </>
-        ) : (
-          /* Nothing of this shop is being served — most often an expired
-             subscription. Say so and stop: there is nowhere useful to send them. */
-          <p className="text-center text-sm font-medium" style={{ color: skin.muted }}>{t('pub.catalogUnavailableHint')}</p>
-        )}
-      </div>
-    </div>
-  )
-}
-
 interface StoreProps {
   tenant: Tenant
   C: StoreColors
@@ -760,9 +572,6 @@ interface StoreProps {
   shareLink: () => void
   copied: boolean
   waHref: string
-  /** Fired on the way to WhatsApp, so the cart's contact is not lost when the
-   *  message is composed and never sent. */
-  onOrder: () => void
   list: PublicList | null
   norm: (s?: string | null) => string
   isService: boolean
@@ -791,7 +600,6 @@ function Storefront(p: StoreProps) {
     shareLink,
     copied,
     waHref,
-    onOrder,
     list,
     norm,
     isService,
@@ -1114,7 +922,6 @@ function Storefront(p: StoreProps) {
             </span>
             <a
               href={waHref}
-              onClick={onOrder}
               target="_blank"
               rel="noopener noreferrer"
               className="w-fit rounded-lg bg-white px-3.5 py-2 text-[13px] font-bold"
@@ -1263,44 +1070,28 @@ function Storefront(p: StoreProps) {
         </main>
       </div>
 
-      <div className="mx-auto w-full max-w-[1280px] px-5 pb-12 md:px-16">
-        <LeadForm
-          tenant={tenant}
-          listId={list?.id ?? null}
-          listName={list?.name ?? null}
-          ink={C.ink}
-          accent={accent}
-          accentInk={readableOn(accent)}
-        />
-      </div>
-
       {/* Footer */}
       <footer className="py-10" style={{ background: '#0F172A' }}>
         <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-3 px-5 md:px-16">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-col gap-3">
-              <span className="text-[16px] font-bold text-white">
-                {tenant.name}
-              </span>
-              {tenant.address && (
-                <span
-                  className="text-[12px] font-medium"
-                  style={{ color: '#94A3B8' }}
-                >
-                  {tenant.address}
-                </span>
-              )}
-              {tenant.taxId && (
-                <span
-                  className="text-[12px] font-medium"
-                  style={{ color: '#94A3B8' }}
-                >
-                  {t('pub.taxId')} {tenant.taxId}
-                </span>
-              )}
-            </div>
-            <SocialLinks tenant={tenant} color="#94A3B8" hoverColor="#FFFFFF" />
-          </div>
+          <span className="text-[16px] font-bold text-white">
+            {tenant.name}
+          </span>
+          {tenant.address && (
+            <span
+              className="text-[12px] font-medium"
+              style={{ color: '#94A3B8' }}
+            >
+              {tenant.address}
+            </span>
+          )}
+          {tenant.taxId && (
+            <span
+              className="text-[12px] font-medium"
+              style={{ color: '#94A3B8' }}
+            >
+              {t('pub.taxId')} {tenant.taxId}
+            </span>
+          )}
           <div
             className="my-2 h-px w-full"
             style={{ background: 'rgba(255,255,255,0.1)' }}
@@ -1344,9 +1135,6 @@ interface CartProps {
   customer: CartCustomer
   setCustomer: React.Dispatch<React.SetStateAction<CartCustomer>>
   waHref: string
-  /** Fired on the way to WhatsApp, so the cart's contact is not lost when the
-   *  message is composed and never sent. */
-  onOrder: () => void
   norm: (s?: string | null) => string
   onBack: () => void
 }
@@ -1369,7 +1157,6 @@ function CartView(p: CartProps) {
     customer,
     setCustomer,
     waHref,
-    onOrder,
     norm,
     onBack,
   } = p
@@ -1847,7 +1634,6 @@ function CartView(p: CartProps) {
               </div>
               <a
                 href={waHref}
-                onClick={onOrder}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-14 items-center justify-center gap-2 rounded-2xl text-[16px] font-extrabold text-white"
@@ -1872,16 +1658,10 @@ function CartView(p: CartProps) {
 
       {/* Footer */}
       <footer
-        className="flex flex-col items-center gap-5 px-5 py-10 md:px-16"
+        className="flex flex-col items-center gap-2 px-5 py-8 md:px-16"
         style={{ background: T.footerBg }}
       >
         <span className="text-[14px] font-bold text-white">{tenant.name}</span>
-        <SocialLinks
-          tenant={tenant}
-          color={T.footerText}
-          hoverColor="#FFFFFF"
-          align="center"
-        />
         <span
           className="text-[12px] font-medium"
           style={{ color: T.footerText }}
@@ -1889,41 +1669,6 @@ function CartView(p: CartProps) {
           {t('pub.footer', { currency: tenant.currency || 'UYU' })}
         </span>
       </footer>
-    </div>
-  )
-}
-
-/** What the shop sees in the tab that exists only to produce a file.
- *
- *  `data-no-export` keeps it out of the capture — otherwise the notice would be
- *  baked into the PDF it is announcing. */
-function ExportOverlay({
-  state,
-  accent,
-}: {
-  state: ExportState
-  accent: string
-}) {
-  const message =
-    state === 'error'
-      ? 'No pudimos generar el PDF. Cerrá esta pestaña y probá de nuevo.'
-      : state === 'done'
-        ? 'Listo. Buscá el PDF en tus descargas.'
-        : 'Generando tu PDF…'
-
-  return (
-    <div
-      data-no-export
-      className="fixed inset-x-0 top-0 z-[200] flex items-center justify-center gap-3 px-5 py-3 text-[13px] font-bold text-white"
-      style={{ background: state === 'error' ? '#B91C1C' : accent }}
-    >
-      {state === 'working' && (
-        <span
-          aria-hidden
-          className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
-        />
-      )}
-      <span>{message}</span>
     </div>
   )
 }

@@ -51,7 +51,6 @@ def test_default_prefs_include_all_categorized_activity(tenant, user):
         "sales": True,
         "catalog": True,
         "customers": True,
-        "leads": True,
         "team": True,
     }
 
@@ -76,19 +75,12 @@ def test_mark_seen_clears_unread_then_new_activity_increments(tenant, user):
 def test_update_prefs_persists_and_merges(tenant, user):
     notifications.update_prefs(user.id, {"sales": False})
     prefs = notifications.get_prefs(user.id)
-    assert prefs == {
-        "sales": False,
-        "catalog": True,
-        "customers": True,
-        "leads": True,
-        "team": True,
-    }
+    assert prefs == {"sales": False, "catalog": True, "customers": True, "team": True}
     # partial update keeps the previously-disabled category
     notifications.update_prefs(user.id, {"customers": False})
     assert notifications.get_prefs(user.id) == {
         "sales": False,
         "catalog": True,
         "customers": False,
-        "leads": True,
         "team": True,
     }

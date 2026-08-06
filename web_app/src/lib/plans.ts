@@ -10,10 +10,6 @@ export interface PlanLimits {
   members: number | null
 }
 
-/** Whole features a tier unlocks, as opposed to the numeric limits above.
- *  Mirrors PLAN_FEATURES in api/lib/ctx/plans_context.py — keep both in step. */
-export type PlanFeature = 'leads'
-
 export interface PlanContent {
   id: PlanId
   name: string
@@ -23,8 +19,6 @@ export interface PlanContent {
   trialLabel: string
   features: string[]
   limits: PlanLimits
-  /** What this tier unlocks beyond the allowances. */
-  unlocks: PlanFeature[]
   popular?: boolean
 }
 
@@ -37,7 +31,6 @@ const FREE_PLAN: PlanContent = {
   trialLabel: '',
   features: ['Hasta 10 productos', '1 lista pública', '1 usuario'],
   limits: { products: 10, lists: 1, members: 1 },
-  unlocks: [],
 }
 
 export const PLANS: PlanContent[] = [
@@ -56,7 +49,6 @@ export const PLANS: PlanContent[] = [
       'QR personalizado',
     ],
     limits: { products: 25, lists: 3, members: 1 },
-    unlocks: [],
   },
   {
     id: 'plus',
@@ -70,10 +62,8 @@ export const PLANS: PlanContent[] = [
       'Hasta 300 productos',
       '15 listas públicas',
       'Equipo de hasta 5 usuarios',
-      'Captación de leads',
     ],
     limits: { products: 300, lists: 15, members: 5 },
-    unlocks: ['leads'],
     popular: true,
   },
   {
@@ -88,17 +78,10 @@ export const PLANS: PlanContent[] = [
       'Productos ilimitados',
       'Listas ilimitadas',
       'Usuarios ilimitados',
-      'Captación de leads',
     ],
     limits: { products: null, lists: null, members: null },
-    unlocks: ['leads'],
   },
 ]
 
 export const planById = (id: PlanId): PlanContent =>
   id === 'free' ? FREE_PLAN : PLANS.find((p) => p.id === id) || FREE_PLAN
-
-/** Whether a plan unlocks a feature. The server decides for real
- *  (`plans_context.has_feature`); this is for showing or hiding UI. */
-export const planHasFeature = (id: PlanId, feature: PlanFeature): boolean =>
-  planById(id).unlocks.includes(feature)

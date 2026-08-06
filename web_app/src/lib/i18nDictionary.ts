@@ -1,8 +1,5 @@
 import type { Lang } from './i18n'
 import { DICT_EXTRA } from './i18nDictionaryExtra'
-import { DICT_TOUR } from './i18nDictionaryTour'
-import { DICT_SOCIALS } from './i18nDictionarySocials'
-import { DICT_LEADS } from './i18nDictionaryLeads'
 
 export type TranslationEntry = Record<Lang, string>
 
@@ -931,27 +928,5 @@ const DICT_BASE: Record<string, TranslationEntry> = {
     en: 'You offer home delivery',
     pt: 'Você oferece entrega em domicílio',
   },
-  'set.marketplace.title': {
-    es: 'Mostrar mi negocio en el marketplace',
-    en: 'Show my business in the marketplace',
-    pt: 'Mostrar meu negócio no marketplace',
-  },
-  'set.marketplace.subtitle': {
-    es: 'Las personas podrán descubrir tu negocio. Si compartís tu ubicación, aparecerá ordenado por distancia.',
-    en: 'People can discover your business. If you share your location, it will be ordered by distance.',
-    pt: 'As pessoas poderão descobrir seu negócio. Se você compartilhar sua localização, ele aparecerá ordenado por distância.',
-  },
-  'set.marketplace.enable': { es: 'Activar', en: 'Enable', pt: 'Ativar' },
-  'set.marketplace.disable': { es: 'Desactivar', en: 'Disable', pt: 'Desativar' },
-  'set.marketplace.listed': { es: 'Tu negocio está visible en el marketplace.', en: 'Your business is visible in the marketplace.', pt: 'Seu negócio está visível no marketplace.' },
-  'set.marketplace.hidden': { es: 'Tu negocio no está visible.', en: 'Your business is not visible.', pt: 'Seu negócio não está visível.' },
-  'set.marketplace.noLocation': { es: 'Este navegador no puede compartir tu ubicación.', en: 'This browser cannot share your location.', pt: 'Este navegador não pode compartilhar sua localização.' },
-  'set.marketplace.locationDenied': { es: 'Necesitamos permiso de ubicación para mostrar tu negocio cerca de las personas.', en: 'Location permission is required to show your business nearby.', pt: 'A permissão de localização é necessária para mostrar seu negócio nas proximidades.' },
 }
-export const DICT = {
-  ...DICT_BASE,
-  ...DICT_EXTRA,
-  ...DICT_TOUR,
-  ...DICT_SOCIALS,
-  ...DICT_LEADS,
-}
+export const DICT = { ...DICT_BASE, ...DICT_EXTRA }

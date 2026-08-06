@@ -987,6 +987,12 @@ function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
           >
             Crear cuenta gratis <ArrowRight size={18} />
           </button>
+          <a
+            href="mailto:hola@miprecio.app"
+            className="flex h-[52px] items-center rounded-[14px] border border-white/40 px-7 text-[15px] font-bold text-white hover:bg-white/10"
+          >
+            Hablar con ventas
+          </a>
         </div>
       </Reveal>
     </section>
