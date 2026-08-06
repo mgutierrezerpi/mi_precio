@@ -187,6 +187,21 @@ drops to `free` on `expired`, which is what the plan gate then blocks on.
 response key. Declaring them snake_case is what silently broke the portal link
 before, and the type made it invisible to TS.
 
+### Lists the plan does not serve
+
+`PriceList.published` is the owner's intent; `PriceList.live` is what the plan
+actually serves. They diverge after a downgrade (more lists published than the
+plan allows) or when a subscription expires (nothing is served at all). The
+backend never unpublishes to reconcile them, so paying again brings everything
+back on its own — which means the CRM is the only place that can admit the list
+is unreachable.
+
+`PriceListsScreen` does that three ways: a red **Fuera de línea** badge on the
+row with its public URL hidden, a **Fuera de línea** tab that only appears when
+some list is in that state, and a banner naming the count with a way out. The
+**Activas** counter deliberately counts `published && live`, not `published` —
+otherwise it contradicts the badges right below it.
+
 ## Components
 
 ### Layout Components

@@ -79,6 +79,11 @@ export interface PriceList {
   bgUrl: string | null
   bgOverlay: boolean | null
   itemCount: number
+  /** `published` is intent; `live` is what the plan actually serves. A published
+   *  list goes `live: false` when the plan allows fewer lists than are published
+   *  (downgrade) or the subscription expired. Nothing is unpublished: paying
+   *  again brings it back on its own. */
+  live: boolean
   createdAt: string
   updatedAt: string
   versions?: ListVersion[]

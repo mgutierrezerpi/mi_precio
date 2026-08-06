@@ -10,12 +10,29 @@ from typing import Any
 from urllib import request, error
 
 from config import settings
-from models import Tenant
+from models import Tenant, User
 from lib.ctx import plans
 
 
 class BillingError(Exception):
     """Raised when billing configuration or provider calls fail."""
+
+
+def is_expired(tenant_id: str) -> bool:
+    """Whether the tenant is already in the expired state (before a sync runs)."""
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    return bool(tenant and tenant.billing_status == "expired")
+
+
+def expiry_notice_target(tenant_id: str) -> tuple[str, str] | None:
+    """(owner email, tenant name) to warn that the storefront went offline."""
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant:
+        return None
+    owner = User.get_or_none((User.tenant == tenant_id) & (User.role == "owner"))
+    if not owner or not owner.email:
+        return None
+    return owner.email, tenant.name
 
 
 # Human-readable Spanish labels for Lemon Squeezy events/statuses so the
@@ -327,20 +344,25 @@ def sync_manual_subscription(
     return tenant
 
 
-def expire_ended_subscriptions(now: datetime | None = None) -> int:
+def expire_ended_subscriptions(now: datetime | None = None) -> list[str]:
     """Downgrade tenants whose paid subscription end date has passed.
 
     Webhooks should normally perform this immediately. The worker uses this as a
     backstop for missed manual updates or delayed provider webhooks.
+
+    Returns the ids it expired so the caller can notify them. Expiring takes the
+    public page offline (`plans.live_list_allowance` drops to zero), which is not
+    something an owner should discover from a customer.
     """
     cutoff = now or datetime.utcnow()
-    query = (
-        Tenant.update(plan="free", billing_status="expired")
-        .where(
-            (Tenant.billing_ends_at.is_null(False))
-            & (Tenant.billing_ends_at <= cutoff)
-            & (Tenant.billing_status != "expired")
-            & (Tenant.plan != "free")
-        )
+    condition = (
+        (Tenant.billing_ends_at.is_null(False))
+        & (Tenant.billing_ends_at <= cutoff)
+        & (Tenant.billing_status != "expired")
+        & (Tenant.plan != "free")
     )
-    return query.execute()
+    # Collect before updating: the same condition no longer matches afterwards.
+    expired = [tenant.id for tenant in Tenant.select(Tenant.id).where(condition)]
+    if expired:
+        Tenant.update(plan="free", billing_status="expired").where(condition).execute()
+    return expired

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import { fetchLists, createList, updateList, deleteList, createItem, deleteItem, selectLists, selectIsLoading } from '../../store/slices/menuSlice'
@@ -15,7 +15,7 @@ import { QrCode } from './crm/QrCode'
 import { tone, gradient } from './crm/theme'
 import { timeAgo, formatPrice, catTone, catIcon } from './crm/productFormat'
 
-type Tab = 'all' | 'active' | 'inactive'
+type Tab = 'all' | 'active' | 'inactive' | 'offline'
 
 const FAVICON = '/miprecio-favicon.png'
 // The banner QR is illustrative: it opens the app home.
@@ -36,6 +36,7 @@ export function PriceListsScreen() {
   const products = useAppSelector(selectProducts)
 
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<Tab>('all')
   const [modal, setModal] = useState<{ open: boolean; list: PriceList | null }>(() => ({ open: searchParams.get('new') === '1' && canEdit, list: null }))
@@ -52,15 +53,17 @@ export function PriceListsScreen() {
 
   const counts = useMemo(() => ({
     all: lists.length,
-    active: lists.filter((l) => l.published).length,
+    active: lists.filter((l) => l.published && l.live).length,
     inactive: lists.filter((l) => !l.published).length,
+    offline: lists.filter((l) => l.published && !l.live).length,
   }), [lists])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return lists.filter((l) => {
-      if (tab === 'active' && !l.published) return false
+      if (tab === 'active' && !(l.published && l.live)) return false
       if (tab === 'inactive' && l.published) return false
+      if (tab === 'offline' && !(l.published && !l.live)) return false
       if (!q) return true
       return [l.name, l.slug].some((v) => v?.toLowerCase().includes(q))
     })
@@ -77,6 +80,8 @@ export function PriceListsScreen() {
     { key: 'all', label: 'Todas', count: counts.all },
     { key: 'active', label: 'Activas', count: counts.active },
     { key: 'inactive', label: 'Inactivas', count: counts.inactive },
+    // Only worth a tab when the plan is actually holding lists back.
+    ...(counts.offline ? [{ key: 'offline' as Tab, label: 'Fuera de línea', count: counts.offline }] : []),
   ]
 
   return (
@@ -104,6 +109,33 @@ export function PriceListsScreen() {
             <QrCode value={HOME_URL} size={120} fg="#0F172A" logoUrl={FAVICON} className="h-full w-full object-contain" />
           </div>
         </div>
+
+        {/* Lists published beyond what the plan serves. Nothing was unpublished,
+            so without this the owner has no way to know they are unreachable. */}
+        {counts.offline > 0 && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--tone-red-fg)]/25 p-4 sm:flex-row sm:items-center sm:justify-between" style={tone('red')}>
+            <div className="flex items-start gap-3">
+              <Icon name="alert-triangle" size={18} className="mt-0.5 shrink-0" />
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm font-bold">
+                  {counts.offline === 1
+                    ? 'Una de tus listas publicadas no se está viendo'
+                    : `${counts.offline} de tus listas publicadas no se están viendo`}
+                </p>
+                <p className="text-xs font-medium opacity-80">
+                  Tu plan permite {counts.active} {counts.active === 1 ? 'lista publicada' : 'listas publicadas'}. Quien abra su link o escanee su QR no va a ver nada. No se borró nada: subí de plan y vuelven solas, tal como estaban.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/admin/settings')}
+              className="h-10 shrink-0 rounded-full bg-[var(--tone-red-fg)] px-4 text-xs font-bold text-[var(--dash-surface)]"
+            >
+              Ver planes
+            </button>
+          </div>
+        )}
 
         {/* Header + filters */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -184,16 +216,28 @@ function ListRow({ list, subdomain, canEdit, onEdit, onTogglePublished, onToggle
             {list.showOnIndex && <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone('violet')}>Principal</span>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(list.published ? 'green' : 'amber')}>
-              <span className="h-1.5 w-1.5 rounded-full bg-current" /> {list.published ? 'Activa' : 'Borrador'}
-            </span>
+            {list.published && !list.live ? (
+              /* Published but the plan doesn't cover it — say so here, or the
+                 owner only finds out when a customer opens an empty page. */
+              <span
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                style={tone('red')}
+                title="Tu plan no alcanza para tener esta lista publicada. Subí de plan y vuelve sola, tal como está."
+              >
+                <Icon name="alert-triangle" size={12} /> Fuera de línea
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(list.published ? 'green' : 'amber')}>
+                <span className="h-1.5 w-1.5 rounded-full bg-current" /> {list.published ? 'Activa' : 'Borrador'}
+              </span>
+            )}
             <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone('violet')}>{list.itemCount} producto{list.itemCount === 1 ? '' : 's'}</span>
             <span className="rounded-full bg-[var(--dash-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--dash-text2)]">Actualizada {timeAgo(list.updatedAt)}</span>
           </div>
         </div>
       </div>
 
-      {list.published && (
+      {list.published && list.live && (
         <div className="hidden shrink-0 flex-col gap-1.5 lg:flex">
           <span className="text-[11px] font-bold tracking-wide text-[var(--dash-muted)]">URL</span>
           <button type="button" onClick={copy} className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-[12px] font-semibold text-[var(--dash-link)]" style={tone('violet')}>

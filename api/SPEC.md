@@ -609,9 +609,38 @@ endpoints. Deliberately left open so a blocked owner can get out: `/auth/*`,
 `POST /billing/checkouts` and `DELETE /tenants/{id}`.
 
 The gate lifts as soon as the plan is not `free` (Lemon Squeezy webhook, or the
-immediate `PATCH` fallback when `BILLING_ENABLED=false`). It closes again if a
-subscription ends, since billing drops the plan back to `free`. Tenants created
-before the flag existed default to `plan_gate = false` and are never blocked.
+immediate `PATCH` fallback when `BILLING_ENABLED=false`).
+
+`free` is not a tier you can subscribe to — it is the absence of a plan. Two
+kinds of tenant land there and are gated: signups carrying `plan_gate`, and
+anyone whose subscription ended (billing drops them to `free`, so
+`plans.plan_required` also fires on `_ever_subscribed`). Tenants that predate the
+flag **and never subscribed** keep the access they have always had.
+
+### Plan limits apply to what is already published
+
+`assert_can_add` only guards creation, so on its own a downgrade left every
+already-published list on air forever. `plans.live_list_allowance` closes that:
+
+| Situation | Lists served publicly |
+|---|---|
+| Plan covers everything published | all of them |
+| Downgrade (e.g. `pro` → `micro`, 6 published) | the **3 oldest** |
+| Subscription expired | **none** — the storefront goes dark |
+
+The oldest survive because the main catalogue is almost always the first list
+created; dropping it would be worse than dropping a recent addition.
+
+Nothing is unpublished to make this true. `published` stays as the owner set it
+and `public.live_list_ids` filters at serve time, so paying again restores the
+whole storefront with no republishing. `PriceListView.live` reports the
+difference so the CRM can mark those lists as offline instead of pretending they
+are reachable.
+
+Expiring also mails the owner (`tasks.notify_subscription_expired`), from the
+webhook on the `expired` transition and from `expire_ended_subscriptions` for the
+tenants the backstop catches. It is the one downgrade nobody asked for, and it
+takes the public page down.
 
 ### Subscription management
 

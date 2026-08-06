@@ -1,8 +1,30 @@
 """Public context - public-facing operations."""
 
 from models import PriceList, ListVersion, Item, Product, Tenant
+from lib.ctx import plans_context as plans
 from lib.ctx.identity_context import find_tenant_by_subdomain
 from lib.value_objects import PublishedList
+
+
+def live_list_ids(tenant: Tenant) -> list[str]:
+    """Ids of the published lists the tenant's plan actually allows on air.
+
+    Publishing is the owner's intent; the plan decides how much of that intent is
+    served. When a plan no longer covers everything that is published we keep the
+    oldest lists — the main catalogue is almost always the first one created, and
+    silently dropping it would be worse than dropping a recent addition.
+
+    Nothing is unpublished to make this true: paying again restores the whole
+    storefront on its own, with no republishing to do."""
+    published = list(
+        PriceList.select(PriceList.id)
+        .where((PriceList.tenant == tenant.id) & PriceList.published)
+        .order_by(PriceList.created_at, PriceList.id)
+    )
+    allowance = plans.live_list_allowance(tenant)
+    if allowance is not None:
+        published = published[:allowance]
+    return [price_list.id for price_list in published]
 
 
 def get_published_lists(tenant: Tenant) -> list[PublishedList]:
@@ -12,11 +34,14 @@ def get_published_lists(tenant: Tenant) -> list[PublishedList]:
     own image. When it doesn't, fall back to the matching product's image so the
     public storefront shows the picture the owner uploaded on the product.
     """
+    allowed = live_list_ids(tenant)
+    if not allowed:
+        return []
     product_images = _product_images_by_name(tenant.id)
     result = []
     for price_list in PriceList.select().where(
-        (PriceList.tenant == tenant.id) & PriceList.published
-    ):
+        (PriceList.tenant == tenant.id) & (PriceList.id << allowed)
+    ).order_by(PriceList.created_at, PriceList.id):
         version = ListVersion.get_or_none(
             (ListVersion.list == price_list.id) & ListVersion.published
         )
