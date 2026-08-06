@@ -171,23 +171,25 @@ export function MenuScreen() {
   }, [cart, allItems, cartTotal, customer])
 
   if (isLoading) return <div className="flex min-h-screen items-center justify-center" style={{ background: C.bg }}><LoadingSpinner size="lg" /></div>
+  // No such business. This is the only dead end where we know nothing about a
+  // shop, so it is the only one that may talk about MiPrecio.
+  // `error` is the API's raw `detail` — English, written for us, not for someone
+  // who just scanned a QR. It belongs in the console, never on screen.
   if (error || !tenant) {
+    if (error) console.warn('[public] %s: %s', subdomain, error)
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 font-sans" style={{ background: C.bg }}>
-        <p className="text-sm font-medium" style={{ color: C.muted }}>{error || t('pub.notFound')}</p>
-        <Link to="/" className="text-sm font-bold hover:underline" style={{ color: C.accent }}>{t('pub.backHome')}</Link>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-6 text-center font-sans" style={{ background: C.bg }}>
+        <h1 className="text-lg font-extrabold" style={{ color: C.ink }}>{t('pub.shopNotFound')}</h1>
+        <p className="max-w-xs text-sm font-medium" style={{ color: C.muted }}>{t('pub.shopNotFoundHint')}</p>
+        <Link to="/" className="mt-2 text-sm font-bold hover:underline" style={{ color: C.accent }}>{t('pub.backHome')}</Link>
       </div>
     )
   }
-  // A slug was requested but matches no published list (invalid, renamed, or
-  // unpublished): show "list not found" instead of the empty storefront shell.
+  // The slug matches no list we serve: renamed, unpublished, or held back by the
+  // plan. The shop exists, so send its customer to the rest of its catalogue —
+  // never to MiPrecio's landing, which sells them nothing they came for.
   if (listId && displayLists.length === 0) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 font-sans" style={{ background: C.bg }}>
-        <p className="text-sm font-medium" style={{ color: C.muted }}>{t('pub.notFound')}</p>
-        <Link to="/" className="text-sm font-bold hover:underline" style={{ color: C.accent }}>{t('pub.backHome')}</Link>
-      </div>
-    )
+    return <ListNotFound tenant={tenant} lists={lists} t={t} C={C} brandGradient={brandGradient} />
   }
 
   // Appearance falls back field by field: this list's own override → the
@@ -280,6 +282,79 @@ export function MenuScreen() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Dead end on a shop's own link or QR: the list is gone, the shop is not.
+ *
+ *  Reached by a renamed or unpublished list, and — since plan limits apply to
+ *  what is already published — by every list the current plan no longer serves.
+ *  The reader is the shop's customer standing at a table with a phone, so this
+ *  wears the shop's brand and offers the shop's other lists. When there are
+ *  none (an expired subscription takes the whole storefront down) it says so
+ *  plainly rather than advertising MiPrecio to someone who came for a menu. */
+function ListNotFound({ tenant, lists, t, C, brandGradient }: {
+  tenant: Tenant
+  lists: PublicList[]
+  t: ReturnType<typeof getT>
+  C: StoreColors
+  brandGradient: string
+}) {
+  const onBrand = readableOn(C.accent)
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 py-12 font-sans" style={{ background: C.bg }}>
+      <div className="flex flex-col items-center gap-3 text-center">
+        {tenant.logoUrl
+          ? <img src={tenant.logoUrl} alt={tenant.name} className="h-16 w-16 rounded-2xl object-cover" />
+          : (
+            <span className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-extrabold" style={{ background: brandGradient, color: onBrand }}>
+              {tenant.name.slice(0, 2).toUpperCase()}
+            </span>
+          )}
+        <h1 className="text-xl font-extrabold" style={{ color: C.ink }}>{tenant.name}</h1>
+      </div>
+
+      <div className="flex w-full max-w-sm flex-col gap-4">
+        <p className="text-center text-sm font-medium" style={{ color: C.body }}>
+          {lists.length > 0 ? t('pub.listGone') : t('pub.catalogUnavailable')}
+        </p>
+
+        {lists.length > 0 ? (
+          <>
+            <p className="text-center text-xs font-bold uppercase tracking-wide" style={{ color: C.muted }}>{t('pub.listGoneOthers')}</p>
+            <div className="flex flex-col gap-2">
+              {lists.map((l) => {
+                const count = l.version?.items?.length ?? 0
+                return (
+                  <Link
+                    key={l.id}
+                    to={`/p/${tenant.subdomain}/${l.slug || l.id}`}
+                    className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 transition-transform active:scale-[0.99]"
+                    style={{ background: '#FFFFFF', border: `1px solid ${C.line}`, color: C.ink }}
+                  >
+                    <span className="truncate text-sm font-bold">{l.name}</span>
+                    <span className="shrink-0 text-xs font-semibold" style={{ color: C.muted }}>
+                      {count} {t(count === 1 ? 'pub.product' : 'pub.products')}
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+            <Link
+              to={`/p/${tenant.subdomain}`}
+              className="mt-1 flex h-12 items-center justify-center rounded-full text-sm font-bold"
+              style={{ background: brandGradient, color: onBrand }}
+            >
+              {t('pub.seeCatalog')}
+            </Link>
+          </>
+        ) : (
+          /* Nothing of this shop is being served — most often an expired
+             subscription. Say so and stop: there is nowhere useful to send them. */
+          <p className="text-center text-sm font-medium" style={{ color: C.muted }}>{t('pub.catalogUnavailableHint')}</p>
+        )}
+      </div>
     </div>
   )
 }

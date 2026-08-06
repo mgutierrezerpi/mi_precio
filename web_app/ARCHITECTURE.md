@@ -171,6 +171,24 @@ and `bgOverlay`; `null` on a list means "inherit". `ListAppearanceFields`
 single list — the index route merges all published lists and keeps the business
 default.
 
+### Dead ends on a public link
+
+Whoever hits these is the **shop's** customer, standing somewhere with a phone
+and a QR — not a MiPrecio prospect. `MenuScreen` splits them by how much we know:
+
+| | What we know | What we show |
+|---|---|---|
+| Subdomain matches nothing | nothing | MiPrecio-branded "no encontramos este comercio" — the only dead end that may link to `/` |
+| Slug matches no served list, shop has others | brand + its live lists | `ListNotFound`: shop's logo and colours, its other lists, "Ver todo el catálogo" |
+| Slug matches nothing and neither does anything else | brand only | same shell, "el catálogo no está disponible" — no links out |
+
+The middle row is the common one: a renamed or unpublished list, and every list
+the plan no longer serves. Linking to `/` there would answer "where is the menu?"
+with a page selling them our product.
+
+The API's `error` string is its raw `detail` — English, written for us. It goes
+to `console.warn`, never on screen.
+
 ### Subscription panel
 
 `SubscriptionPanel` (bottom of Settings → Plan y facturación) shows the state,

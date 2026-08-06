@@ -297,6 +297,15 @@ const DICT: Record<string, Entry> = {
   'pub.footer': { es: 'Precios en {currency} · Generado con MiPrecio', en: 'Prices in {currency} · Made with MiPrecio', pt: 'Preços em {currency} · Gerado com MiPrecio' },
   'pub.notFound': { es: 'Lista no encontrada', en: 'List not found', pt: 'Lista não encontrada' },
   'pub.backHome': { es: 'Volver al inicio', en: 'Back to home', pt: 'Voltar ao início' },
+  // Dead end on a public link/QR. The reader is the shop's customer, not ours:
+  // keep them with the shop (its other lists) instead of sending them to MiPrecio.
+  'pub.listGone': { es: 'Esta lista ya no está disponible.', en: 'This list is no longer available.', pt: 'Esta lista já não está disponível.' },
+  'pub.listGoneOthers': { es: 'Pero podés ver estas:', en: 'But you can see these:', pt: 'Mas você pode ver estas:' },
+  'pub.seeCatalog': { es: 'Ver todo el catálogo', en: 'See the full catalogue', pt: 'Ver todo o catálogo' },
+  'pub.catalogUnavailable': { es: 'El catálogo no está disponible en este momento.', en: 'The catalogue is unavailable right now.', pt: 'O catálogo não está disponível neste momento.' },
+  'pub.catalogUnavailableHint': { es: 'Probá de nuevo más tarde o consultá directamente con el comercio.', en: 'Try again later or ask the business directly.', pt: 'Tente mais tarde ou consulte diretamente o comércio.' },
+  'pub.shopNotFound': { es: 'No encontramos este comercio', en: 'We could not find this business', pt: 'Não encontramos este comércio' },
+  'pub.shopNotFoundHint': { es: 'Revisá el link o el código QR que escaneaste.', en: 'Check the link or the QR code you scanned.', pt: 'Verifique o link ou o código QR que escaneou.' },
   // Public list view modes (compact = read-only price list, full = storefront with cart)
   'pub.viewFull': { es: 'Completa', en: 'Full', pt: 'Completa' },
   'pub.viewCompact': { es: 'Compacta', en: 'Compact', pt: 'Compacta' },
