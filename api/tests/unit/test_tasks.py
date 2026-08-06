@@ -30,7 +30,7 @@ def test_run_billing_maintenance_expires_billing_and_prunes_auth_codes(db):
     assert AuthCode.select().count() == 0
 
 
-def test_send_invitation_email_uses_login_link(monkeypatch):
+def test_send_invitation_email_uses_login_link(monkeypatch, db):
     sent = {}
     monkeypatch.setattr("tasks.settings.public_app_url", "https://app.example.com")
     monkeypatch.setattr(
@@ -42,5 +42,6 @@ def test_send_invitation_email_uses_login_link(monkeypatch):
 
     assert sent["to"] == "Editor@Shop.com"
     assert sent["subject"] == "Invitación a Ferretería en Mi Precio"
-    assert "https://app.example.com/login?email=Editor%40Shop.com" in sent["body"]
+    assert "https://app.example.com/login?email=Editor%40Shop.com&code=" in sent["body"]
+    assert AuthCode.get(AuthCode.email == "editor@shop.com").code in sent["body"]
     assert "rol editor" in sent["body"]

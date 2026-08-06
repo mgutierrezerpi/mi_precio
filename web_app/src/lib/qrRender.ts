@@ -9,6 +9,8 @@ export interface QrRenderOptions {
 }
 
 const DEFAULTS = { fg: '#0F172A', bg: '#FFFFFF', margin: 4 }
+export const QR_COLOR_STORAGE_PREFIX = 'miprecio_qr_color:'
+export const DEFAULT_QR_COLOR = '#7C3AED'
 
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -62,24 +64,13 @@ export async function drawQrToCanvas(canvas: HTMLCanvasElement, value: string, s
       const box = logoSize + pad * 2
       const x = (px - box) / 2
       const y = (px - box) / 2
-      roundRect(ctx, x, y, box, box, Math.round(box * 0.22))
       ctx.fillStyle = bg
-      ctx.fill()
+      ctx.fillRect(x, y, box, box)
       ctx.drawImage(img, x + pad, y + pad, logoSize, logoSize)
     } catch {
       // If the logo fails to load, the plain (still scannable) QR remains.
     }
   }
-}
-
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.arcTo(x + w, y, x + w, y + h, r)
-  ctx.arcTo(x + w, y + h, x, y + h, r)
-  ctx.arcTo(x, y + h, x, y, r)
-  ctx.arcTo(x, y, x + w, y, r)
-  ctx.closePath()
 }
 
 /** Builds an SVG string for the QR (vector, ideal for printing). */

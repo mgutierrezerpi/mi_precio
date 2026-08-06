@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import {
@@ -105,15 +105,20 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const needsPlan = useAppSelector(selectNeedsPlan)
 
-  const [email, setEmail] = useState('')
+  const inviteEmail = searchParams.get('email')
+  const [email, setEmail] = useState(inviteEmail ?? '')
   const [code, setCode] = useState('')
+  const inviteAttempted = useRef(false)
 
   useEffect(() => {
-    const inviteEmail = searchParams.get('email')
+    const inviteCode = searchParams.get('code')
     if (inviteEmail && !codeSent) {
-      setEmail(inviteEmail)
+      if (inviteCode && !isAuthenticated && !inviteAttempted.current) {
+        inviteAttempted.current = true
+        void dispatch(verifyCode({ email: inviteEmail, code: inviteCode }))
+      }
     }
-  }, [codeSent, searchParams])
+  }, [codeSent, dispatch, inviteEmail, isAuthenticated, searchParams])
 
   // Redirect if already authenticated. Accounts that still owe us a plan go to
   // the plan screen instead of the panel.

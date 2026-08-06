@@ -57,6 +57,7 @@ export function TeamScreen() {
   const [invites, setInvites] = useState<Invitation[]>([])
   const [loading, setLoading] = useState(true)
   const [showInvite, setShowInvite] = useState(false)
+  const [editMember, setEditMember] = useState<TeamMember | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
@@ -89,11 +90,14 @@ export function TeamScreen() {
     return q ? members.filter((m) => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)) : members
   }, [members, search])
 
-  const changeRole = async (m: TeamMember, role: Role) => {
-    if (!tenant?.id) return
-    const res = await api.updateMemberRole(tenant.id, m.id, role)
-    if (res.error) setError(res.error)
-    else { setError(null); void refresh() }
+  const updateMember = async (m: TeamMember, data: { name: string; email: string; role?: Role }): Promise<string | null> => {
+    if (!tenant?.id) return 'No se encontró la cuenta'
+    const res = await api.updateMember(tenant.id, m.id, data)
+    if (res.error) { setError(res.error); return res.error }
+    setError(null)
+    setEditMember(null)
+    void refresh()
+    return null
   }
 
 
@@ -135,25 +139,26 @@ export function TeamScreen() {
         {/* Members */}
         <div className="flex flex-col gap-4">
           <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
-            <div className="flex min-w-[640px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+            <div className="flex min-w-[700px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="flex-1">Miembro</span>
               <span className="w-[150px]">Rol</span>
 
               <span className="w-[130px]">Último acceso</span>
               <span className="w-[90px]">Estado</span>
-              {canManage && <span className="w-[70px] text-right">Acción</span>}
+              <span className="w-[150px] text-right">Acciones</span>
             </div>
             {loading ? (
-              <div className="flex h-32 min-w-[640px] items-center justify-center text-sm font-medium text-[var(--dash-muted)]">Cargando…</div>
+              <div className="flex h-32 min-w-[700px] items-center justify-center text-sm font-medium text-[var(--dash-muted)]">Cargando…</div>
             ) : shown.length === 0 ? (
-              <div className="flex h-32 min-w-[640px] items-center justify-center text-sm font-medium text-[var(--dash-muted)]">No se encontraron miembros.</div>
+              <div className="flex h-32 min-w-[700px] items-center justify-center text-sm font-medium text-[var(--dash-muted)]">No se encontraron miembros.</div>
             ) : shown.map((m, idx) => {
               const isYou = me?.id === m.id
               const isOwner = m.role === 'owner'
-              const editable = canManage && !isOwner && !isYou
+              const editable = canManage && (!isOwner || isYou)
+              const removable = canManage && !isOwner && !isYou
               const seen = lastSeen(m.lastSeenAt)
               return (
-                <div key={m.id} className={`flex min-w-[640px] items-center gap-3 bg-[var(--dash-surface)] px-5 py-4 ${idx > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                <div key={m.id} className={`flex min-w-[700px] items-center gap-3 bg-[var(--dash-surface)] px-5 py-4 ${idx > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}>
                   <div className="flex flex-1 items-center gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={tone(avatarTone(m.email))}>{initials(m.name || m.email)}</span>
                     <div className="flex min-w-0 flex-col">
@@ -161,25 +166,15 @@ export function TeamScreen() {
                       <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">{m.email}</span>
                     </div>
                   </div>
-                  <span className="w-[150px]">
-                    {editable ? (
-                      <select value={m.role} onChange={(e) => changeRole(m, e.target.value as Role)} className="h-8 w-[120px] rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-[12px] font-bold text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]">
-                        {ASSIGNABLE.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
-                      </select>
-                    ) : (
-                      <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(ROLE_TONE[m.role])}>{ROLE_LABEL[m.role]}</span>
-                    )}
-                  </span>
+                  <span className="w-[150px]"><span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(ROLE_TONE[m.role])}>{ROLE_LABEL[m.role]}</span></span>
 
                   <span className="w-[130px] text-xs font-medium text-[var(--dash-muted)]">{seen.label}</span>
                   <span className="w-[90px]"><span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={tone(seen.active ? 'green' : 'slate')}>{seen.active ? 'Activo' : 'Inactivo'}</span></span>
-                  {canManage && (
-                    <span className="flex w-[70px] justify-end">
-                      {!isOwner && !isYou && (
-                        <button type="button" onClick={() => remove(m)} title="Quitar del equipo" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[#FEF2F2] hover:text-[#EF4444]"><Icon name="circle-x" size={16} /></button>
-                      )}
+                  <span className="flex w-[150px] justify-end gap-1.5">
+                    {editable && <button type="button" onClick={() => setEditMember(m)} className="flex h-8 items-center gap-1 rounded-[var(--dash-radius)] border border-[var(--dash-border)] px-2.5 text-[11px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-text)]"><Icon name="pencil" size={13} /> Editar</button>}
+                    {removable && <button type="button" onClick={() => remove(m)} className="flex h-8 items-center gap-1 rounded-[var(--dash-radius)] border border-transparent px-2 text-[11px] font-bold text-[var(--dash-muted)] hover:border-[#FCA5A5] hover:bg-[#FEF2F2] hover:text-[#EF4444]"><Icon name="circle-x" size={13} /> Quitar</button>}
+                    {!editable && !removable && <span className="text-[11px] font-medium text-[var(--dash-muted)]">—</span>}
                     </span>
-                  )}
                 </div>
               )
             })}
@@ -220,7 +215,45 @@ export function TeamScreen() {
       {showInvite && tenant?.id && (
         <InviteModal tenantId={tenant.id} onClose={() => setShowInvite(false)} onInvited={() => { setShowInvite(false); void refresh() }} />
       )}
+      {editMember && tenant?.id && (
+        <EditMemberModal member={editMember} onClose={() => setEditMember(null)} onSaved={(data) => updateMember(editMember, data)} />
+      )}
     </CrmLayout>
+  )
+}
+
+function EditMemberModal({ member, onClose, onSaved }: { member: TeamMember; onClose: () => void; onSaved: (data: { name: string; email: string; role?: Role }) => Promise<string | null> }) {
+  const [name, setName] = useState(member.name)
+  const [email, setEmail] = useState(member.email)
+  const [role, setRole] = useState<Role>(member.role)
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const valid = name.trim().length > 0 && /\S+@\S+\.\S+/.test(email.trim())
+
+  const submit = async () => {
+    if (!valid || saving) return
+    setSaving(true)
+    setErr(null)
+    const error = await onSaved({ name: name.trim(), email: email.trim(), ...(member.role === 'owner' ? {} : { role }) })
+    if (error) { setErr(error); setSaving(false) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="edit-member-title">
+      <div className="w-full max-w-md rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div><h2 id="edit-member-title" className="text-[18px] font-extrabold text-[var(--dash-text)]">Editar miembro</h2><p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">Actualizá sus datos y permisos de acceso.</p></div>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="text-[var(--dash-muted)] hover:text-[var(--dash-text)]">×</button>
+        </div>
+        <div className="mt-5 flex flex-col gap-3">
+          <label className="flex flex-col gap-1.5 text-xs font-bold text-[var(--dash-text2)]">Nombre<input value={name} onChange={(e) => setName(e.target.value)} className="h-10 rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-bg)] px-3 text-sm font-medium text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]" /></label>
+          <label className="flex flex-col gap-1.5 text-xs font-bold text-[var(--dash-text2)]">Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-10 rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-bg)] px-3 text-sm font-medium text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]" /></label>
+          <label className="flex flex-col gap-1.5 text-xs font-bold text-[var(--dash-text2)]">Rol<select value={role} disabled={member.role === 'owner'} onChange={(e) => setRole(e.target.value as Role)} className="h-10 rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-bg)] px-3 text-sm font-medium text-[var(--dash-text)] outline-none disabled:cursor-not-allowed disabled:opacity-60 focus:border-[var(--dash-link)]">{member.role === 'owner' ? <option value="owner">Dueño</option> : ASSIGNABLE.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}</select></label>
+          {err && <p className="text-xs font-semibold text-[#B91C1C]">{err}</p>}
+        </div>
+        <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={onClose} className="h-10 rounded-[var(--dash-radius)] px-4 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">Cancelar</button><button type="button" onClick={submit} disabled={!valid || saving} className={`h-10 rounded-[var(--dash-radius)] px-5 text-sm font-bold text-white disabled:opacity-50 ${gradient}`}>{saving ? 'Guardando…' : 'Guardar cambios'}</button></div>
+      </div>
+    </div>
   )
 }
 

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '../../../store/hooks'
-import { selectTenant, selectUser, logout } from '../../../store/slices/authSlice'
+import { selectTenant, selectUser, logout, setTenant, setUser } from '../../../store/slices/authSlice'
+import api from '../../../services/api'
+import type { Tenant } from '../../../types'
 import { planById } from '../../../lib/plans'
 import { useT } from '../../../lib/i18n'
 import { tone, gradient } from './theme'
@@ -11,7 +13,7 @@ export type IconName =
   | 'layout-dashboard' | 'package' | 'tags' | 'list-checks' | 'qr-code' | 'users'
   | 'boxes' | 'bar-chart' | 'user-plus' | 'plug' | 'settings' | 'search' | 'moon' | 'sun'
   | 'share-2' | 'bell' | 'chevron-down' | 'chevron-left' | 'chevron-right'
-  | 'chevrons-left' | 'chevrons-right' | 'plus' | 'link-2' | 'copy' | 'eye'
+  | 'chevrons-left' | 'chevrons-right' | 'plus' | 'link-2' | 'external-link' | 'copy' | 'eye'
   | 'trending-up' | 'alert-triangle' | 'wrench' | 'zap' | 'paintbrush' | 'list-plus'
   | 'file-spreadsheet' | 'upload' | 'log-out' | 'user' | 'box' | 'cable' | 'layers'
   | 'cog' | 'droplet' | 'droplets' | 'ellipsis' | 'sliders-horizontal' | 'arrow-up-down' | 'download'
@@ -44,6 +46,7 @@ const ICONS: Record<IconName, React.ReactNode> = {
   'chevrons-right': <><path d="m6 17 5-5-5-5" /><path d="m13 17 5-5-5-5" /></>,
   plus: <><path d="M5 12h14" /><path d="M12 5v14" /></>,
   'link-2': <><path d="M9 17H7A5 5 0 0 1 7 7h2" /><path d="M15 7h2a5 5 0 1 1 0 10h-2" /><line x1="8" x2="16" y1="12" y2="12" /></>,
+  'external-link': <><path d="M15 3h6v6" /><path d="m10 14 11-11" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></>,
   copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></>,
   eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></>,
   'trending-up': <><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" /></>,
@@ -90,7 +93,7 @@ function useAccount() {
   const name = tenant?.name?.trim() || emailName || 'Mi cuenta'
   const initials = name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'U'
   const plan = planById(tenant?.plan ?? 'free').name
-  return { name, initials, plan }
+  return { name, initials, plan, logoUrl: tenant?.logoUrl ?? null }
 }
 
 /* Deterministic QR-looking pattern (placeholder graphic). */
@@ -113,12 +116,19 @@ export function UserMenu() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const t = useT()
-  const { name, initials, plan } = useAccount()
+  const { name, initials, plan, logoUrl } = useAccount()
+  const tenant = useAppSelector(selectTenant)
+  const [tenants, setTenants] = useState<Tenant[]>([])
+  const [showCreate, setShowCreate] = useState(false)
+  const [businessName, setBusinessName] = useState('')
+  const [businessError, setBusinessError] = useState<string | null>(null)
+  const [businessSaving, setBusinessSaving] = useState(false)
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
+    void api.getTenants().then((res) => { if (res.data) setTenants(res.data) })
     const onDoc = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
@@ -132,6 +142,42 @@ export function UserMenu() {
       document.removeEventListener('keydown', onKey)
     }
   }, [open])
+
+  const switchBusiness = async (business: Tenant) => {
+    if (business.id === tenant?.id) return
+    const res = await api.switchTenant(business.id)
+    if (res.data) {
+      api.setToken(res.data.token)
+      dispatch(setUser(res.data.user))
+      dispatch(setTenant(res.data.tenant))
+      setOpen(false)
+      window.location.reload()
+    } else if (res.error) setBusinessError(res.error)
+  }
+
+  const createBusiness = async () => {
+    const cleanName = businessName.trim()
+    if (!cleanName || businessSaving) return
+    setBusinessSaving(true)
+    setBusinessError(null)
+    const subdomain = cleanName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 63)
+    const created = await api.createTenant(cleanName, subdomain || undefined)
+    if (created.error || !created.data) {
+      setBusinessError(created.error || 'No se pudo crear el negocio')
+      setBusinessSaving(false)
+      return
+    }
+    const switched = await api.switchTenant(created.data.id)
+    if (switched.error || !switched.data) {
+      setBusinessError(switched.error || 'No se pudo abrir el negocio')
+      setBusinessSaving(false)
+      return
+    }
+    api.setToken(switched.data.token)
+    dispatch(setUser(switched.data.user))
+    dispatch(setTenant(switched.data.tenant))
+    window.location.reload()
+  }
 
   const handleLogout = async () => {
     setOpen(false)
@@ -148,7 +194,7 @@ export function UserMenu() {
         aria-expanded={open}
         className="flex h-10 items-center gap-2.5 rounded-[10px] border border-transparent bg-[var(--dash-soft)] py-1.5 pl-2 pr-2 transition hover:opacity-80 lg:pr-3.5"
       >
-        <span className={`flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold text-white ${gradient}`}>{initials}</span>
+        {logoUrl ? <img src={logoUrl} alt="" className="h-7 w-7 rounded-lg object-contain" /> : <span className={`flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold text-white ${gradient}`}>{initials}</span>}
         <span className="hidden max-w-[145px] flex-col items-start leading-tight lg:flex">
           <span className="truncate text-xs font-bold text-[var(--dash-text)]">{name}</span>
           <span className="truncate text-[10px] font-semibold text-[var(--dash-link)]">{plan}</span>
@@ -161,13 +207,39 @@ export function UserMenu() {
         className={`absolute right-0 top-[calc(100%+8px)] z-50 w-64 origin-top-right rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-2.5 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.3)] transition-all duration-200 ease-out ${open ? 'scale-100 opacity-100 translate-y-0' : 'pointer-events-none -translate-y-1 scale-95 opacity-0'}`}
       >
         <div className="flex items-center gap-3 px-3.5 py-3">
-          <span className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold text-white ${gradient}`}>{initials}</span>
+          {logoUrl ? <img src={logoUrl} alt="" className="h-9 w-9 rounded-lg object-contain" /> : <span className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold text-white ${gradient}`}>{initials}</span>}
           <div className="flex min-w-0 flex-col items-start gap-1 leading-tight">
             <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">{name}</span>
             <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone('violet')}>{plan}</span>
           </div>
         </div>
         <div className="my-1 h-px bg-[var(--dash-divider)]" />
+        {tenants.length > 1 && (
+          <div className="px-1 pb-2">
+            <p className="px-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">Mis negocios</p>
+            <div className="flex flex-col gap-0.5">
+              {tenants.map((business) => (
+                <button key={business.id} type="button" role="menuitem" onClick={() => void switchBusiness(business)} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[12px] font-semibold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
+                  {business.logoUrl ? <img src={business.logoUrl} alt="" className="h-7 w-7 rounded-lg object-contain" /> : <span className={`flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold text-white ${gradient}`}>{business.name.slice(0, 2).toUpperCase()}</span>}
+                  <span className="min-w-0 flex-1 truncate">{business.name}</span>
+                  {business.id === tenant?.id && <span className="text-[var(--dash-link)]">✓</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {!showCreate ? (
+          <button type="button" role="menuitem" onClick={() => setShowCreate(true)} className="mb-1 flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[13px] font-semibold text-[var(--dash-text2)] transition-colors hover:bg-[var(--dash-soft)]">
+            <Icon name="plus" size={16} /> Crear nuevo negocio
+          </button>
+        ) : (
+          <div className="mb-1 rounded-xl bg-[var(--dash-soft)] p-3">
+            <p className="mb-2 text-[12px] font-bold text-[var(--dash-text)]">Nuevo negocio</p>
+            <input autoFocus value={businessName} onChange={(e) => setBusinessName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void createBusiness() }} placeholder="Nombre del negocio" className="mb-2 h-9 w-full rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2.5 text-[12px] text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]" />
+            {businessError && <p className="mb-2 text-[11px] font-semibold text-[#B91C1C]">{businessError}</p>}
+            <div className="flex justify-end gap-1.5"><button type="button" onClick={() => { setShowCreate(false); setBusinessError(null) }} className="rounded-[var(--dash-radius)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--dash-text2)]">Cancelar</button><button type="button" disabled={!businessName.trim() || businessSaving} onClick={() => void createBusiness()} className={`rounded-[var(--dash-radius)] px-2.5 py-1.5 text-[11px] font-bold text-white disabled:opacity-50 ${gradient}`}>{businessSaving ? 'Creando…' : 'Crear'}</button></div>
+          </div>
+        )}
         <button
           type="button"
           role="menuitem"

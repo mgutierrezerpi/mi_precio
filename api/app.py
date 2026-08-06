@@ -16,11 +16,12 @@ from routes import register_routes
 # tenant. Users belong to exactly one tenant, so the id in the path has to match
 # the `tenant_id` baked into their token — otherwise it's a cross-tenant access.
 _TENANT_SCOPED_PATH = re.compile(r"^/api/v1/tenants/([^/]+)")
+_TENANT_SWITCH_PATH = re.compile(r"^/api/v1/tenants/[^/]+/switch$")
 
 
 async def enforce_tenant_isolation(request: Request, call_next):
     match = _TENANT_SCOPED_PATH.match(request.url.path)
-    if match:
+    if match and not _TENANT_SWITCH_PATH.match(request.url.path):
         auth = request.headers.get("authorization", "")
         if auth[:7].lower() == "bearer ":
             payload = decode_token(auth[7:])

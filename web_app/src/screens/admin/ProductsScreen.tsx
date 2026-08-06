@@ -620,7 +620,7 @@ function pageList(current: number, total: number): (number | '…')[] {
 }
 
 /* ── Create / edit modal ─────────────────────────────────────────── */
-function ProductModal({ product, tenantId, lists, onClose }: { product: Product | null; tenantId?: string; lists: PriceList[]; onClose: () => void }) {
+export function ProductModal({ product, tenantId, lists, onClose, onCreated }: { product: Product | null; tenantId?: string; lists: PriceList[]; onClose: () => void; onCreated?: (product: Product) => void }) {
   const dispatch = useAppDispatch()
   const saving = useAppSelector(selectProductsSaving)
   const [name, setName] = useState(product?.name ?? '')
@@ -701,7 +701,10 @@ function ProductModal({ product, tenantId, lists, onClose }: { product: Product 
       : tenantId
         ? await dispatch(createProduct({ tenantId, data }))
         : null
-    if (result && (createProduct.fulfilled.match(result) || updateProduct.fulfilled.match(result))) onClose()
+    if (result && (createProduct.fulfilled.match(result) || updateProduct.fulfilled.match(result))) {
+      if (createProduct.fulfilled.match(result)) onCreated?.(result.payload)
+      onClose()
+    }
     else if (result && (createProduct.rejected.match(result) || updateProduct.rejected.match(result))) {
       setError((result.payload as string) || 'No se pudo guardar el producto.')
     }

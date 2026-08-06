@@ -8,11 +8,10 @@ from lib.value_objects import PublishedList
 def get_published_lists(tenant: Tenant) -> list[PublishedList]:
     """Get published lists with their published versions and items.
 
-    Items and products are coupled only by name, so an item rarely carries its
-    own image. When it doesn't, fall back to the matching product's image so the
-    public storefront shows the picture the owner uploaded on the product.
+    Catalog-linked items inherit the current product description and image. A
+    name-based fallback keeps older items working when they predate product IDs.
     """
-    product_images = _product_images_by_name(tenant.id)
+    product_details = _product_details(tenant.id)
     result = []
     for price_list in PriceList.select().where(
         (PriceList.tenant == tenant.id) & PriceList.published
@@ -23,25 +22,36 @@ def get_published_lists(tenant: Tenant) -> list[PublishedList]:
         if version:
             items = list(version.items.order_by(Item.position))
             for item in items:
-                fallback = product_images.get(_norm_name(item.name))
-                if fallback and not item.image_url:
-                    item.image_url = fallback["image_url"]
-                    item.image_thumb_url = fallback["image_thumb_url"]
-                elif fallback and not item.image_thumb_url:
-                    item.image_thumb_url = fallback["image_thumb_url"]
+                fallback = product_details.get(str(item.product_id)) or product_details.get(_norm_name(item.name))
+                if fallback:
+                    # Products are the source of truth for catalog-linked details.
+                    item.description = fallback["description"]
+                    if not item.image_url:
+                        item.image_url = fallback["image_url"]
+                    if not item.image_thumb_url:
+                        item.image_thumb_url = fallback["image_thumb_url"]
             result.append(PublishedList(price_list, version, items))
     return result
 
 
-def _product_images_by_name(tenant_id: str) -> dict[str, dict[str, str | None]]:
-    """Map of normalized product name -> image URL for products that have one."""
-    return {
-        _norm_name(p.name): {"image_url": p.image_url, "image_thumb_url": p.image_thumb_url}
-        for p in Product.select(Product.name, Product.image_url, Product.image_thumb_url).where(
-            (Product.tenant == tenant_id) & Product.image_url.is_null(False)
-        )
-        if p.image_url
-    }
+def _product_details(tenant_id: str) -> dict[str, dict[str, str | None]]:
+    """Map products by id and name for current catalog details and image fallbacks."""
+    details: dict[str, dict[str, str | None]] = {}
+    for product in Product.select(
+        Product.id,
+        Product.name,
+        Product.description,
+        Product.image_url,
+        Product.image_thumb_url,
+    ).where(Product.tenant == tenant_id):
+        value = {
+            "description": product.description,
+            "image_url": product.image_url,
+            "image_thumb_url": product.image_thumb_url,
+        }
+        details[str(product.id)] = value
+        details[_norm_name(product.name)] = value
+    return details
 
 
 def _norm_name(name: str) -> str:

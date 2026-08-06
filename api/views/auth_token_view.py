@@ -13,6 +13,6 @@ class AuthTokenView(BaseView):
     def render(cls, result: AuthResult):
         return cls(
             token=result.token,
-            user=UserView.render(result.user),
+            user=UserView.render(result.user, result.role),
             tenant=TenantView.render(result.tenant),
         )

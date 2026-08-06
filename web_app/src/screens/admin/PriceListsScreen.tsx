@@ -10,18 +10,22 @@ import api from '../../services/api'
 import { useT } from '../../lib/i18n'
 import { ListAppearanceFields, hasOwnAppearance, type ListAppearance } from '../../components/appearance/ListAppearanceFields'
 import { CrmLayout } from './crm/CrmLayout'
+import { ProductModal } from './ProductsScreen'
 import { Icon, type IconName } from './crm/ui'
 import { QrCode } from './crm/QrCode'
 import { tone, gradient } from './crm/theme'
 import { timeAgo, formatPrice, catTone, catIcon } from './crm/productFormat'
+import { QR_COLOR_STORAGE_PREFIX, DEFAULT_QR_COLOR, downloadQrPng, downloadQrSvg } from '../../lib/qrRender'
 
 type Tab = 'all' | 'active' | 'inactive'
 
 const FAVICON = '/miprecio-favicon.png'
 const slugOf = (l: PriceList) => l.slug || l.id
 const publicPath = (sub: string | undefined, l: PriceList) => `/p/${sub || ''}/${slugOf(l)}`
-const publicDisplay = (sub: string | undefined, l: PriceList) => `miprecio.app${publicPath(sub, l)}`
+const publicDisplay = (sub: string | undefined, l: PriceList) => `${window.location.origin}${publicPath(sub, l)}`
 const publicUrl = (sub: string | undefined, l: PriceList) => `${window.location.origin}${publicPath(sub, l)}`
+const qrUrl = (sub: string | undefined, l: PriceList) => `${publicUrl(sub, l)}?src=qr`
+const qrFileName = (l: PriceList) => (l.slug || l.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || l.id
 
 /* ── Screen ──────────────────────────────────────────────────────── */
 export function PriceListsScreen() {
@@ -32,18 +36,43 @@ export function PriceListsScreen() {
   const loading = useAppSelector(selectIsLoading)
   const products = useAppSelector(selectProducts)
 
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<Tab>('all')
   const [modal, setModal] = useState<{ open: boolean; list: PriceList | null }>(() => ({ open: searchParams.get('new') === '1' && canEdit, list: null }))
   const [qr, setQr] = useState<PriceList | null>(null)
+  const [qrColor, setQrColor] = useState(DEFAULT_QR_COLOR)
+  const editId = searchParams.get('edit')
+  const newList = searchParams.get('new') === '1'
 
   useEffect(() => {
     if (tenant?.id) {
       dispatch(fetchLists(tenant.id))
       dispatch(fetchProducts(tenant.id))
+      const savedColor = localStorage.getItem(`${QR_COLOR_STORAGE_PREFIX}${tenant.id}`)
+      if (savedColor) setQrColor(savedColor)
     }
   }, [dispatch, tenant?.id])
+
+  useEffect(() => {
+    if (!canEdit) return
+    if (editId) {
+      const list = lists.find((item) => item.id === editId)
+      if (list) setModal({ open: true, list })
+    } else if (newList) {
+      setModal({ open: true, list: null })
+    }
+  }, [canEdit, editId, lists, newList])
+
+  const closeModal = () => {
+    setModal({ open: false, list: null })
+    setSearchParams((current) => {
+      current.delete('new')
+      current.delete('edit')
+      current.delete('step')
+      return current
+    })
+  }
 
   const availableProducts = useMemo(() => products.filter((p) => p.available), [products])
 
@@ -109,7 +138,7 @@ export function PriceListsScreen() {
           </div>
           <div className="flex items-center justify-center gap-2">
             {canEdit && (
-              <button type="button" onClick={() => setModal({ open: true, list: null })} className={`flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-bold text-white ${gradient}`}>
+              <button type="button" onClick={() => { setModal({ open: true, list: null }); setSearchParams({ new: '1' }) }} className={`flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-bold text-white ${gradient}`}>
                 <Icon name="plus" size={15} /> Nueva lista
               </button>
             )}
@@ -129,22 +158,20 @@ export function PriceListsScreen() {
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
-            <div className="flex min-w-[760px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+            <div className="flex min-w-[680px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
               <span className="flex-1">Lista</span>
-              <span className="w-[120px]">Productos</span>
-              <span className="w-[120px]">Estado</span>
-              <span className="w-[130px]">Actualizada</span>
-              <span className="w-[220px]">Enlace público</span>
-              <span className="w-[104px]" />
+              <span className="w-[100px]">Productos</span>
+              <span className="w-[110px]">Estado</span>
+              <span className="w-[110px]">Actualizada</span>
+              <span className="w-[144px]" />
             </div>
             {filtered.map((l, i) => (
               <ListRow
                 key={l.id}
                 list={l}
-                subdomain={tenant?.subdomain}
                 canEdit={canEdit}
                 first={i === 0}
-                onEdit={() => setModal({ open: true, list: l })}
+                onEdit={() => { setModal({ open: true, list: l }); setSearchParams({ edit: l.id }) }}
                 onTogglePublished={() => togglePublished(l)}
                 onTogglePrincipal={() => togglePrincipal(l)}
                 onDelete={() => handleDelete(l)}
@@ -157,15 +184,15 @@ export function PriceListsScreen() {
         )}
       </main>
 
-      {modal.open && <ListModal key={modal.list?.id ?? 'new'} list={modal.list} tenantId={tenant?.id} products={availableProducts} onClose={() => setModal({ open: false, list: null })} />}
-      {qr && <QrModal list={qr} url={publicDisplay(tenant?.subdomain, qr)} qrValue={publicUrl(tenant?.subdomain, qr)} onClose={() => setQr(null)} />}
+      {modal.open && <ListModal key={modal.list?.id ?? 'new'} list={modal.list} initialStep={searchParams.get('step') === '2' ? 2 : 1} tenantId={tenant?.id} products={availableProducts} lists={lists} onClose={closeModal} />}
+      {qr && <QrModal list={qr} url={publicDisplay(tenant?.subdomain, qr)} linkUrl={publicUrl(tenant?.subdomain, qr)} qrValue={qrUrl(tenant?.subdomain, qr)} fg={qrColor} logoUrl={tenant?.logoUrl || FAVICON} onClose={() => setQr(null)} />}
     </CrmLayout>
   )
 }
 
 /* ── Row ─────────────────────────────────────────────────────────── */
-function ListRow({ list, subdomain, canEdit, first, onEdit, onTogglePublished, onTogglePrincipal, onDelete, onCopy, onQr, onOpen }: {
-  list: PriceList; subdomain?: string; canEdit: boolean
+function ListRow({ list, canEdit, first, onEdit, onTogglePublished, onTogglePrincipal, onDelete, onCopy, onQr, onOpen }: {
+  list: PriceList; canEdit: boolean
   first?: boolean
   onEdit: () => void; onTogglePublished: () => void; onTogglePrincipal: () => void; onDelete: () => void; onCopy: () => void; onQr: () => void; onOpen: () => void
 }) {
@@ -173,37 +200,29 @@ function ListRow({ list, subdomain, canEdit, first, onEdit, onTogglePublished, o
   const copy = () => { onCopy(); setCopied(true); setTimeout(() => setCopied(false), 1500) }
 
   return (
-    <div className={`flex min-w-[760px] items-center gap-3 bg-[var(--dash-surface)] px-5 py-4 ${!first ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+    <div className={`flex min-w-[680px] items-center gap-3 bg-[var(--dash-surface)] px-5 py-4 ${!first ? 'border-t border-[var(--dash-divider)]' : ''}`}>
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]" style={tone('violet')}><Icon name="list-checks" size={19} /></span>
         <div className="flex min-w-0 flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <h4 className="truncate text-base font-bold text-[var(--dash-text)]">{list.name}</h4>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h4 className="min-w-0 whitespace-normal break-words text-base font-bold leading-snug text-[var(--dash-text)]">{list.name}</h4>
             {list.showOnIndex && <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={tone('violet')}>Principal</span>}
           </div>
         </div>
       </div>
 
-      <span className="w-[120px] text-sm font-semibold text-[var(--dash-text2)]">{list.itemCount}</span>
-      <span className="w-[120px]">
+      <span className="w-[100px] text-sm font-semibold text-[var(--dash-text2)]">{list.itemCount}</span>
+      <span className="w-[110px]">
         <span className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold" style={tone(list.published ? 'green' : 'amber')}>
           <span className="h-1.5 w-1.5 rounded-full bg-current" /> {list.published ? 'Activa' : 'Borrador'}
         </span>
       </span>
-      <span className="w-[130px] text-xs font-medium text-[var(--dash-muted)]">{timeAgo(list.updatedAt)}</span>
-      <span className="w-[220px]">
-        {list.published
-          ? <button type="button" onClick={copy} className="flex max-w-full items-center gap-2 rounded-lg px-2 py-1 text-xs font-semibold text-[var(--dash-link)] hover:bg-[var(--dash-soft)]">
-              <Icon name="link-2" size={14} />
-              <span className="truncate">{publicDisplay(subdomain, list)}</span>
-              <Icon name={copied ? 'circle-check' : 'copy'} size={14} />
-            </button>
-          : <span className="text-xs text-[var(--dash-muted)]">No disponible</span>}
-      </span>
+      <span className="w-[110px] text-xs font-medium text-[var(--dash-muted)]">{timeAgo(list.updatedAt)}</span>
 
-      <div className="flex w-[104px] shrink-0 items-center justify-end gap-1.5">
+      <div className="flex w-[144px] shrink-0 items-center justify-end gap-1.5">
+        {list.published && <button type="button" onClick={copy} title={copied ? 'Enlace copiado' : 'Copiar enlace público'} aria-label={copied ? 'Enlace copiado' : 'Copiar enlace público'} className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-link)] hover:bg-[var(--dash-soft)]"><Icon name={copied ? 'circle-check' : 'link-2'} size={15} /></button>}
         <button type="button" onClick={onQr} title="Código QR" className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="qr-code" size={15} /></button>
-        <button type="button" onClick={onOpen} title="Abrir lista pública" className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="share-2" size={15} /></button>
+        <button type="button" onClick={onOpen} title="Abrir lista pública" aria-label="Abrir lista pública" className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="external-link" size={15} /></button>
         {canEdit && <RowMenu list={list} onEdit={onEdit} onTogglePublished={onTogglePublished} onTogglePrincipal={onTogglePrincipal} onDelete={onDelete} />}
       </div>
     </div>
@@ -264,26 +283,36 @@ function MenuItemBtn({ icon, label, onClick, danger }: { icon: IconName; label: 
 }
 
 /* ── QR modal ────────────────────────────────────────────────────── */
-function QrModal({ list, url, qrValue, onClose }: { list: PriceList; url: string; qrValue: string; onClose: () => void }) {
+function QrModal({ list, url, linkUrl, qrValue, fg, logoUrl, onClose }: { list: PriceList; url: string; linkUrl: string; qrValue: string; fg: string; logoUrl: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1E1B4B]/60 p-4 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="dash flex w-full max-w-[360px] animate-scale-in flex-col items-center gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-7 text-center font-sans shadow-[0_30px_80px_-20px_rgba(15,23,42,0.5)]">
+      <div className="dash relative flex w-full max-w-[360px] animate-scale-in flex-col items-center gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-7 text-center font-sans shadow-[0_30px_80px_-20px_rgba(15,23,42,0.5)]">
+        <button type="button" onClick={onClose} aria-label="Cerrar" title="Cerrar" className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-lg leading-none text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-text)]">×</button>
         <h3 className="text-lg font-extrabold text-[var(--dash-text)]">{list.name}</h3>
-        <div className="h-52 w-52 rounded-2xl bg-white p-3 shadow-[0_10px_30px_-10px_rgba(15,23,42,0.3)]"><QrCode value={qrValue} size={180} fg="#0F172A" logoUrl={FAVICON} className="h-full w-full object-contain" /></div>
-        <p className="text-xs font-semibold text-[var(--dash-link)]">{url}</p>
-        <button type="button" onClick={onClose} className={`flex h-11 w-full items-center justify-center rounded-xl text-sm font-bold text-white ${gradient}`}>Listo</button>
+        <div className="h-52 w-52 rounded-2xl bg-white p-3 shadow-[0_10px_30px_-10px_rgba(15,23,42,0.3)]"><QrCode value={qrValue} size={180} margin={2} fg={fg} logoUrl={logoUrl} className="h-full w-full object-contain" /></div>
+        <a href={linkUrl} className="text-xs font-semibold text-[var(--dash-link)] underline-offset-2 hover:underline">{url}</a>
+        <div className="flex w-full gap-2">
+          <button type="button" onClick={() => void downloadQrPng(qrValue, `qr-${qrFileName(list)}.png`, { fg, logoUrl })} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #7C3AED, #C026D3)' }}>
+            <Icon name="download" size={14} /> PNG
+          </button>
+          <button type="button" onClick={() => downloadQrSvg(qrValue, `qr-${qrFileName(list)}.svg`, { fg })} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] text-xs font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
+            <Icon name="download" size={14} /> SVG
+          </button>
+        </div>
+
       </div>
     </div>
   )
 }
 
 /* ── Create wizard / edit modal ──────────────────────────────────── */
-function ListModal({ list, tenantId, products, onClose }: { list: PriceList | null; tenantId?: string; products: Product[]; onClose: () => void }) {
+function ListModal({ list, initialStep, tenantId, products, lists, onClose }: { list: PriceList | null; initialStep: 1 | 2; tenantId?: string; products: Product[]; lists: PriceList[]; onClose: () => void }) {
   const dispatch = useAppDispatch()
+  const [, setWizardParams] = useSearchParams()
   const t = useT()
   const tenant = useAppSelector(selectTenant)
   const editing = !!list
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState<1 | 2>(initialStep)
   const [name, setName] = useState(list?.name ?? '')
   const [slug, setSlug] = useState(list?.slug ?? '')
   const [kind, setKind] = useState<'product' | 'service'>(list?.kind ?? 'product')
@@ -292,6 +321,7 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [prodSearch, setProdSearch] = useState('')
   const [saving, setSaving] = useState(false)
+  const [showProductModal, setShowProductModal] = useState(false)
   // Per-list appearance overrides. Null fields inherit the tenant's defaults,
   // so a list only carries what the user deliberately changed here.
   const [appearance, setAppearance] = useState<ListAppearance>({
@@ -359,7 +389,16 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
     return n
   })
 
-  const goNext = (e: React.FormEvent) => { e.preventDefault(); if (name.trim()) setStep(2) }
+  const changeStep = (next: 1 | 2) => {
+    setStep(next)
+    setWizardParams((current) => {
+      if (next === 2) current.set('step', '2')
+      else current.delete('step')
+      return current
+    })
+  }
+
+  const goNext = (e: React.FormEvent) => { e.preventDefault(); if (name.trim()) changeStep(2) }
 
   // Add the selected products as items / remove the ones deselected. Membership is
   // keyed off the product id (stable across renames); items store product_id and copy
@@ -491,10 +530,13 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
         ) : (
           <div>
             <div className="mb-3 flex items-center gap-2">
-              <label className="flex h-10 flex-1 items-center gap-2.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3">
+              <label className="flex h-10 flex-1 items-center gap-2.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3 focus-within:border-[#7C3AED] focus-within:ring-2 focus-within:ring-[#7C3AED]/15">
                 <Icon name="search" size={16} className="text-[var(--dash-muted)]" />
-                <input value={prodSearch} onChange={(e) => setProdSearch(e.target.value)} placeholder="Buscar productos disponibles…" className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-[var(--dash-text)] outline-none placeholder:text-[var(--dash-muted)]" />
+                <input value={prodSearch} onChange={(e) => setProdSearch(e.target.value)} placeholder="Buscar productos disponibles…" className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium text-[var(--dash-text)] outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 placeholder:text-[var(--dash-muted)]" />
               </label>
+              <button type="button" onClick={() => setShowProductModal(true)} className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-link)] hover:bg-[var(--dash-soft)]">
+                <Icon name="plus" size={14} /> Nuevo producto
+              </button>
               {filteredProducts.length > 0 && (
                 <button type="button" onClick={toggleAll} className="h-10 shrink-0 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
                   {allShown ? 'Quitar todos' : 'Seleccionar todos'}
@@ -505,7 +547,7 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
             <div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto pr-1">
               {filteredProducts.length === 0 ? (
                 <div className="flex h-32 items-center justify-center px-4 text-center text-sm font-medium text-[var(--dash-muted)]">
-                  {products.length === 0 ? 'No hay productos disponibles. Cargá productos primero (solo se listan los marcados como disponibles).' : 'Sin resultados para tu búsqueda.'}
+                  {products.length === 0 ? 'No hay productos disponibles. Creá uno nuevo para agregarlo a esta lista.' : 'Sin resultados para tu búsqueda.'}
                 </div>
               ) : (
                 filteredProducts.map((p) => {
@@ -530,7 +572,7 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
             <div className="mt-5 flex items-center justify-between gap-3">
               <span className="text-xs font-semibold text-[var(--dash-muted)]">{selected.size} seleccionado{selected.size === 1 ? '' : 's'}</span>
               <div className="flex gap-3">
-                <button type="button" onClick={() => setStep(1)} className="flex h-11 items-center gap-1.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
+                <button type="button" onClick={() => changeStep(1)} className="flex h-11 items-center gap-1.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-5 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
                   <Icon name="chevron-left" size={16} /> Atrás
                 </button>
                 <button type="button" onClick={finalize} disabled={saving} className={`flex h-11 items-center rounded-xl px-5 text-sm font-bold text-white disabled:opacity-60 ${gradient}`}>
@@ -541,6 +583,7 @@ function ListModal({ list, tenantId, products, onClose }: { list: PriceList | nu
           </div>
         )}
       </div>
+      {showProductModal && <ProductModal product={null} tenantId={tenantId} lists={lists} onCreated={(product) => setSelected((current) => new Set(current).add(product.id))} onClose={() => setShowProductModal(false)} />}
     </div>
   )
 }

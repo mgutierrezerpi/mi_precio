@@ -173,15 +173,32 @@ function InfoSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) {
   const [logo, setLogo] = useState<string | null>(tenant?.logoUrl ?? null)
   const [copied, setCopied] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  const publicUrl = `${window.location.origin}/p/${tenant?.subdomain || ''}`
+  const touched = useRef(false)
+  const saveRef = useRef(save)
+  saveRef.current = save
+  const publicUrl = `${window.location.origin}/p/${subdomain || ''}`
 
-  const pickLogo = async (file?: File) => { if (file) setLogo(await fileToDataUrl(file)) }
+  useEffect(() => {
+    if (!canManage || !touched.current) return
+    const timer = setTimeout(() => {
+      touched.current = false
+      void saveRef.current({ name: name.trim(), subdomain: subdomain.trim(), taxId: taxId.trim() || null, logoUrl: logo }, 'info')
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [name, subdomain, taxId, logo, canManage])
+
+  const pickLogo = async (file?: File) => {
+    if (file) {
+      touched.current = true
+      setLogo(await fileToDataUrl(file))
+    }
+  }
   const copyUrl = () => { navigator.clipboard?.writeText(publicUrl); setCopied(true); setTimeout(() => setCopied(false), 1500) }
 
   return (
     <>
       <SectionHeader t={t} title={t('set.sec.info')} subtitle={t('set.info.subtitle')} canManage={canManage}
-        onSave={() => save({ name: name.trim(), subdomain: subdomain.trim(), taxId: taxId.trim() || null, logoUrl: logo }, 'info')} saving={savingKey === 'info'} saved={savedKey === 'info'} />
+        autosave saving={savingKey === 'info'} saved={savedKey === 'info'} />
 
       <Field label={t('set.info.logo')}>
         <div className="flex items-center gap-4">
@@ -192,16 +209,16 @@ function InfoSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) {
             <div className="flex items-center gap-2">
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => pickLogo(e.target.files?.[0])} />
               <button type="button" onClick={() => fileRef.current?.click()} className="flex h-9 items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"><Icon name="upload" size={15} /> {logo ? t('set.info.changeLogo') : t('set.info.uploadLogo')}</button>
-              {logo && <button type="button" onClick={() => setLogo(null)} className="text-[13px] font-bold text-[#EF4444] hover:underline">{t('common.remove')}</button>}
+              <button type="button" onClick={() => { touched.current = true; setLogo(null) }} className="text-[13px] font-bold text-[#EF4444] hover:underline">{t('common.remove')}</button>
             </div>
           )}
         </div>
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label={t('set.info.name')}><input value={name} onChange={(e) => setName(e.target.value)} disabled={!canManage} className={inputCls} /></Field>
-        <Field label={t('set.info.subdomain')}><input value={subdomain} onChange={(e) => setSubdomain(e.target.value)} disabled={!canManage} className={inputCls} /></Field>
-        <Field label={t('set.info.taxId')}><input value={taxId} onChange={(e) => setTaxId(e.target.value)} disabled={!canManage} placeholder="21 123456 0017" className={inputCls} /></Field>
+        <Field label={t('set.info.name')}><input value={name} onChange={(e) => { touched.current = true; setName(e.target.value) }} disabled={!canManage} className={inputCls} /></Field>
+        <Field label={t('set.info.subdomain')}><input value={subdomain} onChange={(e) => { touched.current = true; setSubdomain(e.target.value) }} disabled={!canManage} className={inputCls} /></Field>
+        <Field label={t('set.info.taxId')}><input value={taxId} onChange={(e) => { touched.current = true; setTaxId(e.target.value) }} disabled={!canManage} placeholder="21 123456 0017" className={inputCls} /></Field>
       </div>
 
       <Field label={t('set.info.publicUrl')}>
@@ -472,24 +489,36 @@ function RegionSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx)
   const [language, setLanguage] = useState(tenant?.language ?? 'es')
   const [timezone, setTimezone] = useState(tenant?.timezone ?? 'America/Montevideo')
   const [deliveryEnabled, setDeliveryEnabled] = useState(tenant?.deliveryEnabled ?? false)
+  const touched = useRef(false)
+  const saveRef = useRef(save)
+  saveRef.current = save
+
+  useEffect(() => {
+    if (!canManage || !touched.current) return
+    const timer = setTimeout(() => {
+      touched.current = false
+      void saveRef.current({ currency, language, timezone, deliveryEnabled }, 'region')
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [currency, language, timezone, deliveryEnabled, canManage])
 
   return (
     <>
       <SectionHeader t={t} title={t('set.sec.region')} subtitle={t('set.region.subtitle')} canManage={canManage}
-        onSave={() => save({ currency, language, timezone, deliveryEnabled }, 'region')} saving={savingKey === 'region'} saved={savedKey === 'region'} />
+        autosave saving={savingKey === 'region'} saved={savedKey === 'region'} />
       <div className="grid grid-cols-2 gap-4">
         <Field label={t('set.region.currency')}>
-          <select value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={!canManage} className={inputCls}>
+          <select value={currency} onChange={(e) => { touched.current = true; setCurrency(e.target.value) }} disabled={!canManage} className={inputCls}>
             {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </Field>
         <Field label={t('set.region.language')}>
-          <select value={language} onChange={(e) => setLanguage(e.target.value)} disabled={!canManage} className={inputCls}>
+          <select value={language} onChange={(e) => { touched.current = true; setLanguage(e.target.value) }} disabled={!canManage} className={inputCls}>
             {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
           </select>
         </Field>
         <Field label={t('set.region.timezone')}>
-          <select value={timezone} onChange={(e) => setTimezone(e.target.value)} disabled={!canManage} className={inputCls}>
+          <select value={timezone} onChange={(e) => { touched.current = true; setTimezone(e.target.value) }} disabled={!canManage} className={inputCls}>
             {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>)}
           </select>
         </Field>
@@ -499,7 +528,7 @@ function RegionSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx)
           <span className="text-[13px] font-bold text-[var(--dash-text)]">{t('set.region.delivery')}</span>
           <span className="text-[11px] font-medium text-[var(--dash-muted)]">{t('set.region.deliverySub')}</span>
         </div>
-        <Toggle on={deliveryEnabled} disabled={!canManage} onClick={() => setDeliveryEnabled((v) => !v)} />
+        <Toggle on={deliveryEnabled} disabled={!canManage} onClick={() => { touched.current = true; setDeliveryEnabled((v) => !v) }} />
       </div>
     </>
   )

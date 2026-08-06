@@ -17,8 +17,8 @@ const NEXT_PLAN: Partial<Record<PlanId, PlanId>> = { free: 'micro', micro: 'plus
 // `id` is the stable (Spanish) key screens pass as CrmLayout `active`; `tKey` is the display label.
 const navMain: { icon: IconName; id: string; tKey: string; label: string; to?: string; badge?: string }[] = [
   { icon: 'layout-dashboard', id: 'Overview', tKey: 'nav.home', label: 'Resumen', to: '/admin' },
-  { icon: 'package', id: 'Productos', tKey: 'nav.products', label: 'Productos', to: '/admin/items' },
   { icon: 'list-checks', id: 'Listas de precios', tKey: 'nav.lists', label: 'Listas', to: '/admin/lists' },
+  { icon: 'package', id: 'Productos', tKey: 'nav.products', label: 'Productos', to: '/admin/items' },
   { icon: 'qr-code', id: 'Códigos QR', tKey: 'nav.qr', label: 'Códigos QR', to: '/admin/qr' },
   { icon: 'users', id: 'Clientes', tKey: 'nav.customers', label: 'Clientes', to: '/admin/clientes' },
   { icon: 'bar-chart', id: 'Reportes', tKey: 'nav.reports', label: 'Reportes', to: '/admin/reportes' },
@@ -112,14 +112,14 @@ export function CrmSidebar({ active, open = false, collapsed = false, onToggle, 
 
         {/* Upsell to the next plan up; hidden once the tenant is on the top plan (pro). */}
         {nextPlan && tenant && !collapsed && (
-          <div className={`flex flex-col gap-2 rounded-xl p-4 text-white shadow-[0_12px_28px_-8px_rgba(124,58,237,0.6)] ${gradient}`}>
+          <div className={`flex flex-col gap-3 rounded-lg p-4 text-white shadow-[0_12px_28px_-8px_rgba(124,58,237,0.6)] ${gradient}`}>
             <div className="flex items-center justify-between gap-2">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">{t('side.planTag', { plan: planById(tenant.plan).name })}</p>
               <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white">Micro</span>
             </div>
             <p className="text-base font-extrabold">{t('side.upgradeTitle', { plan: planById(nextPlan).name })}</p>
             <p className="text-xs font-medium leading-snug text-[#E0E7FF]">{t(`side.upgradeDesc.${nextPlan}`)}</p>
-            <Link to="/admin/settings?section=billing" onClick={onClose} className="mt-1 flex h-9 items-center justify-center rounded-[10px] bg-white text-[13px] font-bold text-[#7C3AED] hover:bg-violet-50">
+            <Link to="/admin/settings?section=billing" onClick={onClose} className="mt-0 flex h-9 items-center justify-center rounded-lg bg-white text-[13px] font-bold text-[#7C3AED] hover:bg-violet-50">
               {t('side.viewPlans')}
             </Link>
           </div>

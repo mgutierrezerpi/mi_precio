@@ -58,7 +58,7 @@ function ToastItem({ toast, onRemove }: ToastProps) {
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border backdrop-blur-sm shadow-lg ${colors[toast.type]} ${isExiting ? 'toast-exit' : 'toast-enter'}`}
+      className={`flex items-center gap-3 rounded-xl border px-4 py-3 font-sans backdrop-blur-sm shadow-lg ${colors[toast.type]} ${isExiting ? 'toast-exit' : 'toast-enter'}`}
     >
       <span className="flex-shrink-0">{icons[toast.type]}</span>
       <span className="text-sm font-medium">{toast.message}</span>

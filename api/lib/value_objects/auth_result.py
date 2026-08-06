@@ -7,3 +7,4 @@ class AuthResult:
     token: str
     user: User
     tenant: Tenant
+    role: str | None = None

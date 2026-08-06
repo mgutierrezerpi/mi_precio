@@ -14,12 +14,12 @@ class UserView(BaseView):
     last_seen_at: datetime | None = None
 
     @classmethod
-    def render(cls, user):
+    def render(cls, user, role: str | None = None):
         return cls(
             id=user.id,
             email=user.email,
             tenant_id=user.tenant_id,
-            role=user.role or "owner",
+            role=role or getattr(user, "_team_role", None) or user.role or "owner",
             name=user.name or user.email.split("@")[0],
 
             created_at=user.created_at,

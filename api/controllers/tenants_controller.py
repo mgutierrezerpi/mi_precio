@@ -1,9 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from config import settings
 from lib.ctx import identity, analytics, activity, plans
 from controllers.deps import get_current_user, require_active_plan, require_admin, require_owner
 from controllers.input_types import CreateTenant, UpdateTenant, UpdatePlan
-from views import TenantView, ActivityView, DeletedView
+from views import TenantView, ActivityView, DeletedView, AuthTokenView
+from lib import encode_token
+from models import User
+from lib.value_objects import AuthResult
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
@@ -47,21 +50,32 @@ def reports_endpoint(tenant_id: str, days: int = 30, current_user: dict = Depend
 
 
 @router.get("/{tenant_id}/activity", dependencies=plan_gated)
-def list_activity_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
-    return ActivityView.render_many(activity.list_activity(tenant_id))
+def list_activity_endpoint(tenant_id: str, limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0), current_user: dict = Depends(get_current_user)):
+    return ActivityView.render_many(activity.list_activity(tenant_id, limit=limit, offset=offset))
 
 
-@router.get("", dependencies=plan_gated)
+@router.get("")
 def list_tenants_endpoint(current_user: dict = Depends(get_current_user)):
-    return TenantView.render_many(identity.list_tenants())
+    return TenantView.render_many(identity.list_tenants(current_user.get("sub")))
 
 
-@router.post("", status_code=201, dependencies=plan_gated)
+@router.post("", status_code=201)
 def create_tenant_endpoint(data: CreateTenant, current_user: dict = Depends(get_current_user)):
-    tenant = identity.create_tenant(data.name, data.subdomain)
+    tenant = identity.create_tenant(data.name, data.subdomain, current_user.get("sub"))
     if not tenant:
-        raise HTTPException(status_code=400, detail="Subdomain already exists")
+        raise HTTPException(status_code=400, detail="No se pudo crear el negocio. Revisá el nombre o subdominio.")
     return TenantView.render(tenant)
+
+
+@router.post("/{tenant_id}/switch")
+def switch_tenant_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
+    member = identity.membership(current_user.get("sub"), tenant_id)
+    tenant = identity.get_tenant(tenant_id)
+    user = User.get_or_none(User.id == current_user.get("sub"))
+    if not member or not tenant or not user:
+        raise HTTPException(status_code=403, detail="No tenés acceso a este negocio")
+    token = encode_token(str(user.id), user.email, tenant.id, member.role)
+    return AuthTokenView.render(AuthResult(token, user, tenant, member.role))
 
 
 @router.get("/{tenant_id}")

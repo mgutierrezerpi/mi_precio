@@ -68,6 +68,8 @@ def update_product(product_id: str, **updates) -> Product | None:
     product.save()
     if "price" in updates:
         _sync_item_prices(product.tenant_id, original_name, product.price, price_list_ids)
+    if "description" in updates:
+        _sync_item_description(product.id, original_name, product.description)
     if "image_url" in updates or "image_thumb_url" in updates:
         _sync_item_images(product.id, product.image_url, product.image_thumb_url)
     return product
@@ -126,6 +128,13 @@ def _sync_item_prices(tenant_id: str, product_name: str, price, price_list_ids: 
         version_ids = version_ids.where(PriceList.id.in_(price_list_ids))
     Item.update(price=price).where(
         (Item.list_version.in_(version_ids)) & (Item.name == product_name)
+    ).execute()
+
+
+def _sync_item_description(product_id: str, original_name: str, description: str | None) -> None:
+    """Keep catalog-linked list descriptions aligned with product edits."""
+    Item.update(description=description).where(
+        (Item.product == product_id) | (Item.name == original_name)
     ).execute()
 
 

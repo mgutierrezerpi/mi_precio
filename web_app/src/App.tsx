@@ -3,9 +3,11 @@ import { Provider } from 'react-redux'
 import { RouterProvider } from 'react-router-dom'
 import { store } from './store'
 import { router } from './routes'
-import api, { setAuthErrorHandler, setPlanRequiredHandler } from './services/api'
+import api, { setAuthErrorHandler, setConnectionErrorHandler, setPlanRequiredHandler } from './services/api'
 import { logout, setTenant } from './store/slices/authSlice'
 import { ToastContainer, toast } from './components/Toast'
+
+let lastConnectionToastAt = 0
 
 function App() {
   useEffect(() => {
@@ -13,6 +15,12 @@ function App() {
       store.dispatch(logout())
       router.navigate('/')
       toast.warning('Tu sesión ha expirado')
+    })
+    setConnectionErrorHandler(() => {
+      const now = Date.now()
+      if (now - lastConnectionToastAt < 4000) return
+      lastConnectionToastAt = now
+      toast.error('No se pudo conectar con el servidor. Reintentá en unos segundos.')
     })
     // The API refused a request until the account has a plan: send them to the
     // plan screen instead of leaving a half-empty panel behind. Re-read the
@@ -27,7 +35,7 @@ function App() {
       }
       if (!window.location.pathname.startsWith('/planes')) router.navigate('/planes')
     })
-    return () => { setAuthErrorHandler(null); setPlanRequiredHandler(null) }
+    return () => { setAuthErrorHandler(null); setConnectionErrorHandler(null); setPlanRequiredHandler(null) }
   }, [])
 
   return (

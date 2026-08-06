@@ -45,11 +45,12 @@ def _push(tenant_id: str, action: str, summary: str, actor_id: str | None) -> No
         logger.exception("Failed to dispatch push notification")
 
 
-def list_activity(tenant_id: str, limit: int = 20) -> list[Activity]:
-    """Most recent activity for a tenant, newest first."""
+def list_activity(tenant_id: str, limit: int = 20, offset: int = 0) -> list[Activity]:
+    """Activity for a tenant, newest first, with offset pagination."""
     return list(
         Activity.select()
         .where(Activity.tenant == tenant_id)
         .order_by(Activity.created_at.desc())
+        .offset(offset)
         .limit(limit)
     )

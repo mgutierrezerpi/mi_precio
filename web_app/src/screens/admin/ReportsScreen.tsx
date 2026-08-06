@@ -33,6 +33,7 @@ const PRODUCT_TONES: Tone[] = ['violet', 'sky', 'rose', 'amber', 'purple']
 export function ReportsScreen() {
   const tenant = useAppSelector(selectTenant)
   const [days, setDays] = useState(30)
+  const [tab, setTab] = useState<'rendimiento' | 'auditoria'>('rendimiento')
   const [data, setData] = useState<ReportData | null>(null)
 
   useEffect(() => {
@@ -60,7 +61,11 @@ export function ReportsScreen() {
           <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">Reportes</h1>
           <p className="text-[13px] text-[#9694A6]">Medí el rendimiento de tu catálogo.</p>
         </section>
-        <div className="flex flex-col gap-4">
+        <nav className="flex w-full items-center gap-1 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] p-1 sm:w-fit" aria-label="Secciones de reportes">
+          <button type="button" onClick={() => setTab('rendimiento')} className={`rounded-md px-4 py-2 text-xs font-bold ${tab === 'rendimiento' ? `text-white ${gradient}` : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`}>Rendimiento</button>
+          <button type="button" onClick={() => setTab('auditoria')} className={`rounded-md px-4 py-2 text-xs font-bold ${tab === 'auditoria' ? `text-white ${gradient}` : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`}>Registro de auditoría</button>
+        </nav>
+        {tab === 'rendimiento' ? <div className="flex flex-col gap-4">
           {/* Bar chart */}
           <section className="flex min-h-[390px] flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 md:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -95,44 +100,61 @@ export function ReportsScreen() {
             <TopProducts data={data} loading={loading} />
             <Channels data={data} loading={loading} />
           </div>
-        </div>
-
-        <ActivityLog tenantId={tenant?.id} />
+        </div> : <ActivityLog tenantId={tenant?.id} audit />}
       </main>
     </CrmLayout>
   )
 }
 
 /** Full activity feed for the tenant, in a fixed-height scrollable panel. */
-function ActivityLog({ tenantId }: { tenantId?: string }) {
+const AUDIT_PAGE_SIZE = 25
+
+function ActivityLog({ tenantId, audit = false }: { tenantId?: string; audit?: boolean }) {
   const [items, setItems] = useState<Activity[]>([])
+  const [page, setPage] = useState(0)
+  const [hasNext, setHasNext] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
   // Poll so a teammate's actions appear live, same cadence as the dashboard feed.
   useEffect(() => {
     if (!tenantId) return
     let cancelled = false
-    const load = () => api.getActivity(tenantId).then((res) => {
-      if (!cancelled && res.data) { setItems(res.data); setLoaded(true) }
+    const pageSize = audit ? AUDIT_PAGE_SIZE : 20
+    const load = () => api.getActivity(tenantId, audit ? pageSize + 1 : pageSize, audit ? page * pageSize : 0).then((res) => {
+      if (!cancelled && res.data) {
+        setItems(res.data.slice(0, pageSize))
+        setHasNext(audit && res.data.length > pageSize)
+        setLoaded(true)
+      }
     })
     load()
     const id = setInterval(load, 7000)
     return () => { cancelled = true; clearInterval(id) }
-  }, [tenantId])
+  }, [audit, page, tenantId])
 
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">Actividad reciente</h3>
+        <div className="flex flex-col gap-1">
+          <h3 className="text-[18px] font-extrabold text-[var(--dash-text)]">{audit ? 'Registro de auditoría' : 'Actividad reciente'}</h3>
+          {audit && <p className="text-[13px] font-medium text-[var(--dash-muted)]">Todas las acciones realizadas en este espacio de trabajo.</p>}
+        </div>
         <span className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--dash-muted)]">
           <span className="h-2 w-2 animate-pulse rounded-full bg-[#10B981]" /> En vivo
         </span>
       </div>
       {loaded && items.length === 0 ? (
-        <p className="py-6 text-center text-xs font-medium text-[var(--dash-muted)]">Todavía no hay actividad.</p>
+        <p className="py-6 text-center text-xs font-medium text-[var(--dash-muted)]">Todavía no hay registros.</p>
       ) : (
-        <div className="flex max-h-80 flex-col gap-3.5 overflow-y-auto pr-1">
+        <div className={`flex ${audit ? 'max-h-[600px]' : 'max-h-80'} flex-col gap-3.5 overflow-y-auto pr-1`}>
           {items.map((a) => <ActivityRow key={a.id} activity={a} />)}
+        </div>
+      )}
+      {audit && (
+        <div className="flex items-center justify-between border-t border-[var(--dash-border)] pt-3">
+          <button type="button" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0 || !loaded} className="rounded-md px-3 py-1.5 text-xs font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] disabled:cursor-not-allowed disabled:opacity-40">Anterior</button>
+          <span className="text-[11px] font-semibold text-[var(--dash-muted)]">Página {page + 1}</span>
+          <button type="button" onClick={() => setPage((p) => p + 1)} disabled={!loaded || !hasNext} className="rounded-md px-3 py-1.5 text-xs font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] disabled:cursor-not-allowed disabled:opacity-40">Siguiente</button>
         </div>
       )}
     </div>

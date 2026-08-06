@@ -13,8 +13,8 @@ from lib.value_objects import AuthResult
 logger = logging.getLogger(__name__)
 
 
-def send_code(email: str) -> str:
-    """Generate and store a verification code for the email."""
+def create_code(email: str) -> str:
+    """Generate and store a one-time verification code for the email."""
     email = email.lower()
     AuthCode.delete().where(AuthCode.email == email).execute()
     code = generate_verification_code()
@@ -23,6 +23,13 @@ def send_code(email: str) -> str:
         code=code,
         expires_at=datetime.utcnow() + timedelta(minutes=10),
     )
+    return code
+
+
+def send_code(email: str) -> str:
+    """Generate, store, and email a verification code."""
+    email = email.lower()
+    code = create_code(email)
 
     if settings.debug:
         logger.warning(f"[AUTH] Local login code for {email}: {code}")
@@ -78,4 +85,4 @@ def authenticate(email: str, code: str) -> AuthResult | None:
 
     token = encode_token(str(user.id), user.email, tenant.id, user.role)
 
-    return AuthResult(token, user, tenant)
+    return AuthResult(token, user, tenant, user.role)

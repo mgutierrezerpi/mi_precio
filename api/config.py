@@ -5,14 +5,18 @@ from functools import lru_cache
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     app_name: str = "Mi Precio API"
     debug: bool = False
     database_path: str = "mi_precio.db"
     secret_key: str = "change-me-in-production"
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
-    public_app_url: str = "http://localhost:5173"
+    public_app_url: str = "http://localhost:3000"
 
     # JWT settings
     jwt_algorithm: str = "HS256"

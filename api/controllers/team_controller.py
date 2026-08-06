@@ -25,9 +25,9 @@ plan_gated = [Depends(require_active_plan)]
 @router.get("/users/me")
 def get_current_user_endpoint(current_user: dict = Depends(get_current_user)):
     user = User.get_or_none(User.id == current_user.get("sub"))
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return UserView.render(user)
+    if not user or str(user.tenant_id) != str(current_user.get("tenant_id")):
+        raise HTTPException(status_code=401, detail="Ya no tenés acceso a este espacio de trabajo")
+    return UserView.render(user, current_user.get("role"))
 
 
 
@@ -70,13 +70,16 @@ def invite_member_endpoint(tenant_id: str, data: InviteMember, current_user: dic
 @router.patch("/tenants/{tenant_id}/members/{user_id}", dependencies=plan_gated)
 def update_member_endpoint(tenant_id: str, user_id: str, data: UpdateMember, current_user: dict = Depends(require_admin)):
     try:
-        user = team.update_member(tenant_id, user_id, data.role)
+        user = team.update_member(tenant_id, user_id, role=data.role, name=data.name, email=data.email)
     except TeamError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    if data.role is not None:
-        activity.record(tenant_id, "member.role_changed", f"Cambió el rol de «{user.email}» a {user.role}",
+    if any(value is not None for value in (data.role, data.name, data.email)):
+        action = "member.role_changed" if data.role is not None and data.name is None and data.email is None else "member.updated"
+        description = f"Cambió el rol de «{user.email}» a {user.role}" if action == "member.role_changed" else f"Actualizó los datos de «{user.email}»"
+        activity.record(tenant_id, action, description,
                         actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                        entity_type="user", entity_id=user.id, meta={"email": user.email, "role": user.role})
+                        entity_type="user", entity_id=user.id,
+                        meta={"email": user.email, "role": user.role, "name": user.name})
     return UserView.render(user)
 
 
