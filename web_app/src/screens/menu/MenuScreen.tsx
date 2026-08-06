@@ -14,6 +14,8 @@ interface PublicList {
   name: string
   slug: string | null
   kind?: 'product' | 'service'
+  /** The shop's main list — whose look stands in when no single list is shown. */
+  showOnIndex?: boolean
   // Per-list appearance overrides; null falls back to the tenant's defaults.
   design?: ListDesign | null
   heroColor?: string | null
@@ -245,7 +247,7 @@ export function MenuScreen() {
   // plan. The shop exists, so send its customer to the rest of its catalogue —
   // never to MiPrecio's landing, which sells them nothing they came for.
   if (listId && displayLists.length === 0) {
-    return <ListNotFound tenant={tenant} lists={lists} t={t} C={C} brandGradient={brandGradient} />
+    return <ListNotFound tenant={tenant} lists={lists} t={t} accent={accent} brandGradient={brandGradient} />
   }
 
   // Appearance falls back field by field: this list's own override → the
@@ -347,20 +349,39 @@ export function MenuScreen() {
  *  Reached by a renamed or unpublished list, and — since plan limits apply to
  *  what is already published — by every list the current plan no longer serves.
  *  The reader is the shop's customer standing at a table with a phone, so this
- *  wears the shop's brand and offers the shop's other lists. When there are
- *  none (an expired subscription takes the whole storefront down) it says so
- *  plainly rather than advertising MiPrecio to someone who came for a menu. */
-function ListNotFound({ tenant, lists, t, C, brandGradient }: {
+ *  wears the shop's own storefront skin and offers the shop's other lists. When
+ *  there are none (an expired subscription takes the whole storefront down) it
+ *  says so plainly rather than advertising MiPrecio to someone who came for a
+ *  menu.
+ *
+ *  No single list is being shown, so the look comes from the shop's main list
+ *  (`showOnIndex`) and falls back field by field to the business defaults — the
+ *  same cascade the storefront uses. A shop on the dark "tech" or "fine"
+ *  template gets a dark dead end, not a white card that reads as another site. */
+function ListNotFound({ tenant, lists, t, accent, brandGradient }: {
   tenant: Tenant
   lists: PublicList[]
   t: ReturnType<typeof getT>
-  C: StoreColors
+  accent: string
   brandGradient: string
 }) {
-  const onBrand = readableOn(C.accent)
+  const onBrand = readableOn(accent)
+  const main = lists.find((l) => l.showOnIndex) ?? lists[0] ?? null
+  const design: ListDesign = main?.design ?? tenant.listDesign ?? 'store'
+  const skin = cartThemeFor(design)
+  const heroColor = main?.heroColor || tenant.listHeroColor || accent
+  const bgUrl = main?.bgUrl ?? tenant.listBgUrl
+  const bgOverlay = main?.bgUrl ? !!main.bgOverlay : !!tenant.listBgOverlay
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 py-12 font-sans" style={{ background: C.bg }}>
-      <div className="flex flex-col items-center gap-3 text-center">
+    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 py-12 font-sans" style={{ background: skin.bg }}>
+      {bgUrl && (
+        <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: `url(${bgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          {bgOverlay && <div className="absolute inset-0" style={{ background: accent, opacity: 0.5, mixBlendMode: 'multiply' }} />}
+        </div>
+      )}
+
+      <div className="relative flex flex-col items-center gap-3 text-center">
         {tenant.logoUrl
           ? <img src={tenant.logoUrl} alt={tenant.name} className="h-16 w-16 rounded-2xl object-cover" />
           : (
@@ -368,17 +389,17 @@ function ListNotFound({ tenant, lists, t, C, brandGradient }: {
               {tenant.name.slice(0, 2).toUpperCase()}
             </span>
           )}
-        <h1 className="text-xl font-extrabold" style={{ color: C.ink }}>{tenant.name}</h1>
+        <h1 className="text-xl font-extrabold" style={{ color: skin.ink }}>{tenant.name}</h1>
       </div>
 
-      <div className="flex w-full max-w-sm flex-col gap-4">
-        <p className="text-center text-sm font-medium" style={{ color: C.body }}>
+      <div className="relative flex w-full max-w-sm flex-col gap-4">
+        <p className="text-center text-sm font-medium" style={{ color: skin.body }}>
           {lists.length > 0 ? t('pub.listGone') : t('pub.catalogUnavailable')}
         </p>
 
         {lists.length > 0 ? (
           <>
-            <p className="text-center text-xs font-bold uppercase tracking-wide" style={{ color: C.muted }}>{t('pub.listGoneOthers')}</p>
+            <p className="text-center text-xs font-bold uppercase tracking-wide" style={{ color: skin.muted }}>{t('pub.listGoneOthers')}</p>
             <div className="flex flex-col gap-2">
               {lists.map((l) => {
                 const count = l.version?.items?.length ?? 0
@@ -387,10 +408,10 @@ function ListNotFound({ tenant, lists, t, C, brandGradient }: {
                     key={l.id}
                     to={`/p/${tenant.subdomain}/${l.slug || l.id}`}
                     className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 transition-transform active:scale-[0.99]"
-                    style={{ background: '#FFFFFF', border: `1px solid ${C.line}`, color: C.ink }}
+                    style={{ background: skin.surface, border: `1px solid ${skin.line}`, color: skin.ink }}
                   >
                     <span className="truncate text-sm font-bold">{l.name}</span>
-                    <span className="shrink-0 text-xs font-semibold" style={{ color: C.muted }}>
+                    <span className="shrink-0 text-xs font-semibold" style={{ color: skin.muted }}>
                       {count} {t(count === 1 ? 'pub.product' : 'pub.products')}
                     </span>
                   </Link>
@@ -400,7 +421,7 @@ function ListNotFound({ tenant, lists, t, C, brandGradient }: {
             <Link
               to={`/p/${tenant.subdomain}`}
               className="mt-1 flex h-12 items-center justify-center rounded-full text-sm font-bold"
-              style={{ background: brandGradient, color: onBrand }}
+              style={{ background: heroColor, color: readableOn(heroColor) }}
             >
               {t('pub.seeCatalog')}
             </Link>
@@ -408,7 +429,7 @@ function ListNotFound({ tenant, lists, t, C, brandGradient }: {
         ) : (
           /* Nothing of this shop is being served — most often an expired
              subscription. Say so and stop: there is nowhere useful to send them. */
-          <p className="text-center text-sm font-medium" style={{ color: C.muted }}>{t('pub.catalogUnavailableHint')}</p>
+          <p className="text-center text-sm font-medium" style={{ color: skin.muted }}>{t('pub.catalogUnavailableHint')}</p>
         )}
       </div>
     </div>

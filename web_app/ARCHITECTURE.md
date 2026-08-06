@@ -179,12 +179,19 @@ and a QR — not a MiPrecio prospect. `MenuScreen` splits them by how much we kn
 | | What we know | What we show |
 |---|---|---|
 | Subdomain matches nothing | nothing | our logo, our purple, and a short pitch — the only dead end that may link to `/` |
-| Slug matches no served list, shop has others | brand + its live lists | `ListNotFound`: shop's logo and colours, its other lists, "Ver todo el catálogo" |
-| Slug matches nothing and neither does anything else | brand only | same shell, "el catálogo no está disponible" — no links out |
+| Slug matches no served list, shop has others | its skin + its live lists | `ListNotFound`: the shop's own storefront look, its other lists, "Ver todo el catálogo" |
+| Slug matches nothing and neither does anything else | its skin only | same shell, "el catálogo no está disponible" — no links out |
 
 The middle row is the common one: a renamed or unpublished list, and every list
 the plan no longer serves. Linking to `/` there would answer "where is the menu?"
 with a page selling them our product.
+
+`ListNotFound` is not a generic white card: no single list is being shown, so it
+resolves the appearance cascade from the shop's **main list** (`showOnIndex`,
+exposed on `PublicListView` for this) and falls back field by field to the
+business defaults — same rule as the storefront. `cartThemeFor(design)` supplies
+the palette, so a shop on the dark `tech` or `fine` template gets a dark dead
+end, and the background image and hero colour carry over too.
 
 The API's `error` string is its raw `detail` — English, written for us. It goes
 to `console.warn`, never on screen.
