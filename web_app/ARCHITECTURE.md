@@ -178,7 +178,7 @@ and a QR — not a MiPrecio prospect. `MenuScreen` splits them by how much we kn
 
 | | What we know | What we show |
 |---|---|---|
-| Subdomain matches nothing | nothing | MiPrecio-branded "no encontramos este comercio" — the only dead end that may link to `/` |
+| Subdomain matches nothing | nothing | our logo, our purple, and a short pitch — the only dead end that may link to `/` |
 | Slug matches no served list, shop has others | brand + its live lists | `ListNotFound`: shop's logo and colours, its other lists, "Ver todo el catálogo" |
 | Slug matches nothing and neither does anything else | brand only | same shell, "el catálogo no está disponible" — no links out |
 
@@ -188,6 +188,12 @@ with a page selling them our product.
 
 The API's `error` string is its raw `detail` — English, written for us. It goes
 to `console.warn`, never on screen.
+
+The no-such-shop page doubles as a landing: whoever reached it already scans QR
+menus, which is the product. Its copy mirrors the real landing rather than
+running a second, parallel message, and it is sized to one viewport
+(`h-[100dvh]`, ~516px of content at 390px wide) — a dead end nobody meant to
+open should never ask to be scrolled.
 
 ### Subscription panel
 

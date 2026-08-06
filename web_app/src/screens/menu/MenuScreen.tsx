@@ -34,6 +34,10 @@ const BASE = {
   accent: '#7C3AED', accent2: '#6D28D9', line: '#E5E2DC',
 }
 
+// Only for the "no such shop" dead end, where there is no tenant to brand with.
+const MIPRECIO_LOGO = '/miprecio-logo-pencil.webp'
+const MIPRECIO_SITE = 'miprecio.app'
+
 export function MenuScreen() {
   const { subdomain, listId } = useParams<{ subdomain: string; listId?: string }>()
   const [searchParams] = useSearchParams()
@@ -177,11 +181,50 @@ export function MenuScreen() {
   // who just scanned a QR. It belongs in the console, never on screen.
   if (error || !tenant) {
     if (error) console.warn('[public] %s: %s', subdomain, error)
+    // No shop to borrow an identity from, so this one is ours. It also doubles
+    // as a pitch: whoever got here already scans QR menus, which is the whole
+    // product. Sized to one viewport — a dead end nobody meant to open should
+    // never ask to be scrolled.
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-6 text-center font-sans" style={{ background: C.bg }}>
-        <h1 className="text-lg font-extrabold" style={{ color: C.ink }}>{t('pub.shopNotFound')}</h1>
-        <p className="max-w-xs text-sm font-medium" style={{ color: C.muted }}>{t('pub.shopNotFoundHint')}</p>
-        <Link to="/" className="mt-2 text-sm font-bold hover:underline" style={{ color: C.accent }}>{t('pub.backHome')}</Link>
+      <div className="flex h-[100dvh] flex-col items-center justify-center gap-7 overflow-hidden px-6 py-8 text-center font-sans" style={{ background: BASE.bg }}>
+        <img src={MIPRECIO_LOGO} alt="MiPrecio" className="h-9 w-auto shrink-0" />
+
+        {/* Why they are here comes first — the pitch never buries the answer. */}
+        <div className="flex shrink-0 flex-col items-center gap-1.5">
+          <span className="rounded-full px-3 py-1 text-[11px] font-bold" style={{ background: `${BASE.accent}14`, color: BASE.accent }}>
+            {t('pub.shopNotFound')}
+          </span>
+          <p className="max-w-xs text-xs font-medium" style={{ color: BASE.muted }}>{t('pub.shopNotFoundHint')}</p>
+        </div>
+
+        <div className="flex w-full max-w-sm shrink-0 flex-col items-center gap-5">
+          <div className="flex flex-col items-center gap-2">
+            <h1 className="text-[26px] font-extrabold leading-[1.15] sm:text-[32px]" style={{ color: BASE.ink }}>
+              {t('pub.lpHeadline')}
+            </h1>
+            <p className="text-sm font-medium leading-relaxed" style={{ color: BASE.body }}>{t('pub.lpSub')}</p>
+          </div>
+
+          <ul className="flex w-full flex-col gap-2 text-left">
+            {['pub.lpFeat1', 'pub.lpFeat2', 'pub.lpFeat3'].map((key) => (
+              <li key={key} className="flex items-center gap-2.5 text-[13px] font-semibold" style={{ color: BASE.body }}>
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: `${BASE.accent}18`, color: BASE.accent }}>
+                  <SIco name="check" size={12} />
+                </span>
+                {t(key)}
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            to="/"
+            className="flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white shadow-[0_12px_28px_-10px_rgba(124,58,237,0.7)]"
+            style={{ background: `linear-gradient(135deg, ${BASE.accent} 0%, ${lighten(BASE.accent, 0.28)} 100%)` }}
+          >
+            {t('pub.lpCta')}
+          </Link>
+          <span className="text-xs font-bold" style={{ color: BASE.accent }}>{MIPRECIO_SITE}</span>
+        </div>
       </div>
     )
   }
