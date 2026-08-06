@@ -289,7 +289,7 @@ function QrModal({ list, url, linkUrl, qrValue, fg, logoUrl, onClose }: { list: 
       <div className="dash relative flex w-full max-w-[360px] animate-scale-in flex-col items-center gap-4 rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-7 text-center font-sans shadow-[0_30px_80px_-20px_rgba(15,23,42,0.5)]">
         <button type="button" onClick={onClose} aria-label="Cerrar" title="Cerrar" className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-lg leading-none text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-text)]">×</button>
         <h3 className="text-lg font-extrabold text-[var(--dash-text)]">{list.name}</h3>
-        <div className="h-52 w-52 rounded-2xl bg-white p-3 shadow-[0_10px_30px_-10px_rgba(15,23,42,0.3)]"><QrCode value={qrValue} size={180} margin={2} fg={fg} logoUrl={logoUrl} className="h-full w-full object-contain" /></div>
+        <div className="h-52 w-52 rounded-2xl bg-white p-3 shadow-[0_10px_30px_-10px_rgba(15,23,42,0.3)]"><QrCode value={qrValue} size={180} margin={2} fg={fg} logoUrl={logoUrl} className="!h-full !w-full object-contain" /></div>
         <a href={linkUrl} className="text-xs font-semibold text-[var(--dash-link)] underline-offset-2 hover:underline">{url}</a>
         <div className="flex w-full gap-2">
           <button type="button" onClick={() => void downloadQrPng(qrValue, `qr-${qrFileName(list)}.png`, { fg, logoUrl })} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #7C3AED, #C026D3)' }}>
