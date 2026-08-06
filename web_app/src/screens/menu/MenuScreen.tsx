@@ -35,8 +35,8 @@ const BASE = {
 }
 
 // Only for the "no such shop" dead end, where there is no tenant to brand with.
-const MIPRECIO_LOGO = '/miprecio-logo-pencil.webp'
-const MIPRECIO_SITE = 'miprecio.app'
+// The white mark is the one that sits on the purple half.
+const MIPRECIO_LOGO_WHITE = '/miprecio-logo-white-pencil.webp'
 
 export function MenuScreen() {
   const { subdomain, listId } = useParams<{ subdomain: string; listId?: string }>()
@@ -185,30 +185,44 @@ export function MenuScreen() {
     // as a pitch: whoever got here already scans QR menus, which is the whole
     // product. Sized to one viewport — a dead end nobody meant to open should
     // never ask to be scrolled.
+    // Stacked on phones, side by side from md. The rows are 2fr/3fr rather than
+    // even: the message needs a couple of lines, the pitch needs room for a CTA,
+    // and on a 320px-tall half the CTA is what gets cut.
     return (
-      <div className="flex h-[100dvh] flex-col items-center justify-center gap-7 overflow-hidden px-6 py-8 text-center font-sans" style={{ background: BASE.bg }}>
-        <img src={MIPRECIO_LOGO} alt="MiPrecio" className="h-9 w-auto shrink-0" />
-
-        {/* Why they are here comes first — the pitch never buries the answer. */}
-        <div className="flex shrink-0 flex-col items-center gap-1.5">
-          <span className="rounded-full px-3 py-1 text-[11px] font-bold" style={{ background: `${BASE.accent}14`, color: BASE.accent }}>
+      <div className="grid h-[100dvh] grid-rows-[2fr_3fr] overflow-hidden font-sans md:grid-cols-2 md:grid-rows-1">
+        {/* Why they are here. Its own half, so the pitch can never bury it. */}
+        {/* `overflow-y-auto`, not `hidden`: the page never scrolls, but on a very
+            short phone a half scrolls itself rather than clipping its CTA. */}
+        <div className="flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-6 text-center md:gap-6 md:px-8" style={{ background: BASE.bg }}>
+          {/* Sized to break in two. `text-balance` keeps the split even here and
+              degrades sanely for the longer en/pt strings. */}
+          <h1
+            className="text-[26px] font-extrabold leading-[1.1] sm:text-[30px] md:text-[46px] lg:text-[54px]"
+            style={{ color: BASE.ink, maxWidth: '16ch', textWrap: 'balance' }}
+          >
             {t('pub.shopNotFound')}
-          </span>
-          <p className="max-w-xs text-xs font-medium" style={{ color: BASE.muted }}>{t('pub.shopNotFoundHint')}</p>
+          </h1>
+          <p className="max-w-sm text-[13px] font-medium leading-relaxed sm:text-sm md:text-lg" style={{ color: BASE.muted }}>
+            {t('pub.shopNotFoundHint')}
+          </p>
         </div>
 
-        <div className="flex w-full max-w-sm shrink-0 flex-col items-center gap-5">
-          <div className="flex flex-col items-center gap-2">
-            <h1 className="text-[26px] font-extrabold leading-[1.15] sm:text-[32px]" style={{ color: BASE.ink }}>
-              {t('pub.lpHeadline')}
-            </h1>
-            <p className="text-sm font-medium leading-relaxed" style={{ color: BASE.body }}>{t('pub.lpSub')}</p>
+        {/* Ours to use: whoever reached this already scans QR menus. */}
+        <div
+          className="flex flex-col items-center justify-center gap-4 overflow-y-auto px-6 py-6 text-center text-white sm:gap-6 md:gap-11 md:px-8"
+          style={{ background: `linear-gradient(150deg, ${BASE.accent2} 0%, ${BASE.accent} 55%, ${lighten(BASE.accent, 0.3)} 100%)` }}
+        >
+          <img src={MIPRECIO_LOGO_WHITE} alt="MiPrecio" className="h-9 w-auto sm:h-12 md:h-20 lg:h-24" />
+
+          <div className="flex max-w-lg flex-col gap-2 md:gap-3">
+            <h2 className="text-[20px] font-extrabold leading-[1.15] sm:text-[24px] md:text-[36px] lg:text-[42px]">{t('pub.lpHeadline')}</h2>
+            <p className="text-xs font-medium leading-relaxed text-white/80 sm:text-[13px] md:text-base lg:text-lg">{t('pub.lpSub')}</p>
           </div>
 
-          <ul className="flex w-full flex-col gap-2 text-left">
+          <ul className="flex flex-col gap-1.5 text-left sm:gap-2 md:gap-3">
             {['pub.lpFeat1', 'pub.lpFeat2', 'pub.lpFeat3'].map((key) => (
-              <li key={key} className="flex items-center gap-2.5 text-[13px] font-semibold" style={{ color: BASE.body }}>
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: `${BASE.accent}18`, color: BASE.accent }}>
+              <li key={key} className="flex items-center gap-2.5 text-xs font-semibold text-white/90 sm:text-[13px] md:gap-3 md:text-base lg:text-[17px]">
+                <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-white/20 sm:h-5 sm:w-5 md:h-7 md:w-7">
                   <SIco name="check" size={12} />
                 </span>
                 {t(key)}
@@ -218,12 +232,11 @@ export function MenuScreen() {
 
           <Link
             to="/"
-            className="flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white shadow-[0_12px_28px_-10px_rgba(124,58,237,0.7)]"
-            style={{ background: `linear-gradient(135deg, ${BASE.accent} 0%, ${lighten(BASE.accent, 0.28)} 100%)` }}
+            className="flex h-11 w-full max-w-xs items-center justify-center rounded-full bg-white text-[13px] font-bold shadow-[0_14px_30px_-12px_rgba(0,0,0,0.5)] sm:h-12 sm:text-sm md:h-14 md:max-w-sm md:text-base lg:h-16 lg:text-lg"
+            style={{ color: BASE.accent }}
           >
             {t('pub.lpCta')}
           </Link>
-          <span className="text-xs font-bold" style={{ color: BASE.accent }}>{MIPRECIO_SITE}</span>
         </div>
       </div>
     )

@@ -295,8 +295,6 @@ const DICT: Record<string, Entry> = {
   'pub.from': { es: 'DESDE', en: 'FROM', pt: 'DESDE' },
   'pub.to': { es: 'HASTA', en: 'TO', pt: 'ATÉ' },
   'pub.footer': { es: 'Precios en {currency} · Generado con MiPrecio', en: 'Prices in {currency} · Made with MiPrecio', pt: 'Preços em {currency} · Gerado com MiPrecio' },
-  'pub.notFound': { es: 'Lista no encontrada', en: 'List not found', pt: 'Lista não encontrada' },
-  'pub.backHome': { es: 'Volver al inicio', en: 'Back to home', pt: 'Voltar ao início' },
   // Dead end on a public link/QR. The reader is the shop's customer, not ours:
   // keep them with the shop (its other lists) instead of sending them to MiPrecio.
   'pub.listGone': { es: 'Esta lista ya no está disponible.', en: 'This list is no longer available.', pt: 'Esta lista já não está disponível.' },
