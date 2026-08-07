@@ -2,7 +2,11 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from config import settings
 from controllers.deps import require_owner
-from controllers.input_types import CreateCheckout, ManualSubscriptionSync, ReconcileCheckout
+from controllers.input_types import (
+    CreateCheckout,
+    ManualSubscriptionSync,
+    ReconcileCheckout,
+)
 from lib.ctx import activity, billing_context as billing
 from tasks import check_pending_billing
 from views import TenantView
@@ -11,9 +15,13 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 
 
 @router.post("/checkouts")
-def create_checkout_endpoint(data: CreateCheckout, current_user: dict = Depends(require_owner)):
+def create_checkout_endpoint(
+    data: CreateCheckout, current_user: dict = Depends(require_owner)
+):
     if current_user.get("tenant_id") != data.tenant_id:
-        raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+        raise HTTPException(
+            status_code=403, detail="No tenés permisos para esta acción"
+        )
     try:
         checkout = billing.create_checkout(
             data.tenant_id,
@@ -24,7 +32,9 @@ def create_checkout_endpoint(data: CreateCheckout, current_user: dict = Depends(
         )
     except billing.BillingError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    billing.begin_subscription_sync(data.tenant_id, checkout.get("checkout_id"), data.plan)
+    billing.begin_subscription_sync(
+        data.tenant_id, checkout.get("checkout_id"), data.plan
+    )
     check_pending_billing.schedule((data.tenant_id,), delay=10)
     return {"url": checkout["url"]}
 
@@ -34,7 +44,10 @@ def sync_manual_subscription_endpoint(
     data: ManualSubscriptionSync,
     x_billing_manual_secret: str | None = Header(default=None),
 ):
-    if not settings.billing_manual_secret or x_billing_manual_secret != settings.billing_manual_secret:
+    if (
+        not settings.billing_manual_secret
+        or x_billing_manual_secret != settings.billing_manual_secret
+    ):
         raise HTTPException(status_code=403, detail="Invalid billing secret")
     try:
         tenant = billing.sync_manual_subscription(
@@ -52,15 +65,23 @@ def sync_manual_subscription_endpoint(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
     plan_es = "Gratis" if tenant.plan == "free" else tenant.plan.capitalize()
-    activity.record(data.tenant_id, "billing.manual_sync", f"Plan sincronizado · plan {plan_es}",
-                    meta={"plan": tenant.plan, "status": data.status})
+    activity.record(
+        data.tenant_id,
+        "billing.manual_sync",
+        f"Plan sincronizado · plan {plan_es}",
+        meta={"plan": tenant.plan, "status": data.status},
+    )
     return TenantView.render(tenant)
 
 
 @router.post("/reconcile-checkout")
-def reconcile_checkout_endpoint(data: ReconcileCheckout, current_user: dict = Depends(require_owner)):
+def reconcile_checkout_endpoint(
+    data: ReconcileCheckout, current_user: dict = Depends(require_owner)
+):
     if current_user.get("tenant_id") != data.tenant_id:
-        raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+        raise HTTPException(
+            status_code=403, detail="No tenés permisos para esta acción"
+        )
     try:
         result = billing.reconcile_checkout_order(data.tenant_id, data.order_id)
     except billing.BillingError as exc:
@@ -71,7 +92,9 @@ def reconcile_checkout_endpoint(data: ReconcileCheckout, current_user: dict = De
 @router.post("/lemon-squeezy/webhook")
 async def lemonsqueezy_webhook_endpoint(request: Request):
     raw = await request.body()
-    if not billing.verify_lemonsqueezy_signature(raw, request.headers.get("X-Signature")):
+    if not billing.verify_lemonsqueezy_signature(
+        raw, request.headers.get("X-Signature")
+    ):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     payload = await request.json()
@@ -82,11 +105,23 @@ async def lemonsqueezy_webhook_endpoint(request: Request):
         attrs["id"] = data["id"]
 
     if event_name and event_name.startswith("subscription_"):
-        custom = payload.get("meta", {}).get("custom_data") or attrs.get("custom_data") or {}
-        tenant = billing.sync_subscription_from_attributes(attrs, tenant_id=custom.get("tenant_id"))
+        custom = (
+            payload.get("meta", {}).get("custom_data") or attrs.get("custom_data") or {}
+        )
+        tenant = billing.sync_subscription_from_attributes(
+            attrs, tenant_id=custom.get("tenant_id")
+        )
         if tenant:
             summary = billing.activity_summary(event_name, plan=tenant.plan)
-            activity.record(tenant.id, "billing.webhook", summary,
-                            meta={"event": event_name or "", "plan": tenant.plan, "status": tenant.billing_status or ""})
+            activity.record(
+                tenant.id,
+                "billing.webhook",
+                summary,
+                meta={
+                    "event": event_name or "",
+                    "plan": tenant.plan,
+                    "status": tenant.billing_status or "",
+                },
+            )
 
     return {"ok": True}

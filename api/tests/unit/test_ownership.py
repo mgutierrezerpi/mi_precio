@@ -8,7 +8,16 @@ import pytest
 from fastapi import HTTPException
 from peewee import SqliteDatabase
 
-from models import Tenant, PriceList, ListVersion, Item, Category, Customer, Order, Product
+from models import (
+    Tenant,
+    PriceList,
+    ListVersion,
+    Item,
+    Category,
+    Customer,
+    Order,
+    Product,
+)
 from controllers import ownership
 
 own_db = SqliteDatabase(":memory:")
@@ -42,12 +51,14 @@ def test_direct_models_owner_ok_other_404(tenants):
         ownership.own_product: Product.create(tenant=a, name="P", price=1),
         ownership.own_customer: Customer.create(tenant=a, name="C"),
         ownership.own_category: Category.create(tenant=a, name="Cat"),
-        ownership.own_order: Order.create(tenant=a, customer=Customer.create(tenant=a, name="C2")),
+        ownership.own_order: Order.create(
+            tenant=a, customer=Customer.create(tenant=a, name="C2")
+        ),
     }
     for guard, row in rows.items():
-        assert guard(row.id, _user(a)).id == row.id           # owner gets it back
+        assert guard(row.id, _user(a)).id == row.id  # owner gets it back
         with pytest.raises(HTTPException) as exc:
-            guard(row.id, _user(b))                            # other tenant blocked
+            guard(row.id, _user(b))  # other tenant blocked
         assert exc.value.status_code == 404
 
 
@@ -61,9 +72,11 @@ def test_nested_version_and_item_resolve_tenant_through_parents(tenants):
     assert ownership.own_version(version.id, _user(a)).id == version.id
     assert ownership.own_item(item.id, _user(a)).id == item.id
 
-    for guard, rid in [(ownership.own_list, plist.id),
-                       (ownership.own_version, version.id),
-                       (ownership.own_item, item.id)]:
+    for guard, rid in [
+        (ownership.own_list, plist.id),
+        (ownership.own_version, version.id),
+        (ownership.own_item, item.id),
+    ]:
         with pytest.raises(HTTPException) as exc:
             guard(rid, _user(b))
         assert exc.value.status_code == 404

@@ -25,7 +25,9 @@ CATEGORY_TITLE = {
 }
 
 
-def subscribe(tenant_id: str, user_id: str, subscription: dict) -> PushSubscription | None:
+def subscribe(
+    tenant_id: str, user_id: str, subscription: dict
+) -> PushSubscription | None:
     """Store (or refresh) a browser push subscription. Idempotent by endpoint."""
     endpoint = subscription.get("endpoint")
     keys = subscription.get("keys") or {}
@@ -87,8 +89,13 @@ def _deliver(subs: list[PushSubscription], payload: str) -> None:
         _send_one(sub, payload)
 
 
-def send_to_users(user_ids: list[str], title: str, body: str, url: str = "/admin",
-                  tag: str | None = None) -> None:
+def send_to_users(
+    user_ids: list[str],
+    title: str,
+    body: str,
+    url: str = "/admin",
+    tag: str | None = None,
+) -> None:
     """Fan out a notification to every device of the given users (in a thread)."""
     if not settings.push_enabled or not user_ids:
         return
@@ -100,8 +107,9 @@ def send_to_users(user_ids: list[str], title: str, body: str, url: str = "/admin
     threading.Thread(target=_deliver, args=(subs, payload), daemon=True).start()
 
 
-def notify_activity(tenant_id: str, category: str, summary: str,
-                    actor_id: str | None = None) -> None:
+def notify_activity(
+    tenant_id: str, category: str, summary: str, actor_id: str | None = None
+) -> None:
     """Push a tenant-activity notification to opted-in teammates (not the actor)."""
     if not settings.push_enabled or not category:
         return

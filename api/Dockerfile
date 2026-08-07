@@ -9,6 +9,9 @@ RUN pip install --no-cache-dir pipenv
 
 COPY Pipfile Pipfile.lock ./
 RUN pipenv install --system --deploy
+# cryptography 49.0.0 currently raises SIGILL in the local arm64 Docker runtime.
+# 46.0.3 remains compatible with PyJWT and py-vapid used by this API.
+RUN pip install --no-cache-dir "cryptography==46.0.3"
 
 COPY . .
 

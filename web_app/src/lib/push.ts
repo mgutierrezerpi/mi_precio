@@ -5,7 +5,12 @@
 // (they report `unsupported` rather than throwing).
 import api from '../services/api'
 
-export type PushStatus = 'unsupported' | 'denied' | 'default' | 'subscribed' | 'unsubscribed'
+export type PushStatus =
+  | 'unsupported'
+  | 'denied'
+  | 'default'
+  | 'subscribed'
+  | 'unsubscribed'
 
 /** True when this browser can show push notifications (PWA-capable). */
 export function pushSupported(): boolean {
@@ -56,7 +61,8 @@ export async function enablePush(tenantId: string): Promise<PushStatus> {
   if (!pushSupported()) return 'unsupported'
 
   const permission = await Notification.requestPermission()
-  if (permission !== 'granted') return permission === 'denied' ? 'denied' : 'default'
+  if (permission !== 'granted')
+    return permission === 'denied' ? 'denied' : 'default'
 
   const reg = await readyRegistration()
   if (!reg) return 'unsupported'

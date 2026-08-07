@@ -42,7 +42,9 @@ class ZohoDeskClient:
             timeout=10.0,
         )
         if resp.status_code >= 400:
-            raise ZohoDeskError(f"Zoho token refresh failed ({resp.status_code}): {resp.text}")
+            raise ZohoDeskError(
+                f"Zoho token refresh failed ({resp.status_code}): {resp.text}"
+            )
 
         data = resp.json()
         token = data.get("access_token")
@@ -75,7 +77,9 @@ class ZohoDeskClient:
             timeout=10.0,
         )
         if resp.status_code >= 400:
-            raise ZohoDeskError(f"Zoho departments fetch failed ({resp.status_code}): {resp.text}")
+            raise ZohoDeskError(
+                f"Zoho departments fetch failed ({resp.status_code}): {resp.text}"
+            )
 
         depts = resp.json().get("data", [])
         if not depts:

@@ -38,18 +38,26 @@ export const fetchProducts = createAsyncThunk(
 
 export const createProduct = createAsyncThunk(
   'products/create',
-  async ({ tenantId, data }: { tenantId: string; data: ProductInput }, { rejectWithValue }) => {
+  async (
+    { tenantId, data }: { tenantId: string; data: ProductInput },
+    { rejectWithValue }
+  ) => {
     const response = await api.createProduct(tenantId, data)
-    if (response.error || !response.data) return rejectWithValue(response.error || 'Error')
+    if (response.error || !response.data)
+      return rejectWithValue(response.error || 'Error')
     return response.data
   }
 )
 
 export const updateProduct = createAsyncThunk(
   'products/update',
-  async ({ productId, data }: { productId: string; data: Partial<ProductInput> }, { rejectWithValue }) => {
+  async (
+    { productId, data }: { productId: string; data: Partial<ProductInput> },
+    { rejectWithValue }
+  ) => {
     const response = await api.updateProduct(productId, data)
-    if (response.error || !response.data) return rejectWithValue(response.error || 'Error')
+    if (response.error || !response.data)
+      return rejectWithValue(response.error || 'Error')
     return response.data
   }
 )
@@ -81,19 +89,27 @@ const productsSlice = createSlice({
         state.isLoading = false
         state.error = (action.payload as string) || 'Error al cargar productos'
       })
-      .addCase(createProduct.pending, (state) => { state.saving = true })
+      .addCase(createProduct.pending, (state) => {
+        state.saving = true
+      })
       .addCase(createProduct.fulfilled, (state, action) => {
         state.saving = false
         state.products.push(action.payload)
       })
-      .addCase(createProduct.rejected, (state) => { state.saving = false })
-      .addCase(updateProduct.pending, (state) => { state.saving = true })
+      .addCase(createProduct.rejected, (state) => {
+        state.saving = false
+      })
+      .addCase(updateProduct.pending, (state) => {
+        state.saving = true
+      })
       .addCase(updateProduct.fulfilled, (state, action) => {
         state.saving = false
         const i = state.products.findIndex((p) => p.id === action.payload.id)
         if (i !== -1) state.products[i] = action.payload
       })
-      .addCase(updateProduct.rejected, (state) => { state.saving = false })
+      .addCase(updateProduct.rejected, (state) => {
+        state.saving = false
+      })
       .addCase(deleteProduct.fulfilled, (state, action) => {
         state.products = state.products.filter((p) => p.id !== action.payload)
       })
@@ -102,7 +118,11 @@ const productsSlice = createSlice({
 
 export default productsSlice.reducer
 
-export const selectProducts = (state: { products: ProductsState }) => state.products.products
-export const selectProductsLoading = (state: { products: ProductsState }) => state.products.isLoading
-export const selectProductsSaving = (state: { products: ProductsState }) => state.products.saving
-export const selectProductsError = (state: { products: ProductsState }) => state.products.error
+export const selectProducts = (state: { products: ProductsState }) =>
+  state.products.products
+export const selectProductsLoading = (state: { products: ProductsState }) =>
+  state.products.isLoading
+export const selectProductsSaving = (state: { products: ProductsState }) =>
+  state.products.saving
+export const selectProductsError = (state: { products: ProductsState }) =>
+  state.products.error

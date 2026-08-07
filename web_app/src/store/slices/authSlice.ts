@@ -60,9 +60,13 @@ export const sendCode = createAsyncThunk(
 
 export const verifyCode = createAsyncThunk(
   'auth/verifyCode',
-  async ({ email, code }: { email: string; code: string }, { rejectWithValue }) => {
+  async (
+    { email, code }: { email: string; code: string },
+    { rejectWithValue }
+  ) => {
     const response = await api.verifyCode(email, code)
-    if (response.error || !response.data) return rejectWithValue(response.error || 'Error')
+    if (response.error || !response.data)
+      return rejectWithValue(response.error || 'Error')
     api.setToken(response.data.token)
     saveAuthState(response.data.user, response.data.tenant)
     return {
@@ -72,19 +76,18 @@ export const verifyCode = createAsyncThunk(
   }
 )
 
-export const logout = createAsyncThunk('auth/logout', async () => {
+export const logout = createAsyncThunk('auth/logout', () => {
   api.setToken(null)
   saveAuthState(null, null)
   return null
 })
 
-
-
 export const refreshCurrentUser = createAsyncThunk(
   'auth/refreshCurrentUser',
   async (_, { rejectWithValue }) => {
     const response = await api.getCurrentUser()
-    if (response.error || !response.data) return rejectWithValue(response.error || 'Error')
+    if (response.error || !response.data)
+      return rejectWithValue(response.error || 'Error')
     return response.data
   }
 )
@@ -102,7 +105,10 @@ const authSlice = createSlice({
       state.tenant = action.payload
       // Persist to localStorage
       if (state.user && action.payload) {
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: state.user, tenant: action.payload }))
+        localStorage.setItem(
+          AUTH_STORAGE_KEY,
+          JSON.stringify({ user: state.user, tenant: action.payload })
+        )
       }
     },
     clearAuthError: (state) => {
@@ -163,18 +169,22 @@ const authSlice = createSlice({
   },
 })
 
-export const { setUser, setTenant, clearAuthError, resetCodeFlow } = authSlice.actions
+export const { setUser, setTenant, clearAuthError, resetCodeFlow } =
+  authSlice.actions
 export default authSlice.reducer
 
 // Selectors
 export const selectUser = (state: { auth: AuthState }) => state.auth.user
 export const selectTenant = (state: { auth: AuthState }) => state.auth.tenant
-export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated
-export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.isLoading
+export const selectIsAuthenticated = (state: { auth: AuthState }) =>
+  state.auth.isAuthenticated
+export const selectAuthLoading = (state: { auth: AuthState }) =>
+  state.auth.isLoading
 export const selectAuthError = (state: { auth: AuthState }) => state.auth.error
-export const selectCodeSent = (state: { auth: AuthState }) => state.auth.codeSent
-export const selectPendingEmail = (state: { auth: AuthState }) => state.auth.pendingEmail
-
+export const selectCodeSent = (state: { auth: AuthState }) =>
+  state.auth.codeSent
+export const selectPendingEmail = (state: { auth: AuthState }) =>
+  state.auth.pendingEmail
 
 /** True while the tenant has to pick a plan before the CRM opens up: gated
  *  signup with no paid plan (either never chosen, or the subscription ended and
@@ -182,13 +192,17 @@ export const selectPendingEmail = (state: { auth: AuthState }) => state.auth.pen
 export const tenantNeedsPlan = (tenant: Tenant | null | undefined) =>
   !!tenant?.planGate && (tenant.plan ?? 'free') === 'free'
 
-export const selectNeedsPlan = (state: { auth: AuthState }) => tenantNeedsPlan(state.auth.tenant)
+export const selectNeedsPlan = (state: { auth: AuthState }) =>
+  tenantNeedsPlan(state.auth.tenant)
 
 // Role-based permissions. Sessions stored before roles existed default to "owner".
 const roleOf = (state: { auth: AuthState }) => state.auth.user?.role ?? 'owner'
 // Can create/edit/delete catalog & CRM data (owners, admins, editors). Viewers are read-only.
-export const selectCanEdit = (state: { auth: AuthState }) => ['owner', 'admin', 'editor'].includes(roleOf(state))
+export const selectCanEdit = (state: { auth: AuthState }) =>
+  ['owner', 'admin', 'editor'].includes(roleOf(state))
 // Can manage the team and tenant settings (owners, admins).
-export const selectIsAdmin = (state: { auth: AuthState }) => ['owner', 'admin'].includes(roleOf(state))
+export const selectIsAdmin = (state: { auth: AuthState }) =>
+  ['owner', 'admin'].includes(roleOf(state))
 // Owner-only actions (change plan, delete account).
-export const selectIsOwner = (state: { auth: AuthState }) => roleOf(state) === 'owner'
+export const selectIsOwner = (state: { auth: AuthState }) =>
+  roleOf(state) === 'owner'

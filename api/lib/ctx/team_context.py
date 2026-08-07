@@ -19,15 +19,26 @@ class TeamError(Exception):
 def _ensure_tenant_memberships(tenant_id: str) -> None:
     """Keep direct/unit-created legacy users compatible with memberships."""
     for user in User.select().where(User.tenant == tenant_id):
-        TenantMembership.get_or_create(user=user, tenant=tenant_id, defaults={"role": user.role or "owner"})
+        TenantMembership.get_or_create(
+            user=user, tenant=tenant_id, defaults={"role": user.role or "owner"}
+        )
 
 
 # ── Members ──────────────────────────────────────────────────────────────
 
+
 def list_members(tenant_id: str) -> list[User]:
     """All users of a tenant, owner first then by join date."""
     _ensure_tenant_memberships(tenant_id)
-    role_rank = Case(None, [(TenantMembership.role == "owner", 0), (TenantMembership.role == "admin", 1), (TenantMembership.role == "editor", 2)], 3)
+    role_rank = Case(
+        None,
+        [
+            (TenantMembership.role == "owner", 0),
+            (TenantMembership.role == "admin", 1),
+            (TenantMembership.role == "editor", 2),
+        ],
+        3,
+    )
     members = list(
         User.select()
         .join(TenantMembership)
@@ -36,7 +47,9 @@ def list_members(tenant_id: str) -> list[User]:
     )
     membership_roles = {
         membership.user_id: membership.role
-        for membership in TenantMembership.select().where(TenantMembership.tenant == tenant_id)
+        for membership in TenantMembership.select().where(
+            TenantMembership.tenant == tenant_id
+        )
     }
     for member in members:
         member._team_role = membership_roles.get(member.id, member.role or "owner")
@@ -57,11 +70,18 @@ def member_stats(tenant_id: str) -> dict:
     cutoff = datetime.utcnow() - timedelta(days=ACTIVE_WINDOW_DAYS)
     members = list(User.select().where(User.tenant == tenant_id))
     active = sum(1 for m in members if m.last_seen_at and m.last_seen_at >= cutoff)
-    pending = Invitation.select().where(
-        Invitation.tenant == tenant_id, Invitation.status == "pending"
-    ).count()
+    pending = (
+        Invitation.select()
+        .where(Invitation.tenant == tenant_id, Invitation.status == "pending")
+        .count()
+    )
     roles_used = len({m.role for m in members})
-    return {"members": len(members), "active": active, "pending": pending, "roles": roles_used}
+    return {
+        "members": len(members),
+        "active": active,
+        "pending": pending,
+        "roles": roles_used,
+    }
 
 
 def invite_member(tenant_id: str, email: str, role: str) -> Invitation:
@@ -189,7 +209,9 @@ def remove_member(tenant_id: str, user_id: str, acting_user_id: str | None) -> U
 
 def cancel_invitation(tenant_id: str, invitation_id: str) -> bool:
     """Revoke a pending invitation. Returns False if it doesn't exist."""
-    invite = Invitation.get_or_none(Invitation.id == invitation_id, Invitation.tenant == tenant_id)
+    invite = Invitation.get_or_none(
+        Invitation.id == invitation_id, Invitation.tenant == tenant_id
+    )
     if not invite:
         return False
     invite.delete_instance()

@@ -68,7 +68,9 @@ def check_pending_billing(tenant_id: str) -> dict[str, object]:
     try:
         return _with_db(lambda: billing.poll_pending_subscription(tenant_id))
     except billing.BillingError:
-        logger.warning("Billing lookup failed for tenant %s; deferring with backoff", tenant_id)
+        logger.warning(
+            "Billing lookup failed for tenant %s; deferring with backoff", tenant_id
+        )
         return _with_db(lambda: billing.defer_pending_subscription(tenant_id))
 
 

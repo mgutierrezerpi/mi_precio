@@ -1,6 +1,7 @@
 """Tests for public context."""
 
 from lib.ctx import lists, versions, items, products, public, identity
+from views.public_tenant_view import PublicTenantView
 
 
 def test_get_tenant_by_subdomain(db):
@@ -16,6 +17,53 @@ def test_get_tenant_by_subdomain_not_found(db):
     found = public.get_tenant_by_subdomain("nonexistent")
 
     assert found is None
+
+
+def test_nearby_marketplace_tenants_only_returns_opted_in_businesses(db):
+    nearby = identity.create_tenant("Nearby", "nearby")
+    nearby.marketplace_enabled = True
+    nearby.marketplace_latitude = "-34.9011"
+    nearby.marketplace_longitude = "-56.1645"
+    nearby.save()
+
+    no_location = identity.create_tenant("No Location", "no-location")
+    no_location.marketplace_enabled = True
+    no_location.save()
+
+    hidden = identity.create_tenant("Hidden", "hidden")
+    hidden.marketplace_enabled = False
+    hidden.marketplace_latitude = "-34.9011"
+    hidden.marketplace_longitude = "-56.1645"
+    hidden.save()
+
+    result = public.nearby_marketplace_tenants(-34.9011, -56.1645)
+
+    assert [(tenant.name, distance) for tenant, distance in result] == [
+        ("Nearby", 0.0),
+        ("No Location", None),
+    ]
+
+    result_without_visitor_location = public.nearby_marketplace_tenants()
+
+    assert [(tenant.name, distance) for tenant, distance in result_without_visitor_location] == [
+        ("Nearby", None),
+        ("No Location", None),
+    ]
+
+
+def test_public_tenant_view_does_not_expose_marketplace_coordinates(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant.marketplace_enabled = True
+    tenant.marketplace_latitude = "-34.9011"
+    tenant.marketplace_longitude = "-56.1645"
+    tenant.save()
+
+    public_tenant = PublicTenantView.render(tenant)
+
+    assert "marketplace_latitude" not in public_tenant.model_dump()
+    assert "marketplace_longitude" not in public_tenant.model_dump()
+
+
 
 
 def test_get_published_lists(db):
@@ -56,8 +104,12 @@ def test_get_published_lists_falls_back_to_product_image(db):
 def test_get_published_lists_keeps_item_image_over_product(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
-    items.create_item(created.version.id, name="Pizza", price=150.0, image_url="http://img/item.jpg")
-    products.create_product(tenant.id, name="Pizza", price=150.0, image_url="http://img/product.jpg")
+    items.create_item(
+        created.version.id, name="Pizza", price=150.0, image_url="http://img/item.jpg"
+    )
+    products.create_product(
+        tenant.id, name="Pizza", price=150.0, image_url="http://img/product.jpg"
+    )
     lists.update_list(created.price_list.id, published=True)
     versions.update_version(created.version.id, published=True)
 
@@ -69,7 +121,9 @@ def test_get_published_lists_keeps_item_image_over_product(db):
 def test_get_published_lists_adds_missing_thumb_from_product(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
-    items.create_item(created.version.id, name="Pizza", price=150.0, image_url="http://img/item.webp")
+    items.create_item(
+        created.version.id, name="Pizza", price=150.0, image_url="http://img/item.webp"
+    )
     products.create_product(
         tenant.id,
         name="Pizza",

@@ -8,7 +8,9 @@ from lib.ctx import plans_context
 security = HTTPBearer(auto_error=False)
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> dict:
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
@@ -29,7 +31,9 @@ def require_roles(*allowed: str):
 
     def dependency(current_user: dict = Depends(get_current_user)) -> dict:
         if current_user.get("role", "owner") not in allowed:
-            raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+            raise HTTPException(
+                status_code=403, detail="No tenés permisos para esta acción"
+            )
         return current_user
 
     return dependency
@@ -47,7 +51,10 @@ def require_active_plan(current_user: dict = Depends(get_current_user)) -> dict:
     if tenant_id and plans_context.plan_required(tenant_id):
         raise HTTPException(
             status_code=402,
-            detail={"code": "plan_required", "message": plans_context.PLAN_REQUIRED_MESSAGE},
+            detail={
+                "code": "plan_required",
+                "message": plans_context.PLAN_REQUIRED_MESSAGE,
+            },
         )
     return current_user
 

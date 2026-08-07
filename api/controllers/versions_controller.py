@@ -9,13 +9,17 @@ router = APIRouter(tags=["versions"])
 
 
 @router.get("/lists/{list_id}/versions")
-def list_versions_endpoint(list_id: str, current_user: dict = Depends(get_current_user)):
+def list_versions_endpoint(
+    list_id: str, current_user: dict = Depends(get_current_user)
+):
     ownership.own_list(list_id, current_user)
     return ListVersionView.render_many(versions.list_versions(list_id))
 
 
 @router.post("/lists/{list_id}/versions", status_code=201)
-def create_version_endpoint(list_id: str, data: CreateVersion, current_user: dict = Depends(require_editor)):
+def create_version_endpoint(
+    list_id: str, data: CreateVersion, current_user: dict = Depends(require_editor)
+):
     ownership.own_list(list_id, current_user)
     version = versions.create_version(list_id, data.name)
     if not version:
@@ -24,13 +28,17 @@ def create_version_endpoint(list_id: str, data: CreateVersion, current_user: dic
 
 
 @router.get("/versions/{version_id}")
-def get_version_endpoint(version_id: str, current_user: dict = Depends(get_current_user)):
+def get_version_endpoint(
+    version_id: str, current_user: dict = Depends(get_current_user)
+):
     version = ownership.own_version(version_id, current_user)
     return ListVersionView.render(version, include_items=True)
 
 
 @router.patch("/versions/{version_id}")
-def update_version_endpoint(version_id: str, data: UpdateVersion, current_user: dict = Depends(require_editor)):
+def update_version_endpoint(
+    version_id: str, data: UpdateVersion, current_user: dict = Depends(require_editor)
+):
     ownership.own_version(version_id, current_user)
     version = versions.update_version(version_id, **data.model_dump(exclude_unset=True))
     if not version:
@@ -39,7 +47,11 @@ def update_version_endpoint(version_id: str, data: UpdateVersion, current_user: 
 
 
 @router.post("/versions/{version_id}/duplicate", status_code=201)
-def duplicate_version_endpoint(version_id: str, name: str | None = None, current_user: dict = Depends(require_editor)):
+def duplicate_version_endpoint(
+    version_id: str,
+    name: str | None = None,
+    current_user: dict = Depends(require_editor),
+):
     ownership.own_version(version_id, current_user)
     version = versions.duplicate_version(version_id, name)
     if not version:

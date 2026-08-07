@@ -37,11 +37,17 @@ export const PLANS: PlanContent[] = [
   {
     id: 'micro',
     name: 'Micro',
-    description: 'Para empezar con una lista simple y compartirla por link o QR.',
+    description:
+      'Para empezar con una lista simple y compartirla por link o QR.',
     price: '$U 200',
     cadence: 'por mes',
     trialLabel: '14 días de prueba gratis',
-    features: ['14 días gratis', 'Hasta 25 productos', '3 listas públicas', 'QR personalizado'],
+    features: [
+      '14 días gratis',
+      'Hasta 25 productos',
+      '3 listas públicas',
+      'QR personalizado',
+    ],
     limits: { products: 25, lists: 3, members: 1 },
   },
   {
@@ -51,7 +57,12 @@ export const PLANS: PlanContent[] = [
     price: '$U 800',
     cadence: 'por mes',
     trialLabel: '30 días de prueba gratis',
-    features: ['30 días gratis', 'Hasta 300 productos', '15 listas públicas', 'Equipo de hasta 5 usuarios'],
+    features: [
+      '30 días gratis',
+      'Hasta 300 productos',
+      '15 listas públicas',
+      'Equipo de hasta 5 usuarios',
+    ],
     limits: { products: 300, lists: 15, members: 5 },
     popular: true,
   },
@@ -62,9 +73,15 @@ export const PLANS: PlanContent[] = [
     price: '$U 1.500',
     cadence: 'por mes',
     trialLabel: '30 días de prueba gratis',
-    features: ['30 días gratis', 'Productos ilimitados', 'Listas ilimitadas', 'Usuarios ilimitados'],
+    features: [
+      '30 días gratis',
+      'Productos ilimitados',
+      'Listas ilimitadas',
+      'Usuarios ilimitados',
+    ],
     limits: { products: null, lists: null, members: null },
   },
 ]
 
-export const planById = (id: PlanId): PlanContent => id === 'free' ? FREE_PLAN : (PLANS.find((p) => p.id === id) || FREE_PLAN)
+export const planById = (id: PlanId): PlanContent =>
+  id === 'free' ? FREE_PLAN : PLANS.find((p) => p.id === id) || FREE_PLAN

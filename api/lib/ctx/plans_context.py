@@ -55,7 +55,9 @@ def normalize_plan(plan: str | None) -> str:
 def _usage(tenant_id: str) -> dict[str, int]:
     members = (
         User.select().where(User.tenant == tenant_id).count()
-        + Invitation.select().where(Invitation.tenant == tenant_id, Invitation.status == "pending").count()
+        + Invitation.select()
+        .where(Invitation.tenant == tenant_id, Invitation.status == "pending")
+        .count()
     )
     return {
         "products": Product.select().where(Product.tenant == tenant_id).count(),
@@ -104,7 +106,9 @@ def assert_can_add(tenant_id: str, resource: str) -> None:
     if limit is None:
         return
     if _usage(tenant_id).get(resource, 0) >= limit:
-        raise PlanLimitError(LIMIT_MESSAGE.get(resource, "Alcanzaste el límite de tu plan."))
+        raise PlanLimitError(
+            LIMIT_MESSAGE.get(resource, "Alcanzaste el límite de tu plan.")
+        )
 
 
 def set_plan(tenant_id: str, plan: str) -> Tenant | None:

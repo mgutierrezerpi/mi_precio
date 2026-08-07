@@ -5,13 +5,15 @@ from decimal import Decimal
 
 from peewee import fn
 
-from models import Tenant, PageView, Customer, Order, OrderItem
+from models import Tenant, PageView, Customer, Order, OrderItem, PriceList
 
 # Accepted traffic sources; anything else is normalized to "link".
 VALID_SOURCES = {"qr", "link"}
 
 
-def record_view(tenant_id: str, list_id: str | None = None, source: str | None = None) -> None:
+def record_view(
+    tenant_id: str, list_id: str | None = None, source: str | None = None
+) -> None:
     """Record a visit to a tenant's public page, tagged by how the visitor arrived."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant:
@@ -34,7 +36,11 @@ def visit_stats(tenant_id: str) -> dict:
 
     def bucket(*extra) -> dict:
         today = count(PageView.created_at >= start_today, *extra)
-        yesterday = count(PageView.created_at >= start_yesterday, PageView.created_at < start_today, *extra)
+        yesterday = count(
+            PageView.created_at >= start_yesterday,
+            PageView.created_at < start_today,
+            *extra,
+        )
         total = count(*extra)
         if yesterday > 0:
             change = (today - yesterday) / yesterday * 100
@@ -42,37 +48,66 @@ def visit_stats(tenant_id: str) -> dict:
             change = 100.0
         else:
             change = 0.0
-        return {"today": today, "yesterday": yesterday, "total": total, "change_pct": round(change)}
+        return {
+            "today": today,
+            "yesterday": yesterday,
+            "total": total,
+            "change_pct": round(change),
+        }
 
     overall = bucket()
     # Top-level keys keep the overall visits (backwards compatible); "qr" holds the QR-only split.
     return {**overall, "qr": bucket(PageView.source == "qr")}
 
 
-def reports(tenant_id: str, days: int = 30) -> dict:
+def reports(tenant_id: str, days: int = 30, list_id: str | None = None) -> dict:
     """Aggregated analytics for the Reports screen: KPIs, a daily visit series,
-    the channel split (QR vs link) and the best-selling products."""
+    the channel split (QR vs link) and the best-selling products.
+
+    When ``list_id`` is supplied, page-view metrics are scoped to that list.
+    Orders are not associated with a price list, so sales KPIs intentionally
+    remain workspace-wide rather than implying an inaccurate attribution.
+    """
     days = max(1, min(days, 365))
+    if list_id and not PriceList.get_or_none(
+        (PriceList.id == list_id) & (PriceList.tenant == tenant_id)
+    ):
+        list_id = None
     now = datetime.utcnow()
     start_today = datetime(now.year, now.month, now.day)
     # Inclusive window of `days` days ending today (e.g. 30 → 29 days ago … today).
     window_start = start_today - timedelta(days=days - 1)
 
     # ── Page views in the window, bucketed per day and per channel ──────────
+    view_conditions = [
+        PageView.tenant == tenant_id,
+        PageView.created_at >= window_start,
+    ]
+    total_view_conditions = [PageView.tenant == tenant_id]
+    if list_id:
+        view_conditions.append(PageView.list_id == list_id)
+        total_view_conditions.append(PageView.list_id == list_id)
     views = list(
-        PageView.select(PageView.source, PageView.created_at)
-        .where(PageView.tenant == tenant_id, PageView.created_at >= window_start)
+        PageView.select(PageView.source, PageView.created_at).where(*view_conditions)
     )
 
     # One bucket per day so the series has no gaps even on days with no traffic.
     series = [
-        {"date": (window_start + timedelta(days=i)).strftime("%Y-%m-%d"), "link": 0, "qr": 0}
+        {
+            "date": (window_start + timedelta(days=i)).strftime("%Y-%m-%d"),
+            "link": 0,
+            "qr": 0,
+        }
         for i in range(days)
     ]
     index = {row["date"]: row for row in series}
     channels = {"link": 0, "qr": 0}
     for v in views:
-        created = v.created_at if isinstance(v.created_at, datetime) else datetime.fromisoformat(str(v.created_at))
+        created = (
+            v.created_at
+            if isinstance(v.created_at, datetime)
+            else datetime.fromisoformat(str(v.created_at))
+        )
         key = "qr" if v.source == "qr" else "link"
         channels[key] += 1
         day = index.get(created.strftime("%Y-%m-%d"))
@@ -80,8 +115,12 @@ def reports(tenant_id: str, days: int = 30) -> dict:
             day[key] += 1
 
     # ── KPIs ────────────────────────────────────────────────────────────────
-    visits_total = PageView.select().where(PageView.tenant == tenant_id).count()
-    qr_total = PageView.select().where(PageView.tenant == tenant_id, PageView.source == "qr").count()
+    visits_total = PageView.select().where(*total_view_conditions).count()
+    qr_total = (
+        PageView.select()
+        .where(*total_view_conditions, PageView.source == "qr")
+        .count()
+    )
     customers_total = Customer.select().where(Customer.tenant == tenant_id).count()
     revenue = (
         Order.select(fn.COALESCE(fn.SUM(Order.total), 0))
@@ -104,12 +143,17 @@ def reports(tenant_id: str, days: int = 30) -> dict:
         .dicts()
     )
     top_products = [
-        {"name": r["name"], "units": int(r["units"] or 0), "revenue": str(r["revenue"] or 0)}
+        {
+            "name": r["name"],
+            "units": int(r["units"] or 0),
+            "revenue": str(r["revenue"] or 0),
+        }
         for r in rows
     ]
 
     return {
         "days": days,
+        "list_id": list_id,
         "kpis": {
             "visits": visits_total,
             "qr_scans": qr_total,

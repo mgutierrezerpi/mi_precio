@@ -37,6 +37,10 @@ class BaseModel(Model):
 
     def duplicate(self, **overrides):
         """Create a copy of this instance with optional overrides."""
-        data = {k: v for k, v in self.__data__.items() if k not in ("id", "created_at", "updated_at")}
+        data = {
+            k: v
+            for k, v in self.__data__.items()
+            if k not in ("id", "created_at", "updated_at")
+        }
         data.update(overrides)
         return self.__class__.create(**data)

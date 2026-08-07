@@ -38,7 +38,8 @@ def update_category(category_id: str, **updates) -> Category | None:
         # differ only in casing from the category record (casing is preserved on
         # save, not canonicalized), so an exact match would miss them.
         Product.update(category=category.name).where(
-            (Product.tenant == category.tenant_id) & (fn.LOWER(Product.category) == old_name.lower())
+            (Product.tenant == category.tenant_id)
+            & (fn.LOWER(Product.category) == old_name.lower())
         ).execute()
     return category
 
@@ -51,7 +52,8 @@ def delete_category(category_id: str) -> bool:
     # Case-insensitive match: product categories are free text and may differ
     # only in casing from the category record (see update_category).
     Product.update(category=None).where(
-        (Product.tenant == category.tenant_id) & (fn.LOWER(Product.category) == category.name.lower())
+        (Product.tenant == category.tenant_id)
+        & (fn.LOWER(Product.category) == category.name.lower())
     ).execute()
     category.delete_instance()
     return True

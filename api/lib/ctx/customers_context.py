@@ -10,6 +10,7 @@ from models import Tenant, Customer, Order, OrderItem
 
 # ── Customers ────────────────────────────────────────────────────────────
 
+
 def list_customers(tenant_id: str) -> list[Customer]:
     """All customers of a tenant, newest first, each annotated with aggregates."""
     customers = list(
@@ -62,6 +63,7 @@ def delete_customer(customer_id: str) -> bool:
 
 # ── Orders (purchase history) ────────────────────────────────────────────
 
+
 def list_orders(customer_id: str) -> list[Order]:
     """A customer's purchases, newest first, with their line items preloaded."""
     return list(
@@ -71,16 +73,24 @@ def list_orders(customer_id: str) -> list[Order]:
     )
 
 
-def create_order(customer_id: str, items: list[dict], status: str = "paid",
-                 note: str | None = None, currency: str | None = None,
-                 reference: str | None = None) -> Order | None:
+def create_order(
+    customer_id: str,
+    items: list[dict],
+    status: str = "paid",
+    note: str | None = None,
+    currency: str | None = None,
+    reference: str | None = None,
+) -> Order | None:
     """Register a purchase for a customer, computing the total from its items."""
     customer = Customer.get_or_none(Customer.id == customer_id)
     if not customer:
         return None
 
     line_items = items or []
-    total = sum((Decimal(str(i["unit_price"])) * int(i.get("quantity", 1)) for i in line_items), Decimal(0))
+    total = sum(
+        (Decimal(str(i["unit_price"])) * int(i.get("quantity", 1)) for i in line_items),
+        Decimal(0),
+    )
 
     order = Order.create(
         tenant=customer.tenant,
@@ -101,7 +111,9 @@ def create_order(customer_id: str, items: list[dict], status: str = "paid",
     return order
 
 
-def update_order(order_id: str, items: list[dict] | None = None, **fields) -> Order | None:
+def update_order(
+    order_id: str, items: list[dict] | None = None, **fields
+) -> Order | None:
     """Update an order's fields and, if `items` is given, replace its lines + recompute total."""
     order = Order.get_or_none(Order.id == order_id)
     if not order:
@@ -116,7 +128,9 @@ def update_order(order_id: str, items: list[dict] | None = None, **fields) -> Or
         for i in items:
             qty = int(i.get("quantity", 1))
             price = Decimal(str(i["unit_price"]))
-            OrderItem.create(order=order, name=i["name"], quantity=qty, unit_price=price)
+            OrderItem.create(
+                order=order, name=i["name"], quantity=qty, unit_price=price
+            )
             total += price * qty
         order.total = total
 
@@ -134,14 +148,17 @@ def delete_order(order_id: str) -> bool:
 
 # ── Stats ────────────────────────────────────────────────────────────────
 
+
 def customer_stats(tenant_id: str) -> dict:
     """KPI counts for the customers screen."""
     cutoff = datetime.utcnow() - timedelta(days=30)
 
     total = Customer.select().where(Customer.tenant == tenant_id).count()
-    new = Customer.select().where(
-        Customer.tenant == tenant_id, Customer.created_at >= cutoff
-    ).count()
+    new = (
+        Customer.select()
+        .where(Customer.tenant == tenant_id, Customer.created_at >= cutoff)
+        .count()
+    )
 
     # Customers with at least one purchase in the last 30 days.
     active = (
@@ -164,6 +181,7 @@ def customer_stats(tenant_id: str) -> dict:
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
+
 def _annotate(customer: Customer) -> None:
     """Attach orders_count / total_spent / last_order_at to a customer instance."""
     agg = (
@@ -180,5 +198,7 @@ def _annotate(customer: Customer) -> None:
     customer.total_spent = Decimal(str(agg["total_spent"] or 0))
     last = agg["last_order_at"]
     customer.last_order_at = (
-        last if isinstance(last, datetime) else (datetime.fromisoformat(last) if last else None)
+        last
+        if isinstance(last, datetime)
+        else (datetime.fromisoformat(last) if last else None)
     )

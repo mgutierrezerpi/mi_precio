@@ -37,7 +37,9 @@ def create_ticket(
 
     # Prefix the tenant context so agents see who is reporting at a glance
     # (Zoho Desk renders the description as HTML).
-    context_lines = [f"Tenant: {tenant.name} ({tenant_id})" if tenant else f"Tenant: {tenant_id}"]
+    context_lines = [
+        f"Tenant: {tenant.name} ({tenant_id})" if tenant else f"Tenant: {tenant_id}"
+    ]
     if tenant:
         context_lines.append(f"Plan: {tenant.plan}")
         context_lines.append(f"Subdominio: {tenant.subdomain}")

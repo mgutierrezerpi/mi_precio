@@ -18,7 +18,11 @@ import { trackEvent } from '../lib/analytics'
 
 /* ── Inline icons (lucide-style) ──────────────────────────────── */
 type IconProps = { className?: string; size?: number }
-const svg = (size: number, className: string | undefined, children: React.ReactNode) => (
+const svg = (
+  size: number,
+  className: string | undefined,
+  children: React.ReactNode
+) => (
   <svg
     width={size}
     height={size}
@@ -34,11 +38,51 @@ const svg = (size: number, className: string | undefined, children: React.ReactN
     {children}
   </svg>
 )
-const XIcon = ({ className, size = 18 }: IconProps) => svg(size, className, <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>)
-const MailIcon = ({ className, size = 18 }: IconProps) => svg(size, className, <><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></>)
-const LockIcon = ({ className, size = 18 }: IconProps) => svg(size, className, <><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>)
-const ArrowRight = ({ className, size = 18 }: IconProps) => svg(size, className, <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>)
-const ShieldCheck = ({ className, size = 14 }: IconProps) => svg(size, className, <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></>)
+const XIcon = ({ className, size = 18 }: IconProps) =>
+  svg(
+    size,
+    className,
+    <>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </>
+  )
+const MailIcon = ({ className, size = 18 }: IconProps) =>
+  svg(
+    size,
+    className,
+    <>
+      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </>
+  )
+const LockIcon = ({ className, size = 18 }: IconProps) =>
+  svg(
+    size,
+    className,
+    <>
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </>
+  )
+const ArrowRight = ({ className, size = 18 }: IconProps) =>
+  svg(
+    size,
+    className,
+    <>
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </>
+  )
+const ShieldCheck = ({ className, size = 14 }: IconProps) =>
+  svg(
+    size,
+    className,
+    <>
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+      <path d="m9 12 2 2 4-4" />
+    </>
+  )
 /* Iconos de login social — deshabilitados temporalmente (solo email por ahora).
 const GoogleIcon = ({ size = 18 }: IconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
@@ -75,7 +119,15 @@ function SocialButton({ provider }: { provider: 'google' | 'apple' }) {
 const inputCls =
   'min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-[#0F172A] outline-none placeholder:text-[#94A3B8] focus:border-0 focus:outline-none focus:ring-0'
 
-function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Field({
+  label,
+  icon,
+  children,
+}: {
+  label: string
+  icon: React.ReactNode
+  children: React.ReactNode
+}) {
   return (
     <div className="flex flex-col gap-2">
       <label className="text-xs font-bold text-[#334155]">{label}</label>
@@ -131,7 +183,7 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
     }
   }, [isAuthenticated, needsPlan, navigate])
 
-  const handleSendCode = async (e: React.FormEvent) => {
+  const handleSendCode = (e: React.FormEvent) => {
     e.preventDefault()
     dispatch(clearAuthError())
     void dispatch(sendCode({ email }))
@@ -156,121 +208,185 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="flex w-full max-w-[440px] flex-col gap-5 rounded-[24px] bg-white p-9 shadow-[0_30px_80px_-20px_rgba(30,27,75,0.45)] sm:p-10">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <img src="/miprecio-logo-pencil.webp" alt="Mi Precio" className="h-10 w-auto" />
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Cerrar"
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F5F3FF] text-[#475569] transition-colors hover:bg-[#EDE9FE]"
-        >
-          <XIcon />
-        </button>
-      </div>
-
-      {/* Title */}
-      <div className="flex flex-col gap-1.5">
-        <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-[#0F172A]">
-          {codeSent ? 'Revisá tu email' : 'Bienvenido de vuelta'}
-        </h1>
-        <p className="text-sm leading-relaxed text-[#64748B]">
-          {codeSent ? (
-            <>
-              Ingresá el código que enviamos a{' '}
-              <span className="font-semibold text-[#334155]">{pendingEmail}</span>.
-            </>
-          ) : (
-            'Iniciá sesión para gestionar tu catálogo.'
-          )}
-        </p>
-      </div>
-
-      {!codeSent ? (
-        /* Step 1: Email input */
-        <>
-          {/* Login social temporalmente deshabilitado: por ahora solo email.
-          <div className="flex gap-3">
-            <SocialButton provider="google" />
-            <SocialButton provider="apple" />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="h-px flex-1 bg-[#E2E8F0]" />
-            <span className="text-xs font-medium text-[#94A3B8]">o ingresá con tu email</span>
-            <span className="h-px flex-1 bg-[#E2E8F0]" />
-          </div>
-          */}
-
-          <form onSubmit={handleSendCode} className="flex flex-col gap-4">
-            <Field label="Email" icon={<MailIcon />}>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tucorreo@empresa.com"
-                required
-                autoFocus
-                autoComplete="email"
-                className={inputCls}
-              />
-            </Field>
-
-            {error && (
-              <p className="rounded-xl bg-[#FEF2F2] px-3.5 py-2.5 text-sm font-medium text-[#DC2626]">
-                {error}
-              </p>
-            )}
-
-            <button type="submit" disabled={isLoading} className={submitCls}>
-              {isLoading ? 'Enviando...' : <>Enviar código <ArrowRight /></>}
-            </button>
-          </form>
-        </>
+      <AuthHeader onClose={onClose} />
+      <AuthIntro codeSent={codeSent} pendingEmail={pendingEmail} />
+      {codeSent ? (
+        <CodeForm
+          code={code}
+          error={error}
+          isLoading={isLoading}
+          onChangeEmail={handleChangeEmail}
+          onCodeChange={setCode}
+          onSubmit={handleVerifyCode}
+        />
       ) : (
-        /* Step 2: Code verification */
-        <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
-          <Field label="Código de verificación" icon={<LockIcon />}>
-            <input
-              id="code"
-              type="text"
-              inputMode="numeric"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="123456"
-              required
-              autoFocus
-              autoComplete="one-time-code"
-              className={`${inputCls} tracking-[0.3em]`}
-            />
-          </Field>
-
-          <button
-            type="button"
-            onClick={handleChangeEmail}
-            className="self-start text-[13px] font-semibold text-[#7C3AED] hover:underline"
-          >
-            ← Cambiar email
-          </button>
-
-          {error && (
-            <p className="rounded-xl bg-[#FEF2F2] px-3.5 py-2.5 text-sm font-medium text-[#DC2626]">
-              {error}
-            </p>
-          )}
-
-          <button type="submit" disabled={isLoading} className={submitCls}>
-            {isLoading ? 'Verificando...' : <>Verificar código <ArrowRight /></>}
-          </button>
-        </form>
+        <EmailForm
+          email={email}
+          error={error}
+          isLoading={isLoading}
+          onEmailChange={setEmail}
+          onSubmit={handleSendCode}
+        />
       )}
+      <SecurityNote />
+    </div>
+  )
+}
 
-      {/* Security note */}
-      <div className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[#94A3B8]">
-        <ShieldCheck className="text-[#10B981]" />
-        Tus datos están protegidos con cifrado SSL
-      </div>
+function AuthHeader({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="flex items-center justify-between">
+      <img
+        src="/miprecio-logo-pencil.webp"
+        alt="Mi Precio"
+        className="h-10 w-auto"
+      />
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Cerrar"
+        className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F5F3FF] text-[#475569] transition-colors hover:bg-[#EDE9FE]"
+      >
+        <XIcon />
+      </button>
+    </div>
+  )
+}
+
+function AuthIntro({
+  codeSent,
+  pendingEmail,
+}: {
+  codeSent: boolean
+  pendingEmail: string | null
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-[#0F172A]">
+        {codeSent ? 'Revisá tu email' : 'Bienvenido de vuelta'}
+      </h1>
+      <p className="text-sm leading-relaxed text-[#64748B]">
+        {codeSent ? (
+          <>
+            Ingresá el código que enviamos a{' '}
+            <span className="font-semibold text-[#334155]">{pendingEmail}</span>
+            .
+          </>
+        ) : (
+          'Iniciá sesión para gestionar tu catálogo.'
+        )}
+      </p>
+    </div>
+  )
+}
+
+function AuthError({ error }: { error: string | null }) {
+  return error ? (
+    <p className="rounded-xl bg-[#FEF2F2] px-3.5 py-2.5 text-sm font-medium text-[#DC2626]">
+      {error}
+    </p>
+  ) : null
+}
+
+function EmailForm({
+  email,
+  error,
+  isLoading,
+  onEmailChange,
+  onSubmit,
+}: {
+  email: string
+  error: string | null
+  isLoading: boolean
+  onEmailChange: (value: string) => void
+  onSubmit: (event: React.FormEvent) => void
+}) {
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <Field label="Email" icon={<MailIcon />}>
+        <input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => onEmailChange(e.target.value)}
+          placeholder="tucorreo@empresa.com"
+          required
+          autoFocus
+          autoComplete="email"
+          className={inputCls}
+        />
+      </Field>
+      <AuthError error={error} />
+      <button type="submit" disabled={isLoading} className={submitCls}>
+        {isLoading ? (
+          'Enviando...'
+        ) : (
+          <>
+            Enviar código <ArrowRight />
+          </>
+        )}
+      </button>
+    </form>
+  )
+}
+
+function CodeForm({
+  code,
+  error,
+  isLoading,
+  onChangeEmail,
+  onCodeChange,
+  onSubmit,
+}: {
+  code: string
+  error: string | null
+  isLoading: boolean
+  onChangeEmail: () => void
+  onCodeChange: (value: string) => void
+  onSubmit: (event: React.FormEvent) => void
+}) {
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <Field label="Código de verificación" icon={<LockIcon />}>
+        <input
+          id="code"
+          type="text"
+          inputMode="numeric"
+          value={code}
+          onChange={(e) => onCodeChange(e.target.value)}
+          placeholder="123456"
+          required
+          autoFocus
+          autoComplete="one-time-code"
+          className={`${inputCls} tracking-[0.3em]`}
+        />
+      </Field>
+      <button
+        type="button"
+        onClick={onChangeEmail}
+        className="self-start text-[13px] font-semibold text-[#7C3AED] hover:underline"
+      >
+        ← Cambiar email
+      </button>
+      <AuthError error={error} />
+      <button type="submit" disabled={isLoading} className={submitCls}>
+        {isLoading ? (
+          'Verificando...'
+        ) : (
+          <>
+            Verificar código <ArrowRight />
+          </>
+        )}
+      </button>
+    </form>
+  )
+}
+
+function SecurityNote() {
+  return (
+    <div className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[#94A3B8]">
+      <ShieldCheck className="text-[#10B981]" />
+      Tus datos están protegidos con cifrado SSL
     </div>
   )
 }

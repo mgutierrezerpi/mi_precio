@@ -39,17 +39,23 @@ class ObjectStorage:
 
     @property
     def _s3_configured(self) -> bool:
-        return all([
-            settings.storage_endpoint_url,
-            settings.storage_public_url,
-            settings.storage_bucket,
-            settings.storage_access_key,
-            settings.storage_secret_key,
-        ])
+        return all(
+            [
+                settings.storage_endpoint_url,
+                settings.storage_public_url,
+                settings.storage_bucket,
+                settings.storage_access_key,
+                settings.storage_secret_key,
+            ]
+        )
 
     @property
     def _local_configured(self) -> bool:
-        return bool(settings.storage_local_path and settings.storage_public_url and settings.storage_bucket)
+        return bool(
+            settings.storage_local_path
+            and settings.storage_public_url
+            and settings.storage_bucket
+        )
 
     def _write_local(self, key: str, body: bytes) -> None:
         path = PurePosixPath(key)
@@ -57,7 +63,11 @@ class ObjectStorage:
             raise ObjectStorageError("Invalid object key")
 
         try:
-            target = Path(settings.storage_local_path) / settings.storage_bucket / Path(*path.parts)
+            target = (
+                Path(settings.storage_local_path)
+                / settings.storage_bucket
+                / Path(*path.parts)
+            )
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(body)
         except Exception as e:
@@ -73,7 +83,9 @@ class ObjectStorage:
                 endpoint_url=settings.storage_endpoint_url,
                 aws_access_key_id=settings.storage_access_key,
                 aws_secret_access_key=settings.storage_secret_key,
-                config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
+                config=Config(
+                    signature_version="s3v4", s3={"addressing_style": "path"}
+                ),
             )
 
         return self._client

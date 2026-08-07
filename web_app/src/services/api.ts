@@ -1,14 +1,47 @@
-import type { Tenant, PriceList, ListDesign, ListVersion, Item, Product, Category, AuthToken, Customer, CustomerStats, CustomerDetail, Order, Activity, TeamMember, Invitation, MemberStats, Role, NotificationsData, NotifPrefs, PlanInfo, PlanId, User } from '../types'
+import type {
+  Tenant,
+  MarketplaceBusiness,
+  PriceList,
+  PriceListVariantType,
+  ListDesign,
+  ListVersion,
+  Item,
+  Product,
+  Category,
+  AuthToken,
+  Customer,
+  CustomerStats,
+  CustomerDetail,
+  Order,
+  Activity,
+  TeamMember,
+  Invitation,
+  MemberStats,
+  Role,
+  NotificationsData,
+  NotifPrefs,
+  PlanInfo,
+  PlanId,
+  User,
+} from '../types'
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
-type ApiResponse<T> = { data: T; error?: never } | { data?: never; error: string }
+type ApiResponse<T> =
+  | { data: T; error?: never }
+  | { data?: never; error: string }
 
-type VisitBucket = { today: number; yesterday: number; total: number; changePct: number }
+type VisitBucket = {
+  today: number
+  yesterday: number
+  total: number
+  changePct: number
+}
 export type VisitStats = VisitBucket & { qr: VisitBucket }
 
 export type ReportData = {
   days: number
+  listId: string | null
   kpis: { visits: number; qrScans: number; customers: number; revenue: string }
   series: { date: string; link: number; qr: number }[]
   channels: { link: number; qr: number }
@@ -25,7 +58,9 @@ export function setAuthErrorHandler(callback: AuthErrorCallback | null) {
 type ConnectionErrorCallback = () => void
 let onConnectionError: ConnectionErrorCallback | null = null
 
-export function setConnectionErrorHandler(callback: ConnectionErrorCallback | null) {
+export function setConnectionErrorHandler(
+  callback: ConnectionErrorCallback | null
+) {
   onConnectionError = callback
 }
 
@@ -56,7 +91,13 @@ function transformKeys<T>(obj: unknown): T {
 }
 
 /** Map a product payload's camelCase image fields to the API's snake_case keys. */
-function productBody<T extends { imageUrl?: string | null; imageThumbUrl?: string | null; priceListIds?: string[] }>(data: T) {
+function productBody<
+  T extends {
+    imageUrl?: string | null
+    imageThumbUrl?: string | null
+    priceListIds?: string[]
+  },
+>(data: T) {
   const { imageUrl, imageThumbUrl, priceListIds, ...rest } = data
   return {
     ...rest,
@@ -91,14 +132,16 @@ class ApiService {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    allowReconnect = true,
+    allowReconnect = true
   ): Promise<ApiResponse<T>> {
-    const headers: HeadersInit = options.body instanceof FormData
-      ? { ...options.headers }
-      : { 'Content-Type': 'application/json', ...options.headers }
+    const headers: HeadersInit =
+      options.body instanceof FormData
+        ? { ...options.headers }
+        : { 'Content-Type': 'application/json', ...options.headers }
 
     if (this.token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`
+      ;(headers as Record<string, string>)['Authorization'] =
+        `Bearer ${this.token}`
     }
 
     try {
@@ -116,7 +159,8 @@ class ApiService {
         // `detail` is a plain string everywhere except the plan gate, which
         // sends { code, message } so it can be told apart from plan-limit 402s.
         const detail = errorData.detail
-        if (response.status === 402 && detail?.code === 'plan_required') onPlanRequired?.()
+        if (response.status === 402 && detail?.code === 'plan_required')
+          onPlanRequired?.()
         const message = typeof detail === 'string' ? detail : detail?.message
         return { error: message || `Error ${response.status}` }
       }
@@ -144,7 +188,10 @@ class ApiService {
     })
   }
 
-  async verifyCode(email: string, code: string): Promise<ApiResponse<AuthToken>> {
+  async verifyCode(
+    email: string,
+    code: string
+  ): Promise<ApiResponse<AuthToken>> {
     return this.request('/auth/tokens', {
       method: 'POST',
       body: JSON.stringify({ email, code }),
@@ -156,12 +203,33 @@ class ApiService {
     return this.request('/tenants')
   }
 
-  async createTenant(name: string, subdomain?: string): Promise<ApiResponse<Tenant>> {
-    return this.request('/tenants', { method: 'POST', body: JSON.stringify({ name, subdomain }) })
+  async createTenant(
+    name: string,
+    subdomain?: string
+  ): Promise<ApiResponse<Tenant>> {
+    return this.request('/tenants', {
+      method: 'POST',
+      body: JSON.stringify({ name, subdomain }),
+    })
   }
 
   async switchTenant(tenantId: string): Promise<ApiResponse<AuthToken>> {
     return this.request(`/tenants/${tenantId}/switch`, { method: 'POST' })
+  }
+
+  async getMarketplaceNearby(
+    latitude?: number,
+    longitude?: number,
+    category?: string
+  ): Promise<ApiResponse<MarketplaceBusiness[]>> {
+    const params = new URLSearchParams()
+    if (latitude != null && longitude != null) {
+      params.set('latitude', String(latitude))
+      params.set('longitude', String(longitude))
+    }
+    if (category) params.set('category', category)
+    const query = params.size ? `?${params}` : ''
+    return this.request(`/public/marketplace/nearby${query}`)
   }
 
   async getTenant(id: string): Promise<ApiResponse<Tenant>> {
@@ -171,18 +239,50 @@ class ApiService {
   async updateTenant(
     id: string,
     data: {
-      name?: string; subdomain?: string; currency?: string
-      logoUrl?: string | null; brandColor?: string | null; description?: string | null
-      listDesign?: string | null; listBgUrl?: string | null; listBgOverlay?: boolean; listHeroColor?: string | null
-      language?: string; timezone?: string; deliveryEnabled?: boolean
-      legalName?: string | null; taxId?: string | null; address?: string | null
+      name?: string
+      subdomain?: string
+      currency?: string
+      logoUrl?: string | null
+      brandColor?: string | null
+      description?: string | null
+      listDesign?: string | null
+      listBgUrl?: string | null
+      listBgOverlay?: boolean
+      listHeroColor?: string | null
+      language?: string
+      timezone?: string
+      deliveryEnabled?: boolean
+      marketplaceEnabled?: boolean
+      marketplaceLatitude?: number | null
+      marketplaceLongitude?: number | null
+      businessCategory?: string | null
+      legalName?: string | null
+      taxId?: string | null
+      address?: string | null
     }
   ): Promise<ApiResponse<Tenant>> {
     // Map the camelCase brand/tax fields to the API's snake_case keys.
-    const map: Record<string, string> = { logoUrl: 'logo_url', brandColor: 'brand_color', listDesign: 'list_design', listBgUrl: 'list_bg_url', listBgOverlay: 'list_bg_overlay', listHeroColor: 'list_hero_color', legalName: 'legal_name', taxId: 'tax_id', deliveryEnabled: 'delivery_enabled' }
+    const map: Record<string, string> = {
+      logoUrl: 'logo_url',
+      brandColor: 'brand_color',
+      listDesign: 'list_design',
+      listBgUrl: 'list_bg_url',
+      listBgOverlay: 'list_bg_overlay',
+      listHeroColor: 'list_hero_color',
+      legalName: 'legal_name',
+      taxId: 'tax_id',
+      deliveryEnabled: 'delivery_enabled',
+      marketplaceEnabled: 'marketplace_enabled',
+      marketplaceLatitude: 'marketplace_latitude',
+      marketplaceLongitude: 'marketplace_longitude',
+      businessCategory: 'business_category',
+    }
     const body: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(data)) body[map[k] ?? k] = v
-    return this.request(`/tenants/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
+    return this.request(`/tenants/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
   }
 
   async deleteTenant(id: string): Promise<ApiResponse<{ deleted: boolean }>> {
@@ -194,18 +294,35 @@ class ApiService {
     return this.request(`/tenants/${tenantId}/plan`)
   }
 
-  async updatePlan(tenantId: string, plan: PlanId): Promise<ApiResponse<Tenant>> {
-    return this.request(`/tenants/${tenantId}/plan`, { method: 'PATCH', body: JSON.stringify({ plan }) })
-  }
-
-  async createCheckout(tenantId: string, plan: PlanId, redirectUrl?: string): Promise<ApiResponse<{ url: string }>> {
-    return this.request('/billing/checkouts', {
-      method: 'POST',
-      body: JSON.stringify({ tenant_id: tenantId, plan, redirect_url: redirectUrl }),
+  async updatePlan(
+    tenantId: string,
+    plan: PlanId
+  ): Promise<ApiResponse<Tenant>> {
+    return this.request(`/tenants/${tenantId}/plan`, {
+      method: 'PATCH',
+      body: JSON.stringify({ plan }),
     })
   }
 
-  async reconcileCheckout(tenantId: string, orderId: string): Promise<ApiResponse<{ status: string; subscriptionId?: string }>> {
+  async createCheckout(
+    tenantId: string,
+    plan: PlanId,
+    redirectUrl?: string
+  ): Promise<ApiResponse<{ url: string }>> {
+    return this.request('/billing/checkouts', {
+      method: 'POST',
+      body: JSON.stringify({
+        tenant_id: tenantId,
+        plan,
+        redirect_url: redirectUrl,
+      }),
+    })
+  }
+
+  async reconcileCheckout(
+    tenantId: string,
+    orderId: string
+  ): Promise<ApiResponse<{ status: string; subscriptionId?: string }>> {
     return this.request('/billing/reconcile-checkout', {
       method: 'POST',
       body: JSON.stringify({ tenant_id: tenantId, order_id: orderId }),
@@ -216,7 +333,7 @@ class ApiService {
   async createSupportTicket(
     subject: string,
     description: string,
-    priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium',
+    priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium'
   ): Promise<ApiResponse<{ id: number | string; status: string }>> {
     return this.request('/support/tickets', {
       method: 'POST',
@@ -233,29 +350,69 @@ class ApiService {
     return this.request(`/lists/${listId}`)
   }
 
-  async createList(tenantId: string, name: string, kind: 'product' | 'service' = 'product'): Promise<ApiResponse<PriceList>> {
+  async createList(
+    tenantId: string,
+    name: string,
+    kind: 'product' | 'service' = 'product',
+    variant?: {
+      parentListId: string
+      variantType: PriceListVariantType
+      customerId?: string
+      startsAt?: string
+      endsAt?: string
+    }
+  ): Promise<ApiResponse<PriceList>> {
     return this.request(`/tenants/${tenantId}/lists`, {
       method: 'POST',
-      body: JSON.stringify({ name, kind }),
+      body: JSON.stringify({
+        name,
+        kind,
+        ...(variant
+          ? {
+              parent_list_id: variant.parentListId,
+              variant_type: variant.variantType,
+              customer_id: variant.customerId || undefined,
+              starts_at: variant.startsAt || undefined,
+              ends_at: variant.endsAt || undefined,
+            }
+          : {}),
+      }),
     })
   }
 
   async updateList(
     listId: string,
     data: {
-      name?: string; slug?: string; published?: boolean; showOnIndex?: boolean; kind?: 'product' | 'service'
+      name?: string
+      slug?: string
+      published?: boolean
+      showOnIndex?: boolean
+      kind?: 'product' | 'service'
+      parentListId?: string | null
       // Appearance overrides: `null` clears one and falls back to the tenant's.
-      design?: ListDesign | null; heroColor?: string | null; bgUrl?: string | null; bgOverlay?: boolean | null
-    },
+      design?: ListDesign | null
+      heroColor?: string | null
+      bgUrl?: string | null
+      bgOverlay?: boolean | null
+    }
   ): Promise<ApiResponse<PriceList>> {
     // Only send the keys actually provided — the API distinguishes "absent"
     // (leave as is) from an explicit null (clear the override).
-    const map: Record<string, string> = { showOnIndex: 'show_on_index', heroColor: 'hero_color', bgUrl: 'bg_url', bgOverlay: 'bg_overlay' }
+    const map: Record<string, string> = {
+      showOnIndex: 'show_on_index',
+      parentListId: 'parent_list_id',
+      heroColor: 'hero_color',
+      bgUrl: 'bg_url',
+      bgOverlay: 'bg_overlay',
+    }
     const body: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(data)) {
       if (v !== undefined) body[map[k] ?? k] = v
     }
-    return this.request(`/lists/${listId}`, { method: 'PATCH', body: JSON.stringify(body) })
+    return this.request(`/lists/${listId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
   }
 
   async deleteList(listId: string): Promise<ApiResponse<{ deleted: boolean }>> {
@@ -271,23 +428,34 @@ class ApiService {
     return this.request(`/versions/${versionId}`)
   }
 
-  async createVersion(listId: string, name: string): Promise<ApiResponse<ListVersion>> {
+  async createVersion(
+    listId: string,
+    name: string
+  ): Promise<ApiResponse<ListVersion>> {
     return this.request(`/lists/${listId}/versions`, {
       method: 'POST',
       body: JSON.stringify({ name }),
     })
   }
 
-  async updateVersion(versionId: string, data: { name?: string; published?: boolean }): Promise<ApiResponse<ListVersion>> {
+  async updateVersion(
+    versionId: string,
+    data: { name?: string; published?: boolean }
+  ): Promise<ApiResponse<ListVersion>> {
     return this.request(`/versions/${versionId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     })
   }
 
-  async duplicateVersion(versionId: string, name?: string): Promise<ApiResponse<ListVersion>> {
+  async duplicateVersion(
+    versionId: string,
+    name?: string
+  ): Promise<ApiResponse<ListVersion>> {
     const params = name ? `?name=${encodeURIComponent(name)}` : ''
-    return this.request(`/versions/${versionId}/duplicate${params}`, { method: 'POST' })
+    return this.request(`/versions/${versionId}/duplicate${params}`, {
+      method: 'POST',
+    })
   }
 
   // Items endpoints
@@ -299,15 +467,40 @@ class ApiService {
     return this.request(`/items/${itemId}`)
   }
 
-  async createItem(versionId: string, data: { name: string; price: number; description?: string; currency?: string; category?: string; imageUrl?: string; imageThumbUrl?: string; productId?: string }): Promise<ApiResponse<Item>> {
+  async createItem(
+    versionId: string,
+    data: {
+      name: string
+      price: number
+      description?: string
+      currency?: string
+      category?: string
+      imageUrl?: string
+      imageThumbUrl?: string
+      productId?: string
+    }
+  ): Promise<ApiResponse<Item>> {
     const { imageUrl, imageThumbUrl, productId, ...rest } = data
     return this.request(`/versions/${versionId}/items`, {
       method: 'POST',
-      body: JSON.stringify({ ...rest, image_url: imageUrl, image_thumb_url: imageThumbUrl, product_id: productId }),
+      body: JSON.stringify({
+        ...rest,
+        image_url: imageUrl,
+        image_thumb_url: imageThumbUrl,
+        product_id: productId,
+      }),
     })
   }
 
-  async updateItem(itemId: string, data: { name?: string; price?: number; description?: string; category?: string }): Promise<ApiResponse<Item>> {
+  async updateItem(
+    itemId: string,
+    data: {
+      name?: string
+      price?: number
+      description?: string
+      category?: string
+    }
+  ): Promise<ApiResponse<Item>> {
     return this.request(`/items/${itemId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -318,7 +511,10 @@ class ApiService {
     return this.request(`/items/${itemId}`, { method: 'DELETE' })
   }
 
-  async reorderItems(versionId: string, itemIds: string[]): Promise<ApiResponse<{ reordered: boolean }>> {
+  async reorderItems(
+    versionId: string,
+    itemIds: string[]
+  ): Promise<ApiResponse<{ reordered: boolean }>> {
     return this.request(`/versions/${versionId}/items/order`, {
       method: 'PUT',
       body: JSON.stringify({ item_ids: itemIds }),
@@ -330,43 +526,73 @@ class ApiService {
     return this.request(`/tenants/${tenantId}/stats/visits`)
   }
 
-  async getActivity(tenantId: string, limit = 20, offset = 0): Promise<ApiResponse<Activity[]>> {
-    return this.request(`/tenants/${tenantId}/activity?limit=${limit}&offset=${offset}`)
+  async getActivity(
+    tenantId: string,
+    limit = 20,
+    offset = 0
+  ): Promise<ApiResponse<Activity[]>> {
+    return this.request(
+      `/tenants/${tenantId}/activity?limit=${limit}&offset=${offset}`
+    )
   }
 
-  async getReports(tenantId: string, days = 30): Promise<ApiResponse<ReportData>> {
-    return this.request(`/tenants/${tenantId}/stats/reports?days=${days}`)
+  async getReports(
+    tenantId: string,
+    days = 30,
+    listId?: string
+  ): Promise<ApiResponse<ReportData>> {
+    const listFilter = listId ? `&list_id=${encodeURIComponent(listId)}` : ''
+    return this.request(
+      `/tenants/${tenantId}/stats/reports?days=${days}${listFilter}`
+    )
   }
 
   // Notifications (in-app)
-  async getNotifications(tenantId: string): Promise<ApiResponse<NotificationsData>> {
+  async getNotifications(
+    tenantId: string
+  ): Promise<ApiResponse<NotificationsData>> {
     return this.request(`/tenants/${tenantId}/notifications`)
   }
 
-  async updateNotifPrefs(tenantId: string, prefs: Partial<NotifPrefs>): Promise<ApiResponse<{ prefs: NotifPrefs }>> {
+  async updateNotifPrefs(
+    tenantId: string,
+    prefs: Partial<NotifPrefs>
+  ): Promise<ApiResponse<{ prefs: NotifPrefs }>> {
     return this.request(`/tenants/${tenantId}/notifications/prefs`, {
       method: 'PATCH',
       body: JSON.stringify(prefs),
     })
   }
 
-  async markNotificationsSeen(tenantId: string): Promise<ApiResponse<{ ok: boolean }>> {
-    return this.request(`/tenants/${tenantId}/notifications/seen`, { method: 'POST' })
+  async markNotificationsSeen(
+    tenantId: string
+  ): Promise<ApiResponse<{ ok: boolean }>> {
+    return this.request(`/tenants/${tenantId}/notifications/seen`, {
+      method: 'POST',
+    })
   }
 
   // Web Push (PWA desktop/mobile notifications)
-  async getPushPublicKey(): Promise<ApiResponse<{ key: string; enabled: boolean }>> {
+  async getPushPublicKey(): Promise<
+    ApiResponse<{ key: string; enabled: boolean }>
+  > {
     return this.request('/push/public-key')
   }
 
-  async subscribePush(tenantId: string, subscription: PushSubscriptionJSON): Promise<ApiResponse<{ ok: boolean }>> {
+  async subscribePush(
+    tenantId: string,
+    subscription: PushSubscriptionJSON
+  ): Promise<ApiResponse<{ ok: boolean }>> {
     return this.request(`/tenants/${tenantId}/push/subscribe`, {
       method: 'POST',
       body: JSON.stringify(subscription),
     })
   }
 
-  async unsubscribePush(tenantId: string, endpoint: string): Promise<ApiResponse<{ ok: boolean }>> {
+  async unsubscribePush(
+    tenantId: string,
+    endpoint: string
+  ): Promise<ApiResponse<{ ok: boolean }>> {
     return this.request(`/tenants/${tenantId}/push/unsubscribe`, {
       method: 'POST',
       body: JSON.stringify({ endpoint }),
@@ -386,36 +612,56 @@ class ApiService {
     return this.request(`/tenants/${tenantId}/invitations`)
   }
 
-  async inviteMember(tenantId: string, email: string, role: Role): Promise<ApiResponse<Invitation>> {
+  async inviteMember(
+    tenantId: string,
+    email: string,
+    role: Role
+  ): Promise<ApiResponse<Invitation>> {
     return this.request(`/tenants/${tenantId}/members`, {
       method: 'POST',
       body: JSON.stringify({ email, role }),
     })
   }
 
-
-
   async getCurrentUser(): Promise<ApiResponse<User>> {
     return this.request('/users/me')
   }
 
-  async updateMember(tenantId: string, userId: string, data: { role?: Role; name?: string; email?: string }): Promise<ApiResponse<TeamMember>> {
+  async updateMember(
+    tenantId: string,
+    userId: string,
+    data: { role?: Role; name?: string; email?: string }
+  ): Promise<ApiResponse<TeamMember>> {
     return this.request(`/tenants/${tenantId}/members/${userId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     })
   }
 
-  async updateMemberRole(tenantId: string, userId: string, role: Role): Promise<ApiResponse<TeamMember>> {
+  async updateMemberRole(
+    tenantId: string,
+    userId: string,
+    role: Role
+  ): Promise<ApiResponse<TeamMember>> {
     return this.updateMember(tenantId, userId, { role })
   }
 
-  async removeMember(tenantId: string, userId: string): Promise<ApiResponse<{ deleted: boolean }>> {
-    return this.request(`/tenants/${tenantId}/members/${userId}`, { method: 'DELETE' })
+  async removeMember(
+    tenantId: string,
+    userId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/tenants/${tenantId}/members/${userId}`, {
+      method: 'DELETE',
+    })
   }
 
-  async cancelInvitation(tenantId: string, invitationId: string): Promise<ApiResponse<{ deleted: boolean }>> {
-    return this.request(`/tenants/${tenantId}/invitations/${invitationId}`, { method: 'DELETE' })
+  async cancelInvitation(
+    tenantId: string,
+    invitationId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/tenants/${tenantId}/invitations/${invitationId}`, {
+      method: 'DELETE',
+    })
   }
 
   // Product endpoints (tenant-level catalog)
@@ -425,7 +671,17 @@ class ApiService {
 
   async createProduct(
     tenantId: string,
-    data: { name: string; price: number; sku?: string | null; currency?: string; available?: boolean; description?: string | null; category?: string | null; imageUrl?: string | null; imageThumbUrl?: string | null }
+    data: {
+      name: string
+      price: number
+      sku?: string | null
+      currency?: string
+      available?: boolean
+      description?: string | null
+      category?: string | null
+      imageUrl?: string | null
+      imageThumbUrl?: string | null
+    }
   ): Promise<ApiResponse<Product>> {
     return this.request(`/tenants/${tenantId}/products`, {
       method: 'POST',
@@ -435,7 +691,18 @@ class ApiService {
 
   async updateProduct(
     productId: string,
-    data: { name?: string; price?: number; sku?: string | null; currency?: string; available?: boolean; description?: string | null; category?: string | null; imageUrl?: string | null; imageThumbUrl?: string | null; priceListIds?: string[] }
+    data: {
+      name?: string
+      price?: number
+      sku?: string | null
+      currency?: string
+      available?: boolean
+      description?: string | null
+      category?: string | null
+      imageUrl?: string | null
+      imageThumbUrl?: string | null
+      priceListIds?: string[]
+    }
   ): Promise<ApiResponse<Product>> {
     return this.request(`/products/${productId}`, {
       method: 'PATCH',
@@ -443,11 +710,16 @@ class ApiService {
     })
   }
 
-  async deleteProduct(productId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+  async deleteProduct(
+    productId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
     return this.request(`/products/${productId}`, { method: 'DELETE' })
   }
 
-  async uploadProductImage(tenantId: string, file: Blob): Promise<ApiResponse<{ url: string; thumbnailUrl: string }>> {
+  async uploadProductImage(
+    tenantId: string,
+    file: Blob
+  ): Promise<ApiResponse<{ url: string; thumbnailUrl: string }>> {
     const body = new FormData()
     body.append('image', file, 'product.webp')
     return this.request(`/tenants/${tenantId}/product_images`, {
@@ -481,7 +753,9 @@ class ApiService {
     })
   }
 
-  async deleteCategory(categoryId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+  async deleteCategory(
+    categoryId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
     return this.request(`/categories/${categoryId}`, { method: 'DELETE' })
   }
 
@@ -490,56 +764,107 @@ class ApiService {
     return this.request(`/tenants/${tenantId}/customers`)
   }
 
-  async getCustomerStats(tenantId: string): Promise<ApiResponse<CustomerStats>> {
+  async getCustomerStats(
+    tenantId: string
+  ): Promise<ApiResponse<CustomerStats>> {
     return this.request(`/tenants/${tenantId}/customers/stats`)
   }
 
   async createCustomer(
     tenantId: string,
-    data: { name: string; rut?: string | null; email?: string | null; phone?: string | null; notes?: string | null }
+    data: {
+      name: string
+      rut?: string | null
+      email?: string | null
+      phone?: string | null
+      notes?: string | null
+    }
   ): Promise<ApiResponse<Customer>> {
-    return this.request(`/tenants/${tenantId}/customers`, { method: 'POST', body: JSON.stringify(data) })
+    return this.request(`/tenants/${tenantId}/customers`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
   }
 
-  async getCustomerDetail(customerId: string): Promise<ApiResponse<CustomerDetail>> {
+  async getCustomerDetail(
+    customerId: string
+  ): Promise<ApiResponse<CustomerDetail>> {
     return this.request(`/customers/${customerId}`)
   }
 
   async updateCustomer(
     customerId: string,
-    data: { name?: string; rut?: string | null; email?: string | null; phone?: string | null; notes?: string | null }
+    data: {
+      name?: string
+      rut?: string | null
+      email?: string | null
+      phone?: string | null
+      notes?: string | null
+    }
   ): Promise<ApiResponse<Customer>> {
-    return this.request(`/customers/${customerId}`, { method: 'PATCH', body: JSON.stringify(data) })
+    return this.request(`/customers/${customerId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
   }
 
-  async deleteCustomer(customerId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+  async deleteCustomer(
+    customerId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
     return this.request(`/customers/${customerId}`, { method: 'DELETE' })
   }
 
   async createOrder(
     customerId: string,
-    data: { items: { name: string; quantity: number; unit_price: number }[]; status?: string; note?: string | null; currency?: string | null; reference?: string | null }
+    data: {
+      items: { name: string; quantity: number; unit_price: number }[]
+      status?: string
+      note?: string | null
+      currency?: string | null
+      reference?: string | null
+    }
   ): Promise<ApiResponse<Order>> {
-    return this.request(`/customers/${customerId}/orders`, { method: 'POST', body: JSON.stringify(data) })
+    return this.request(`/customers/${customerId}/orders`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
   }
 
   async updateOrder(
     orderId: string,
-    data: { items?: { name: string; quantity: number; unit_price: number }[]; status?: string; note?: string | null; reference?: string | null }
+    data: {
+      items?: { name: string; quantity: number; unit_price: number }[]
+      status?: string
+      note?: string | null
+      reference?: string | null
+    }
   ): Promise<ApiResponse<Order>> {
-    return this.request(`/orders/${orderId}`, { method: 'PATCH', body: JSON.stringify(data) })
+    return this.request(`/orders/${orderId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
   }
 
-  async deleteOrder(orderId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+  async deleteOrder(
+    orderId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
     return this.request(`/orders/${orderId}`, { method: 'DELETE' })
   }
 
   // Public endpoints
-  async getPublicMenu(subdomain: string): Promise<ApiResponse<{ tenant: Tenant; lists: PriceList[] }>> {
-    return this.request(`/public/${subdomain}`)
+  async getPublicMenu(
+    subdomain: string,
+    listId?: string
+  ): Promise<ApiResponse<{ tenant: Tenant; lists: PriceList[] }>> {
+    const listFilter = listId ? `?list=${encodeURIComponent(listId)}` : ''
+    return this.request(`/public/${subdomain}${listFilter}`)
   }
 
-  async recordPublicView(subdomain: string, listId?: string, source?: string): Promise<ApiResponse<{ ok: boolean }>> {
+  async recordPublicView(
+    subdomain: string,
+    listId?: string,
+    source?: string
+  ): Promise<ApiResponse<{ ok: boolean }>> {
     const params = new URLSearchParams()
     if (listId) params.set('list', listId)
     if (source) params.set('source', source)
@@ -548,14 +873,24 @@ class ApiService {
   }
 
   // Import endpoints
-  async importFromUrl(url: string): Promise<ApiResponse<{ items: { name: string; price: number; description: string | null }[]; count: number }>> {
+  async importFromUrl(url: string): Promise<
+    ApiResponse<{
+      items: { name: string; price: number; description: string | null }[]
+      count: number
+    }>
+  > {
     return this.request('/import/from-url', {
       method: 'POST',
       body: JSON.stringify({ url }),
     })
   }
 
-  async importFromImages(imageUrls: string[]): Promise<ApiResponse<{ items: { name: string; price: number; description: string | null }[]; count: number }>> {
+  async importFromImages(imageUrls: string[]): Promise<
+    ApiResponse<{
+      items: { name: string; price: number; description: string | null }[]
+      count: number
+    }>
+  > {
     return this.request('/import/from-images', {
       method: 'POST',
       body: JSON.stringify({ image_urls: imageUrls }),
