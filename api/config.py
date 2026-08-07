@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
     public_app_url: str = "http://localhost:3000"
 
+    # Sentry is enabled in deployments by setting SENTRY_DSN as a Fly secret.
+    sentry_dsn: str = ""
+    sentry_environment: str = "production"
+    sentry_enable_logs: bool = True
+
     # JWT settings
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24  # 24 hours

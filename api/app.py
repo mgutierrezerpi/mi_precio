@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from config import settings
+from infra.sentry import init_sentry
 from lib import decode_token
 from models import db, create_tables
 from routes import register_routes
@@ -41,6 +42,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+init_sentry()
 
 
 @asynccontextmanager
