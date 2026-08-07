@@ -4,6 +4,7 @@ import { AdminExperienceLayout } from './components/AdminExperienceLayout'
 import { HomeScreen } from './screens/home/HomeScreen'
 import { OldLandingScreen } from './screens/home/OldLandingScreen'
 import { MenuScreen } from './screens/menu/MenuScreen'
+import { MarketplaceScreen } from './screens/marketplace/MarketplaceScreen'
 
 import { ListEditScreen } from './screens/admin/ListEditScreen'
 import { CategoriesScreen } from './screens/admin/CategoriesScreen'
@@ -29,6 +30,10 @@ export const router = createBrowserRouter([
   {
     path: '/old_landing',
     element: <OldLandingScreen />,
+  },
+  {
+    path: '/marketplace',
+    element: <MarketplaceScreen />,
   },
   {
     path: '/p/:subdomain',

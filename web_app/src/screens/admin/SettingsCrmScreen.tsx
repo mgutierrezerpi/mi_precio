@@ -1131,6 +1131,16 @@ function RegionSection({
         t={t}
         value={deliveryEnabled}
       />
+      <MarketplaceControl
+        canManage={canManage}
+        enabled={tenant?.marketplaceEnabled ?? false}
+        hasLocation={
+          tenant?.marketplaceLatitude != null && tenant?.marketplaceLongitude != null
+        }
+        save={save}
+        saving={savingKey === 'marketplace'}
+        t={t}
+      />
     </>
   )
 }
@@ -1197,6 +1207,79 @@ function RegionFields({
           </select>
         </Field>
       ))}
+    </div>
+  )
+}
+
+function MarketplaceControl({
+  canManage,
+  enabled,
+  hasLocation,
+  save,
+  saving,
+  t,
+}: {
+  canManage: boolean
+  enabled: boolean
+  hasLocation: boolean
+  save: Ctx['save']
+  saving: boolean
+  t: TFn
+}) {
+  const [locationError, setLocationError] = useState<string | null>(null)
+  const toggle = () => {
+    setLocationError(null)
+    if (enabled) {
+      void save({ marketplaceEnabled: false }, 'marketplace')
+      return
+    }
+    if (!navigator.geolocation) {
+      setLocationError(t('set.marketplace.noLocation'))
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        void save(
+          {
+            marketplaceEnabled: true,
+            marketplaceLatitude: position.coords.latitude,
+            marketplaceLongitude: position.coords.longitude,
+          },
+          'marketplace'
+        )
+      },
+      () => setLocationError(t('set.marketplace.locationDenied')),
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 86400000 }
+    )
+  }
+  return (
+    <div className="mt-4 flex flex-col gap-2 rounded-2xl border border-[var(--dash-border)] p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-1">
+        <span className="text-[13px] font-bold text-[var(--dash-text)]">
+          {t('set.marketplace.title')}
+        </span>
+        <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+          {t('set.marketplace.subtitle')}
+        </span>
+        {locationError && (
+          <span className="text-[11px] font-semibold text-[var(--tone-red-fg)]">
+            {locationError}
+          </span>
+        )}
+        {enabled && hasLocation && (
+          <span className="text-[11px] font-semibold text-[var(--tone-green-fg)]">
+            {t('set.marketplace.listed')}
+          </span>
+        )}
+      </div>
+      <button
+        type="button"
+        disabled={!canManage || saving}
+        onClick={toggle}
+        className={`h-10 shrink-0 rounded-xl px-4 text-xs font-bold disabled:opacity-60 ${enabled ? 'border border-[var(--dash-border)] text-[var(--dash-text2)]' : `${gradient} text-white`}`}
+      >
+        {saving ? t('common.saving') : enabled ? t('set.marketplace.disable') : t('set.marketplace.enable')}
+      </button>
     </div>
   )
 }

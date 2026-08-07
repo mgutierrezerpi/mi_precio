@@ -30,6 +30,15 @@ export interface PlanInfo {
   }
 }
 
+export interface MarketplaceBusiness {
+  name: string
+  subdomain: string
+  logoUrl: string | null
+  description: string | null
+  address: string | null
+  distanceKm: number
+}
+
 export interface Tenant {
   id: string
   name: string
@@ -49,6 +58,9 @@ export interface Tenant {
   language: string
   timezone: string
   deliveryEnabled: boolean
+  marketplaceEnabled: boolean
+  marketplaceLatitude: number | null
+  marketplaceLongitude: number | null
   legalName: string | null
   taxId: string | null
   address: string | null
