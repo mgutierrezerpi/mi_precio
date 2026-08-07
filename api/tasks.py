@@ -14,10 +14,12 @@ from huey import SqliteHuey, crontab
 
 from config import settings
 from infra.mailer import mailer
+from infra.sentry import init_sentry
 from lib.ctx import auth, billing_context as billing
 from models import db
 
 logger = logging.getLogger(__name__)
+init_sentry()
 
 HUEY_DB_PATH = os.environ.get("HUEY_DB_PATH", "huey.db")
 _huey_db_parent = Path(HUEY_DB_PATH).parent

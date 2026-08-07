@@ -45,6 +45,18 @@ The Vite web app also has these useful routes:
 
 Ports can be overridden with `LANDING_PORT`, `WEB_APP_PORT`, and `API_PORT`.
 
+## Sentry Monitoring
+
+The API and Huey worker send errors and structured logs to Sentry when the
+runtime `SENTRY_DSN` secret is configured. Get the DSN from the Sentry project
+settings, then set it on Fly (this also redeploys the app):
+
+```bash
+fly secrets set --app mi-precio SENTRY_DSN="https://<public-key>@<sentry-host>/<project-id>"
+```
+
+Do not commit the DSN to `fly.toml` or an `.env` file.
+
 ## Current Production Deploy
 
 The production landing page is deployed from `landing/` on `main`.
