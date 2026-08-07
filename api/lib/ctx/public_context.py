@@ -32,10 +32,16 @@ def get_published_lists(
         )
         if version:
             items = list(version.items.order_by(Item.position))
+            visible_items = []
             for item in items:
                 fallback = product_details.get(
                     str(item.product_id)
                 ) or product_details.get(_norm_name(item.name))
+                if fallback and not fallback["available"]:
+                    # Disabling a catalog product removes it from every public list.
+                    # Name matching keeps this behavior consistent for legacy items
+                    # created before product_id was stored on list items.
+                    continue
                 if fallback:
                     # Products are the source of truth for catalog-linked details.
                     item.description = fallback["description"]
@@ -43,21 +49,24 @@ def get_published_lists(
                         item.image_url = fallback["image_url"]
                     if not item.image_thumb_url:
                         item.image_thumb_url = fallback["image_thumb_url"]
-            result.append(PublishedList(price_list, version, items))
+                visible_items.append(item)
+            result.append(PublishedList(price_list, version, visible_items))
     return result
 
 
-def _product_details(tenant_id: str) -> dict[str, dict[str, str | None]]:
-    """Map products by id and name for current catalog details and image fallbacks."""
-    details: dict[str, dict[str, str | None]] = {}
+def _product_details(tenant_id: str) -> dict[str, dict[str, str | bool | None]]:
+    """Map products by id and name for current catalog details and availability."""
+    details: dict[str, dict[str, str | bool | None]] = {}
     for product in Product.select(
         Product.id,
         Product.name,
+        Product.available,
         Product.description,
         Product.image_url,
         Product.image_thumb_url,
     ).where(Product.tenant == tenant_id):
         value = {
+            "available": product.available,
             "description": product.description,
             "image_url": product.image_url,
             "image_thumb_url": product.image_thumb_url,
