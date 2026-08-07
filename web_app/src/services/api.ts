@@ -1,5 +1,6 @@
 import type {
   Tenant,
+  MarketplaceBusiness,
   PriceList,
   PriceListVariantType,
   ListDesign,
@@ -216,6 +217,15 @@ class ApiService {
     return this.request(`/tenants/${tenantId}/switch`, { method: 'POST' })
   }
 
+  async getMarketplaceNearby(
+    latitude: number,
+    longitude: number
+  ): Promise<ApiResponse<MarketplaceBusiness[]>> {
+    return this.request(
+      `/public/marketplace/nearby?latitude=${latitude}&longitude=${longitude}`
+    )
+  }
+
   async getTenant(id: string): Promise<ApiResponse<Tenant>> {
     return this.request(`/tenants/${id}`)
   }
@@ -236,6 +246,9 @@ class ApiService {
       language?: string
       timezone?: string
       deliveryEnabled?: boolean
+      marketplaceEnabled?: boolean
+      marketplaceLatitude?: number | null
+      marketplaceLongitude?: number | null
       legalName?: string | null
       taxId?: string | null
       address?: string | null
@@ -252,6 +265,9 @@ class ApiService {
       legalName: 'legal_name',
       taxId: 'tax_id',
       deliveryEnabled: 'delivery_enabled',
+      marketplaceEnabled: 'marketplace_enabled',
+      marketplaceLatitude: 'marketplace_latitude',
+      marketplaceLongitude: 'marketplace_longitude',
     }
     const body: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(data)) body[map[k] ?? k] = v

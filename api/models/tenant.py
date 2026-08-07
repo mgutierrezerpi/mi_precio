@@ -54,6 +54,12 @@ class Tenant(BaseModel):
     # Whether the business offers home delivery; gates the cart's delivery option.
     delivery_enabled = BooleanField(default=False)
 
+    # Public marketplace discovery is strictly opt-in. Coordinates are only used
+    # to sort opted-in businesses by proximity and are never exposed to others.
+    marketplace_enabled = BooleanField(default=False)
+    marketplace_latitude = CharField(max_length=32, null=True)
+    marketplace_longitude = CharField(max_length=32, null=True)
+
     # Tax / legal data
     legal_name = CharField(max_length=255, null=True)
     tax_id = CharField(max_length=32, null=True)  # RUT / CUIT / etc.

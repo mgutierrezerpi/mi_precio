@@ -1,6 +1,7 @@
 """Tests for public context."""
 
 from lib.ctx import lists, versions, items, products, public, identity
+from views.public_tenant_view import PublicTenantView
 
 
 def test_get_tenant_by_subdomain(db):
@@ -16,6 +17,38 @@ def test_get_tenant_by_subdomain_not_found(db):
     found = public.get_tenant_by_subdomain("nonexistent")
 
     assert found is None
+
+
+def test_nearby_marketplace_tenants_only_returns_opted_in_businesses(db):
+    nearby = identity.create_tenant("Nearby", "nearby")
+    nearby.marketplace_enabled = True
+    nearby.marketplace_latitude = "-34.9011"
+    nearby.marketplace_longitude = "-56.1645"
+    nearby.save()
+
+    hidden = identity.create_tenant("Hidden", "hidden")
+    hidden.marketplace_latitude = "-34.9011"
+    hidden.marketplace_longitude = "-56.1645"
+    hidden.save()
+
+    result = public.nearby_marketplace_tenants(-34.9011, -56.1645)
+
+    assert [(tenant.name, distance) for tenant, distance in result] == [("Nearby", 0.0)]
+
+
+def test_public_tenant_view_does_not_expose_marketplace_coordinates(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant.marketplace_enabled = True
+    tenant.marketplace_latitude = "-34.9011"
+    tenant.marketplace_longitude = "-56.1645"
+    tenant.save()
+
+    public_tenant = PublicTenantView.render(tenant)
+
+    assert "marketplace_latitude" not in public_tenant.model_dump()
+    assert "marketplace_longitude" not in public_tenant.model_dump()
+
+
 
 
 def test_get_published_lists(db):

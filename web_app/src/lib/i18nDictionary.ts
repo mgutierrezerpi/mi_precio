@@ -928,5 +928,20 @@ const DICT_BASE: Record<string, TranslationEntry> = {
     en: 'You offer home delivery',
     pt: 'Você oferece entrega em domicílio',
   },
+  'set.marketplace.title': {
+    es: 'Mostrar mi negocio en el marketplace',
+    en: 'Show my business in the marketplace',
+    pt: 'Mostrar meu negócio no marketplace',
+  },
+  'set.marketplace.subtitle': {
+    es: 'Las personas cercanas podrán descubrir tu negocio. Guardaremos tu ubicación para ordenar los resultados por distancia.',
+    en: 'Nearby people will be able to discover your business. We save your location to sort results by distance.',
+    pt: 'Pessoas próximas poderão descobrir seu negócio. Salvaremos sua localização para ordenar os resultados por distância.',
+  },
+  'set.marketplace.enable': { es: 'Activar', en: 'Enable', pt: 'Ativar' },
+  'set.marketplace.disable': { es: 'Desactivar', en: 'Disable', pt: 'Desativar' },
+  'set.marketplace.listed': { es: 'Tu negocio está visible en el marketplace.', en: 'Your business is visible in the marketplace.', pt: 'Seu negócio está visível no marketplace.' },
+  'set.marketplace.noLocation': { es: 'Este navegador no puede compartir tu ubicación.', en: 'This browser cannot share your location.', pt: 'Este navegador não pode compartilhar sua localização.' },
+  'set.marketplace.locationDenied': { es: 'Necesitamos permiso de ubicación para mostrar tu negocio cerca de las personas.', en: 'Location permission is required to show your business nearby.', pt: 'A permissão de localização é necessária para mostrar seu negócio nas proximidades.' },
 }
 export const DICT = { ...DICT_BASE, ...DICT_EXTRA }
