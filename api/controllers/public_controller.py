@@ -7,11 +7,12 @@ router = APIRouter(prefix="/public", tags=["public"])
 
 @router.get("/marketplace/nearby")
 def nearby_marketplace_endpoint(
-    latitude: float = Query(..., ge=-90, le=90),
-    longitude: float = Query(..., ge=-180, le=180),
+    latitude: float | None = Query(None, ge=-90, le=90),
+    longitude: float | None = Query(None, ge=-180, le=180),
+    category: str | None = Query(None, max_length=32),
     limit: int = Query(50, ge=1, le=100),
 ):
-    """Discover nearby businesses that explicitly chose to be listed."""
+    """Discover opted-in businesses, ordered by proximity when available."""
     return [
         {
             "name": tenant.name,
@@ -19,10 +20,11 @@ def nearby_marketplace_endpoint(
             "logo_url": tenant.logo_url,
             "description": tenant.description,
             "address": tenant.address,
+            "business_category": tenant.business_category,
             "distance_km": distance_km,
         }
         for tenant, distance_km in public.nearby_marketplace_tenants(
-            latitude, longitude, limit
+            latitude, longitude, limit, category
         )
     ]
 

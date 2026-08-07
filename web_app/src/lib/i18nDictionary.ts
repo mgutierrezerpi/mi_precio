@@ -934,13 +934,14 @@ const DICT_BASE: Record<string, TranslationEntry> = {
     pt: 'Mostrar meu negócio no marketplace',
   },
   'set.marketplace.subtitle': {
-    es: 'Las personas cercanas podrán descubrir tu negocio. Guardaremos tu ubicación para ordenar los resultados por distancia.',
-    en: 'Nearby people will be able to discover your business. We save your location to sort results by distance.',
-    pt: 'Pessoas próximas poderão descobrir seu negócio. Salvaremos sua localização para ordenar os resultados por distância.',
+    es: 'Las personas podrán descubrir tu negocio. Si compartís tu ubicación, aparecerá ordenado por distancia.',
+    en: 'People can discover your business. If you share your location, it will be ordered by distance.',
+    pt: 'As pessoas poderão descobrir seu negócio. Se você compartilhar sua localização, ele aparecerá ordenado por distância.',
   },
   'set.marketplace.enable': { es: 'Activar', en: 'Enable', pt: 'Ativar' },
   'set.marketplace.disable': { es: 'Desactivar', en: 'Disable', pt: 'Desativar' },
   'set.marketplace.listed': { es: 'Tu negocio está visible en el marketplace.', en: 'Your business is visible in the marketplace.', pt: 'Seu negócio está visível no marketplace.' },
+  'set.marketplace.hidden': { es: 'Tu negocio no está visible.', en: 'Your business is not visible.', pt: 'Seu negócio não está visível.' },
   'set.marketplace.noLocation': { es: 'Este navegador no puede compartir tu ubicación.', en: 'This browser cannot share your location.', pt: 'Este navegador não pode compartilhar sua localização.' },
   'set.marketplace.locationDenied': { es: 'Necesitamos permiso de ubicación para mostrar tu negocio cerca de las personas.', en: 'Location permission is required to show your business nearby.', pt: 'A permissão de localização é necessária para mostrar seu negócio nas proximidades.' },
 }

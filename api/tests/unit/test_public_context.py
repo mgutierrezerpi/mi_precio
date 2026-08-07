@@ -26,14 +26,29 @@ def test_nearby_marketplace_tenants_only_returns_opted_in_businesses(db):
     nearby.marketplace_longitude = "-56.1645"
     nearby.save()
 
+    no_location = identity.create_tenant("No Location", "no-location")
+    no_location.marketplace_enabled = True
+    no_location.save()
+
     hidden = identity.create_tenant("Hidden", "hidden")
+    hidden.marketplace_enabled = False
     hidden.marketplace_latitude = "-34.9011"
     hidden.marketplace_longitude = "-56.1645"
     hidden.save()
 
     result = public.nearby_marketplace_tenants(-34.9011, -56.1645)
 
-    assert [(tenant.name, distance) for tenant, distance in result] == [("Nearby", 0.0)]
+    assert [(tenant.name, distance) for tenant, distance in result] == [
+        ("Nearby", 0.0),
+        ("No Location", None),
+    ]
+
+    result_without_visitor_location = public.nearby_marketplace_tenants()
+
+    assert [(tenant.name, distance) for tenant, distance in result_without_visitor_location] == [
+        ("Nearby", None),
+        ("No Location", None),
+    ]
 
 
 def test_public_tenant_view_does_not_expose_marketplace_coordinates(db):

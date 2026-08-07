@@ -65,6 +65,13 @@ const LANGUAGES: { code: string; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'pt', label: 'Português' },
 ]
+const BUSINESS_CATEGORIES = [
+  ['restaurant', 'Restaurante'], ['bakery', 'Panadería'], ['cafe', 'Cafetería'],
+  ['grocery', 'Almacén / minimercado'], ['drugstore', 'Farmacia'], ['hardware', 'Ferretería'],
+  ['beauty', 'Belleza / salón'], ['clothing', 'Indumentaria'], ['home', 'Hogar / decoración'],
+  ['pets', 'Mascotas'], ['services', 'Servicios'], ['other', 'Otro'],
+] as const
+
 const TIMEZONES = [
   'America/Montevideo',
   'America/Argentina/Buenos_Aires',
@@ -1085,6 +1092,7 @@ function RegionSection({
   const [deliveryEnabled, setDeliveryEnabled] = useState(
     tenant?.deliveryEnabled ?? false
   )
+  const [businessCategory, setBusinessCategory] = useState(tenant?.businessCategory ?? '')
   const touched = useRef(false)
   const saveRef = useLatest(save)
 
@@ -1093,12 +1101,12 @@ function RegionSection({
     const timer = setTimeout(() => {
       touched.current = false
       void saveRef.current(
-        { currency, language, timezone, deliveryEnabled },
+        { currency, language, timezone, deliveryEnabled, businessCategory: businessCategory || null },
         'region'
       )
     }, 500)
     return () => clearTimeout(timer)
-  }, [currency, language, timezone, deliveryEnabled, canManage])
+  }, [currency, language, timezone, deliveryEnabled, businessCategory, canManage])
 
   return (
     <>
@@ -1112,10 +1120,12 @@ function RegionSection({
         saved={savedKey === 'region'}
       />
       <RegionFields
+        businessCategory={businessCategory}
         canManage={canManage}
         currency={currency}
         language={language}
         onChange={() => markTouched(touched)}
+        setBusinessCategory={setBusinessCategory}
         setCurrency={setCurrency}
         setLanguage={setLanguage}
         setTimezone={setTimezone}
@@ -1134,9 +1144,6 @@ function RegionSection({
       <MarketplaceControl
         canManage={canManage}
         enabled={tenant?.marketplaceEnabled ?? false}
-        hasLocation={
-          tenant?.marketplaceLatitude != null && tenant?.marketplaceLongitude != null
-        }
         save={save}
         saving={savingKey === 'marketplace'}
         t={t}
@@ -1146,20 +1153,24 @@ function RegionSection({
 }
 
 function RegionFields({
+  businessCategory,
   canManage,
   currency,
   language,
   onChange,
+  setBusinessCategory,
   setCurrency,
   setLanguage,
   setTimezone,
   t,
   timezone,
 }: {
+  businessCategory: string
   canManage: boolean
   currency: string
   language: string
   onChange: () => void
+  setBusinessCategory: (value: string) => void
   setCurrency: (value: string) => void
   setLanguage: (value: string) => void
   setTimezone: (value: string) => void
@@ -1178,6 +1189,12 @@ function RegionFields({
       options: LANGUAGES.map(({ code, label }) => [code, label]),
       setValue: setLanguage,
       value: language,
+    },
+    {
+      label: 'Categoría del negocio',
+      options: [['', 'Sin categoría'], ...BUSINESS_CATEGORIES],
+      setValue: setBusinessCategory,
+      value: businessCategory,
     },
     {
       label: t('set.region.timezone'),
@@ -1214,27 +1231,23 @@ function RegionFields({
 function MarketplaceControl({
   canManage,
   enabled,
-  hasLocation,
   save,
   saving,
   t,
 }: {
   canManage: boolean
   enabled: boolean
-  hasLocation: boolean
   save: Ctx['save']
   saving: boolean
   t: TFn
 }) {
-  const [locationError, setLocationError] = useState<string | null>(null)
   const toggle = () => {
-    setLocationError(null)
     if (enabled) {
       void save({ marketplaceEnabled: false }, 'marketplace')
       return
     }
     if (!navigator.geolocation) {
-      setLocationError(t('set.marketplace.noLocation'))
+      void save({ marketplaceEnabled: true }, 'marketplace')
       return
     }
     navigator.geolocation.getCurrentPosition(
@@ -1248,12 +1261,12 @@ function MarketplaceControl({
           'marketplace'
         )
       },
-      () => setLocationError(t('set.marketplace.locationDenied')),
+      () => void save({ marketplaceEnabled: true }, 'marketplace'),
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 86400000 }
     )
   }
   return (
-    <div className="mt-4 flex flex-col gap-2 rounded-2xl border border-[var(--dash-border)] p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-[var(--dash-link)]/30 bg-[var(--dash-soft)] p-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col gap-1">
         <span className="text-[13px] font-bold text-[var(--dash-text)]">
           {t('set.marketplace.title')}
@@ -1261,25 +1274,14 @@ function MarketplaceControl({
         <span className="text-[11px] font-medium text-[var(--dash-muted)]">
           {t('set.marketplace.subtitle')}
         </span>
-        {locationError && (
-          <span className="text-[11px] font-semibold text-[var(--tone-red-fg)]">
-            {locationError}
-          </span>
-        )}
-        {enabled && hasLocation && (
-          <span className="text-[11px] font-semibold text-[var(--tone-green-fg)]">
-            {t('set.marketplace.listed')}
-          </span>
-        )}
+
       </div>
-      <button
-        type="button"
-        disabled={!canManage || saving}
-        onClick={toggle}
-        className={`h-10 shrink-0 rounded-xl px-4 text-xs font-bold disabled:opacity-60 ${enabled ? 'border border-[var(--dash-border)] text-[var(--dash-text2)]' : `${gradient} text-white`}`}
-      >
-        {saving ? t('common.saving') : enabled ? t('set.marketplace.disable') : t('set.marketplace.enable')}
-      </button>
+      <div className="flex shrink-0 items-center gap-3">
+        <span className={`text-xs font-bold ${enabled ? 'text-[var(--tone-green-fg)]' : 'text-[var(--dash-muted)]'}`}>
+          {saving ? t('common.saving') : enabled ? t('set.marketplace.listed') : t('set.marketplace.hidden')}
+        </span>
+        <Toggle on={enabled} onClick={toggle} disabled={!canManage || saving} />
+      </div>
     </div>
   )
 }
