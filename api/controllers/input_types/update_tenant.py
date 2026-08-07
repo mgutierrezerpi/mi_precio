@@ -24,6 +24,7 @@ class UpdateTenant(BaseModel):
     marketplace_enabled: bool | None = None
     marketplace_latitude: float | None = None
     marketplace_longitude: float | None = None
+    business_category: str | None = None
     # Tax / legal
     legal_name: str | None = None
     tax_id: str | None = None

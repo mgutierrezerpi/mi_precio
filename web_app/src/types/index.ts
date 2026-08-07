@@ -36,7 +36,8 @@ export interface MarketplaceBusiness {
   logoUrl: string | null
   description: string | null
   address: string | null
-  distanceKm: number
+  businessCategory: string | null
+  distanceKm: number | null
 }
 
 export interface Tenant {
@@ -61,6 +62,7 @@ export interface Tenant {
   marketplaceEnabled: boolean
   marketplaceLatitude: number | null
   marketplaceLongitude: number | null
+  businessCategory: string | null
   legalName: string | null
   taxId: string | null
   address: string | null

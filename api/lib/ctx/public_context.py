@@ -71,30 +71,40 @@ def _norm_name(name: str) -> str:
     return (name or "").strip().lower()
 
 
-def nearby_marketplace_tenants(latitude: float, longitude: float, limit: int = 50):
-    """Return opted-in businesses with a saved position, closest first.
+def nearby_marketplace_tenants(
+    latitude: float | None = None,
+    longitude: float | None = None,
+    limit: int = 50,
+    category: str | None = None,
+):
+    """Return opted-in businesses, sorting by proximity when coordinates exist.
 
     The data set is intentionally kept small and the distance calculation is
-    done here, avoiding database-specific geo extensions.
+    done here, avoiding database-specific geo extensions. Without visitor
+    coordinates, all opted-in businesses are returned without a distance.
     """
-    candidates = Tenant.select().where(
-        Tenant.marketplace_enabled
-        & Tenant.marketplace_latitude.is_null(False)
-        & Tenant.marketplace_longitude.is_null(False)
-    )
+    candidates = Tenant.select().where(Tenant.marketplace_enabled)
+    if category:
+        candidates = candidates.where(Tenant.business_category == category)
     results = []
     for tenant in candidates:
-        try:
-            distance = _distance_km(
-                latitude,
-                longitude,
-                float(tenant.marketplace_latitude),
-                float(tenant.marketplace_longitude),
-            )
-        except (TypeError, ValueError):
-            continue
-        results.append((tenant, round(distance, 1)))
-    return sorted(results, key=lambda result: result[1])[:limit]
+        if latitude is None or longitude is None:
+            distance = None
+        else:
+            try:
+                distance = round(
+                    _distance_km(
+                        latitude,
+                        longitude,
+                        float(tenant.marketplace_latitude),
+                        float(tenant.marketplace_longitude),
+                    ),
+                    1,
+                )
+            except (TypeError, ValueError):
+                distance = None
+        results.append((tenant, distance))
+    return sorted(results, key=lambda result: (result[1] is None, result[1] or 0))[:limit]
 
 
 def _distance_km(lat_a: float, lon_a: float, lat_b: float, lon_b: float) -> float:

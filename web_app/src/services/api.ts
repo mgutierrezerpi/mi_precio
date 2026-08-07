@@ -218,12 +218,18 @@ class ApiService {
   }
 
   async getMarketplaceNearby(
-    latitude: number,
-    longitude: number
+    latitude?: number,
+    longitude?: number,
+    category?: string
   ): Promise<ApiResponse<MarketplaceBusiness[]>> {
-    return this.request(
-      `/public/marketplace/nearby?latitude=${latitude}&longitude=${longitude}`
-    )
+    const params = new URLSearchParams()
+    if (latitude != null && longitude != null) {
+      params.set('latitude', String(latitude))
+      params.set('longitude', String(longitude))
+    }
+    if (category) params.set('category', category)
+    const query = params.size ? `?${params}` : ''
+    return this.request(`/public/marketplace/nearby${query}`)
   }
 
   async getTenant(id: string): Promise<ApiResponse<Tenant>> {
@@ -249,6 +255,7 @@ class ApiService {
       marketplaceEnabled?: boolean
       marketplaceLatitude?: number | null
       marketplaceLongitude?: number | null
+      businessCategory?: string | null
       legalName?: string | null
       taxId?: string | null
       address?: string | null
@@ -268,6 +275,7 @@ class ApiService {
       marketplaceEnabled: 'marketplace_enabled',
       marketplaceLatitude: 'marketplace_latitude',
       marketplaceLongitude: 'marketplace_longitude',
+      businessCategory: 'business_category',
     }
     const body: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(data)) body[map[k] ?? k] = v

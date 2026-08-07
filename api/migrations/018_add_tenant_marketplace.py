@@ -6,7 +6,7 @@ import peewee as pw
 def migrate(migrator, database, fake=False, **kwargs):
     migrator.add_fields(
         "tenants",
-        marketplace_enabled=pw.BooleanField(default=False),
+        marketplace_enabled=pw.BooleanField(default=True),
         marketplace_latitude=pw.CharField(max_length=32, null=True),
         marketplace_longitude=pw.CharField(max_length=32, null=True),
     )
