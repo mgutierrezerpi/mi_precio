@@ -121,11 +121,11 @@ function NavItem({
     <>
       <Icon
         name={icon}
-        className={active ? 'text-white' : 'text-[var(--dash-muted)]'}
+        className={active ? 'text-[var(--dash-sidebar-active-text)]' : 'text-[var(--dash-muted)]'}
       />
       {!collapsed && (
         <span
-          className={`flex-1 text-sm ${active ? 'font-bold text-white' : 'font-semibold text-[var(--dash-text2)]'}`}
+          className={`flex-1 text-sm ${active ? 'font-bold text-[var(--dash-sidebar-active-text)]' : 'font-semibold text-[var(--dash-text2)]'}`}
         >
           {label}
         </span>
@@ -133,7 +133,7 @@ function NavItem({
       {badge &&
         !collapsed &&
         (active ? (
-          <span className="rounded-[10px] bg-white/20 px-2 py-0.5 text-[11px] font-bold text-white">
+          <span className="rounded-[10px] bg-[var(--dash-sidebar-badge)] px-2 py-0.5 text-[11px] font-bold text-[var(--dash-sidebar-active-text)]">
             {badge}
           </span>
         ) : (
@@ -146,7 +146,7 @@ function NavItem({
         ))}
     </>
   )
-  const cls = `flex h-9 items-center gap-2 rounded-[8px] ${collapsed ? 'justify-center px-0' : 'px-3'} ${active ? 'bg-[#2A1C66] text-white' : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`
+  const cls = `flex h-9 items-center gap-2 rounded-[8px] ${collapsed ? 'justify-center px-0' : 'px-3'} ${active ? 'bg-[var(--dash-sidebar-active)] text-[var(--dash-sidebar-active-text)]' : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`
   return to ? (
     <Link to={to} onClick={onNavigate} className={cls}>
       {inner}
@@ -193,7 +193,7 @@ function SidebarHeader({
           />
           <span
             aria-hidden
-            className="pointer-events-none absolute bottom-0 left-[30%] right-0 h-[25%] bg-[#100922]"
+            className="pointer-events-none absolute bottom-0 left-[30%] right-0 h-[25%] bg-[var(--dash-sidebar)]"
           />
         </Link>
       )}
@@ -343,7 +343,7 @@ export function CrmSidebar({
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[248px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[#100922] p-3 transition-[width,transform] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${collapsed ? 'lg:w-[72px]' : ''} ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[248px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[var(--dash-sidebar)] p-3 transition-[width,transform] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${collapsed ? 'lg:w-[72px]' : ''} ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <SidebarHeader
           collapsed={collapsed}
