@@ -2,11 +2,6 @@
 
 export type PlanId = 'free' | 'micro' | 'plus' | 'pro'
 
-/** Lemon Squeezy subscription states we surface. `cancelled` still has access
- *  until `endsAt`; `expired` is when the plan actually drops back to free. */
-export type BillingStatus =
-  | 'on_trial' | 'active' | 'paid' | 'past_due' | 'unpaid' | 'cancelled' | 'expired' | 'paused'
-
 export interface PlanInfo {
   plan: PlanId
   limits: {
@@ -15,29 +10,23 @@ export interface PlanInfo {
     members: number | null
   }
   usage: { products: number; lists: number; members: number }
-  /** Whole features this tier unlocks, e.g. `['leads']`. The server is the
-   *  authority; the UI uses it to show or hide, never to enforce. */
-  features?: string[]
   /** When false there is no payment gateway, so plan changes apply immediately. */
   billingEnabled?: boolean
   /** True while the tenant still has to pick a plan before the CRM opens up. */
   planRequired?: boolean
-  /** camelCase: `api.request` camelizes every response key. Declaring these in
-   *  snake_case used to silently break every read (the portal link never
-   *  rendered) because the type lied and TS could not catch it. */
   billing?: {
     provider: string | null
-    customerId: string | null
-    subscriptionId: string | null
-    variantId: string | null
-    status: BillingStatus | null
-    renewsAt: string | null
-    endsAt: string | null
-    trialEndsAt: string | null
-    portalUrl: string | null
-    updatePaymentUrl: string | null
-    cardBrand: string | null
-    cardLastFour: string | null
+    customer_id: string | null
+    subscription_id: string | null
+    variant_id: string | null
+    status: string | null
+    renews_at: string | null
+    ends_at: string | null
+    trial_ends_at: string | null
+    portal_url: string | null
+    update_payment_url: string | null
+    card_brand: string | null
+    card_last_four: string | null
   }
 }
 
@@ -47,8 +36,7 @@ export interface MarketplaceBusiness {
   logoUrl: string | null
   description: string | null
   address: string | null
-  businessCategory: string | null
-  distanceKm: number | null
+  distanceKm: number
 }
 
 export interface Tenant {
@@ -67,24 +55,12 @@ export interface Tenant {
   listBgUrl: string | null
   listBgOverlay: boolean
   listHeroColor: string | null
-  /** Social links for the public footer. Null = the shop does not use it, so
-   *  no icon is shown. All are ready-to-open URLs except `socialWhatsapp`,
-   *  which holds digits only and becomes wa.me/<digits> on the page. */
-  socialInstagram: string | null
-  socialFacebook: string | null
-  socialTiktok: string | null
-  socialWebsite: string | null
-  socialWhatsapp: string | null
-  /** Whether the public list shows the lead form. Only has an effect on the
-   *  tiers that include leads — the server decides, this just drives the UI. */
-  leadsEnabled: boolean
   language: string
   timezone: string
   deliveryEnabled: boolean
   marketplaceEnabled: boolean
   marketplaceLatitude: number | null
   marketplaceLongitude: number | null
-  businessCategory: string | null
   legalName: string | null
   taxId: string | null
   address: string | null
@@ -131,11 +107,6 @@ export interface PriceList {
   bgUrl: string | null
   bgOverlay: boolean | null
   itemCount: number
-  /** `published` is intent; `live` is what the plan actually serves. A published
-   *  list goes `live: false` when the plan allows fewer lists than are published
-   *  (downgrade) or the subscription expired. Nothing is unpublished: paying
-   *  again brings it back on its own. */
-  live: boolean
   createdAt: string
   updatedAt: string
   versions?: ListVersion[]
@@ -234,28 +205,6 @@ export interface Order {
   items: OrderItem[]
 }
 
-/** Someone who left their details on a shop's public list. Not a Customer:
- *  that one means a contact with a purchase history, and a lead becomes one
- *  only when the shop converts it. */
-export type LeadStatus = 'new' | 'contacted' | 'converted' | 'discarded'
-export type LeadSource = 'form' | 'cart'
-
-export interface Lead {
-  id: string
-  tenantId: string
-  name: string
-  phone: string | null
-  email: string | null
-  message: string | null
-  /** Which list they were reading. Kept as a plain id so the lead outlives it. */
-  listId: string | null
-  listName: string | null
-  source: LeadSource
-  status: LeadStatus
-  createdAt: string
-  updatedAt: string
-}
-
 export interface CustomerStats {
   total: number
   active: number
@@ -284,7 +233,6 @@ export interface NotifPrefs {
   sales: boolean
   catalog: boolean
   customers: boolean
-  leads: boolean
   team: boolean
 }
 

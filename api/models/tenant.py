@@ -47,20 +47,6 @@ class Tenant(BaseModel):
     # Optional hero/header color for the public list (falls back to brand_color when null).
     list_hero_color = CharField(max_length=9, null=True)
 
-    # Social links shown in the public list footer. Each is optional: a null one
-    # simply has no icon. All hold a ready-to-open URL except whatsapp, which
-    # holds digits only (the public page builds wa.me/<digits> from it).
-    social_instagram = TextField(null=True)
-    social_facebook = TextField(null=True)
-    social_tiktok = TextField(null=True)
-    social_website = TextField(null=True)
-    social_whatsapp = CharField(max_length=20, null=True)
-
-    # Whether the public list shows the lead form. Off by default: a shop that
-    # is not going to answer is better off without one, and an unanswered form
-    # is worse than no form. Only takes effect on tiers that include leads.
-    leads_enabled = BooleanField(default=False)
-
     # Language & region
     language = CharField(max_length=5, default="es")
     timezone = CharField(max_length=64, default="America/Montevideo")
@@ -68,12 +54,11 @@ class Tenant(BaseModel):
     # Whether the business offers home delivery; gates the cart's delivery option.
     delivery_enabled = BooleanField(default=False)
 
-    # New businesses are visible in the marketplace by default. Coordinates only
-    # affect distance ordering and are never exposed to other visitors.
-    marketplace_enabled = BooleanField(default=True)
+    # Public marketplace discovery is strictly opt-in. Coordinates are only used
+    # to sort opted-in businesses by proximity and are never exposed to others.
+    marketplace_enabled = BooleanField(default=False)
     marketplace_latitude = CharField(max_length=32, null=True)
     marketplace_longitude = CharField(max_length=32, null=True)
-    business_category = CharField(max_length=32, null=True)
 
     # Tax / legal data
     legal_name = CharField(max_length=255, null=True)

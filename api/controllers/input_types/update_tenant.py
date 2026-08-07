@@ -2,7 +2,6 @@ from pydantic import BaseModel, field_validator
 import re
 
 from controllers.input_types.appearance import validate_design, validate_hex_color
-from controllers.input_types.socials import normalize_social_url, normalize_whatsapp
 
 
 class UpdateTenant(BaseModel):
@@ -17,12 +16,6 @@ class UpdateTenant(BaseModel):
     list_bg_url: str | None = None
     list_bg_overlay: bool | None = None
     list_hero_color: str | None = None
-    # Social links for the public list footer
-    social_instagram: str | None = None
-    social_facebook: str | None = None
-    social_tiktok: str | None = None
-    social_website: str | None = None
-    social_whatsapp: str | None = None
     # Language & region
     language: str | None = None
     timezone: str | None = None
@@ -31,7 +24,6 @@ class UpdateTenant(BaseModel):
     marketplace_enabled: bool | None = None
     marketplace_latitude: float | None = None
     marketplace_longitude: float | None = None
-    business_category: str | None = None
     # Tax / legal
     legal_name: str | None = None
     tax_id: str | None = None
@@ -67,28 +59,3 @@ class UpdateTenant(BaseModel):
     @classmethod
     def validate_list_design(cls, v: str | None) -> str | None:
         return validate_design(v)
-
-    @field_validator("social_instagram")
-    @classmethod
-    def validate_social_instagram(cls, v: str | None) -> str | None:
-        return normalize_social_url(v, "instagram")
-
-    @field_validator("social_facebook")
-    @classmethod
-    def validate_social_facebook(cls, v: str | None) -> str | None:
-        return normalize_social_url(v, "facebook")
-
-    @field_validator("social_tiktok")
-    @classmethod
-    def validate_social_tiktok(cls, v: str | None) -> str | None:
-        return normalize_social_url(v, "tiktok")
-
-    @field_validator("social_website")
-    @classmethod
-    def validate_social_website(cls, v: str | None) -> str | None:
-        return normalize_social_url(v, "website")
-
-    @field_validator("social_whatsapp")
-    @classmethod
-    def validate_social_whatsapp(cls, v: str | None) -> str | None:
-        return normalize_whatsapp(v)
