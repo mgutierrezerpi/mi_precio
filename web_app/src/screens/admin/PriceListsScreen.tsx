@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
@@ -293,8 +293,8 @@ export function PriceListsScreen() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
-            <div className="flex min-w-[680px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+          <div className="overflow-visible rounded-xl border-0 bg-transparent lg:overflow-hidden lg:border lg:border-[var(--dash-border)] lg:bg-[var(--dash-surface)]">
+            <div className="hidden min-w-[680px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)] lg:flex">
               <span className="flex-1">{t('pl.column.list')}</span>
               <span className="w-[100px]">{t('pl.column.products')}</span>
               <span className="w-[110px]">{t('pl.column.status')}</span>
@@ -302,7 +302,10 @@ export function PriceListsScreen() {
               <span className="w-[144px]" />
             </div>
             {filtered.map((l, i) => (
-              <Fragment key={l.id}>
+              <div
+                key={l.id}
+                className="mx-2 my-2 overflow-hidden rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_8px_24px_-18px_rgba(15,23,42,0.45)] lg:contents"
+              >
               <ListRow
                 list={l}
                 canEdit={canEdit}
@@ -362,7 +365,7 @@ export function PriceListsScreen() {
                     onReports={() => navigate(`/admin/reportes?list=${variant.id}`)}
                   />
                 ))}
-              </Fragment>
+              </div>
             ))}
           </div>
         )}
@@ -444,9 +447,9 @@ function ListRow({
 
   return (
     <div
-      className={`flex min-w-[680px] items-center gap-3 px-5 ${variant ? 'bg-[var(--dash-soft)] py-3' : 'bg-[var(--dash-surface)] py-4'} ${!first ? 'border-t border-[var(--dash-divider)]' : ''}`}
+      className={`flex min-w-0 flex-col gap-3 px-4 py-4 lg:min-w-[680px] lg:flex-row lg:items-center lg:gap-3 lg:px-5 ${variant ? 'border-t border-[var(--dash-divider)] bg-[var(--dash-soft)] lg:py-3' : 'bg-[var(--dash-surface)] lg:py-4'} ${!first ? 'lg:border-t lg:border-[var(--dash-divider)]' : ''}`}
     >
-      <div className={`relative flex min-w-0 flex-1 items-center gap-3 ${variant ? 'pl-12' : ''}`}>
+      <div className={`relative flex min-w-0 flex-1 items-start gap-3 lg:items-center ${variant ? 'pl-10 lg:pl-12' : ''}`}>
         {variant && (
           <span
             aria-hidden="true"
@@ -459,7 +462,13 @@ function ListRow({
         >
           <Icon name="list-checks" size={variant ? 15 : 19} />
         </span>
-        <div className="flex min-w-0 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {variant && (
+            <span className="flex items-center gap-1 whitespace-nowrap text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--dash-link)]">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
+              Variante de la principal
+            </span>
+          )}
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <h4 className={`min-w-0 whitespace-normal break-words font-bold leading-snug text-[var(--dash-text)] ${variant ? 'text-[14px]' : 'text-base'}`}>
               {list.name}
@@ -485,10 +494,37 @@ function ListRow({
         </div>
       </div>
 
-      <span className={`w-[100px] font-semibold text-[var(--dash-text2)] ${variant ? 'text-xs' : 'text-sm'}`}>
+      <div className="grid grid-cols-3 gap-x-3 border-t border-[var(--dash-divider)] pt-3 text-xs lg:hidden">
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('pl.column.products')}</span>
+          <span className="font-semibold text-[var(--dash-text2)]">{list.itemCount}</span>
+        </span>
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('pl.column.status')}</span>
+          <span
+            className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
+            style={tone(list.published && list.live ? 'green' : list.published ? 'red' : 'amber')}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            {list.published && !list.live
+              ? 'Fuera de línea'
+              : list.published
+                ? t('pl.status.active')
+                : t('pl.status.draft')}
+          </span>
+        </span>
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('pl.column.updated')}</span>
+          <span className="truncate font-medium text-[var(--dash-muted)]">
+            {formatListTimeAgo(list.updatedAt, localeOf(tenant?.language))}
+          </span>
+        </span>
+      </div>
+
+      <span className={`hidden w-[100px] font-semibold text-[var(--dash-text2)] lg:block ${variant ? 'text-xs' : 'text-sm'}`}>
         {list.itemCount}
       </span>
-      <span className="w-[110px]">
+      <span className="hidden w-[110px] lg:block">
         <span
           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
           style={tone(list.published && list.live ? 'green' : list.published ? 'red' : 'amber')}
@@ -501,11 +537,11 @@ function ListRow({
               : t('pl.status.draft')}
         </span>
       </span>
-      <span className="w-[110px] text-xs font-medium text-[var(--dash-muted)]">
+      <span className="hidden w-[110px] text-xs font-medium text-[var(--dash-muted)] lg:block">
         {formatListTimeAgo(list.updatedAt, localeOf(tenant?.language))}
       </span>
 
-      <div className="flex w-[144px] shrink-0 items-center justify-end gap-1.5">
+      <div className="flex w-full shrink-0 items-center justify-end gap-2 border-t border-[var(--dash-divider)] pt-3 lg:w-[144px] lg:border-0 lg:pt-0">
         {list.published && (
           <button
             type="button"

@@ -13,8 +13,12 @@ def _live_ids(tenant_id: str) -> set[str]:
 
 
 def _item_count(price_list) -> int:
-    """Number of items in the list's most recent version."""
-    from models import ListVersion, Item
+    """Number of currently visible items in the list's most recent version.
+
+    Catalog-linked items follow the current product availability. Manual items and
+    snapshots whose source product was deleted remain part of the count.
+    """
+    from models import ListVersion, Item, Product
 
     version = (
         ListVersion.select()
@@ -24,7 +28,28 @@ def _item_count(price_list) -> int:
     )
     if not version:
         return 0
-    return Item.select().where(Item.list_version == version.id).count()
+
+    availability: dict[str, bool] = {}
+    for product in Product.select(
+        Product.id, Product.name, Product.available
+    ).where(Product.tenant == price_list.tenant_id):
+        availability[str(product.id)] = product.available
+        availability[_norm_name(product.name)] = product.available
+
+    visible = 0
+    for item in Item.select().where(Item.list_version == version.id):
+        product_key = str(item.product_id)
+        if product_key in availability:
+            if availability[product_key]:
+                visible += 1
+            continue
+        if availability.get(_norm_name(item.name), True):
+            visible += 1
+    return visible
+
+
+def _norm_name(name: str | None) -> str:
+    return (name or "").strip().lower()
 
 
 class PriceListView(BaseView):

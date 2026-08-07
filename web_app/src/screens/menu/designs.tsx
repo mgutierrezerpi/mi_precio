@@ -739,18 +739,18 @@ export function ClassicList(p: DesignProps) {
                     {s.items.map((it, i) => (
                       <div
                         key={it.id}
-                        className="flex items-center gap-3 border-b py-4 md:gap-5"
+                        className="flex flex-wrap items-start gap-x-3 gap-y-2 border-b py-4 lg:flex-nowrap lg:items-center lg:gap-5"
                         style={{ borderColor: C.line }}
                       >
                         <span
-                          className="hidden w-[96px] shrink-0 text-[13px] font-medium md:block"
+                          className="hidden w-[96px] shrink-0 text-[13px] font-medium lg:block"
                           style={{ color: C.muted }}
                         >
                           {code(it, i)}
                         </span>
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 basis-full lg:basis-0">
                           <p
-                            className="text-[16px] font-medium"
+                            className="break-words text-[16px] font-medium"
                             style={{ color: C.ink }}
                           >
                             {it.name}
@@ -765,27 +765,29 @@ export function ClassicList(p: DesignProps) {
                           )}
                         </div>
                         <span
-                          className="mx-2 hidden flex-1 translate-y-[-3px] border-b border-dotted md:block"
+                          className="mx-2 hidden flex-1 translate-y-[-3px] border-b border-dotted lg:block"
                           style={{ borderColor: '#CBC8C0' }}
                         />
-                        <div className="flex shrink-0 flex-col items-end">
-                          <span
-                            className="text-[18px] font-bold md:text-[20px]"
-                            style={{ color: C.ink }}
-                          >
-                            {money(it.price)}
-                          </span>
+                        <div className="ml-auto flex shrink-0 items-center gap-3">
+                          <div className="flex flex-col items-end">
+                            <span
+                              className="text-[18px] font-bold md:text-[20px]"
+                              style={{ color: C.ink }}
+                            >
+                              {money(it.price)}
+                            </span>
+                          </div>
+                          {!isService && (
+                            <CartControl
+                              qty={cart[it.id] ?? 0}
+                              id={it.id}
+                              addToCart={addToCart}
+                              decFromCart={decFromCart}
+                              accent={accent}
+                              ink={C.ink}
+                            />
+                          )}
                         </div>
-                        {!isService && (
-                          <CartControl
-                            qty={cart[it.id] ?? 0}
-                            id={it.id}
-                            addToCart={addToCart}
-                            decFromCart={decFromCart}
-                            accent={accent}
-                            ink={C.ink}
-                          />
-                        )}
                       </div>
                     ))}
                   </div>
@@ -981,10 +983,10 @@ export function NordicMenu(p: DesignProps) {
                   <span className="h-px w-16" style={{ background: accent }} />
                 </div>
                 {s.items.map((it) => (
-                  <div key={it.id} className="flex items-baseline gap-3 py-2.5">
-                    <div className="min-w-0">
+                  <div key={it.id} className="flex flex-wrap items-start gap-x-3 gap-y-2 py-2.5 lg:flex-nowrap lg:items-baseline">
+                    <div className="min-w-0 flex-1 basis-full lg:basis-0">
                       <p
-                        className="text-[16px] font-semibold"
+                        className="break-words text-[16px] font-semibold"
                         style={{ color: ink }}
                       >
                         {it.name}
@@ -999,25 +1001,27 @@ export function NordicMenu(p: DesignProps) {
                       )}
                     </div>
                     <span
-                      className="mx-1 min-w-[16px] flex-1 translate-y-[-3px] border-b border-dotted"
+                      className="mx-1 hidden min-w-[16px] flex-1 translate-y-[-3px] border-b border-dotted lg:block"
                       style={{ borderColor: '#B9B0A4' }}
                     />
-                    <span
-                      className="shrink-0 text-[16px] font-semibold tabular-nums"
-                      style={{ color: ink }}
-                    >
-                      {money(it.price)}
-                    </span>
-                    {!isService && (
-                      <CartControl
-                        qty={cart[it.id] ?? 0}
-                        id={it.id}
-                        addToCart={addToCart}
-                        decFromCart={decFromCart}
-                        accent={accent}
-                        ink={ink}
-                      />
-                    )}
+                    <div className="ml-auto flex shrink-0 items-center gap-3">
+                      <span
+                        className="text-[16px] font-semibold tabular-nums"
+                        style={{ color: ink }}
+                      >
+                        {money(it.price)}
+                      </span>
+                      {!isService && (
+                        <CartControl
+                          qty={cart[it.id] ?? 0}
+                          id={it.id}
+                          addToCart={addToCart}
+                          decFromCart={decFromCart}
+                          accent={accent}
+                          ink={ink}
+                        />
+                      )}
+                    </div>
                   </div>
                 ))}
               </section>
@@ -1148,11 +1152,11 @@ export function FineDining(p: DesignProps) {
                   {s.items.map((it) => (
                     <div
                       key={it.id}
-                      className="flex items-baseline gap-3 py-1.5"
+                      className="flex flex-wrap items-start gap-x-3 gap-y-2 py-1.5 lg:flex-nowrap lg:items-baseline"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1 basis-full lg:basis-0">
                         <p
-                          className="text-[15px] font-semibold"
+                          className="break-words text-[15px] font-semibold"
                           style={{ color: ink }}
                         >
                           {it.name}
@@ -1167,25 +1171,27 @@ export function FineDining(p: DesignProps) {
                         )}
                       </div>
                       <span
-                        className="mx-1 min-w-[16px] flex-1 translate-y-[-3px] border-b border-dotted"
+                        className="mx-1 hidden min-w-[16px] flex-1 translate-y-[-3px] border-b border-dotted lg:block"
                         style={{ borderColor: '#CDBF9F' }}
                       />
-                      <span
-                        className="shrink-0 text-[15px] font-semibold tabular-nums"
-                        style={{ color: ink }}
-                      >
-                        {money(it.price)}
-                      </span>
-                      {!isService && (
-                        <CartControl
-                          qty={cart[it.id] ?? 0}
-                          id={it.id}
-                          addToCart={addToCart}
-                          decFromCart={decFromCart}
-                          accent={gold}
-                          ink={ink}
-                        />
-                      )}
+                      <div className="ml-auto flex shrink-0 items-center gap-3">
+                        <span
+                          className="text-[15px] font-semibold tabular-nums"
+                          style={{ color: ink }}
+                        >
+                          {money(it.price)}
+                        </span>
+                        {!isService && (
+                          <CartControl
+                            qty={cart[it.id] ?? 0}
+                            id={it.id}
+                            addToCart={addToCart}
+                            decFromCart={decFromCart}
+                            accent={gold}
+                            ink={ink}
+                          />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </section>
@@ -1331,11 +1337,11 @@ export function ModernBrand(p: DesignProps) {
               {s.items.map((it) => (
                 <div
                   key={it.id}
-                  className="flex items-center gap-4 border-b py-3.5"
+                  className="flex flex-wrap items-start gap-x-4 gap-y-2 border-b py-3.5 lg:flex-nowrap lg:items-center"
                   style={{ borderColor: line }}
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-bold" style={{ color: ink }}>
+                  <div className="min-w-0 flex-1 basis-full lg:basis-0">
+                    <p className="break-words text-[15px] font-bold" style={{ color: ink }}>
                       {it.name}
                     </p>
                     {it.description && (
@@ -1347,22 +1353,24 @@ export function ModernBrand(p: DesignProps) {
                       </p>
                     )}
                   </div>
-                  <span
-                    className="shrink-0 text-[18px] font-black tabular-nums"
-                    style={{ color: ink }}
-                  >
-                    {money(it.price)}
-                  </span>
-                  {!isService && (
-                    <CartControl
-                      qty={cart[it.id] ?? 0}
-                      id={it.id}
-                      addToCart={addToCart}
-                      decFromCart={decFromCart}
-                      accent={accent}
-                      ink={ink}
-                    />
-                  )}
+                  <div className="ml-auto flex shrink-0 items-center gap-3">
+                    <span
+                      className="text-[18px] font-black tabular-nums"
+                      style={{ color: ink }}
+                    >
+                      {money(it.price)}
+                    </span>
+                    {!isService && (
+                      <CartControl
+                        qty={cart[it.id] ?? 0}
+                        id={it.id}
+                        addToCart={addToCart}
+                        decFromCart={decFromCart}
+                        accent={accent}
+                        ink={ink}
+                      />
+                    )}
+                  </div>
                 </div>
               ))}
             </section>

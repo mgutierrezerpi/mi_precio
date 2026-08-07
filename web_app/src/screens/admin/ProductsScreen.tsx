@@ -164,7 +164,7 @@ export function ProductsScreen() {
     const arr =
       status === 'recent'
         ? [...base]
-            .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
+            .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
             .slice(0, 12)
         : base.filter((p) => {
             if (status === 'all') return true
@@ -175,7 +175,7 @@ export function ProductsScreen() {
           })
     const price = (p: Product) => parseFloat(p.price) || 0
     const cmp: Record<SortKey, (a: Product, b: Product) => number> = {
-      recent: (a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt),
+      recent: (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt),
       'name-asc': (a, b) => a.name.localeCompare(b.name),
       'name-desc': (a, b) => b.name.localeCompare(a.name),
       'price-asc': (a, b) => price(a) - price(b),
@@ -363,8 +363,16 @@ export function ProductsScreen() {
           )}
 
           {/* Table */}
-          <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
-            <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
+            <div className="flex items-center gap-3 bg-[var(--dash-table-head)] px-4 py-3 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)] lg:hidden">
+              <Checkbox
+                checked={allSelected}
+                indeterminate={someSelected && !allSelected}
+                onChange={toggleSelectAll}
+              />
+              <span>{t('products.product')}</span>
+            </div>
+            <div className="hidden min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)] lg:flex">
               <span className="w-9">
                 <Checkbox
                   checked={allSelected}
@@ -392,15 +400,16 @@ export function ProductsScreen() {
                 return (
                   <div
                     key={p.id}
-                    className={`flex min-w-[720px] items-center gap-3 px-5 py-4 ${selected.has(p.id) ? 'bg-[var(--dash-soft)]' : 'bg-[var(--dash-surface)]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
+                    className={`flex min-w-0 flex-col gap-3 px-4 py-4 lg:min-w-[720px] lg:flex-row lg:items-center lg:gap-3 lg:px-5 ${selected.has(p.id) ? 'bg-[var(--dash-soft)]' : 'bg-[var(--dash-surface)]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
                   >
-                    <span className="w-9">
-                      <Checkbox
-                        checked={selected.has(p.id)}
-                        onChange={() => toggleSelect(p.id)}
-                      />
-                    </span>
-                    <div className="flex flex-1 items-center gap-3">
+                    <div className="flex min-w-0 items-start gap-3 lg:contents">
+                      <span className="w-9 shrink-0">
+                        <Checkbox
+                          checked={selected.has(p.id)}
+                          onChange={() => toggleSelect(p.id)}
+                        />
+                      </span>
+                      <div className="flex min-w-0 flex-1 items-start gap-3 lg:items-center">
                       {p.imageUrl ? (
                         <img
                           src={p.imageThumbUrl || p.imageUrl}
@@ -415,19 +424,82 @@ export function ProductsScreen() {
                           <Icon name={catIcon(p.category)} size={20} />
                         </span>
                       )}
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-sm font-bold text-[var(--dash-text)]">
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span className="break-words text-sm font-bold text-[var(--dash-text)] lg:truncate">
                           {p.name}
                         </span>
-                        <span className="truncate text-xs font-medium text-[var(--dash-muted)]">
+                        <span className="line-clamp-2 text-xs font-medium text-[var(--dash-muted)] lg:truncate">
                           {p.description || '—'}
                         </span>
                       </div>
+                      {canEdit && (
+                        <div className="shrink-0 lg:hidden">
+                          <RowMenu
+                            onEdit={() => setModal({ open: true, product: p })}
+                            onDelete={() => handleDelete(p)}
+                          />
+                        </div>
+                      )}
+                      </div>
                     </div>
-                    <span className="w-[110px] text-xs font-semibold text-[var(--dash-text2)]">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 pl-9 text-xs sm:grid-cols-3 lg:hidden">
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">SKU</span>
+                        <span className="truncate font-semibold text-[var(--dash-text2)]">{p.sku || '—'}</span>
+                      </span>
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.category')}</span>
+                        {p.category ? (
+                          <span
+                            className="inline-flex max-w-full w-fit truncate rounded-full px-2 py-1 text-[11px] font-bold"
+                            style={tone(catTone(p.category))}
+                          >
+                            {displayCategory(p.category)}
+                          </span>
+                        ) : (
+                          <span className="font-medium text-[var(--dash-muted)]">{t('products.noCategory')}</span>
+                        )}
+                      </span>
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.price')}</span>
+                        <span className="font-extrabold text-[var(--dash-text)]">{formatProductPrice(p.price)}</span>
+                      </span>
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.availability')}</span>
+                        {canEdit ? (
+                          <AvailabilitySwitch
+                            value={p.available}
+                            onToggle={() =>
+                              dispatch(
+                                updateProduct({
+                                  productId: p.id,
+                                  data: { available: !p.available },
+                                })
+                              )
+                            }
+                          />
+                        ) : (
+                          <span
+                            className="w-fit rounded-full px-2.5 py-1 text-[11px] font-bold"
+                            style={tone(p.available ? 'green' : 'red')}
+                          >
+                            {p.available
+                              ? t('products.available')
+                              : t('products.unavailable')}
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.updated')}</span>
+                        <span className="truncate font-medium text-[var(--dash-muted)]">
+                          {new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(p.updatedAt))}
+                        </span>
+                      </span>
+                    </div>
+                    <span className="hidden w-[110px] text-xs font-semibold text-[var(--dash-text2)] lg:block">
                       {p.sku || '—'}
                     </span>
-                    <span className="w-[130px]">
+                    <span className="hidden w-[130px] lg:block">
                       {p.category ? (
                         <span
                           className="rounded-full px-2.5 py-1 text-[11px] font-bold"
@@ -441,10 +513,10 @@ export function ProductsScreen() {
                         </span>
                       )}
                     </span>
-                    <span className="w-[110px] text-sm font-extrabold text-[var(--dash-text)]">
+                    <span className="hidden w-[110px] text-sm font-extrabold text-[var(--dash-text)] lg:block">
                       {formatProductPrice(p.price)}
                     </span>
-                    <span className="w-[160px]">
+                    <span className="hidden w-[160px] lg:block">
                       {canEdit ? (
                         <AvailabilitySwitch
                           value={p.available}
@@ -468,18 +540,20 @@ export function ProductsScreen() {
                         </span>
                       )}
                     </span>
-                    <span className="w-[120px] text-xs font-medium text-[var(--dash-muted)]">
+                    <span className="hidden w-[120px] text-xs font-medium text-[var(--dash-muted)] lg:block">
                       {new Intl.DateTimeFormat(locale, {
                         dateStyle: 'medium',
                       }).format(new Date(p.updatedAt))}
                     </span>
                     {canEdit ? (
-                      <RowMenu
-                        onEdit={() => setModal({ open: true, product: p })}
-                        onDelete={() => handleDelete(p)}
-                      />
+                      <span className="hidden shrink-0 lg:block">
+                        <RowMenu
+                          onEdit={() => setModal({ open: true, product: p })}
+                          onDelete={() => handleDelete(p)}
+                        />
+                      </span>
                     ) : (
-                      <span className="w-8" />
+                      <span className="hidden w-8 shrink-0 lg:block" />
                     )}
                   </div>
                 )
