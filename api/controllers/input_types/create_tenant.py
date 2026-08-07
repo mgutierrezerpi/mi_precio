@@ -3,4 +3,4 @@ from pydantic import BaseModel
 
 class CreateTenant(BaseModel):
     name: str
-    subdomain: str
+    subdomain: str | None = None

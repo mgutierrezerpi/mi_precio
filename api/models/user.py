@@ -16,7 +16,6 @@ class User(BaseModel):
     notif_prefs = TextField(null=True)
     notifications_seen_at = DateTimeField(null=True)
 
-
     class Meta:
         table_name = "users"
 

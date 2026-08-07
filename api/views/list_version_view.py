@@ -19,7 +19,10 @@ class ListVersionView(BaseView):
         view = cls.model_validate(version)
         if include_items:
             from models import Item
-            source = items if items is not None else version.items.order_by(Item.position)
+
+            source = (
+                items if items is not None else version.items.order_by(Item.position)
+            )
             view.items = ItemView.render_many(source)
         return view
 

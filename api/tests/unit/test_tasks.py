@@ -34,7 +34,11 @@ def test_run_billing_maintenance_expires_billing_and_prunes_auth_codes(db, captu
     result = run_billing_maintenance.call_local()
 
     tenant = Tenant.get_by_id(tenant.id)
-    assert result == {"expired_subscriptions": 1, "pruned_codes": 1}
+    assert result == {
+        "expired_subscriptions": 1,
+        "pruned_codes": 1,
+        "pending_billing_checks": 0,
+    }
     assert tenant.plan == "free"
     assert tenant.billing_status == "expired"
     assert AuthCode.select().count() == 0

@@ -2,23 +2,54 @@
 
 from datetime import datetime
 
-from models import Tenant, User, Invitation
+from models import Tenant, User, Invitation, TenantMembership
 from lib.value_objects import UserResult
 
 
-def list_tenants() -> list[Tenant]:
-    return list(Tenant.select())
+def list_tenants(user_id: str | None = None) -> list[Tenant]:
+    if not user_id:
+        return list(Tenant.select())
+    user = User.get_or_none(User.id == user_id)
+    if not user:
+        return []
+    tenant_ids = TenantMembership.select(TenantMembership.tenant).where(
+        TenantMembership.user == user_id
+    )
+    return list(
+        Tenant.select().where(Tenant.id.in_(tenant_ids)).order_by(Tenant.name.asc())
+    )
 
 
 def get_tenant(tenant_id: str) -> Tenant | None:
     return Tenant.get_or_none(Tenant.id == tenant_id)
 
 
-def create_tenant(name: str, subdomain: str) -> Tenant | None:
-    subdomain = subdomain.lower()
+def create_tenant(
+    name: str, subdomain: str | None = None, owner_user_id: str | None = None
+) -> Tenant | None:
+    name = name.strip()
+    if not name:
+        return None
+    subdomain = (subdomain or name).lower().strip()
+    subdomain = "-".join(part for part in subdomain.replace("_", "-").split() if part)[
+        :63
+    ]
+    if not subdomain:
+        return None
     if Tenant.select().where(Tenant.subdomain == subdomain).exists():
         return None
-    return Tenant.create(name=name, subdomain=subdomain)
+    tenant = Tenant.create(name=name, subdomain=subdomain)
+    if owner_user_id:
+        user = User.get_or_none(User.id == owner_user_id)
+        if user:
+            TenantMembership.create(user=user, tenant=tenant, role="owner")
+    return tenant
+
+
+def membership(user_id: str, tenant_id: str) -> TenantMembership | None:
+    return TenantMembership.get_or_none(
+        (TenantMembership.user == user_id) & (TenantMembership.tenant == tenant_id)
+    )
 
 
 def update_tenant(tenant_id: str, **updates) -> Tenant | None:
@@ -29,9 +60,11 @@ def update_tenant(tenant_id: str, **updates) -> Tenant | None:
     # Check subdomain uniqueness if being updated
     new_subdomain = updates.get("subdomain")
     if new_subdomain and new_subdomain != tenant.subdomain:
-        existing = Tenant.select().where(
-            (Tenant.subdomain == new_subdomain) & (Tenant.id != tenant_id)
-        ).exists()
+        existing = (
+            Tenant.select()
+            .where((Tenant.subdomain == new_subdomain) & (Tenant.id != tenant_id))
+            .exists()
+        )
         if existing:
             raise ValueError("Subdomain already in use")
 
@@ -57,7 +90,10 @@ def touch_last_seen(user_id: str, min_interval_seconds: int = 60) -> None:
     if not user:
         return
     now = datetime.utcnow()
-    if user.last_seen_at is None or (now - user.last_seen_at).total_seconds() >= min_interval_seconds:
+    if (
+        user.last_seen_at is None
+        or (now - user.last_seen_at).total_seconds() >= min_interval_seconds
+    ):
         user.last_seen_at = now
         user.save()
 
@@ -76,6 +112,15 @@ def get_or_create_user(email: str) -> UserResult:
     email = email.lower()
     user = User.get_or_none(User.email == email)
     if user:
+        invite = Invitation.get_or_none(
+            (Invitation.email == email) & (Invitation.status == "pending")
+        )
+        if invite:
+            TenantMembership.get_or_create(
+                user=user, tenant=invite.tenant, defaults={"role": invite.role}
+            )
+            invite.status = "accepted"
+            invite.save()
         return UserResult(user, False)
 
     # If someone invited this email, join their team instead of creating a new tenant.
@@ -89,6 +134,7 @@ def get_or_create_user(email: str) -> UserResult:
             name=email.split("@")[0].title(),
             role=invite.role,
         )
+        TenantMembership.create(user=user, tenant=invite.tenant, role=invite.role)
         invite.status = "accepted"
         invite.save()
         return UserResult(user, True)
@@ -106,4 +152,5 @@ def get_or_create_user(email: str) -> UserResult:
     tenant = Tenant.create(name=name, subdomain=subdomain, plan_gate=True)
     # First user of a brand-new tenant owns it.
     user = User.create(email=email, tenant=tenant, name=name, role="owner")
+    TenantMembership.create(user=user, tenant=tenant, role="owner")
     return UserResult(user, True)

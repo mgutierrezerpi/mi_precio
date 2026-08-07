@@ -9,7 +9,11 @@ export type BillingStatus =
 
 export interface PlanInfo {
   plan: PlanId
-  limits: { products: number | null; lists: number | null; members: number | null }
+  limits: {
+    products: number | null
+    lists: number | null
+    members: number | null
+  }
   usage: { products: number; lists: number; members: number }
   /** When false there is no payment gateway, so plan changes apply immediately. */
   billingEnabled?: boolean
@@ -34,6 +38,16 @@ export interface PlanInfo {
   }
 }
 
+export interface MarketplaceBusiness {
+  name: string
+  subdomain: string
+  logoUrl: string | null
+  description: string | null
+  address: string | null
+  businessCategory: string | null
+  distanceKm: number | null
+}
+
 export interface Tenant {
   id: string
   name: string
@@ -53,6 +67,10 @@ export interface Tenant {
   language: string
   timezone: string
   deliveryEnabled: boolean
+  marketplaceEnabled: boolean
+  marketplaceLatitude: number | null
+  marketplaceLongitude: number | null
+  businessCategory: string | null
   legalName: string | null
   taxId: string | null
   address: string | null
@@ -61,9 +79,23 @@ export interface Tenant {
 }
 
 /** Visual template for the public price list. */
-export type ListDesign = 'store' | 'classic' | 'nordic' | 'fine' | 'modern' | 'photo' | 'cards' | 'catalog' | 'tech'
+export type ListDesign =
+  | 'store'
+  | 'classic'
+  | 'nordic'
+  | 'fine'
+  | 'modern'
+  | 'photo'
+  | 'cards'
+  | 'catalog'
+  | 'tech'
 
 export type ListKind = 'product' | 'service'
+export type PriceListVariantType =
+  | 'customer'
+  | 'promotion'
+  | 'seasonal'
+  | 'custom'
 
 export interface PriceList {
   id: string
@@ -73,6 +105,12 @@ export interface PriceList {
   published: boolean
   showOnIndex: boolean
   kind: ListKind
+  /** Null for a root list; variants are child lists with their own item snapshot. */
+  parentListId?: string | null
+  variantType?: PriceListVariantType | null
+  customerId?: string | null
+  startsAt?: string | null
+  endsAt?: string | null
   /** Per-list appearance. `null` inherits the tenant's `list*` defaults. */
   design: ListDesign | null
   heroColor: string | null
@@ -221,7 +259,6 @@ export interface NotificationsData {
 
 // Team types
 export type Role = 'owner' | 'admin' | 'editor' | 'viewer'
-
 
 export interface TeamMember {
   id: string

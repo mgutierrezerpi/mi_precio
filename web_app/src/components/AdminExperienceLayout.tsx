@@ -1,7 +1,11 @@
 import { useEffect } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import { refreshCurrentUser, selectIsAuthenticated, selectNeedsPlan } from '../store/slices/authSlice'
+import {
+  refreshCurrentUser,
+  selectIsAuthenticated,
+  selectNeedsPlan,
+} from '../store/slices/authSlice'
 
 export function AdminExperienceLayout() {
   const dispatch = useAppDispatch()

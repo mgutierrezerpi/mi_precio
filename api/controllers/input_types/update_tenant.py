@@ -20,6 +20,11 @@ class UpdateTenant(BaseModel):
     language: str | None = None
     timezone: str | None = None
     delivery_enabled: bool | None = None
+    # Marketplace discovery
+    marketplace_enabled: bool | None = None
+    marketplace_latitude: float | None = None
+    marketplace_longitude: float | None = None
+    business_category: str | None = None
     # Tax / legal
     legal_name: str | None = None
     tax_id: str | None = None
@@ -32,7 +37,9 @@ class UpdateTenant(BaseModel):
             return v
         v = v.lower()
         if not re.match(r"^[a-z0-9-]+$", v):
-            raise ValueError("Subdomain can only contain lowercase letters, numbers, and hyphens")
+            raise ValueError(
+                "Subdomain can only contain lowercase letters, numbers, and hyphens"
+            )
         if len(v) < 3:
             raise ValueError("Subdomain must be at least 3 characters")
         if len(v) > 63:

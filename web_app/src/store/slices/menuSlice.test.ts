@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import menuReducer, {
-  setCurrentList,
-  clearError,
-} from './menuSlice'
+import menuReducer, { setCurrentList, clearError } from './menuSlice'
 import type { PriceList } from '../../types'
 
 describe('menuSlice', () => {

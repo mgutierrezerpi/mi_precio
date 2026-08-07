@@ -16,11 +16,12 @@ from routes import register_routes
 # tenant. Users belong to exactly one tenant, so the id in the path has to match
 # the `tenant_id` baked into their token — otherwise it's a cross-tenant access.
 _TENANT_SCOPED_PATH = re.compile(r"^/api/v1/tenants/([^/]+)")
+_TENANT_SWITCH_PATH = re.compile(r"^/api/v1/tenants/[^/]+/switch$")
 
 
 async def enforce_tenant_isolation(request: Request, call_next):
     match = _TENANT_SCOPED_PATH.match(request.url.path)
-    if match:
+    if match and not _TENANT_SWITCH_PATH.match(request.url.path):
         auth = request.headers.get("authorization", "")
         if auth[:7].lower() == "bearer ":
             payload = decode_token(auth[7:])
@@ -29,9 +30,11 @@ async def enforce_tenant_isolation(request: Request, call_next):
             # tenant; missing/invalid tokens fall through to the route's own 401.
             if token_tenant and match.group(1) != token_tenant:
                 return JSONResponse(
-                    status_code=403, content={"detail": "No tenés acceso a este negocio"}
+                    status_code=403,
+                    content={"detail": "No tenés acceso a este negocio"},
                 )
     return await call_next(request)
+
 
 # Configure logging
 logging.basicConfig(
@@ -79,4 +82,5 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=settings.debug)

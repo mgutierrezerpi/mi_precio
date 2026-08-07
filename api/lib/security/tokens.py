@@ -20,6 +20,8 @@ def encode_token(user_id: str, email: str, tenant_id: str, role: str = "owner") 
 def decode_token(token: str) -> dict | None:
     """Decode a JWT token. Returns None if invalid or expired."""
     try:
-        return jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
+        return jwt.decode(
+            token, settings.secret_key, algorithms=[settings.jwt_algorithm]
+        )
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None

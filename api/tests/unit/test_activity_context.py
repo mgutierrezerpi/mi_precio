@@ -27,7 +27,9 @@ def tenant(db):
 
 
 def test_record_creates_entry(tenant):
-    a = activity.record(tenant.id, "product.created", "Agregó el producto «X»", actor="ana@x.com")
+    a = activity.record(
+        tenant.id, "product.created", "Agregó el producto «X»", actor="ana@x.com"
+    )
     assert a is not None
     assert a.action == "product.created"
     assert a.actor == "ana@x.com"
@@ -39,8 +41,12 @@ def test_record_unknown_tenant_returns_none(db):
 
 
 def test_record_stores_meta_and_view_exposes_it_as_object(tenant):
-    a = activity.record(tenant.id, "order.created", "Registró una compra…",
-                        meta={"customer": "Ana", "currency": "UYU", "total": "500"})
+    a = activity.record(
+        tenant.id,
+        "order.created",
+        "Registró una compra…",
+        meta={"customer": "Ana", "currency": "UYU", "total": "500"},
+    )
     # Persisted as a JSON string on the model...
     assert isinstance(a.meta, str)
     # ...but the view exposes it as an object the client can interpolate.

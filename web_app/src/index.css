@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @plugin "@tailwindcss/forms";
 
 /* Custom theme - Soft Modern Aesthetic */
@@ -14,9 +14,12 @@
   --radius-xl: 24px;
 
   /* Shadows */
-  --shadow-soft: 0 2px 8px -2px rgba(0, 0, 0, 0.15), 0 4px 16px -4px rgba(0, 0, 0, 0.1);
-  --shadow-medium: 0 4px 12px -2px rgba(0, 0, 0, 0.2), 0 8px 24px -4px rgba(0, 0, 0, 0.15);
-  --shadow-elevated: 0 8px 24px -4px rgba(0, 0, 0, 0.25), 0 16px 48px -8px rgba(0, 0, 0, 0.2);
+  --shadow-soft:
+    0 2px 8px -2px rgba(0, 0, 0, 0.15), 0 4px 16px -4px rgba(0, 0, 0, 0.1);
+  --shadow-medium:
+    0 4px 12px -2px rgba(0, 0, 0, 0.2), 0 8px 24px -4px rgba(0, 0, 0, 0.15);
+  --shadow-elevated:
+    0 8px 24px -4px rgba(0, 0, 0, 0.25), 0 16px 48px -8px rgba(0, 0, 0, 0.2);
   --shadow-glow: 0 0 40px -10px;
 
   /* Glass effect */
@@ -26,7 +29,7 @@
 
 /* Dark theme (default) - Warm, soft, organic */
 :root,
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* Warmer, softer dark tones */
   --color-bg-primary: #121214;
   --color-bg-secondary: #18181b;
@@ -63,13 +66,25 @@
   --color-info-soft: rgba(130, 170, 255, 0.15);
 
   /* Gradients */
-  --gradient-subtle: linear-gradient(135deg, var(--color-bg-card) 0%, var(--color-bg-elevated) 100%);
-  --gradient-accent: linear-gradient(135deg, var(--color-accent) 0%, #e8c49a 100%);
-  --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  --gradient-subtle: linear-gradient(
+    135deg,
+    var(--color-bg-card) 0%,
+    var(--color-bg-elevated) 100%
+  );
+  --gradient-accent: linear-gradient(
+    135deg,
+    var(--color-accent) 0%,
+    #e8c49a 100%
+  );
+  --gradient-glass: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
 }
 
 /* Light theme - Soft, airy, warm */
-[data-theme="light"] {
+[data-theme='light'] {
   --color-bg-primary: #faf8f5;
   --color-bg-secondary: #f4f1ec;
   --color-bg-card: #ffffff;
@@ -100,14 +115,29 @@
   --color-info: #3b82f6;
   --color-info-soft: rgba(59, 130, 246, 0.1);
 
-  --gradient-subtle: linear-gradient(135deg, #ffffff 0%, var(--color-bg-secondary) 100%);
-  --gradient-accent: linear-gradient(135deg, var(--color-accent) 0%, #c49b6d 100%);
-  --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 100%);
+  --gradient-subtle: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    var(--color-bg-secondary) 100%
+  );
+  --gradient-accent: linear-gradient(
+    135deg,
+    var(--color-accent) 0%,
+    #c49b6d 100%
+  );
+  --gradient-glass: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
 
   /* Light mode shadows are softer */
-  --shadow-soft: 0 2px 8px -2px rgba(0, 0, 0, 0.08), 0 4px 16px -4px rgba(0, 0, 0, 0.05);
-  --shadow-medium: 0 4px 12px -2px rgba(0, 0, 0, 0.1), 0 8px 24px -4px rgba(0, 0, 0, 0.08);
-  --shadow-elevated: 0 8px 24px -4px rgba(0, 0, 0, 0.12), 0 16px 48px -8px rgba(0, 0, 0, 0.1);
+  --shadow-soft:
+    0 2px 8px -2px rgba(0, 0, 0, 0.08), 0 4px 16px -4px rgba(0, 0, 0, 0.05);
+  --shadow-medium:
+    0 4px 12px -2px rgba(0, 0, 0, 0.1), 0 8px 24px -4px rgba(0, 0, 0, 0.08);
+  --shadow-elevated:
+    0 8px 24px -4px rgba(0, 0, 0, 0.12), 0 16px 48px -8px rgba(0, 0, 0, 0.1);
 }
 
 /* Base styles */
@@ -124,19 +154,28 @@ html {
 body {
   background-color: var(--color-bg-primary);
   min-height: 100vh;
-  transition: background-color 0.4s ease, color 0.4s ease;
+  transition:
+    background-color 0.4s ease,
+    color 0.4s ease;
 }
 
 /* Smooth transitions for all interactive elements */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   transition-property: background-color, border-color, box-shadow, opacity;
   transition-duration: 0.2s;
   transition-timing-function: ease-out;
 }
 
 /* Exclude transition properties that would cause layout shifts */
-input, textarea, select, button, a {
-  transition-property: background-color, border-color, box-shadow, opacity, transform, color;
+input,
+textarea,
+select,
+button,
+a {
+  transition-property:
+    background-color, border-color, box-shadow, opacity, transform, color;
 }
 
 /* Serif headings */
@@ -168,75 +207,231 @@ input, textarea, select, button, a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #7C3AED;
+  background: #7c3aed;
   border-radius: 10px;
   border: 3px solid transparent;
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6D28D9;
+  background: #6d28d9;
   background-clip: padding-box;
 }
 
 /* Firefox */
 * {
-  scrollbar-color: #7C3AED transparent;
+  scrollbar-color: #7c3aed transparent;
 }
 
 /* ==========================================
    CRM Dashboard palette (light / dark)
    ========================================== */
 .dash {
-  --dash-bg: #F5F3FF;
-  --dash-surface: #FFFFFF;
-  --dash-border: #E2E8F0;
-  --dash-divider: #F1F5F9;
-  --dash-soft: #F5F3FF;
-  --dash-soft-border: transparent;
-  --dash-table-head: #FAF5FF;
-  --dash-text: #0F172A;
-  --dash-text2: #475569;
-  --dash-muted: #94A3B8;
-  --dash-link: #6D28D9;
+  --dash-radius: 10px;
+  --dash-bg: #f1eef7;
+  --dash-surface: #ffffff;
+  --dash-border: #dcd6e7;
+  --dash-divider: #e7e2ee;
+  --dash-soft: #e9e2fa;
+  --dash-soft-border: #d7cbed;
+  --dash-table-head: #f6f2fb;
+  --dash-text: #211b2d;
+  --dash-text2: #5f586e;
+  --dash-muted: #857d98;
+  --dash-link: #5b21b6;
+  --dash-sidebar: #faf9fd;
+  --dash-sidebar-active: #e3d9fa;
+  --dash-sidebar-active-text: #5b21b6;
+  --dash-sidebar-badge: rgba(91, 33, 182, 0.14);
+  --dash-chart-track: #ded7eb;
+  --dash-chart-fill: #7c3aed;
 
-  --tone-violet-bg: #EDE9FE; --tone-violet-fg: #7C3AED;
-  --tone-sky-bg: #E0F2FE;    --tone-sky-fg: #0EA5E9;
-  --tone-blue-bg: #DBEAFE;   --tone-blue-fg: #3B82F6;
-  --tone-green-bg: #ECFDF5;  --tone-green-fg: #10B981;
-  --tone-amber-bg: #FFFBEB;  --tone-amber-fg: #F59E0B;
-  --tone-orange-bg: #FEF3C7; --tone-orange-fg: #D97706;
-  --tone-red-bg: #FEF2F2;    --tone-red-fg: #EF4444;
-  --tone-pink-bg: #FCE7F3;   --tone-pink-fg: #A855F7;
-  --tone-rose-bg: #FCE7F3;   --tone-rose-fg: #EC4899;
-  --tone-slate-bg: #F1F5F9;  --tone-slate-fg: #64748B;
-  --tone-purple-bg: #F3E8FF; --tone-purple-fg: #A855F7;
+  --tone-violet-bg: #ede9fe;
+  --tone-violet-fg: #7c3aed;
+  --tone-sky-bg: #e0f2fe;
+  --tone-sky-fg: #0ea5e9;
+  --tone-blue-bg: #dbeafe;
+  --tone-blue-fg: #3b82f6;
+  --tone-green-bg: #ecfdf5;
+  --tone-green-fg: #10b981;
+  --tone-amber-bg: #fffbeb;
+  --tone-amber-fg: #f59e0b;
+  --tone-orange-bg: #fef3c7;
+  --tone-orange-fg: #d97706;
+  --tone-red-bg: #fef2f2;
+  --tone-red-fg: #ef4444;
+  --tone-pink-bg: #fce7f3;
+  --tone-pink-fg: #a855f7;
+  --tone-rose-bg: #fce7f3;
+  --tone-rose-fg: #ec4899;
+  --tone-slate-bg: #f1f5f9;
+  --tone-slate-fg: #64748b;
+  --tone-purple-bg: #f3e8ff;
+  --tone-purple-fg: #a855f7;
 }
 
-[data-theme="dark"] .dash {
-  --dash-bg: #0F0823;
-  --dash-surface: #1A0F36;
-  --dash-border: #2E1065;
-  --dash-divider: #2E1065;
-  --dash-soft: #241452;
-  --dash-soft-border: #3B1F77;
-  --dash-table-head: #241452;
-  --dash-text: #FFFFFF;
-  --dash-text2: #CBD5E1;
-  --dash-muted: #8A7BB0;
-  --dash-link: #C4B5FD;
+/* One radius across admin controls. Toggles, checkboxes, and pagination keep
+   their intentionally different geometry. */
+.dash button:not([role='switch']):not([role='checkbox']):not(.dash-pagination),
+.dash a,
+.dash input,
+.dash select,
+.dash textarea {
+  border-radius: var(--dash-radius);
+}
 
-  --tone-violet-bg: #3B1F77; --tone-violet-fg: #C4B5FD;
-  --tone-sky-bg: #0C4A6E;    --tone-sky-fg: #7DD3FC;
-  --tone-blue-bg: #1E3A8A;   --tone-blue-fg: #93C5FD;
-  --tone-green-bg: #064E3B;  --tone-green-fg: #6EE7B7;
-  --tone-amber-bg: #451A03;  --tone-amber-fg: #FCD34D;
-  --tone-orange-bg: #451A03; --tone-orange-fg: #FCD34D;
-  --tone-red-bg: #450A0A;    --tone-red-fg: #FCA5A5;
-  --tone-pink-bg: #4A1D3F;   --tone-pink-fg: #F0ABFC;
-  --tone-rose-bg: #4A1D3F;   --tone-rose-fg: #F9A8D4;
-  --tone-slate-bg: #241452;  --tone-slate-fg: #8A7BB0;
-  --tone-purple-bg: #3B1F77; --tone-purple-fg: #D8B4FE;
+.dash button:not(:disabled),
+.dash a,
+.dash [role='button'],
+.dash [role='switch'],
+.dash [role='checkbox'] {
+  cursor: pointer;
+}
+
+.dash button:disabled {
+  cursor: not-allowed;
+}
+
+.dash-tooltip {
+  position: relative;
+}
+
+.dash-tooltip[data-tooltip]:not([data-tooltip='']):hover::after {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 20;
+  width: max-content;
+  max-width: 240px;
+  padding: 7px 9px;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  background: var(--dash-text);
+  color: var(--dash-surface);
+  content: attr(data-tooltip);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+/* DaisyUI is the component baseline for the CRM. Keep the Pencil palette as
+   the source of truth instead of allowing framework defaults to recolor it. */
+.dash .btn {
+  min-height: 36px;
+  border: 0;
+  box-shadow: none;
+  text-transform: none;
+}
+
+.dash .btn.dash-primary {
+  background: linear-gradient(135deg, #7c3aed 0%, #c026d3 100%);
+  color: #ffffff;
+}
+
+.dash .input.dash-search {
+  border-color: var(--dash-border);
+  background: var(--dash-surface);
+  color: var(--dash-text);
+  box-shadow: none;
+}
+
+.dash .card.dash-card {
+  border: 1px solid var(--dash-border);
+  background: var(--dash-surface);
+  box-shadow: none;
+}
+
+.dash .card.dash-card.dash-featured {
+  background: linear-gradient(135deg, var(--dash-soft) 0%, var(--dash-surface) 100%);
+}
+
+/* A few CRM pages still use the original dark prototype utility colors. Keep
+   those classes compatible with both palettes while the screens converge on
+   the shared tokens. */
+.dash [class~='text-[#F8F7FF]'] {
+  color: var(--dash-text);
+}
+
+.dash [class~='text-[#9694A6]'],
+.dash [class~='text-[#8E8B9C]'] {
+  color: var(--dash-muted);
+}
+
+.dash [class~='text-[#B7B3C5]'] {
+  color: var(--dash-text2);
+}
+
+.dash [class~='text-[#C4B5FD]'] {
+  color: var(--dash-link);
+}
+
+.dash [class~='bg-[#1C1730]'] {
+  background-color: var(--dash-soft);
+}
+
+.dash [class~='bg-[#1C1B2A]'] {
+  background-color: var(--dash-chart-track);
+}
+
+.dash [class~='bg-[#6C43E8]'] {
+  background-color: var(--dash-chart-fill);
+}
+
+[data-theme='dark'] .dash .input.dash-search {
+  background: #11111a;
+}
+
+[data-theme='dark'] .dash .card.dash-card {
+  background: #17102d;
+}
+
+[data-theme='dark'] .dash .card.dash-card.dash-featured {
+  background: linear-gradient(135deg, #2a1c66 0%, #17102d 100%);
+}
+
+[data-theme='dark'] .dash {
+  --dash-bg: #0e071d;
+  --dash-surface: #160d2d;
+  --dash-border: #33205b;
+  --dash-divider: #291746;
+  --dash-soft: #21133f;
+  --dash-soft-border: #482673;
+  --dash-table-head: #1d1138;
+  --dash-text: #ffffff;
+  --dash-text2: #cbd5e1;
+  --dash-muted: #9281b7;
+  --dash-link: #d5b8ff;
+  --dash-sidebar: #100922;
+  --dash-sidebar-active: #2a1c66;
+  --dash-sidebar-active-text: #ffffff;
+  --dash-sidebar-badge: rgba(255, 255, 255, 0.2);
+  --dash-chart-track: #1c1b2a;
+  --dash-chart-fill: #6c43e8;
+
+  --tone-violet-bg: #3b1f77;
+  --tone-violet-fg: #c4b5fd;
+  --tone-sky-bg: #0c4a6e;
+  --tone-sky-fg: #7dd3fc;
+  --tone-blue-bg: #1e3a8a;
+  --tone-blue-fg: #93c5fd;
+  --tone-green-bg: #064e3b;
+  --tone-green-fg: #6ee7b7;
+  --tone-amber-bg: #451a03;
+  --tone-amber-fg: #fcd34d;
+  --tone-orange-bg: #451a03;
+  --tone-orange-fg: #fcd34d;
+  --tone-red-bg: #450a0a;
+  --tone-red-fg: #fca5a5;
+  --tone-pink-bg: #4a1d3f;
+  --tone-pink-fg: #f0abfc;
+  --tone-rose-bg: #4a1d3f;
+  --tone-rose-fg: #f9a8d4;
+  --tone-slate-bg: #241452;
+  --tone-slate-fg: #8a7bb0;
+  --tone-purple-bg: #3b1f77;
+  --tone-purple-fg: #d8b4fe;
 }
 
 /* Selection */
@@ -246,7 +441,7 @@ input, textarea, select, button, a {
 }
 
 /* Logo adjustments for light mode */
-[data-theme="light"] .logo-adaptive {
+[data-theme='light'] .logo-adaptive {
   filter: brightness(0.7) contrast(1.15) saturate(1.2);
 }
 
@@ -383,7 +578,12 @@ input, textarea, select, button, a {
 /* Divider */
 .soft-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-border),
+    transparent
+  );
   border: none;
   margin: 1.5rem 0;
 }
@@ -402,8 +602,12 @@ input, textarea, select, button, a {
 
 /* Fade in animation */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Fade in up animation */
@@ -456,20 +660,34 @@ input, textarea, select, button, a {
 
 /* Pulse animation for loading */
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Shimmer animation for skeleton loading */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* Subtle bounce */
 @keyframes subtleBounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 /* Animation utility classes */
@@ -494,14 +712,38 @@ input, textarea, select, button, a {
 }
 
 /* Staggered animation delays */
-.stagger-1 { animation-delay: 0.05s; opacity: 0; }
-.stagger-2 { animation-delay: 0.1s; opacity: 0; }
-.stagger-3 { animation-delay: 0.15s; opacity: 0; }
-.stagger-4 { animation-delay: 0.2s; opacity: 0; }
-.stagger-5 { animation-delay: 0.25s; opacity: 0; }
-.stagger-6 { animation-delay: 0.3s; opacity: 0; }
-.stagger-7 { animation-delay: 0.35s; opacity: 0; }
-.stagger-8 { animation-delay: 0.4s; opacity: 0; }
+.stagger-1 {
+  animation-delay: 0.05s;
+  opacity: 0;
+}
+.stagger-2 {
+  animation-delay: 0.1s;
+  opacity: 0;
+}
+.stagger-3 {
+  animation-delay: 0.15s;
+  opacity: 0;
+}
+.stagger-4 {
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+.stagger-5 {
+  animation-delay: 0.25s;
+  opacity: 0;
+}
+.stagger-6 {
+  animation-delay: 0.3s;
+  opacity: 0;
+}
+.stagger-7 {
+  animation-delay: 0.35s;
+  opacity: 0;
+}
+.stagger-8 {
+  animation-delay: 0.4s;
+  opacity: 0;
+}
 
 /* Skeleton loading */
 .skeleton {
@@ -533,8 +775,9 @@ input, textarea, select, button, a {
 
 /* Smooth hover transitions for interactive elements */
 .hover-lift {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hover-lift:hover {
@@ -570,9 +813,11 @@ input, textarea, select, button, a {
   border-radius: inherit;
   opacity: 0;
   transition: opacity 0.3s ease;
-  background: linear-gradient(135deg,
+  background: linear-gradient(
+    135deg,
     rgba(var(--color-accent-rgb), 0.05) 0%,
-    transparent 50%);
+    transparent 50%
+  );
   pointer-events: none;
 }
 
@@ -691,7 +936,7 @@ input, textarea, select, button, a {
    ========================================== */
 
 /* Bistro - Warm cream paper, vintage feel */
-[data-menu-theme="bistro"] {
+[data-menu-theme='bistro'] {
   --color-bg-primary: #f4ede4;
   --color-bg-secondary: #ebe3d8;
   --color-bg-card: #faf6f0;
@@ -710,7 +955,7 @@ input, textarea, select, button, a {
 }
 
 /* Modern - Clean, high contrast */
-[data-menu-theme="modern"] {
+[data-menu-theme='modern'] {
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f8f8f8;
   --color-bg-card: #ffffff;
@@ -729,7 +974,7 @@ input, textarea, select, button, a {
 }
 
 /* Noir - Elegant black and gold */
-[data-menu-theme="noir"] {
+[data-menu-theme='noir'] {
   --color-bg-primary: #0a0a0a;
   --color-bg-secondary: #111111;
   --color-bg-card: #151515;
@@ -748,7 +993,7 @@ input, textarea, select, button, a {
 }
 
 /* Sage - Soft green, organic */
-[data-menu-theme="sage"] {
+[data-menu-theme='sage'] {
   --color-bg-primary: #f5f7f4;
   --color-bg-secondary: #ecf0ea;
   --color-bg-card: #fafbf9;
@@ -770,12 +1015,20 @@ input, textarea, select, button, a {
 .landing-page a,
 .landing-page button,
 .landing-page summary {
-  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    filter 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 /* Respect users who prefer less motion. */
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto !important; }
+  html {
+    scroll-behavior: auto !important;
+  }
   .landing-page *,
   .landing-page *::before,
   .landing-page *::after {

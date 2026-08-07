@@ -13,12 +13,16 @@ SUPPORTED_PRODUCT_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image
 
 
 @router.get("/tenants/{tenant_id}/products")
-def list_products_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
+def list_products_endpoint(
+    tenant_id: str, current_user: dict = Depends(get_current_user)
+):
     return ProductView.render_many(products.list_products(tenant_id))
 
 
 @router.post("/tenants/{tenant_id}/products", status_code=201)
-def create_product_endpoint(tenant_id: str, data: CreateProduct, current_user: dict = Depends(require_editor)):
+def create_product_endpoint(
+    tenant_id: str, data: CreateProduct, current_user: dict = Depends(require_editor)
+):
     try:
         plans.assert_can_add(tenant_id, "products")
     except PlanLimitError as e:
@@ -26,9 +30,16 @@ def create_product_endpoint(tenant_id: str, data: CreateProduct, current_user: d
     product = products.create_product(tenant_id, **data.model_dump())
     if not product:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    activity.record(tenant_id, "product.created", f"Agregó el producto «{product.name}»",
-                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                    entity_type="product", entity_id=product.id, meta={"name": product.name})
+    activity.record(
+        tenant_id,
+        "product.created",
+        f"Agregó el producto «{product.name}»",
+        actor=current_user.get("email"),
+        actor_id=current_user.get("sub"),
+        entity_type="product",
+        entity_id=product.id,
+        meta={"name": product.name},
+    )
     return ProductView.render(product)
 
 
@@ -58,13 +69,17 @@ async def create_product_image_endpoint(
 
 
 @router.get("/products/{product_id}")
-def get_product_endpoint(product_id: str, current_user: dict = Depends(get_current_user)):
+def get_product_endpoint(
+    product_id: str, current_user: dict = Depends(get_current_user)
+):
     product = ownership.own_product(product_id, current_user)
     return ProductView.render(product)
 
 
 @router.patch("/products/{product_id}")
-def update_product_endpoint(product_id: str, data: UpdateProduct, current_user: dict = Depends(require_editor)):
+def update_product_endpoint(
+    product_id: str, data: UpdateProduct, current_user: dict = Depends(require_editor)
+):
     ownership.own_product(product_id, current_user)
     product = products.update_product(product_id, **data.model_dump(exclude_unset=True))
     if not product:
@@ -73,11 +88,20 @@ def update_product_endpoint(product_id: str, data: UpdateProduct, current_user: 
 
 
 @router.delete("/products/{product_id}")
-def delete_product_endpoint(product_id: str, current_user: dict = Depends(require_editor)):
+def delete_product_endpoint(
+    product_id: str, current_user: dict = Depends(require_editor)
+):
     product = ownership.own_product(product_id, current_user)
     name, tenant_id = product.name, product.tenant_id
     products.delete_product(product_id)
-    activity.record(tenant_id, "product.deleted", f"Eliminó el producto «{name}»",
-                    actor=current_user.get("email"), actor_id=current_user.get("sub"),
-                    entity_type="product", entity_id=product_id, meta={"name": name})
+    activity.record(
+        tenant_id,
+        "product.deleted",
+        f"Eliminó el producto «{name}»",
+        actor=current_user.get("email"),
+        actor_id=current_user.get("sub"),
+        entity_type="product",
+        entity_id=product_id,
+        meta={"name": name},
+    )
     return DeletedView()

@@ -67,7 +67,11 @@ def update_product(product_id: str, **updates) -> Product | None:
         setattr(product, key, value)
     product.save()
     if "price" in updates:
-        _sync_item_prices(product.tenant_id, original_name, product.price, price_list_ids)
+        _sync_item_prices(
+            product.tenant_id, original_name, product.price, price_list_ids
+        )
+    if "description" in updates:
+        _sync_item_description(product.id, original_name, product.description)
     if "image_url" in updates or "image_thumb_url" in updates:
         _sync_item_images(product.id, product.image_url, product.image_thumb_url)
     return product
@@ -82,7 +86,9 @@ def delete_product(product_id: str) -> bool:
     return True
 
 
-def upload_product_image(tenant_id: str, content_type: str, data: bytes) -> ProductImageUpload | None:
+def upload_product_image(
+    tenant_id: str, content_type: str, data: bytes
+) -> ProductImageUpload | None:
     """Store a WebP product image and thumbnail, returning their public URLs."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant:
@@ -98,7 +104,9 @@ def upload_product_image(tenant_id: str, content_type: str, data: bytes) -> Prod
     key_base = f"tenants/{tenant_id}/product_images/{uuid4().hex}"
     try:
         image_url = object_storage.upload(f"{key_base}.webp", image_webp, "image/webp")
-        thumb_url = object_storage.upload(f"{key_base}_thumb.webp", thumb_webp, "image/webp")
+        thumb_url = object_storage.upload(
+            f"{key_base}_thumb.webp", thumb_webp, "image/webp"
+        )
     except ObjectStorageError as e:
         raise ProductImageUploadError(str(e)) from e
 
@@ -116,7 +124,9 @@ def _next_position(tenant_id: str) -> int:
     return (last.position + 1) if last else 0
 
 
-def _sync_item_prices(tenant_id: str, product_name: str, price, price_list_ids: list[str] | None) -> None:
+def _sync_item_prices(
+    tenant_id: str, product_name: str, price, price_list_ids: list[str] | None
+) -> None:
     version_ids = (
         ListVersion.select(ListVersion.id)
         .join(PriceList)
@@ -129,7 +139,18 @@ def _sync_item_prices(tenant_id: str, product_name: str, price, price_list_ids: 
     ).execute()
 
 
-def _sync_item_images(product_id: str, image_url: str | None, image_thumb_url: str | None) -> None:
+def _sync_item_description(
+    product_id: str, original_name: str, description: str | None
+) -> None:
+    """Keep catalog-linked list descriptions aligned with product edits."""
+    Item.update(description=description).where(
+        (Item.product == product_id) | (Item.name == original_name)
+    ).execute()
+
+
+def _sync_item_images(
+    product_id: str, image_url: str | None, image_thumb_url: str | None
+) -> None:
     Item.update(image_url=image_url, image_thumb_url=image_thumb_url).where(
         Item.product == product_id
     ).execute()
@@ -148,7 +169,9 @@ def _encode_webp(image, max_side: int, quality: int) -> bytes:
     image = image.copy()
     image.thumbnail((max_side, max_side))
 
-    if image.mode in ("RGBA", "LA") or (image.mode == "P" and "transparency" in image.info):
+    if image.mode in ("RGBA", "LA") or (
+        image.mode == "P" and "transparency" in image.info
+    ):
         background = image.convert("RGBA")
         flattened = Image.new("RGBA", background.size, (255, 255, 255, 255))
         flattened.alpha_composite(background)

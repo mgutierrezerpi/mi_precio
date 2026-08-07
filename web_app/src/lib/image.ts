@@ -7,12 +7,17 @@ export async function fileToDataUrl(file: File, max = 256): Promise<string> {
     r.readAsDataURL(file)
   })
   const img = await new Promise<HTMLImageElement>((res, rej) => {
-    const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src
+    const i = new Image()
+    i.onload = () => res(i)
+    i.onerror = rej
+    i.src = src
   })
   const scale = Math.min(1, max / Math.max(img.width, img.height))
-  const w = Math.round(img.width * scale), h = Math.round(img.height * scale)
+  const w = Math.round(img.width * scale),
+    h = Math.round(img.height * scale)
   const canvas = document.createElement('canvas')
-  canvas.width = w; canvas.height = h
+  canvas.width = w
+  canvas.height = h
   canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
   return canvas.toDataURL('image/png')
 }

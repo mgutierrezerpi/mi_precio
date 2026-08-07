@@ -35,6 +35,11 @@ class PriceListView(BaseView):
     published: bool
     show_on_index: bool
     kind: str = "product"
+    parent_list_id: str | None = None
+    variant_type: str | None = None
+    customer_id: str | None = None
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
     # Per-list appearance; null means "inherit the tenant default".
     design: str | None = None
     hero_color: str | None = None

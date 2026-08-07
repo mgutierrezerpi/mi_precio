@@ -9,7 +9,10 @@ const sizeClasses = {
   lg: 'h-12 w-12',
 }
 
-export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerProps) {
+export function LoadingSpinner({
+  size = 'md',
+  className = '',
+}: LoadingSpinnerProps) {
   return (
     <div className={`flex items-center justify-center ${className}`}>
       <svg

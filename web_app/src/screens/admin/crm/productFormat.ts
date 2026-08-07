@@ -6,16 +6,38 @@ import type { IconName } from './ui'
 
 // Keys are matched case-insensitively (see lookups below).
 const CAT_TONE: Record<string, Tone> = {
-  ferretería: 'violet', ferreteria: 'violet', eléctricos: 'sky', electricos: 'sky',
-  pinturas: 'rose', construcción: 'slate', construccion: 'slate', herramientas: 'purple',
-  lavadero: 'sky', limpieza: 'sky',
+  ferretería: 'violet',
+  ferreteria: 'violet',
+  eléctricos: 'sky',
+  electricos: 'sky',
+  pinturas: 'rose',
+  construcción: 'slate',
+  construccion: 'slate',
+  herramientas: 'purple',
+  lavadero: 'sky',
+  limpieza: 'sky',
 }
 const CAT_ICON: Record<string, IconName> = {
-  ferretería: 'wrench', ferreteria: 'wrench', eléctricos: 'zap', electricos: 'zap',
-  pinturas: 'paintbrush', construcción: 'layers', construccion: 'layers', herramientas: 'cog',
-  lavadero: 'droplets', limpieza: 'droplets',
+  ferretería: 'wrench',
+  ferreteria: 'wrench',
+  eléctricos: 'zap',
+  electricos: 'zap',
+  pinturas: 'paintbrush',
+  construcción: 'layers',
+  construccion: 'layers',
+  herramientas: 'cog',
+  lavadero: 'droplets',
+  limpieza: 'droplets',
 }
-const TONE_POOL: Tone[] = ['violet', 'sky', 'blue', 'green', 'amber', 'rose', 'purple']
+const TONE_POOL: Tone[] = [
+  'violet',
+  'sky',
+  'blue',
+  'green',
+  'amber',
+  'rose',
+  'purple',
+]
 
 export function catTone(cat?: string | null): Tone {
   if (!cat) return 'slate'
@@ -26,7 +48,8 @@ export function catTone(cat?: string | null): Tone {
   return TONE_POOL[h % TONE_POOL.length]
 }
 
-export const catIcon = (cat?: string | null): IconName => (cat && CAT_ICON[cat.trim().toLowerCase()]) || 'box'
+export const catIcon = (cat?: string | null): IconName =>
+  (cat && CAT_ICON[cat.trim().toLowerCase()]) || 'box'
 
 /** Category shown with its first letter capitalized, regardless of how it was typed. */
 export function displayCategory(cat?: string | null): string {
@@ -45,7 +68,10 @@ export function normalizeCategory(cat?: string | null): string | null {
 export function formatPrice(price: string): string {
   const n = parseFloat(price)
   if (Number.isNaN(n)) return price
-  return '$ ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(n)
+  return (
+    '$ ' +
+    new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(n)
+  )
 }
 
 export function timeAgo(iso: string): string {
@@ -61,6 +87,13 @@ export function timeAgo(iso: string): string {
 }
 
 export type AvailKey = 'available' | 'unavailable'
-export const availKey = (p: Product): AvailKey => (p.available ? 'available' : 'unavailable')
-export const STOCK_LABEL: Record<AvailKey, string> = { available: 'Disponible', unavailable: 'No disponible' }
-export const STOCK_TONE: Record<AvailKey, Tone> = { available: 'green', unavailable: 'red' }
+export const availKey = (p: Product): AvailKey =>
+  p.available ? 'available' : 'unavailable'
+export const STOCK_LABEL: Record<AvailKey, string> = {
+  available: 'Disponible',
+  unavailable: 'No disponible',
+}
+export const STOCK_TONE: Record<AvailKey, Tone> = {
+  available: 'green',
+  unavailable: 'red',
+}

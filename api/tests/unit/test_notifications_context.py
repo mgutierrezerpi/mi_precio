@@ -47,7 +47,12 @@ def test_default_prefs_include_all_categorized_activity(tenant, user):
     res = notifications.list_notifications(tenant.id, user.id)
     assert len(res["items"]) == 5  # the uncategorized one is excluded
     assert res["unread"] == 5
-    assert res["prefs"] == {"sales": True, "catalog": True, "customers": True, "team": True}
+    assert res["prefs"] == {
+        "sales": True,
+        "catalog": True,
+        "customers": True,
+        "team": True,
+    }
 
 
 def test_prefs_filter_categories(tenant, user):
@@ -73,4 +78,9 @@ def test_update_prefs_persists_and_merges(tenant, user):
     assert prefs == {"sales": False, "catalog": True, "customers": True, "team": True}
     # partial update keeps the previously-disabled category
     notifications.update_prefs(user.id, {"customers": False})
-    assert notifications.get_prefs(user.id) == {"sales": False, "catalog": True, "customers": False, "team": True}
+    assert notifications.get_prefs(user.id) == {
+        "sales": False,
+        "catalog": True,
+        "customers": False,
+        "team": True,
+    }

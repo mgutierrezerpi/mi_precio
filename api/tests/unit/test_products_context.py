@@ -70,7 +70,9 @@ def test_update_product_price_can_target_selected_lists(db):
     first_item = items.create_item(first_list.version.id, name="Pizza", price=150)
     second_item = items.create_item(second_list.version.id, name="Pizza", price=150)
 
-    products.update_product(product.id, price=200, price_list_ids=[first_list.price_list.id])
+    products.update_product(
+        product.id, price=200, price_list_ids=[first_list.price_list.id]
+    )
 
     first_item = Item.get_by_id(first_item.id)
     second_item = Item.get_by_id(second_item.id)
@@ -134,7 +136,10 @@ def test_upload_product_image_stores_webp_original_and_thumbnail(db, monkeypatch
     assert result is not None
     assert result["url"].endswith(".webp")
     assert result["thumbnail_url"].endswith("_thumb.webp")
-    assert [content_type for _, _, content_type in uploaded] == ["image/webp", "image/webp"]
+    assert [content_type for _, _, content_type in uploaded] == [
+        "image/webp",
+        "image/webp",
+    ]
     assert all(key.endswith(".webp") for key, _, _ in uploaded)
     sizes = []
     for _, body, _ in uploaded:

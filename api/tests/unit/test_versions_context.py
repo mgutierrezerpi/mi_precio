@@ -44,7 +44,9 @@ def test_update_version(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
 
-    updated = versions.update_version(created.version.id, name="Updated", published=True)
+    updated = versions.update_version(
+        created.version.id, name="Updated", published=True
+    )
 
     assert updated.name == "Updated"
     assert updated.published is True

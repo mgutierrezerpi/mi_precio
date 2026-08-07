@@ -8,9 +8,16 @@ from models import Tenant, Activity
 logger = logging.getLogger(__name__)
 
 
-def record(tenant_id: str, action: str, summary: str, actor: str | None = None,
-           actor_id: str | None = None, entity_type: str | None = None,
-           entity_id: str | None = None, meta: dict | None = None) -> Activity | None:
+def record(
+    tenant_id: str,
+    action: str,
+    summary: str,
+    actor: str | None = None,
+    actor_id: str | None = None,
+    entity_type: str | None = None,
+    entity_id: str | None = None,
+    meta: dict | None = None,
+) -> Activity | None:
     """Append an activity entry. Never raises — a failed audit log must not break the request.
 
     `summary` is the pre-rendered Spanish fallback; `meta` holds the dynamic values
@@ -20,9 +27,14 @@ def record(tenant_id: str, action: str, summary: str, actor: str | None = None,
         if not tenant:
             return None
         entry = Activity.create(
-            tenant=tenant, action=action, summary=summary,
+            tenant=tenant,
+            action=action,
+            summary=summary,
             meta=json.dumps(meta) if meta else None,
-            actor=actor, actor_id=actor_id, entity_type=entity_type, entity_id=entity_id,
+            actor=actor,
+            actor_id=actor_id,
+            entity_type=entity_type,
+            entity_id=entity_id,
         )
         _push(tenant_id, action, summary, actor_id)
         return entry
@@ -45,11 +57,12 @@ def _push(tenant_id: str, action: str, summary: str, actor_id: str | None) -> No
         logger.exception("Failed to dispatch push notification")
 
 
-def list_activity(tenant_id: str, limit: int = 20) -> list[Activity]:
-    """Most recent activity for a tenant, newest first."""
+def list_activity(tenant_id: str, limit: int = 20, offset: int = 0) -> list[Activity]:
+    """Activity for a tenant, newest first, with offset pagination."""
     return list(
         Activity.select()
         .where(Activity.tenant == tenant_id)
         .order_by(Activity.created_at.desc())
+        .offset(offset)
         .limit(limit)
     )

@@ -9,8 +9,13 @@ export function useTheme() {
   useEffect(() => {
     // Apply theme to document
     if (theme === 'system') {
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      document.documentElement.setAttribute('data-theme', systemDark ? 'dark' : 'light')
+      const systemDark = window.matchMedia(
+        '(prefers-color-scheme: dark)'
+      ).matches
+      document.documentElement.setAttribute(
+        'data-theme',
+        systemDark ? 'dark' : 'light'
+      )
     } else {
       document.documentElement.setAttribute('data-theme', theme)
     }
@@ -21,8 +26,10 @@ export function useTheme() {
     dispatch(setTheme(newTheme))
   }
 
-  const isDark = theme === 'dark' ||
-    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  const isDark =
+    theme === 'dark' ||
+    (theme === 'system' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches)
 
   return { theme, toggleTheme, isDark }
 }

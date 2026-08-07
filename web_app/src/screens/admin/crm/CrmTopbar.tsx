@@ -16,35 +16,59 @@ interface CrmTopbarProps {
   actions?: React.ReactNode
   /** Opens the mobile navigation drawer (hamburger). */
   onMenu?: () => void
+  hideContext?: boolean
 }
 
 /** Shared CRM topbar: title + search + theme toggle + notifications + user menu. */
-export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', searchValue, onSearchChange, onSearchSubmit, actions, onMenu }: CrmTopbarProps) {
+export function CrmTopbar({
+  title,
+  subtitle,
+  searchPlaceholder,
+  searchValue,
+  onSearchChange,
+  onSearchSubmit,
+  actions,
+  onMenu,
+  hideContext,
+}: CrmTopbarProps) {
   const { isDark, toggleTheme } = useTheme()
   const t = useT()
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t('common.search')
 
   return (
-    <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 md:gap-4 md:px-8">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[var(--dash-border)] bg-[var(--dash-bg)] px-4 md:gap-4 md:px-10">
       <button
         type="button"
         onClick={onMenu}
-        aria-label="Abrir menú"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80 lg:hidden"
+        aria-label={t('top.openMenu')}
+        title={t('top.openMenu')}
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-transparent bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80 lg:hidden"
       >
         <Icon name="menu" />
       </button>
-      <div className="flex min-w-0 flex-col">
-        <h1 className="truncate text-lg font-extrabold text-[var(--dash-text)] md:text-xl">{title}</h1>
-        <p className="truncate text-xs font-medium text-[var(--dash-muted)]">{subtitle}</p>
-      </div>
+      {!hideContext && (
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h1 className="truncate text-base font-bold text-[var(--dash-text)] md:text-[17px]">
+            {title}
+          </h1>
+          <p className="truncate text-[13px] font-medium text-[var(--dash-muted)]">
+            {subtitle}
+          </p>
+        </div>
+      )}
       <div className="flex-1" />
-      <label className="hidden h-10 w-[320px] items-center gap-2.5 rounded-xl bg-[var(--dash-soft)] px-3 lg:flex">
+      <label className="input input-sm dash-search hidden h-9 w-[220px] items-center gap-2 rounded-[8px] px-3 lg:flex">
         <Icon name="search" size={16} className="text-[var(--dash-muted)]" />
         <input
-          placeholder={searchPlaceholder}
+          placeholder={resolvedSearchPlaceholder}
           value={searchValue ?? ''}
           onChange={(e) => onSearchChange?.(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && onSearchSubmit) { e.preventDefault(); onSearchSubmit(searchValue ?? '') } }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && onSearchSubmit) {
+              e.preventDefault()
+              onSearchSubmit(searchValue ?? '')
+            }
+          }}
           readOnly={!onSearchChange}
           className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] font-medium text-[var(--dash-text)] outline-none placeholder:text-[var(--dash-muted)] focus:border-0 focus:outline-none focus:ring-0"
         />
@@ -52,10 +76,13 @@ export function CrmTopbar({ title, subtitle, searchPlaceholder = 'Buscar…', se
       <button
         type="button"
         onClick={toggleTheme}
-        className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[var(--dash-soft-border)] bg-[var(--dash-soft)] hover:opacity-80"
+        className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-transparent bg-[var(--dash-soft)] hover:opacity-80"
         title={isDark ? t('top.lightMode') : t('top.darkMode')}
       >
-        <Icon name={isDark ? 'sun' : 'moon'} className={isDark ? 'text-[#FBBF24]' : 'text-[var(--dash-text2)]'} />
+        <Icon
+          name={isDark ? 'sun' : 'moon'}
+          className={isDark ? 'text-[#FBBF24]' : 'text-[var(--dash-text2)]'}
+        />
       </button>
       <NotificationsBell />
       {actions}

@@ -2,6 +2,13 @@ from datetime import datetime
 from views.base_view import BaseView
 
 
+def _float_or_none(value):
+    try:
+        return float(value) if value is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
 class TenantView(BaseView):
     id: str
     name: str
@@ -20,6 +27,10 @@ class TenantView(BaseView):
     language: str = "es"
     timezone: str = "America/Montevideo"
     delivery_enabled: bool = False
+    marketplace_enabled: bool = True
+    marketplace_latitude: float | None = None
+    marketplace_longitude: float | None = None
+    business_category: str | None = None
     legal_name: str | None = None
     tax_id: str | None = None
     address: str | None = None
@@ -48,6 +59,10 @@ class TenantView(BaseView):
             language=g("language", "es") or "es",
             timezone=g("timezone", "America/Montevideo") or "America/Montevideo",
             delivery_enabled=bool(g("delivery_enabled", False)),
+            marketplace_enabled=bool(g("marketplace_enabled", True)),
+            marketplace_latitude=_float_or_none(g("marketplace_latitude")),
+            marketplace_longitude=_float_or_none(g("marketplace_longitude")),
+            business_category=g("business_category"),
             legal_name=g("legal_name"),
             tax_id=g("tax_id"),
             address=g("address"),

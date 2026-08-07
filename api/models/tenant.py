@@ -1,4 +1,4 @@
-from peewee import BooleanField, CharField, DateTimeField, TextField
+from peewee import BooleanField, CharField, DateTimeField, IntegerField, TextField
 from models.base import BaseModel
 
 
@@ -29,9 +29,14 @@ class Tenant(BaseModel):
     billing_update_payment_url = TextField(null=True)
     billing_card_brand = CharField(max_length=32, null=True)
     billing_card_last_four = CharField(max_length=8, null=True)
+    billing_checkout_id = CharField(max_length=64, null=True)
+    billing_order_id = CharField(max_length=64, null=True)
+    billing_sync_started_at = DateTimeField(null=True)
+    billing_sync_next_at = DateTimeField(null=True)
+    billing_sync_attempts = IntegerField(default=0)
 
     # Brand & appearance (shown on the public price-list page)
-    logo_url = TextField(null=True)        # data URL or hosted URL
+    logo_url = TextField(null=True)  # data URL or hosted URL
     brand_color = CharField(max_length=9, null=True)  # hex, e.g. #7C3AED
     description = TextField(null=True)
     # Visual template for the public price list: store | classic | nordic | fine | modern | photo | cards | catalog
@@ -49,9 +54,16 @@ class Tenant(BaseModel):
     # Whether the business offers home delivery; gates the cart's delivery option.
     delivery_enabled = BooleanField(default=False)
 
+    # New businesses are visible in the marketplace by default. Coordinates only
+    # affect distance ordering and are never exposed to other visitors.
+    marketplace_enabled = BooleanField(default=True)
+    marketplace_latitude = CharField(max_length=32, null=True)
+    marketplace_longitude = CharField(max_length=32, null=True)
+    business_category = CharField(max_length=32, null=True)
+
     # Tax / legal data
     legal_name = CharField(max_length=255, null=True)
-    tax_id = CharField(max_length=32, null=True)   # RUT / CUIT / etc.
+    tax_id = CharField(max_length=32, null=True)  # RUT / CUIT / etc.
     address = TextField(null=True)
 
     class Meta:
