@@ -14,6 +14,8 @@ interface PublicList {
   name: string
   slug: string | null
   kind?: 'product' | 'service'
+  /** The shop's main list — whose look stands in when no single list is shown. */
+  showOnIndex?: boolean
   // Per-list appearance overrides; null falls back to the tenant's defaults.
   design?: ListDesign | null
   heroColor?: string | null
@@ -33,6 +35,10 @@ const BASE = {
   bg: '#FAFAF7', ink: '#0F0D1A', body: '#44424E', muted: '#84818E',
   accent: '#7C3AED', accent2: '#6D28D9', line: '#E5E2DC',
 }
+
+// Only for the "no such shop" dead end, where there is no tenant to brand with.
+// The white mark is the one that sits on the purple half.
+const MIPRECIO_LOGO_WHITE = '/miprecio-logo-white-pencil.webp'
 
 export function MenuScreen() {
   const { subdomain, listId } = useParams<{ subdomain: string; listId?: string }>()
@@ -171,23 +177,77 @@ export function MenuScreen() {
   }, [cart, allItems, cartTotal, customer])
 
   if (isLoading) return <div className="flex min-h-screen items-center justify-center" style={{ background: C.bg }}><LoadingSpinner size="lg" /></div>
+  // No such business. This is the only dead end where we know nothing about a
+  // shop, so it is the only one that may talk about MiPrecio.
+  // `error` is the API's raw `detail` — English, written for us, not for someone
+  // who just scanned a QR. It belongs in the console, never on screen.
   if (error || !tenant) {
+    if (error) console.warn('[public] %s: %s', subdomain, error)
+    // No shop to borrow an identity from, so this one is ours. It also doubles
+    // as a pitch: whoever got here already scans QR menus, which is the whole
+    // product. Sized to one viewport — a dead end nobody meant to open should
+    // never ask to be scrolled.
+    // Stacked on phones, side by side from md. The rows are 2fr/3fr rather than
+    // even: the message needs a couple of lines, the pitch needs room for a CTA,
+    // and on a 320px-tall half the CTA is what gets cut.
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 font-sans" style={{ background: C.bg }}>
-        <p className="text-sm font-medium" style={{ color: C.muted }}>{error || t('pub.notFound')}</p>
-        <Link to="/" className="text-sm font-bold hover:underline" style={{ color: C.accent }}>{t('pub.backHome')}</Link>
+      <div className="grid h-[100dvh] grid-rows-[2fr_3fr] overflow-hidden font-sans md:grid-cols-2 md:grid-rows-1">
+        {/* Why they are here. Its own half, so the pitch can never bury it. */}
+        {/* `overflow-y-auto`, not `hidden`: the page never scrolls, but on a very
+            short phone a half scrolls itself rather than clipping its CTA. */}
+        <div className="flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-6 text-center md:gap-6 md:px-8" style={{ background: BASE.bg }}>
+          {/* Sized to break in two. `text-balance` keeps the split even here and
+              degrades sanely for the longer en/pt strings. */}
+          <h1
+            className="text-[26px] font-extrabold leading-[1.1] sm:text-[30px] md:text-[46px] lg:text-[54px]"
+            style={{ color: BASE.ink, maxWidth: '16ch', textWrap: 'balance' }}
+          >
+            {t('pub.shopNotFound')}
+          </h1>
+          <p className="max-w-sm text-[13px] font-medium leading-relaxed sm:text-sm md:text-lg" style={{ color: BASE.muted }}>
+            {t('pub.shopNotFoundHint')}
+          </p>
+        </div>
+
+        {/* Ours to use: whoever reached this already scans QR menus. */}
+        <div
+          className="flex flex-col items-center justify-center gap-4 overflow-y-auto px-6 py-6 text-center text-white sm:gap-6 md:gap-11 md:px-8"
+          style={{ background: `linear-gradient(150deg, ${BASE.accent2} 0%, ${BASE.accent} 55%, ${lighten(BASE.accent, 0.3)} 100%)` }}
+        >
+          <img src={MIPRECIO_LOGO_WHITE} alt="MiPrecio" className="h-9 w-auto sm:h-12 md:h-20 lg:h-24" />
+
+          <div className="flex max-w-lg flex-col gap-2 md:gap-3">
+            <h2 className="text-[20px] font-extrabold leading-[1.15] sm:text-[24px] md:text-[36px] lg:text-[42px]">{t('pub.lpHeadline')}</h2>
+            <p className="text-xs font-medium leading-relaxed text-white/80 sm:text-[13px] md:text-base lg:text-lg">{t('pub.lpSub')}</p>
+          </div>
+
+          <ul className="flex flex-col gap-1.5 text-left sm:gap-2 md:gap-3">
+            {['pub.lpFeat1', 'pub.lpFeat2', 'pub.lpFeat3'].map((key) => (
+              <li key={key} className="flex items-center gap-2.5 text-xs font-semibold text-white/90 sm:text-[13px] md:gap-3 md:text-base lg:text-[17px]">
+                <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-white/20 sm:h-5 sm:w-5 md:h-7 md:w-7">
+                  <SIco name="check" size={12} />
+                </span>
+                {t(key)}
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            to="/"
+            className="flex h-11 w-full max-w-xs items-center justify-center rounded-full bg-white text-[13px] font-bold shadow-[0_14px_30px_-12px_rgba(0,0,0,0.5)] sm:h-12 sm:text-sm md:h-14 md:max-w-sm md:text-base lg:h-16 lg:text-lg"
+            style={{ color: BASE.accent }}
+          >
+            {t('pub.lpCta')}
+          </Link>
+        </div>
       </div>
     )
   }
-  // A slug was requested but matches no published list (invalid, renamed, or
-  // unpublished): show "list not found" instead of the empty storefront shell.
+  // The slug matches no list we serve: renamed, unpublished, or held back by the
+  // plan. The shop exists, so send its customer to the rest of its catalogue —
+  // never to MiPrecio's landing, which sells them nothing they came for.
   if (listId && displayLists.length === 0) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 font-sans" style={{ background: C.bg }}>
-        <p className="text-sm font-medium" style={{ color: C.muted }}>{t('pub.notFound')}</p>
-        <Link to="/" className="text-sm font-bold hover:underline" style={{ color: C.accent }}>{t('pub.backHome')}</Link>
-      </div>
-    )
+    return <ListNotFound tenant={tenant} lists={lists} t={t} accent={accent} brandGradient={brandGradient} />
   }
 
   // Appearance falls back field by field: this list's own override → the
@@ -280,6 +340,98 @@ export function MenuScreen() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Dead end on a shop's own link or QR: the list is gone, the shop is not.
+ *
+ *  Reached by a renamed or unpublished list, and — since plan limits apply to
+ *  what is already published — by every list the current plan no longer serves.
+ *  The reader is the shop's customer standing at a table with a phone, so this
+ *  wears the shop's own storefront skin and offers the shop's other lists. When
+ *  there are none (an expired subscription takes the whole storefront down) it
+ *  says so plainly rather than advertising MiPrecio to someone who came for a
+ *  menu.
+ *
+ *  No single list is being shown, so the look comes from the shop's main list
+ *  (`showOnIndex`) and falls back field by field to the business defaults — the
+ *  same cascade the storefront uses. A shop on the dark "tech" or "fine"
+ *  template gets a dark dead end, not a white card that reads as another site. */
+function ListNotFound({ tenant, lists, t, accent, brandGradient }: {
+  tenant: Tenant
+  lists: PublicList[]
+  t: ReturnType<typeof getT>
+  accent: string
+  brandGradient: string
+}) {
+  const onBrand = readableOn(accent)
+  const main = lists.find((l) => l.showOnIndex) ?? lists[0] ?? null
+  const design: ListDesign = main?.design ?? tenant.listDesign ?? 'store'
+  const skin = cartThemeFor(design)
+  const heroColor = main?.heroColor || tenant.listHeroColor || accent
+  const bgUrl = main?.bgUrl ?? tenant.listBgUrl
+  const bgOverlay = main?.bgUrl ? !!main.bgOverlay : !!tenant.listBgOverlay
+
+  return (
+    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 py-12 font-sans" style={{ background: skin.bg }}>
+      {bgUrl && (
+        <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: `url(${bgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          {bgOverlay && <div className="absolute inset-0" style={{ background: accent, opacity: 0.5, mixBlendMode: 'multiply' }} />}
+        </div>
+      )}
+
+      <div className="relative flex flex-col items-center gap-3 text-center">
+        {tenant.logoUrl
+          ? <img src={tenant.logoUrl} alt={tenant.name} className="h-16 w-16 rounded-2xl object-cover" />
+          : (
+            <span className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-extrabold" style={{ background: brandGradient, color: onBrand }}>
+              {tenant.name.slice(0, 2).toUpperCase()}
+            </span>
+          )}
+        <h1 className="text-xl font-extrabold" style={{ color: skin.ink }}>{tenant.name}</h1>
+      </div>
+
+      <div className="relative flex w-full max-w-sm flex-col gap-4">
+        <p className="text-center text-sm font-medium" style={{ color: skin.body }}>
+          {lists.length > 0 ? t('pub.listGone') : t('pub.catalogUnavailable')}
+        </p>
+
+        {lists.length > 0 ? (
+          <>
+            <p className="text-center text-xs font-bold uppercase tracking-wide" style={{ color: skin.muted }}>{t('pub.listGoneOthers')}</p>
+            <div className="flex flex-col gap-2">
+              {lists.map((l) => {
+                const count = l.version?.items?.length ?? 0
+                return (
+                  <Link
+                    key={l.id}
+                    to={`/p/${tenant.subdomain}/${l.slug || l.id}`}
+                    className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 transition-transform active:scale-[0.99]"
+                    style={{ background: skin.surface, border: `1px solid ${skin.line}`, color: skin.ink }}
+                  >
+                    <span className="truncate text-sm font-bold">{l.name}</span>
+                    <span className="shrink-0 text-xs font-semibold" style={{ color: skin.muted }}>
+                      {count} {t(count === 1 ? 'pub.product' : 'pub.products')}
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+            <Link
+              to={`/p/${tenant.subdomain}`}
+              className="mt-1 flex h-12 items-center justify-center rounded-full text-sm font-bold"
+              style={{ background: heroColor, color: readableOn(heroColor) }}
+            >
+              {t('pub.seeCatalog')}
+            </Link>
+          </>
+        ) : (
+          /* Nothing of this shop is being served — most often an expired
+             subscription. Say so and stop: there is nowhere useful to send them. */
+          <p className="text-center text-sm font-medium" style={{ color: skin.muted }}>{t('pub.catalogUnavailableHint')}</p>
+        )}
+      </div>
     </div>
   )
 }
