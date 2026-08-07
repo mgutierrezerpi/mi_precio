@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { trackEvent } from '../../lib/analytics'
 import { useAppSelector } from '../../store/hooks'
 import { selectUser } from '../../store/slices/authSlice'
 import api from '../../services/api'
@@ -37,6 +38,7 @@ export function SupportScreen() {
     setSending(false)
     if (res.error) setError(res.error)
     else {
+      trackEvent('Submitted Support Form', { priority })
       setTicketId(res.data?.id ?? '')
       setSubject('')
       setDescription('')

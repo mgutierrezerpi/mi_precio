@@ -6,6 +6,10 @@ kill_timeout = "30s"
 [build]
   dockerfile = "Dockerfile.fly"
 
+  # Browser ingestion keys are public and embedded by Vite at image build time.
+  [build.args]
+    VITE_AMPLITUDE_API_KEY = "bb1466eed32f3121fa400c3cc1a110c9"
+
 [env]
   APP_NAME = "Mi Precio API"
   DEBUG = "false"

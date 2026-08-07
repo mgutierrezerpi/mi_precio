@@ -19,6 +19,7 @@ import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { tone, gradient, type Tone } from './crm/theme'
 import { catTone, catIcon, normalizeCategory } from './crm/productFormat'
+import { trackEvent } from '../../lib/analytics'
 
 const COLOR_OPTIONS: Tone[] = ['violet', 'sky', 'blue', 'green', 'amber', 'rose', 'purple', 'slate']
 
@@ -264,7 +265,10 @@ function CategoryModal({ category, tenantId, onClose }: { category: Category | n
       : tenantId
         ? await dispatch(createCategory({ tenantId, data }))
         : null
-    if (result && (createCategory.fulfilled.match(result) || updateCategory.fulfilled.match(result))) onClose()
+    if (result && (createCategory.fulfilled.match(result) || updateCategory.fulfilled.match(result))) {
+      if (createCategory.fulfilled.match(result)) trackEvent('Created Category')
+      onClose()
+    }
   }
 
   return (

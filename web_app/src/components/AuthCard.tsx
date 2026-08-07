@@ -14,6 +14,7 @@ import {
   selectNeedsPlan,
   tenantNeedsPlan,
 } from '../store/slices/authSlice'
+import { trackEvent } from '../lib/analytics'
 
 /* ── Inline icons (lucide-style) ──────────────────────────────── */
 type IconProps = { className?: string; size?: number }
@@ -115,7 +116,9 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
     if (inviteEmail && !codeSent) {
       if (inviteCode && !isAuthenticated && !inviteAttempted.current) {
         inviteAttempted.current = true
-        void dispatch(verifyCode({ email: inviteEmail, code: inviteCode }))
+        void dispatch(verifyCode({ email: inviteEmail, code: inviteCode })).then((result) => {
+          if (verifyCode.fulfilled.match(result)) trackEvent('Completed Login')
+        })
       }
     }
   }, [codeSent, dispatch, inviteEmail, isAuthenticated, searchParams])
@@ -131,7 +134,7 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     dispatch(clearAuthError())
-    dispatch(sendCode({ email }))
+    void dispatch(sendCode({ email }))
   }
 
   const handleVerifyCode = async (e: React.FormEvent) => {
@@ -140,6 +143,7 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
 
     const result = await dispatch(verifyCode({ email: pendingEmail!, code }))
     if (verifyCode.fulfilled.match(result)) {
+      trackEvent('Completed Login')
       // A brand-new signup has no plan yet: send it to pick one.
       navigate(tenantNeedsPlan(result.payload.tenant) ? '/planes' : '/admin')
     }

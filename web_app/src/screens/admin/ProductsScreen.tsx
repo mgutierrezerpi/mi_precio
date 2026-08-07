@@ -20,6 +20,7 @@ import { Icon, type IconName } from './crm/ui'
 import { tone, gradient } from './crm/theme'
 import { catTone, catIcon, formatPrice, timeAgo, displayCategory, normalizeCategory } from './crm/productFormat'
 import api from '../../services/api'
+import { trackEvent } from '../../lib/analytics'
 
 const PAGE_SIZE = 8
 type Status = 'all' | 'available' | 'unavailable' | 'nophoto' | 'recent'
@@ -702,7 +703,14 @@ export function ProductModal({ product, tenantId, lists, onClose, onCreated }: {
         ? await dispatch(createProduct({ tenantId, data }))
         : null
     if (result && (createProduct.fulfilled.match(result) || updateProduct.fulfilled.match(result))) {
-      if (createProduct.fulfilled.match(result)) onCreated?.(result.payload)
+      if (createProduct.fulfilled.match(result)) {
+        trackEvent('Created Product', {
+          has_image: Boolean(imageUrl),
+          has_category: Boolean(data.category),
+          is_available: available,
+        })
+        onCreated?.(result.payload)
+      }
       onClose()
     }
     else if (result && (createProduct.rejected.match(result) || updateProduct.rejected.match(result))) {

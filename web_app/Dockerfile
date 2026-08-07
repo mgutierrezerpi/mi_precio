@@ -7,7 +7,9 @@ RUN corepack enable && yarn install --frozen-lockfile
 
 COPY . .
 ARG VITE_API_URL=/api/v1
-ENV VITE_API_URL=$VITE_API_URL
+ARG VITE_AMPLITUDE_API_KEY
+ENV VITE_API_URL=$VITE_API_URL \
+    VITE_AMPLITUDE_API_KEY=$VITE_AMPLITUDE_API_KEY
 RUN yarn build
 RUN yarn test:prod-api-url
 

@@ -19,6 +19,7 @@ import {
 import { toast } from '../../components/Toast'
 import api from '../../services/api'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
+import { trackEvent } from '../../lib/analytics'
 
 interface ExtractedItem {
   name: string
@@ -138,7 +139,7 @@ export function ListEditScreen() {
     const versionId = currentVersion?.id
     if (!versionId || !newItem.name.trim() || !newItem.price) return
 
-    await dispatch(createItem({
+    const result = await dispatch(createItem({
       versionId,
       data: {
         name: newItem.name.trim(),
@@ -146,6 +147,12 @@ export function ListEditScreen() {
         description: newItem.description.trim() || undefined,
       }
     }))
+    if (createItem.fulfilled.match(result)) {
+      trackEvent('Added List Item', {
+        source: 'manual',
+        has_description: Boolean(newItem.description.trim()),
+      })
+    }
     setNewItem({ name: '', price: '', description: '' })
     setShowAddItem(false)
     toast.success('Producto agregado')
@@ -318,8 +325,9 @@ export function ListEditScreen() {
 
     // Add deduplicated items
     const itemCount = itemsByName.size
+    let createdItemCount = 0
     for (const item of itemsByName.values()) {
-      await dispatch(createItem({
+      const result = await dispatch(createItem({
         versionId,
         data: {
           name: item.name,
@@ -327,6 +335,13 @@ export function ListEditScreen() {
           description: item.description || undefined,
         }
       }))
+      if (createItem.fulfilled.match(result)) createdItemCount += 1
+    }
+    if (createdItemCount > 0) {
+      trackEvent('Added List Items', {
+        source: 'import',
+        item_count: createdItemCount,
+      })
     }
 
     // Reset import state
