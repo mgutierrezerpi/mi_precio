@@ -40,6 +40,7 @@ export type VisitStats = VisitBucket & { qr: VisitBucket }
 
 export type ReportData = {
   days: number
+  listId: string | null
   kpis: { visits: number; qrScans: number; customers: number; revenue: string }
   series: { date: string; link: number; qr: number }[]
   channels: { link: number; qr: number }
@@ -513,9 +514,13 @@ class ApiService {
 
   async getReports(
     tenantId: string,
-    days = 30
+    days = 30,
+    listId?: string
   ): Promise<ApiResponse<ReportData>> {
-    return this.request(`/tenants/${tenantId}/stats/reports?days=${days}`)
+    const listFilter = listId ? `&list_id=${encodeURIComponent(listId)}` : ''
+    return this.request(
+      `/tenants/${tenantId}/stats/reports?days=${days}${listFilter}`
+    )
   }
 
   // Notifications (in-app)
@@ -824,9 +829,11 @@ class ApiService {
 
   // Public endpoints
   async getPublicMenu(
-    subdomain: string
+    subdomain: string,
+    listId?: string
   ): Promise<ApiResponse<{ tenant: Tenant; lists: PriceList[] }>> {
-    return this.request(`/public/${subdomain}`)
+    const listFilter = listId ? `?list=${encodeURIComponent(listId)}` : ''
+    return this.request(`/public/${subdomain}${listFilter}`)
   }
 
   async recordPublicView(

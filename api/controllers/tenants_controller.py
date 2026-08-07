@@ -66,9 +66,12 @@ def update_plan_endpoint(
 
 @router.get("/{tenant_id}/stats/reports", dependencies=plan_gated)
 def reports_endpoint(
-    tenant_id: str, days: int = 30, current_user: dict = Depends(get_current_user)
+    tenant_id: str,
+    days: int = 30,
+    list_id: str | None = None,
+    current_user: dict = Depends(get_current_user),
 ):
-    return analytics.reports(tenant_id, days)
+    return analytics.reports(tenant_id, days, list_id)
 
 
 @router.get("/{tenant_id}/activity", dependencies=plan_gated)
