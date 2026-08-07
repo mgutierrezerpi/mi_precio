@@ -228,17 +228,23 @@ a {
    ========================================== */
 .dash {
   --dash-radius: 10px;
-  --dash-bg: #f5f3ff;
+  --dash-bg: #f1eef7;
   --dash-surface: #ffffff;
-  --dash-border: #e2e8f0;
-  --dash-divider: #f1f5f9;
-  --dash-soft: #f5f3ff;
-  --dash-soft-border: transparent;
-  --dash-table-head: #faf5ff;
-  --dash-text: #0f172a;
-  --dash-text2: #475569;
-  --dash-muted: #94a3b8;
-  --dash-link: #6d28d9;
+  --dash-border: #dcd6e7;
+  --dash-divider: #e7e2ee;
+  --dash-soft: #e9e2fa;
+  --dash-soft-border: #d7cbed;
+  --dash-table-head: #f6f2fb;
+  --dash-text: #211b2d;
+  --dash-text2: #5f586e;
+  --dash-muted: #857d98;
+  --dash-link: #5b21b6;
+  --dash-sidebar: #faf9fd;
+  --dash-sidebar-active: #e3d9fa;
+  --dash-sidebar-active-text: #5b21b6;
+  --dash-sidebar-badge: rgba(91, 33, 182, 0.14);
+  --dash-chart-track: #ded7eb;
+  --dash-chart-fill: #7c3aed;
 
   --tone-violet-bg: #ede9fe;
   --tone-violet-fg: #7c3aed;
@@ -326,18 +332,62 @@ a {
 
 .dash .input.dash-search {
   border-color: var(--dash-border);
-  background: #11111a;
+  background: var(--dash-surface);
   color: var(--dash-text);
   box-shadow: none;
 }
 
 .dash .card.dash-card {
   border: 1px solid var(--dash-border);
-  background: #17102d;
+  background: var(--dash-surface);
   box-shadow: none;
 }
 
 .dash .card.dash-card.dash-featured {
+  background: linear-gradient(135deg, var(--dash-soft) 0%, var(--dash-surface) 100%);
+}
+
+/* A few CRM pages still use the original dark prototype utility colors. Keep
+   those classes compatible with both palettes while the screens converge on
+   the shared tokens. */
+.dash [class~='text-[#F8F7FF]'] {
+  color: var(--dash-text);
+}
+
+.dash [class~='text-[#9694A6]'],
+.dash [class~='text-[#8E8B9C]'] {
+  color: var(--dash-muted);
+}
+
+.dash [class~='text-[#B7B3C5]'] {
+  color: var(--dash-text2);
+}
+
+.dash [class~='text-[#C4B5FD]'] {
+  color: var(--dash-link);
+}
+
+.dash [class~='bg-[#1C1730]'] {
+  background-color: var(--dash-soft);
+}
+
+.dash [class~='bg-[#1C1B2A]'] {
+  background-color: var(--dash-chart-track);
+}
+
+.dash [class~='bg-[#6C43E8]'] {
+  background-color: var(--dash-chart-fill);
+}
+
+[data-theme='dark'] .dash .input.dash-search {
+  background: #11111a;
+}
+
+[data-theme='dark'] .dash .card.dash-card {
+  background: #17102d;
+}
+
+[data-theme='dark'] .dash .card.dash-card.dash-featured {
   background: linear-gradient(135deg, #2a1c66 0%, #17102d 100%);
 }
 
@@ -353,6 +403,12 @@ a {
   --dash-text2: #cbd5e1;
   --dash-muted: #9281b7;
   --dash-link: #d5b8ff;
+  --dash-sidebar: #100922;
+  --dash-sidebar-active: #2a1c66;
+  --dash-sidebar-active-text: #ffffff;
+  --dash-sidebar-badge: rgba(255, 255, 255, 0.2);
+  --dash-chart-track: #1c1b2a;
+  --dash-chart-fill: #6c43e8;
 
   --tone-violet-bg: #3b1f77;
   --tone-violet-fg: #c4b5fd;
