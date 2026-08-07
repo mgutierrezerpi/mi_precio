@@ -189,7 +189,7 @@ function SidebarHeader({
                 : '/miprecio-logo-pencil.webp'
             }
             alt="MiPrecio"
-            className="h-8 w-auto max-w-[150px] object-contain object-left"
+            className="h-[34px] w-auto max-w-[155px] object-contain object-left"
           />
           <span
             aria-hidden
@@ -226,7 +226,7 @@ function PublicListAction({
   t: ReturnType<typeof useT>
 }) {
   const label = linkCopied ? t('side.linkCopied') : t('side.copyPublicLink')
-  const className = `btn btn-sm mt-1 flex h-9 items-center rounded-lg bg-[var(--dash-soft)] text-xs font-bold text-[var(--dash-link)] hover:opacity-90 ${collapsed ? 'justify-center px-0' : 'justify-center gap-2'}`
+  const className = `btn btn-sm mt-2 flex h-9 items-center rounded-lg bg-[var(--dash-soft)] text-xs font-bold text-[var(--dash-link)] hover:opacity-90 ${collapsed ? 'justify-center px-0' : 'justify-center gap-2'}`
   if (hasMainList)
     return (
       <button
