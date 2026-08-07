@@ -43,18 +43,51 @@ def _with_db(task):
 def run_billing_maintenance() -> dict[str, int]:
     """Expire ended subscriptions and prune stale auth codes."""
 
-    expired_subscriptions = _with_db(billing.expire_ended_subscriptions)
+    expired_ids = _with_db(billing.expire_ended_subscriptions)
     pruned_codes = _with_db(auth.prune_expired_codes)
 
-    if expired_subscriptions:
-        logger.info("Expired %s ended billing subscriptions", expired_subscriptions)
+    for tenant_id in expired_ids:
+        notify_subscription_expired(tenant_id)
+
+    if expired_ids:
+        logger.info("Expired %s ended billing subscriptions", len(expired_ids))
     if pruned_codes:
         logger.info("Pruned %s expired auth codes", pruned_codes)
 
     return {
-        "expired_subscriptions": expired_subscriptions,
+        "expired_subscriptions": len(expired_ids),
         "pruned_codes": pruned_codes,
     }
+
+
+@huey.task(retries=2, retry_delay=30)
+def notify_subscription_expired(tenant_id: str) -> bool:
+    """Tell the owner their subscription lapsed and the public page is offline.
+
+    Expiring is the one downgrade the owner did not ask for, and it takes the
+    whole storefront down. Finding out from a customer would be the worst way.
+    """
+
+    target = _with_db(lambda: billing.expiry_notice_target(tenant_id))
+    if not target:
+        return False
+    email, tenant_name = target
+
+    plans_url = f"{settings.public_app_url.rstrip('/')}/planes"
+    body = (
+        f"Tu suscripción de {tenant_name} en Mi Precio venció.\n\n"
+        "Tu lista de precios dejó de estar online: quien entre al link o escanee "
+        "el QR no va a ver nada.\n\n"
+        "Tus productos, listas y clientes están intactos. Elegí un plan y todo "
+        "vuelve a publicarse tal como estaba, sin que tengas que rehacer nada:\n"
+        f"{plans_url}\n"
+    )
+    mailer.send(
+        to=email,
+        subject=f"Tu lista de {tenant_name} está fuera de línea",
+        body=body,
+    )
+    return True
 
 
 @huey.task(retries=2, retry_delay=30)

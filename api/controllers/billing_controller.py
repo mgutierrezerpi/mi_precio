@@ -4,6 +4,7 @@ from config import settings
 from controllers.deps import require_owner
 from controllers.input_types import CreateCheckout, ManualSubscriptionSync, SubscriptionAction
 from lib.ctx import activity, billing_context as billing
+from tasks import notify_subscription_expired
 from views import TenantView
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -105,10 +106,16 @@ async def lemonsqueezy_webhook_endpoint(request: Request):
 
     if event_name and event_name.startswith("subscription_"):
         custom = payload.get("meta", {}).get("custom_data") or attrs.get("custom_data") or {}
-        tenant = billing.sync_subscription_from_attributes(attrs, tenant_id=custom.get("tenant_id"))
+        tenant_id = custom.get("tenant_id")
+        was_expired = billing.is_expired(tenant_id) if tenant_id else False
+        tenant = billing.sync_subscription_from_attributes(attrs, tenant_id=tenant_id)
         if tenant:
             summary = billing.activity_summary(event_name, plan=tenant.plan)
             activity.record(tenant.id, "billing.webhook", summary,
                             meta={"event": event_name or "", "plan": tenant.plan, "status": tenant.billing_status or ""})
+            # Expiring takes the public page offline. Warn the owner once, on the
+            # transition — a repeated `expired` webhook must not re-send.
+            if tenant.billing_status == "expired" and not was_expired:
+                notify_subscription_expired(tenant.id)
 
     return {"ok": True}
