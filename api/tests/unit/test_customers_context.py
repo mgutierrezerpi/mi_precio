@@ -6,7 +6,7 @@ from decimal import Decimal
 import pytest
 from peewee import SqliteDatabase
 
-from models import Tenant, Customer, Order, OrderItem
+from models import Tenant, Customer, Order, OrderItem, PriceList
 from lib.ctx import customers
 
 customers_db = SqliteDatabase(":memory:", pragmas={"foreign_keys": 1})
@@ -14,7 +14,7 @@ customers_db = SqliteDatabase(":memory:", pragmas={"foreign_keys": 1})
 
 @pytest.fixture(scope="function")
 def db():
-    models = [Tenant, Customer, Order, OrderItem]
+    models = [Tenant, Customer, PriceList, Order, OrderItem]
     customers_db.bind(models)
     customers_db.connect()
     customers_db.create_tables(models)
