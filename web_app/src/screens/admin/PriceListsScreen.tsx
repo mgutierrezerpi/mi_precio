@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import {
@@ -74,6 +74,7 @@ export function PriceListsScreen() {
   const products = useAppSelector(selectProducts)
 
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<Tab>('all')
   const [modal, setModal] = useState<{ open: boolean; list: PriceList | null }>(
@@ -282,6 +283,7 @@ export function PriceListsScreen() {
                 onOpen={() =>
                   window.open(publicUrl(tenant?.subdomain, l), '_blank')
                 }
+                onReports={() => navigate(`/admin/reportes?list=${l.id}`)}
                 onCreateVariant={() => setVariantParent(l)}
               />
               {lists
@@ -321,6 +323,7 @@ export function PriceListsScreen() {
                     onOpen={() =>
                       window.open(publicUrl(tenant?.subdomain, variant), '_blank')
                     }
+                    onReports={() => navigate(`/admin/reportes?list=${variant.id}`)}
                   />
                 ))}
               </Fragment>
@@ -374,6 +377,7 @@ function ListRow({
   onCopy,
   onQr,
   onOpen,
+  onReports,
   onCreateVariant,
   variant = false,
   variantDetail,
@@ -388,6 +392,7 @@ function ListRow({
   onCopy: () => void
   onQr: () => void
   onOpen: () => void
+  onReports: () => void
   onCreateVariant?: () => void
   variant?: boolean
   variantDetail?: string
@@ -461,7 +466,7 @@ function ListRow({
       </span>
 
       <div className="flex w-[144px] shrink-0 items-center justify-end gap-1.5">
-        {!variant && list.published && (
+        {list.published && (
           <button
             type="button"
             onClick={copy}
@@ -472,27 +477,27 @@ function ListRow({
             <Icon name={copied ? 'circle-check' : 'link-2'} size={15} />
           </button>
         )}
-        {!variant && (
-        <button
-          type="button"
-          onClick={onQr}
-          title={t('pl.qrCode')}
-          aria-label={t('pl.qrCode')}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
-        >
-          <Icon name="qr-code" size={15} />
-        </button>
-        )}
-        {!variant && (
-        <button
-          type="button"
-          onClick={onOpen}
-          title={t('pl.openPublic')}
-          aria-label={t('pl.openPublic')}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
-        >
-          <Icon name="external-link" size={15} />
-        </button>
+        {list.published && (
+          <>
+            <button
+              type="button"
+              onClick={onQr}
+              title={t('pl.qrCode')}
+              aria-label={t('pl.qrCode')}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
+            >
+              <Icon name="qr-code" size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={onOpen}
+              title={t('pl.openPublic')}
+              aria-label={t('pl.openPublic')}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
+            >
+              <Icon name="external-link" size={15} />
+            </button>
+          </>
         )}
         {canEdit && (
           <RowMenu
@@ -503,6 +508,7 @@ function ListRow({
             onDelete={onDelete}
             onCreateVariant={onCreateVariant}
             isVariant={variant}
+            onReports={onReports}
           />
         )}
       </div>
@@ -518,6 +524,7 @@ function RowMenu({
   onDelete,
   onCreateVariant,
   isVariant = false,
+  onReports,
 }: {
   list: PriceList
   onEdit: () => void
@@ -526,6 +533,7 @@ function RowMenu({
   onDelete: () => void
   onCreateVariant?: () => void
   isVariant?: boolean
+  onReports: () => void
 }) {
   const t = useT()
   const [open, setOpen] = useState(false)
@@ -620,6 +628,11 @@ function RowMenu({
                 onClick={act(onTogglePrincipal)}
               />
             )}
+            <MenuItemBtn
+              icon="bar-chart"
+              label={t('nav.reports')}
+              onClick={act(onReports)}
+            />
             <div className="my-1 h-px bg-[var(--dash-divider)]" />
             <MenuItemBtn
               icon="circle-x"

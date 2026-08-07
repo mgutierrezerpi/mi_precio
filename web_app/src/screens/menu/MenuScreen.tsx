@@ -110,7 +110,7 @@ export function MenuScreen() {
       if (!subdomain) return
       setIsLoading(true)
       setError(null)
-      const response = (await api.getPublicMenu(subdomain)) as {
+      const response = (await api.getPublicMenu(subdomain, listId)) as {
         data?: PublicMenuData
         error?: string
       }
@@ -122,7 +122,7 @@ export function MenuScreen() {
       setIsLoading(false)
     }
     fetchPublicData()
-  }, [subdomain])
+  }, [subdomain, listId])
 
   useEffect(() => {
     // Only count a view once the tenant loaded fine. If a slug is given, it must
@@ -134,7 +134,7 @@ export function MenuScreen() {
     const last = recentViews.get(key)
     if (last && now - last < 3000) return
     recentViews.set(key, now)
-    api.recordPublicView(subdomain, listId, viewSource)
+    api.recordPublicView(subdomain, listId ? displayLists[0]?.id : undefined, viewSource)
   }, [
     subdomain,
     listId,

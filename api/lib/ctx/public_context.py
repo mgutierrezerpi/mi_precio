@@ -5,7 +5,9 @@ from lib.ctx.identity_context import find_tenant_by_subdomain
 from lib.value_objects import PublishedList
 
 
-def get_published_lists(tenant: Tenant) -> list[PublishedList]:
+def get_published_lists(
+    tenant: Tenant, requested_list: str | None = None
+) -> list[PublishedList]:
     """Get published lists with their published versions and items.
 
     Catalog-linked items inherit the current product description and image. A
@@ -13,14 +15,16 @@ def get_published_lists(tenant: Tenant) -> list[PublishedList]:
     """
     product_details = _product_details(tenant.id)
     result = []
-    # Variants are intentionally excluded from the tenant-wide public catalog.
-    # They are shared through their own access flow, not discoverable beside the
-    # default price list.
-    for price_list in PriceList.select().where(
-        (PriceList.tenant == tenant.id)
-        & PriceList.published
-        & PriceList.parent_list.is_null(True)
-    ): 
+    # Variants stay hidden from the tenant-wide catalog. Their own ID/slug URL
+    # may resolve one published variant, which is how special lists are shared.
+    conditions = [(PriceList.tenant == tenant.id) & PriceList.published]
+    if requested_list:
+        conditions.append(
+            (PriceList.id == requested_list) | (PriceList.slug == requested_list)
+        )
+    else:
+        conditions.append(PriceList.parent_list.is_null(True))
+    for price_list in PriceList.select().where(*conditions):
         version = ListVersion.get_or_none(
             (ListVersion.list == price_list.id) & ListVersion.published
         )

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useAppSelector } from '../../store/hooks'
+import { useSearchParams } from 'react-router-dom'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
-import type { Activity } from '../../types'
+import { fetchLists, selectLists } from '../../store/slices/menuSlice'
+import type { Activity, PriceList } from '../../types'
 import api, { type ReportData } from '../../services/api'
 import { formatPrice } from './crm/productFormat'
 import { CrmLayout } from './crm/CrmLayout'
@@ -41,26 +43,43 @@ const channelMeta = (t: TFn): { key: 'link' | 'qr'; name: string; color: string 
 const PRODUCT_TONES: Tone[] = ['violet', 'sky', 'rose', 'amber', 'purple']
 
 export function ReportsScreen() {
+  const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
+  const lists = useAppSelector(selectLists)
+  const [searchParams, setSearchParams] = useSearchParams()
   const { t } = useAnalyticsI18n()
   const [days, setDays] = useState(30)
   const [tab, setTab] = useState<'rendimiento' | 'auditoria'>('rendimiento')
   const [data, setData] = useState<ReportData | null>(null)
+  const selectedList = lists.find((list) => list.id === searchParams.get('list'))
+  const selectedListId = selectedList?.id
+
+  useEffect(() => {
+    if (tenant?.id) dispatch(fetchLists(tenant.id))
+  }, [dispatch, tenant?.id])
 
   useEffect(() => {
     if (!tenant?.id) return
     let cancelled = false
-    api.getReports(tenant.id, days).then((res) => {
+    api.getReports(tenant.id, days, selectedListId).then((res) => {
       if (!cancelled && res.data) setData(res.data)
     })
     return () => {
       cancelled = true
     }
-  }, [tenant?.id, days])
+  }, [tenant?.id, days, selectedListId])
 
   // Derived: we're loading until the data we hold matches the requested range
   // (avoids a synchronous setState in the effect, and shows the spinner on range switch).
-  const loading = data?.days !== days
+  const loading = data?.days !== days || data?.listId !== (selectedListId ?? null)
+
+  const selectList = (listId: string) => {
+    setSearchParams((current) => {
+      if (listId) current.set('list', listId)
+      else current.delete('list')
+      return current
+    })
+  }
 
   const periodVisits = useMemo(
     () => (data?.series ?? []).reduce((acc, d) => acc + d.link + d.qr, 0),
@@ -92,6 +111,9 @@ export function ReportsScreen() {
             loading={loading}
             periodVisits={periodVisits}
             setDays={setDays}
+            lists={lists}
+            selectedListId={selectedListId}
+            onSelectList={selectList}
           />
         ) : (
           <ActivityLog tenantId={tenant?.id} audit />
@@ -157,12 +179,18 @@ function PerformanceReport({
   loading,
   periodVisits,
   setDays,
+  lists,
+  selectedListId,
+  onSelectList,
 }: {
   data: ReportData | null
   days: number
   loading: boolean
   periodVisits: number
   setDays: (days: number) => void
+  lists: PriceList[]
+  selectedListId?: string
+  onSelectList: (listId: string) => void
 }) {
   const { locale, t } = useAnalyticsI18n()
   return (
@@ -174,12 +202,15 @@ function PerformanceReport({
           setDays={setDays}
           t={t}
           locale={locale}
+          lists={lists}
+          selectedListId={selectedListId}
+          onSelectList={onSelectList}
         />
         <VisitChart data={data} loading={loading} t={t} locale={locale} />
         <ChartLegend t={t} />
       </section>
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <TopProducts data={data} loading={loading} />
+      <div className={`grid grid-cols-1 gap-4 ${selectedListId ? '' : 'xl:grid-cols-2'}`}>
+        {!selectedListId && <TopProducts data={data} loading={loading} />}
         <Channels data={data} loading={loading} />
       </div>
     </div>
@@ -192,12 +223,18 @@ function PerformanceHeader({
   setDays,
   t,
   locale,
+  lists,
+  selectedListId,
+  onSelectList,
 }: {
   days: number
   periodVisits: number
   setDays: (days: number) => void
   t: TFn
   locale: string
+  lists: PriceList[]
+  selectedListId?: string
+  onSelectList: (listId: string) => void
 }) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -209,8 +246,22 @@ function PerformanceHeader({
           {t('analytics.opensInLastDays', { count: fmtInt(periodVisits, locale), days })}
         </p>
       </div>
-      <div className="flex w-full items-center gap-1 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] p-1 sm:w-auto sm:shrink-0">
-        {[7, 30, 90].map((rangeDays) => (
+      <div className="flex flex-col gap-2 sm:items-end">
+        <label className="flex w-full items-center gap-2 text-xs font-semibold text-[var(--dash-text2)] sm:w-auto">
+          <span className="shrink-0">{t('analytics.list')}</span>
+          <select
+            value={selectedListId ?? ''}
+            onChange={(event) => onSelectList(event.target.value)}
+            className="min-w-0 flex-1 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2.5 py-1.5 text-xs font-semibold text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)] sm:w-52"
+          >
+            <option value="">{t('analytics.allLists')}</option>
+            {lists.map((list) => (
+              <option key={list.id} value={list.id}>{list.name}</option>
+            ))}
+          </select>
+        </label>
+        <div className="flex w-full items-center gap-1 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] p-1 sm:w-auto sm:shrink-0">
+          {[7, 30, 90].map((rangeDays) => (
           <button
             key={rangeDays}
             type="button"
@@ -219,7 +270,8 @@ function PerformanceHeader({
           >
             {t('analytics.days', { count: rangeDays })}
           </button>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
