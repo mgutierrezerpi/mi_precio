@@ -8,6 +8,9 @@ class PublicListView(BaseView):
     name: str
     slug: str | None = None
     kind: str = "product"
+    # Which list is the shop's main one. The public page uses it to know whose
+    # look to wear when no single list is being shown (e.g. the dead-end screen).
+    show_on_index: bool = False
     # Per-list appearance overrides; null means "inherit the tenant default".
     # The public page merges these over the tenant fields when a single list is
     # being shown.
@@ -25,6 +28,7 @@ class PublicListView(BaseView):
             name=price_list.name,
             slug=price_list.slug,
             kind=getattr(price_list, "kind", "product") or "product",
+            show_on_index=bool(getattr(price_list, "show_on_index", False)),
             design=getattr(price_list, "design", None),
             hero_color=getattr(price_list, "hero_color", None),
             bg_url=getattr(price_list, "bg_url", None),

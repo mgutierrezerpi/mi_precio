@@ -16,7 +16,7 @@ def test_expire_ended_subscriptions_downgrades_paid_tenants(db):
         billing_ends_at=datetime.utcnow() - timedelta(minutes=1),
     )
 
-    assert billing.expire_ended_subscriptions() == 1
+    assert len(billing.expire_ended_subscriptions()) == 1
 
     tenant = Tenant.get_by_id(tenant.id)
     assert tenant.plan == "free"
@@ -33,7 +33,7 @@ def test_expire_ended_subscriptions_keeps_future_subscription(db):
         billing_ends_at=datetime.utcnow() + timedelta(days=1),
     )
 
-    assert billing.expire_ended_subscriptions() == 0
+    assert len(billing.expire_ended_subscriptions()) == 0
 
     tenant = Tenant.get_by_id(tenant.id)
     assert tenant.plan == "plus"

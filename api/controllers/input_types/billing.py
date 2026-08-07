@@ -8,6 +8,12 @@ class CreateCheckout(BaseModel):
     redirect_url: str | None = None
 
 
+class SubscriptionAction(BaseModel):
+    """Cancel / resume the tenant's own subscription."""
+
+    tenant_id: str
+
+
 class ManualSubscriptionSync(BaseModel):
     tenant_id: str
     plan: str

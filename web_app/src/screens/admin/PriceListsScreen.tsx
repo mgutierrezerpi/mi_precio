@@ -44,7 +44,7 @@ import {
 } from '../../lib/qrRender'
 import { trackEvent } from '../../lib/analytics'
 
-type Tab = 'all' | 'active' | 'inactive'
+type Tab = 'all' | 'active' | 'inactive' | 'offline'
 
 Object.assign(DICT, DICT_LISTS)
 
@@ -137,8 +137,9 @@ export function PriceListsScreen() {
   const counts = useMemo(
     () => ({
       all: lists.length,
-      active: lists.filter((l) => l.published).length,
+      active: lists.filter((l) => l.published && l.live).length,
       inactive: lists.filter((l) => !l.published).length,
+      offline: lists.filter((l) => l.published && !l.live).length,
     }),
     [lists]
   )
@@ -150,6 +151,9 @@ export function PriceListsScreen() {
       (tab === 'all' || (tab === 'active' ? l.published : !l.published))
 
     return lists.filter((l) => {
+      if (tab === 'active' && !(l.published && l.live)) return false
+      if (tab === 'inactive' && l.published) return false
+      if (tab === 'offline' && !(l.published && !l.live)) return false
       if (l.parentListId) return false
       const variants = lists.filter((child) => child.parentListId === l.id)
       return matches(l) || variants.some(matches)
@@ -177,6 +181,10 @@ export function PriceListsScreen() {
     { key: 'all', label: t('pl.tab.all'), count: counts.all },
     { key: 'active', label: t('pl.tab.active'), count: counts.active },
     { key: 'inactive', label: t('pl.tab.inactive'), count: counts.inactive },
+    // Only worth a tab when the plan is actually holding lists back.
+    ...(counts.offline
+      ? [{ key: 'offline' as Tab, label: 'Fuera de línea', count: counts.offline }]
+      : []),
   ]
 
   return (
@@ -196,6 +204,33 @@ export function PriceListsScreen() {
           </h1>
           <p className="text-[13px] text-[#9694A6]">{t('lists.subtitle')}</p>
         </section>
+
+        {/* Lists published beyond what the plan serves. Nothing was unpublished,
+            so without this the owner has no way to know they are unreachable. */}
+        {counts.offline > 0 && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--tone-red-fg)]/25 p-4 sm:flex-row sm:items-center sm:justify-between" style={tone('red')}>
+            <div className="flex items-start gap-3">
+              <Icon name="alert-triangle" size={18} className="mt-0.5 shrink-0" />
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm font-bold">
+                  {counts.offline === 1
+                    ? 'Una de tus listas publicadas no se está viendo'
+                    : `${counts.offline} de tus listas publicadas no se están viendo`}
+                </p>
+                <p className="text-xs font-medium opacity-80">
+                  Tu plan permite {counts.active} {counts.active === 1 ? 'lista publicada' : 'listas publicadas'}. Quien abra su link o escanee su QR no va a ver nada. No se borró nada: subí de plan y vuelven solas, tal como estaban.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/admin/settings')}
+              className="h-10 shrink-0 rounded-full bg-[var(--tone-red-fg)] px-4 text-xs font-bold text-[var(--dash-surface)]"
+            >
+              Ver planes
+            </button>
+          </div>
+        )}
 
         {/* Header + filters */}
         <section className="flex flex-wrap items-center justify-between gap-3">
@@ -456,10 +491,14 @@ function ListRow({
       <span className="w-[110px]">
         <span
           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
-          style={tone(list.published ? 'green' : 'amber')}
+          style={tone(list.published && list.live ? 'green' : list.published ? 'red' : 'amber')}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current" />{' '}
-          {list.published ? t('pl.status.active') : t('pl.status.draft')}
+          {list.published && !list.live
+            ? 'Fuera de línea'
+            : list.published
+              ? t('pl.status.active')
+              : t('pl.status.draft')}
         </span>
       </span>
       <span className="w-[110px] text-xs font-medium text-[var(--dash-muted)]">

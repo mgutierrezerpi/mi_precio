@@ -171,6 +171,68 @@ and `bgOverlay`; `null` on a list means "inherit". `ListAppearanceFields`
 single list — the index route merges all published lists and keeps the business
 default.
 
+### Dead ends on a public link
+
+Whoever hits these is the **shop's** customer, standing somewhere with a phone
+and a QR — not a MiPrecio prospect. `MenuScreen` splits them by how much we know:
+
+| | What we know | What we show |
+|---|---|---|
+| Subdomain matches nothing | nothing | our logo, our purple, and a short pitch — the only dead end that may link to `/` |
+| Slug matches no served list, shop has others | its skin + its live lists | `ListNotFound`: the shop's own storefront look, its other lists, "Ver todo el catálogo" |
+| Slug matches nothing and neither does anything else | its skin only | same shell, "el catálogo no está disponible" — no links out |
+
+The middle row is the common one: a renamed or unpublished list, and every list
+the plan no longer serves. Linking to `/` there would answer "where is the menu?"
+with a page selling them our product.
+
+`ListNotFound` is not a generic white card: no single list is being shown, so it
+resolves the appearance cascade from the shop's **main list** (`showOnIndex`,
+exposed on `PublicListView` for this) and falls back field by field to the
+business defaults — same rule as the storefront. `cartThemeFor(design)` supplies
+the palette, so a shop on the dark `tech` or `fine` template gets a dark dead
+end, and the background image and hero colour carry over too.
+
+The API's `error` string is its raw `detail` — English, written for us. It goes
+to `console.warn`, never on screen.
+
+The no-such-shop page doubles as a landing: whoever reached it already scans QR
+menus, which is the product. Its copy mirrors the real landing rather than
+running a second, parallel message, and it is sized to one viewport
+(`h-[100dvh]`, ~516px of content at 390px wide) — a dead end nobody meant to
+open should never ask to be scrolled.
+
+### Subscription panel
+
+`SubscriptionPanel` (bottom of Settings → Plan y facturación) shows the state,
+dates and card from `PlanInfo.billing`, plus the provider portal links and the
+cancel / resume actions (`api.cancelSubscription` / `resumeSubscription`,
+owner-only). It renders nothing when the account never subscribed.
+
+Cancelling is at the end of the paid period: `status: "cancelled"` still means
+"paid plan, access until `endsAt`", so the panel reads "access until X" and
+offers Resume instead of treating the account as downgraded. The plan only
+drops to `free` on `expired`, which is what the plan gate then blocks on.
+
+`PlanInfo.billing` keys are **camelCase** — `api.request` camelizes every
+response key. Declaring them snake_case is what silently broke the portal link
+before, and the type made it invisible to TS.
+
+### Lists the plan does not serve
+
+`PriceList.published` is the owner's intent; `PriceList.live` is what the plan
+actually serves. They diverge after a downgrade (more lists published than the
+plan allows) or when a subscription expires (nothing is served at all). The
+backend never unpublishes to reconcile them, so paying again brings everything
+back on its own — which means the CRM is the only place that can admit the list
+is unreachable.
+
+`PriceListsScreen` does that three ways: a red **Fuera de línea** badge on the
+row with its public URL hidden, a **Fuera de línea** tab that only appears when
+some list is in that state, and a banner naming the count with a way out. The
+**Activas** counter deliberately counts `published && live`, not `published` —
+otherwise it contradicts the badges right below it.
+
 ## Components
 
 ### Layout Components

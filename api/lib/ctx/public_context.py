@@ -3,30 +3,64 @@
 from math import asin, cos, radians, sin, sqrt
 
 from models import PriceList, ListVersion, Item, Product, Tenant
+from lib.ctx import plans_context as plans
 from lib.ctx.identity_context import find_tenant_by_subdomain
 from lib.value_objects import PublishedList
+
+
+def live_list_ids(tenant: Tenant) -> list[str]:
+    """Ids of the published lists the tenant's plan actually allows on air.
+
+    Publishing is the owner's intent; the plan decides how much of that intent is
+    served. When a plan no longer covers everything that is published we keep the
+    oldest lists — the main catalogue is almost always the first one created, and
+    silently dropping it would be worse than dropping a recent addition.
+
+    Nothing is unpublished to make this true: paying again restores the whole
+    storefront on its own, with no republishing to do.
+    """
+    published = list(
+        PriceList.select(PriceList.id)
+        .where((PriceList.tenant == tenant.id) & PriceList.published)
+        .order_by(PriceList.created_at, PriceList.id)
+    )
+    allowance = plans.live_list_allowance(tenant)
+    if allowance is not None:
+        published = published[:allowance]
+    return [price_list.id for price_list in published]
 
 
 def get_published_lists(
     tenant: Tenant, requested_list: str | None = None
 ) -> list[PublishedList]:
-    """Get published lists with their published versions and items.
+    """Get plan-allowed published lists with their versions and items.
 
     Catalog-linked items inherit the current product description and image. A
     name-based fallback keeps older items working when they predate product IDs.
+    The tenant-wide index is capped by the plan; an explicitly shared list URL
+    remains reachable so existing QR codes and shared variants keep working.
     """
+    allowed = live_list_ids(tenant)
+    if not allowed:
+        return []
+
     product_details = _product_details(tenant.id)
-    result = []
-    # Variants stay hidden from the tenant-wide catalog. Their own ID/slug URL
-    # may resolve one published variant, which is how special lists are shared.
-    conditions = [(PriceList.tenant == tenant.id) & PriceList.published]
+    conditions = [(PriceList.tenant == tenant.id), PriceList.published]
     if requested_list:
+        # A directly shared variant remains reachable by its own URL. The plan
+        # allowance applies to the tenant-wide index, not to an explicit link.
         conditions.append(
             (PriceList.id == requested_list) | (PriceList.slug == requested_list)
         )
     else:
-        conditions.append(PriceList.parent_list.is_null(True))
-    for price_list in PriceList.select().where(*conditions):
+        conditions.extend(
+            [PriceList.id << allowed, PriceList.parent_list.is_null(True)]
+        )
+
+    result = []
+    for price_list in PriceList.select().where(*conditions).order_by(
+        PriceList.created_at, PriceList.id
+    ):
         version = ListVersion.get_or_none(
             (ListVersion.list == price_list.id) & ListVersion.published
         )

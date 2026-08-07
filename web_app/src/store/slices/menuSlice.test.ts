@@ -23,6 +23,7 @@ describe('menuSlice', () => {
       name: 'Test List',
       slug: 'test_list',
       published: true,
+      live: true,
       showOnIndex: true,
       kind: 'product',
       design: null,

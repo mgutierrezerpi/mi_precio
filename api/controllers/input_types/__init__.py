@@ -30,8 +30,7 @@ from controllers.input_types.push_subscription import PushSubscribe as PushSubsc
 from controllers.input_types.push_subscription import PushUnsubscribe as PushUnsubscribe
 from controllers.input_types.update_plan import UpdatePlan as UpdatePlan
 from controllers.input_types.billing import CreateCheckout as CreateCheckout
-from controllers.input_types.billing import (
-    ManualSubscriptionSync as ManualSubscriptionSync,
-)
+from controllers.input_types.billing import ManualSubscriptionSync as ManualSubscriptionSync
 from controllers.input_types.billing import ReconcileCheckout as ReconcileCheckout
+from controllers.input_types.billing import SubscriptionAction as SubscriptionAction
 from controllers.input_types.support import CreateSupportTicket as CreateSupportTicket

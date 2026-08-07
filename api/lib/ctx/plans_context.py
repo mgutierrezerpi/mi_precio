@@ -34,16 +34,40 @@ class PlanLimitError(Exception):
 PLAN_REQUIRED_MESSAGE = "Elegí un plan para empezar a usar Mi Precio."
 
 
+def _ever_subscribed(tenant: Tenant) -> bool:
+    """True once a tenant has had a subscription of any kind, ended or not."""
+    return bool(getattr(tenant, "billing_status", None) or getattr(tenant, "billing_provider", None))
+
+
 def plan_required(tenant_id: str) -> bool:
     """True when the tenant must pick a paid plan before using the CRM.
 
-    Only tenants created after the paid onboarding shipped carry `plan_gate`;
-    for them "free" means "signup not finished" (or "subscription expired",
-    since the billing webhook drops an ended subscription back to free)."""
+    "free" is not a tier you can subscribe to — it is the absence of a plan. Two
+    kinds of tenant land there and must pick one before going on:
+
+    - signups after the paid onboarding shipped (they carry `plan_gate`);
+    - anyone whose paid subscription ended, since the webhook drops them to free.
+
+    Accounts that predate the paid onboarding and never subscribed are left
+    alone: they keep the access they have always had."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    if not tenant or not getattr(tenant, "plan_gate", False):
+    if not tenant:
         return False
-    return normalize_plan(getattr(tenant, "plan", "free")) == "free"
+    if normalize_plan(getattr(tenant, "plan", "free")) != "free":
+        return False
+    return bool(getattr(tenant, "plan_gate", False)) or _ever_subscribed(tenant)
+
+
+def live_list_allowance(tenant: Tenant | None) -> int | None:
+    """How many lists this tenant may keep on its public page. `None` = unlimited.
+
+    Zero while a plan is required: an expired subscription takes the storefront
+    offline, it does not quietly fall back to the free allowance."""
+    if tenant is None:
+        return 0
+    if plan_required(tenant.id):
+        return 0
+    return PLANS[normalize_plan(getattr(tenant, "plan", "free"))]["lists"]
 
 
 def normalize_plan(plan: str | None) -> str:
