@@ -7,6 +7,7 @@ import api from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { tone, gradient, type Tone } from './crm/theme'
+import { trackEvent } from '../../lib/analytics'
 
 type Status = 'Activo' | 'Inactivo' | 'Nuevo'
 const statusTone: Record<Status, Tone> = { Activo: 'green', Inactivo: 'slate', Nuevo: 'violet' }
@@ -201,7 +202,16 @@ function CustomerModal({ tenantId, customer, onClose, onSaved }: { tenantId?: st
     const body = { name: name.trim(), rut: rut.trim() || null, email: email.trim() || null, phone: phone.trim() || null, notes: notes.trim() || null }
     const res = isEdit ? await api.updateCustomer(customer.id, body) : await api.createCustomer(tenantId!, body)
     setSaving(false)
-    if (res.data) onSaved(res.data.id)
+    if (res.data) {
+      if (!isEdit) {
+        trackEvent('Created Customer', {
+          has_email: Boolean(body.email),
+          has_phone: Boolean(body.phone),
+          has_rut: Boolean(body.rut),
+        })
+      }
+      onSaved(res.data.id)
+    }
   }
 
   return (
@@ -426,9 +436,14 @@ function OrderForm({ customerId, products, money, order, onSaved, onCancel }: { 
       .filter((l) => l.name.trim() && parseFloat(l.unitPrice) > 0)
       .map((l) => ({ name: l.name.trim(), quantity: parseInt(l.quantity) || 1, unit_price: parseFloat(l.unitPrice) }))
     const payload = { items, status, note: note.trim() || null, reference: reference.trim() || null }
-    if (order) await api.updateOrder(order.id, payload)
-    else await api.createOrder(customerId, payload)
+    const res = order ? await api.updateOrder(order.id, payload) : await api.createOrder(customerId, payload)
     setSaving(false)
+    if (!order && res.data) {
+      trackEvent('Created Order', {
+        item_count: items.length,
+        status,
+      })
+    }
     await onSaved()
   }
 

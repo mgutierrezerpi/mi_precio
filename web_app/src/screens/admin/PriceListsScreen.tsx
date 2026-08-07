@@ -16,6 +16,7 @@ import { QrCode } from './crm/QrCode'
 import { tone, gradient } from './crm/theme'
 import { timeAgo, formatPrice, catTone, catIcon } from './crm/productFormat'
 import { QR_COLOR_STORAGE_PREFIX, DEFAULT_QR_COLOR, downloadQrPng, downloadQrSvg } from '../../lib/qrRender'
+import { trackEvent } from '../../lib/analytics'
 
 type Tab = 'all' | 'active' | 'inactive'
 
@@ -430,6 +431,12 @@ function ListModal({ list, initialStep, tenantId, products, lists, onClose }: { 
           const vid = res.payload.versions?.[0]?.id
           await dispatch(updateList({ listId: res.payload.id, data: { slug: slug.trim() || undefined, published, showOnIndex: principal, ...appearance } }))
           if (vid) await syncItems(vid)
+          trackEvent('Created Price List', {
+            kind,
+            published,
+            is_primary: principal,
+            initial_item_count: selected.size,
+          })
         }
       }
       if (tenantId) dispatch(fetchLists(tenantId))
