@@ -60,6 +60,10 @@ class Tenant(BaseModel):
     marketplace_latitude = CharField(max_length=32, null=True)
     marketplace_longitude = CharField(max_length=32, null=True)
     business_category = CharField(max_length=32, null=True)
+    # Public marketplace contact links.
+    whatsapp_url = TextField(null=True)
+    website_url = TextField(null=True)
+    instagram_url = TextField(null=True)
 
     # Tax / legal data
     legal_name = CharField(max_length=255, null=True)

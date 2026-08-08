@@ -44,6 +44,12 @@ const SORT_OPTIONS: { key: SortKey; labelKey: string }[] = [
 const outlineBtn =
   'flex h-[38px] items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'
 
+/** Backend timestamps are naive UTC; convert them to the browser's local time. */
+function parseUtcDate(value: string) {
+  const hasTimezone = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(value)
+  return new Date(hasTimezone ? value : `${value}Z`)
+}
+
 /** Read an image file, downscale it, and return a compressed WebP blob. */
 async function fileToImageBlob(file: File, max = 1600): Promise<Blob> {
   const src = await new Promise<string>((res, rej) => {
@@ -163,7 +169,7 @@ export function ProductsScreen() {
     const arr =
       status === 'recent'
         ? [...base]
-            .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+            .sort((a, b) => +parseUtcDate(b.createdAt) - +parseUtcDate(a.createdAt))
             .slice(0, 12)
         : base.filter((p) => {
             if (status === 'all') return true
@@ -174,7 +180,7 @@ export function ProductsScreen() {
           })
     const price = (p: Product) => parseFloat(p.price) || 0
     const cmp: Record<SortKey, (a: Product, b: Product) => number> = {
-      recent: (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt),
+      recent: (a, b) => +parseUtcDate(b.createdAt) - +parseUtcDate(a.createdAt),
       'name-asc': (a, b) => a.name.localeCompare(b.name),
       'name-desc': (a, b) => b.name.localeCompare(a.name),
       'price-asc': (a, b) => price(a) - price(b),
@@ -371,7 +377,7 @@ export function ProductsScreen() {
               />
               <span>{t('products.product')}</span>
             </div>
-            <div className="hidden min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)] lg:flex">
+            <div className="hidden min-w-[720px] items-center gap-2 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)] lg:flex">
               <span className="w-9">
                 <Checkbox
                   checked={allSelected}
@@ -380,11 +386,11 @@ export function ProductsScreen() {
                 />
               </span>
               <span className="flex-1">{t('products.product')}</span>
-              <span className="w-[110px]">SKU</span>
-              <span className="w-[130px]">{t('products.category')}</span>
-              <span className="w-[110px]">{t('products.price')}</span>
-              <span className="w-[160px]">{t('products.availability')}</span>
-              <span className="w-[120px]">{t('products.updated')}</span>
+              <span className="w-[90px]">SKU</span>
+              <span className="w-[115px]">{t('products.category')}</span>
+              <span className="w-[100px]">{t('products.price')}</span>
+              <span className="w-[145px]">{t('products.availability')}</span>
+              <span className="w-[105px]">{t('products.updated')}</span>
               <span className="w-8" />
             </div>
 
@@ -399,7 +405,7 @@ export function ProductsScreen() {
                 return (
                   <div
                     key={p.id}
-                    className={`flex min-w-0 flex-col gap-3 px-4 py-4 lg:min-w-[720px] lg:flex-row lg:items-center lg:gap-3 lg:px-5 ${selected.has(p.id) ? 'bg-[var(--dash-soft)]' : 'bg-[var(--dash-surface)]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
+                    className={`flex min-w-0 flex-col gap-3 px-4 py-4 lg:min-w-[720px] lg:flex-row lg:items-center lg:gap-2 lg:px-5 ${selected.has(p.id) ? 'bg-[var(--dash-soft)]' : 'bg-[var(--dash-surface)]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
                   >
                     <div className="flex min-w-0 items-start gap-3 lg:contents">
                       <span className="w-9 shrink-0">
@@ -424,7 +430,10 @@ export function ProductsScreen() {
                         </span>
                       )}
                       <div className="flex min-w-0 flex-1 flex-col">
-                        <span className="break-words text-sm font-bold text-[var(--dash-text)] lg:truncate">
+                        <span
+                          title={p.name}
+                          className="line-clamp-2 break-words text-sm font-bold leading-5 text-[var(--dash-text)]"
+                        >
                           {p.name}
                         </span>
                         <span className="line-clamp-2 text-xs font-medium text-[var(--dash-muted)] lg:truncate">
@@ -491,14 +500,14 @@ export function ProductsScreen() {
                       <span className="flex min-w-0 flex-col gap-0.5">
                         <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.updated')}</span>
                         <span className="truncate font-medium text-[var(--dash-muted)]">
-                          {new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(p.updatedAt))}
+                          {new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(parseUtcDate(p.updatedAt))}
                         </span>
                       </span>
                     </div>
-                    <span className="hidden w-[110px] text-xs font-semibold text-[var(--dash-text2)] lg:block">
+                    <span className="hidden w-[90px] text-xs font-semibold text-[var(--dash-text2)] lg:block">
                       {p.sku || '—'}
                     </span>
-                    <span className="hidden w-[130px] lg:block">
+                    <span className="hidden w-[115px] lg:block">
                       {p.category ? (
                         <span
                           className="rounded-full px-2.5 py-1 text-[11px] font-bold"
@@ -512,10 +521,10 @@ export function ProductsScreen() {
                         </span>
                       )}
                     </span>
-                    <span className="hidden w-[110px] text-sm font-extrabold text-[var(--dash-text)] lg:block">
+                    <span className="hidden w-[100px] text-sm font-extrabold text-[var(--dash-text)] lg:block">
                       {formatProductPrice(p.price)}
                     </span>
-                    <span className="hidden w-[160px] lg:block">
+                    <span className="hidden w-[145px] lg:block">
                       {canEdit ? (
                         <AvailabilitySwitch
                           value={p.available}
@@ -539,10 +548,10 @@ export function ProductsScreen() {
                         </span>
                       )}
                     </span>
-                    <span className="hidden w-[120px] text-xs font-medium text-[var(--dash-muted)] lg:block">
+                    <span className="hidden w-[105px] text-xs font-medium text-[var(--dash-muted)] lg:block">
                       {new Intl.DateTimeFormat(locale, {
                         dateStyle: 'medium',
-                      }).format(new Date(p.updatedAt))}
+                      }).format(parseUtcDate(p.updatedAt))}
                     </span>
                     {canEdit ? (
                       <span className="hidden shrink-0 lg:block">

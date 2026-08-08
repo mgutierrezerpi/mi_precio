@@ -343,7 +343,7 @@ export function CrmSidebar({
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[248px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[var(--dash-sidebar)] p-3 transition-[width,transform] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${collapsed ? 'lg:w-[72px]' : ''} ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex min-h-[720px] w-[248px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[var(--dash-sidebar)] p-3 transition-[width,transform] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${collapsed ? 'lg:w-[72px]' : ''} ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <SidebarHeader
           collapsed={collapsed}

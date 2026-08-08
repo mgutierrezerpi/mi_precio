@@ -31,6 +31,9 @@ class TenantView(BaseView):
     marketplace_latitude: float | None = None
     marketplace_longitude: float | None = None
     business_category: str | None = None
+    whatsapp_url: str | None = None
+    website_url: str | None = None
+    instagram_url: str | None = None
     legal_name: str | None = None
     tax_id: str | None = None
     address: str | None = None
@@ -63,6 +66,9 @@ class TenantView(BaseView):
             marketplace_latitude=_float_or_none(g("marketplace_latitude")),
             marketplace_longitude=_float_or_none(g("marketplace_longitude")),
             business_category=g("business_category"),
+            whatsapp_url=g("whatsapp_url"),
+            website_url=g("website_url"),
+            instagram_url=g("instagram_url"),
             legal_name=g("legal_name"),
             tax_id=g("tax_id"),
             address=g("address"),
