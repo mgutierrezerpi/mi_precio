@@ -13,6 +13,8 @@ from controllers.input_types.update_product import UpdateProduct as UpdateProduc
 from controllers.input_types.create_category import CreateCategory as CreateCategory
 from controllers.input_types.update_category import UpdateCategory as UpdateCategory
 from controllers.input_types.create_customer import CreateCustomer as CreateCustomer
+from controllers.input_types.public_viewer import PublicViewerCapture as PublicViewerCapture
+from controllers.input_types.public_viewer_dismissal import PublicViewerDismissal as PublicViewerDismissal
 from controllers.input_types.update_customer import UpdateCustomer as UpdateCustomer
 from controllers.input_types.create_order import CreateOrder as CreateOrder
 from controllers.input_types.create_order import UpdateOrder as UpdateOrder

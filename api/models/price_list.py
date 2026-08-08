@@ -58,6 +58,7 @@ class PriceList(BaseModel):
     hero_color = CharField(max_length=9, null=True)
     bg_url = TextField(null=True)
     bg_overlay = BooleanField(null=True)
+    capture_viewer_info = BooleanField(default=False)
 
     class Meta:
         table_name = "lists"

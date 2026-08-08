@@ -16,6 +16,7 @@ class UpdateList(BaseModel):
     hero_color: str | None = None
     bg_url: str | None = None
     bg_overlay: bool | None = None
+    capture_viewer_info: bool | None = None
 
     @field_validator("design")
     @classmethod

@@ -8,10 +8,17 @@ from views.public_list_view import PublicListView
 class PublicMenuView(BaseView):
     tenant: PublicTenantView
     lists: list[PublicListView]
+    viewer_identified: bool = False
 
     @classmethod
-    def render(cls, tenant: Tenant, published_lists: list[PublishedList]):
+    def render(
+        cls,
+        tenant: Tenant,
+        published_lists: list[PublishedList],
+        viewer_identified: bool = False,
+    ):
         return cls(
             tenant=PublicTenantView.render(tenant),
             lists=[PublicListView.render(pl) for pl in published_lists],
+            viewer_identified=viewer_identified,
         )

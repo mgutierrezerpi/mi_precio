@@ -37,6 +37,9 @@ export interface MarketplaceBusiness {
   description: string | null
   address: string | null
   businessCategory: string | null
+  whatsappUrl: string | null
+  websiteUrl: string | null
+  instagramUrl: string | null
   distanceKm: number | null
 }
 
@@ -63,6 +66,9 @@ export interface Tenant {
   marketplaceLatitude: number | null
   marketplaceLongitude: number | null
   businessCategory: string | null
+  whatsappUrl: string | null
+  websiteUrl: string | null
+  instagramUrl: string | null
   legalName: string | null
   taxId: string | null
   address: string | null
@@ -108,10 +114,30 @@ export interface PriceList {
   heroColor: string | null
   bgUrl: string | null
   bgOverlay: boolean | null
+  captureViewerInfo?: boolean
   itemCount: number
   createdAt: string
   updatedAt: string
   versions?: ListVersion[]
+}
+
+export interface PublicViewer {
+  id: string
+  tenantId: string
+  listId: string
+  listName: string
+  name: string
+  email: string | null
+  phone: string | null
+  customerId: string | null
+  ipAddress: string | null
+  viewCount: number
+  createdAt: string
+  lastSeenAt: string
+}
+
+export interface PublicViewerStats {
+  anonymousDismissals: number
 }
 
 export interface ListVersion {

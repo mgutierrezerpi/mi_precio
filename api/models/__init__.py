@@ -9,6 +9,8 @@ from models.product import Product as Product
 from models.category import Category as Category
 from models.page_view import PageView as PageView
 from models.customer import Customer as Customer
+from models.public_viewer import PublicViewer as PublicViewer
+from models.public_viewer_dismissal import PublicViewerDismissal as PublicViewerDismissal
 from models.order import Order as Order
 from models.order_item import OrderItem as OrderItem
 from models.activity import Activity as Activity
@@ -33,6 +35,8 @@ def create_tables():
             Category,
             PageView,
             Customer,
+            PublicViewer,
+            PublicViewerDismissal,
             Order,
             OrderItem,
             Activity,
@@ -69,6 +73,7 @@ def _ensure_list_columns():
             ("customer_id", "customer_id VARCHAR(32)"),
             ("starts_at", "starts_at DATETIME"),
             ("ends_at", "ends_at DATETIME"),
+            ("capture_viewer_info", "capture_viewer_info INTEGER NOT NULL DEFAULT 0"),
         ],
     )
 
@@ -95,6 +100,14 @@ def _ensure_optional_columns():
     _add_missing_columns("activities", [("meta", "meta TEXT")])
     _add_missing_columns("customers", [("rut", "rut VARCHAR(32)")])
     _add_missing_columns("orders", [("reference", "reference VARCHAR(64)")])
+    _add_missing_columns(
+        "public_viewers",
+        [
+            ("customer_id", "customer_id VARCHAR(32)"),
+            ("visitor_token", "visitor_token VARCHAR(64)"),
+            ("ip_address", "ip_address VARCHAR(64)"),
+        ],
+    )
 
 
 def _ensure_item_columns():
@@ -147,6 +160,9 @@ def _ensure_tenant_columns():
             ("marketplace_latitude", "marketplace_latitude VARCHAR(32)"),
             ("marketplace_longitude", "marketplace_longitude VARCHAR(32)"),
             ("business_category", "business_category VARCHAR(32)"),
+            ("whatsapp_url", "whatsapp_url TEXT"),
+            ("website_url", "website_url TEXT"),
+            ("instagram_url", "instagram_url TEXT"),
             ("legal_name", "legal_name VARCHAR(255)"),
             ("tax_id", "tax_id VARCHAR(32)"),
             ("address", "address TEXT"),

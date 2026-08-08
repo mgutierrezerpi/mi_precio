@@ -10,7 +10,7 @@ from lib.ctx import categories_context as categories
 from lib.ctx import analytics_context as analytics
 from lib.ctx import public_context as public
 from lib.ctx import customers_context as customers
-from lib.ctx import leads_context as leads  # noqa: F401
+from lib.ctx import public_viewers_context as public_viewers
 from lib.ctx import activity_context as activity
 from lib.ctx import team_context as team
 from lib.ctx import notifications_context as notifications
@@ -28,6 +28,7 @@ categories = categories
 analytics = analytics
 public = public
 customers = customers
+public_viewers = public_viewers
 activity = activity
 team = team
 notifications = notifications

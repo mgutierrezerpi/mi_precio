@@ -22,7 +22,7 @@ import type {
   Product,
 } from '../../types'
 import api from '../../services/api'
-import { localeOf, useT } from '../../lib/i18n'
+import { localeOf, useT, type TFn } from '../../lib/i18n'
 import { DICT } from '../../lib/i18nDictionary'
 import { DICT_LISTS } from '../../lib/i18nDictionaryLists'
 import {
@@ -42,8 +42,9 @@ import {
   downloadQrPng,
   downloadQrSvg,
 } from '../../lib/qrRender'
+import { trackEvent } from '../../lib/analytics'
 
-type Tab = 'all' | 'active' | 'inactive'
+type Tab = 'all' | 'active' | 'inactive' | 'offline'
 
 Object.assign(DICT, DICT_LISTS)
 
@@ -136,8 +137,9 @@ export function PriceListsScreen() {
   const counts = useMemo(
     () => ({
       all: lists.length,
-      active: lists.filter((l) => l.published).length,
+      active: lists.filter((l) => l.published && l.live).length,
       inactive: lists.filter((l) => !l.published).length,
+      offline: lists.filter((l) => l.published && !l.live).length,
     }),
     [lists]
   )
@@ -149,6 +151,9 @@ export function PriceListsScreen() {
       (tab === 'all' || (tab === 'active' ? l.published : !l.published))
 
     return lists.filter((l) => {
+      if (tab === 'active' && !(l.published && l.live)) return false
+      if (tab === 'inactive' && l.published) return false
+      if (tab === 'offline' && !(l.published && !l.live)) return false
       if (l.parentListId) return false
       const variants = lists.filter((child) => child.parentListId === l.id)
       return matches(l) || variants.some(matches)
@@ -176,6 +181,10 @@ export function PriceListsScreen() {
     { key: 'all', label: t('pl.tab.all'), count: counts.all },
     { key: 'active', label: t('pl.tab.active'), count: counts.active },
     { key: 'inactive', label: t('pl.tab.inactive'), count: counts.inactive },
+    // Only worth a tab when the plan is actually holding lists back.
+    ...(counts.offline
+      ? [{ key: 'offline' as Tab, label: t('pl.tab.offline'), count: counts.offline }]
+      : []),
   ]
 
   return (
@@ -195,6 +204,35 @@ export function PriceListsScreen() {
           </h1>
           <p className="text-[13px] text-[#9694A6]">{t('lists.subtitle')}</p>
         </section>
+
+        {/* Lists published beyond what the plan serves. Nothing was unpublished,
+            so without this the owner has no way to know they are unreachable. */}
+        {counts.offline > 0 && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--tone-red-fg)]/25 p-4 sm:flex-row sm:items-center sm:justify-between" style={tone('red')}>
+            <div className="flex items-start gap-3">
+              <Icon name="alert-triangle" size={18} className="mt-0.5 shrink-0" />
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm font-bold">
+                  {counts.offline === 1
+                    ? t('pl.offline.oneTitle')
+                    : t('pl.offline.manyTitle', { count: counts.offline })}
+                </p>
+                <p className="text-xs font-medium opacity-80">
+                  {counts.offline === 1
+                    ? t('pl.offline.oneDescription', { active: counts.active })
+                    : t('pl.offline.manyDescription', { active: counts.active })}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/admin/settings')}
+              className="h-10 shrink-0 rounded-full bg-[var(--tone-red-fg)] px-4 text-xs font-bold text-[var(--dash-surface)]"
+            >
+              {t('pl.offline.viewPlans')}
+            </button>
+          </div>
+        )}
 
         {/* Header + filters */}
         <section className="flex flex-wrap items-center justify-between gap-3">
@@ -312,7 +350,8 @@ export function PriceListsScreen() {
                     variant
                     variantDetail={variantDetail(
                       variant,
-                      customers.find((customer) => customer.id === variant.customerId)
+                      customers.find((customer) => customer.id === variant.customerId),
+                      t
                     )}
                     onEdit={() => {
                       setModal({ open: true, list: variant })
@@ -430,7 +469,7 @@ function ListRow({
           {variant && (
             <span className="flex items-center gap-1 whitespace-nowrap text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--dash-link)]">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
-              Variante de la principal
+              {t('pl.variant.main')}
             </span>
           )}
           <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -439,7 +478,7 @@ function ListRow({
             </h4>
             {variant ? (
               <span className="rounded-full border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 py-0.5 text-[10px] font-bold text-[var(--dash-text2)]">
-                {variantLabel(list)}
+                {variantLabel(list, t)}
               </span>
             ) : list.showOnIndex && (
               <span
@@ -450,7 +489,7 @@ function ListRow({
               </span>
             )}
           </div>
-          {variant && variantDetail && variantDetail !== variantLabel(list) && (
+          {variant && variantDetail && variantDetail !== variantLabel(list, t) && (
             <span className="text-[11px] font-medium text-[var(--dash-muted)]">
               {variantDetail}
             </span>
@@ -471,7 +510,7 @@ function ListRow({
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {list.published && !list.live
-              ? 'Fuera de línea'
+              ? t('pl.status.offline')
               : list.published
                 ? t('pl.status.active')
                 : t('pl.status.draft')}
@@ -491,10 +530,14 @@ function ListRow({
       <span className="hidden w-[110px] lg:block">
         <span
           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
-          style={tone(list.published ? 'green' : 'amber')}
+          style={tone(list.published && list.live ? 'green' : list.published ? 'red' : 'amber')}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current" />{' '}
-          {list.published ? t('pl.status.active') : t('pl.status.draft')}
+          {list.published && !list.live
+            ? t('pl.status.offline')
+            : list.published
+              ? t('pl.status.active')
+              : t('pl.status.draft')}
         </span>
       </span>
       <span className="hidden w-[110px] text-xs font-medium text-[var(--dash-muted)] lg:block">
@@ -642,7 +685,7 @@ function RowMenu({
             {!isVariant && onCreateVariant && (
               <MenuItemBtn
                 icon="list-plus"
-                label="Crear lista especial"
+                label={t('pl.menu.createVariant')}
                 onClick={act(onCreateVariant)}
               />
             )}
@@ -705,22 +748,22 @@ function MenuItemBtn({
   )
 }
 
-function variantLabel(list: PriceList): string {
-  if (list.variantType === 'customer') return 'Cliente'
-  if (list.variantType === 'promotion') return 'Promoción'
-  if (list.variantType === 'seasonal') return 'Temporada'
-  return 'Especial'
+function variantLabel(list: PriceList, t: TFn): string {
+  if (list.variantType === 'customer') return t('pl.variant.customer')
+  if (list.variantType === 'promotion') return t('pl.variant.promotion')
+  if (list.variantType === 'seasonal') return t('pl.variant.seasonal')
+  return t('pl.variant.custom')
 }
 
-function variantDetail(list: PriceList, customer?: Customer): string {
+function variantDetail(list: PriceList, customer: Customer | undefined, t: TFn): string {
   const audience = customer
-    ? `Cliente · ${customer.name}`
-    : variantLabel(list)
+    ? t('pl.variant.customerWithName', { name: customer.name })
+    : variantLabel(list, t)
   const date = list.startsAt
-    ? ` · desde ${new Date(list.startsAt).toLocaleDateString()}`
+    ? ` · ${t('pl.variant.from', { date: new Date(list.startsAt).toLocaleDateString() })}`
     : ''
   const end = list.endsAt
-    ? ` hasta ${new Date(list.endsAt).toLocaleDateString()}`
+    ? ` ${t('pl.variant.to', { date: new Date(list.endsAt).toLocaleDateString() })}`
     : ''
   return `${audience}${date}${end}`
 }
@@ -747,6 +790,7 @@ function VariantModal({
   onClose: () => void
 }) {
   const dispatch = useAppDispatch()
+  const t = useT()
   const [name, setName] = useState(`${parent.name} — `)
   const [variantType, setVariantType] =
     useState<PriceListVariantType>('customer')
@@ -882,24 +926,24 @@ function VariantModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-extrabold text-[var(--dash-text)]">
-              Crear lista especial
+              {t('pl.variant.modal.title')}
             </h3>
             <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">
-              Parte de “{parent.name}” y conserva una copia independiente de sus precios.
+              {t('pl.variant.modal.description', { parent: parent.name })}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80"
-            aria-label="Cerrar"
+            aria-label={t('pl.close')}
           >
             ✕
           </button>
         </div>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-[var(--dash-text2)]">Nombre</span>
+          <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.name')}</span>
           <input
             autoFocus
             value={name}
@@ -910,7 +954,7 @@ function VariantModal({
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-[var(--dash-text2)]">Propósito</span>
+          <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.purpose')}</span>
           <select
             value={variantType}
             onChange={(event) =>
@@ -918,22 +962,22 @@ function VariantModal({
             }
             className={inputCls}
           >
-            <option value="customer">Precios para un cliente</option>
-            <option value="promotion">Promoción</option>
-            <option value="seasonal">Lista de temporada</option>
-            <option value="custom">Lista especial</option>
+            <option value="customer">{t('pl.variant.customerPrices')}</option>
+            <option value="promotion">{t('pl.variant.promotion')}</option>
+            <option value="seasonal">{t('pl.variant.seasonalList')}</option>
+            <option value="custom">{t('pl.variant.modal.title')}</option>
           </select>
         </label>
 
         {variantType === 'customer' && (
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-[var(--dash-text2)]">Cliente</span>
+            <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.customer')}</span>
             <select
               value={customerId}
               onChange={(event) => setCustomerId(event.target.value)}
               className={inputCls}
             >
-              <option value="">Seleccionar después</option>
+              <option value="">{t('pl.variant.selectLater')}</option>
               {customers.map((customer) => (
                 <option key={customer.id} value={customer.id}>
                   {customer.name}
@@ -947,8 +991,8 @@ function VariantModal({
           <div className="flex flex-col gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold text-[var(--dash-text2)]">Ajustar precios</p>
-                <p className="text-[11px] font-medium text-[var(--dash-muted)]">Solo cambia los productos elegidos en esta lista especial.</p>
+                <p className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.adjustPrices')}</p>
+                <p className="text-[11px] font-medium text-[var(--dash-muted)]">{t('pl.variant.adjustDescription')}</p>
               </div>
               <button
                 type="button"
@@ -959,7 +1003,7 @@ function VariantModal({
                 }}
                 className="text-[11px] font-bold text-[var(--dash-link)] hover:underline"
               >
-                Quitar
+                {t('pl.variant.remove')}
               </button>
             </div>
             <div className="flex gap-2">
@@ -970,8 +1014,8 @@ function VariantModal({
                 }
                 className={`${inputCls} flex-1`}
               >
-                <option value="discount">Descuento</option>
-                <option value="surcharge">Recargo</option>
+                <option value="discount">{t('pl.variant.discount')}</option>
+                <option value="surcharge">{t('pl.variant.surcharge')}</option>
               </select>
               <label className="relative w-28">
                 <input
@@ -995,8 +1039,8 @@ function VariantModal({
                   className="self-start text-[11px] font-bold text-[var(--dash-link)] hover:underline"
                 >
                   {selectedItemIds.size === sourceItems.length
-                    ? 'Quitar todos'
-                    : 'Seleccionar todos'}
+                    ? t('pl.removeAll')
+                    : t('pl.selectAll')}
                 </button>
                 <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)]">
                   {sourceItems.map((item) => (
@@ -1017,7 +1061,7 @@ function VariantModal({
                 </div>
               </>
             ) : (
-              <p className="text-xs font-medium text-[var(--dash-muted)]">Cargando productos de la lista…</p>
+              <p className="text-xs font-medium text-[var(--dash-muted)]">{t('pl.variant.loadingProducts')}</p>
             )}
           </div>
         ) : (
@@ -1026,8 +1070,8 @@ function VariantModal({
             onClick={() => setShowPriceAdjustment(true)}
             className="flex w-full items-center justify-between rounded-xl border border-dashed border-[var(--dash-border)] px-3.5 py-3 text-left hover:bg-[var(--dash-soft)]"
           >
-            <span className="text-sm font-bold text-[var(--dash-text2)]">Ajustar precios</span>
-            <span className="text-xs font-medium text-[var(--dash-muted)]">Descuento o recargo</span>
+            <span className="text-sm font-bold text-[var(--dash-text2)]">{t('pl.variant.adjustPrices')}</span>
+            <span className="text-xs font-medium text-[var(--dash-muted)]">{t('pl.variant.discount')} / {t('pl.variant.surcharge')}</span>
           </button>
         )}
 
@@ -1035,7 +1079,7 @@ function VariantModal({
           <>
             <div className="flex flex-col gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-bold text-[var(--dash-text2)]">Programación</span>
+                <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.schedule')}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -1046,27 +1090,27 @@ function VariantModal({
                   }}
                   className="text-[11px] font-bold text-[var(--dash-link)] hover:underline"
                 >
-                  Sin fechas
+                  {t('pl.variant.noDates')}
                 </button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">Empieza:</span>
-                <button type="button" onClick={() => setStart(new Date())} className={shortcutClass}>Ahora</button>
-                <button type="button" onClick={() => setStart(scheduledDate(1))} className={shortcutClass}>Mañana 9:00</button>
-                <button type="button" onClick={setNextMonday} className={shortcutClass}>Próximo lunes</button>
+                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">{t('pl.variant.starts')}</span>
+                <button type="button" onClick={() => setStart(new Date())} className={shortcutClass}>{t('pl.variant.now')}</button>
+                <button type="button" onClick={() => setStart(scheduledDate(1))} className={shortcutClass}>{t('pl.variant.tomorrow')}</button>
+                <button type="button" onClick={setNextMonday} className={shortcutClass}>{t('pl.variant.nextMonday')}</button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">Termina:</span>
-                <button type="button" onClick={() => setEndAfter(1)} className={shortcutClass}>En 1 día</button>
-                <button type="button" onClick={() => setEndAfter(7)} className={shortcutClass}>En 1 semana</button>
-                <button type="button" onClick={() => setEndAfter(30)} className={shortcutClass}>En 1 mes</button>
-                <button type="button" onClick={() => setEndsAt('')} className={shortcutClass}>Sin vencimiento</button>
+                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">{t('pl.variant.ends')}</span>
+                <button type="button" onClick={() => setEndAfter(1)} className={shortcutClass}>{t('pl.variant.inDay')}</button>
+                <button type="button" onClick={() => setEndAfter(7)} className={shortcutClass}>{t('pl.variant.inWeek')}</button>
+                <button type="button" onClick={() => setEndAfter(30)} className={shortcutClass}>{t('pl.variant.inMonth')}</button>
+                <button type="button" onClick={() => setEndsAt('')} className={shortcutClass}>{t('pl.variant.noExpiry')}</button>
                 <button
                   type="button"
                   onClick={() => setShowCustomSchedule(true)}
                   className={shortcutClass}
                 >
-                  Personalizar
+                  {t('pl.variant.customize')}
                 </button>
               </div>
             </div>
@@ -1074,7 +1118,7 @@ function VariantModal({
             {showCustomSchedule && (
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-[var(--dash-text2)]">Desde</span>
+                  <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.fromDate')}</span>
                   <input
                     type="datetime-local"
                     value={startsAt}
@@ -1083,7 +1127,7 @@ function VariantModal({
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-[var(--dash-text2)]">Hasta</span>
+                  <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.toDate')}</span>
                   <input
                     type="datetime-local"
                     value={endsAt}
@@ -1101,21 +1145,21 @@ function VariantModal({
             onClick={() => setShowSchedule(true)}
             className="flex w-full items-center justify-between rounded-xl border border-dashed border-[var(--dash-border)] px-3.5 py-3 text-left hover:bg-[var(--dash-soft)]"
           >
-            <span className="text-sm font-bold text-[var(--dash-text2)]">Agregar período</span>
-            <span className="text-xs font-medium text-[var(--dash-muted)]">Opcional</span>
+            <span className="text-sm font-bold text-[var(--dash-text2)]">{t('pl.variant.addPeriod')}</span>
+            <span className="text-xs font-medium text-[var(--dash-muted)]">{t('pl.variant.optional')}</span>
           </button>
         )}
 
         <div className="mt-1 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="h-10 rounded-xl px-4 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
-            Cancelar
+            {t('pl.cancel')}
           </button>
           <button
             type="submit"
             disabled={saving}
             className={`flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold text-white disabled:opacity-60 ${gradient}`}
           >
-            <Icon name="list-plus" size={16} /> {saving ? 'Creando…' : 'Crear variante'}
+            <Icon name="list-plus" size={16} /> {saving ? t('pl.saving') : t('pl.variant.create')}
           </button>
         </div>
       </form>
@@ -1236,6 +1280,7 @@ function ListModal({
   )
   const [published, setPublished] = useState(list?.published ?? false)
   const [principal, setPrincipal] = useState(list?.showOnIndex ?? false)
+  const [captureViewerInfo, setCaptureViewerInfo] = useState(list?.captureViewerInfo ?? false)
   const [parentListId, setParentListId] = useState(list?.parentListId ?? '')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [prodSearch, setProdSearch] = useState('')
@@ -1410,6 +1455,7 @@ function ListModal({
               slug: slug.trim() || undefined,
               published,
               showOnIndex: principal,
+              captureViewerInfo,
               kind,
               parentListId: parentListId || null,
               ...appearance,
@@ -1430,11 +1476,18 @@ function ListModal({
                 slug: slug.trim() || undefined,
                 published,
                 showOnIndex: principal,
+                captureViewerInfo,
                 ...appearance,
               },
             })
           )
           if (vid) await syncItems(vid)
+          trackEvent('Created Price List', {
+            kind,
+            published,
+            is_primary: principal,
+            initial_item_count: selected.size,
+          })
         }
       }
       if (tenantId) dispatch(fetchLists(tenantId))
@@ -1550,14 +1603,14 @@ function ListModal({
               {editing && (
                 <label className="flex flex-col gap-1.5">
                   <span className="text-xs font-bold text-[var(--dash-text2)]">
-                    Lista base
+                    {t('pl.baseList')}
                   </span>
                   <select
                     value={parentListId}
                     onChange={(event) => setParentListId(event.target.value)}
                     className={inputCls}
                   >
-                    <option value="">Lista independiente</option>
+                    <option value="">{t('pl.independentList')}</option>
                     {lists
                       .filter(
                         (candidate) =>
@@ -1570,7 +1623,7 @@ function ListModal({
                       ))}
                   </select>
                   <span className="text-[11px] font-medium text-[var(--dash-muted)]">
-                    Seleccioná una lista base para mostrar esta lista como una variante anidada.
+                    {t('pl.baseListDescription')}
                   </span>
                 </label>
               )}
@@ -1596,6 +1649,12 @@ function ListModal({
                 desc={t('pl.makeMainDesc')}
                 value={principal}
                 onToggle={() => setPrincipal((v) => !v)}
+              />
+              <ToggleRow
+                label={t('list.viewerCapture')}
+                desc={t('list.viewerCaptureDesc')}
+                value={captureViewerInfo}
+                onToggle={() => setCaptureViewerInfo((v) => !v)}
               />
 
               {/* Appearance overrides, collapsed by default so creating a list

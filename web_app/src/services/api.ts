@@ -23,6 +23,8 @@ import type {
   PlanInfo,
   PlanId,
   User,
+  PublicViewer,
+  PublicViewerStats,
 } from '../types'
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
@@ -148,6 +150,9 @@ class ApiService {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
         headers,
+        // Public viewer cookies must work when the local frontend and API run
+        // on different ports, while the production proxy remains same-origin.
+        credentials: options.credentials ?? 'include',
       })
 
       if (!response.ok) {
@@ -256,6 +261,9 @@ class ApiService {
       marketplaceLatitude?: number | null
       marketplaceLongitude?: number | null
       businessCategory?: string | null
+      whatsappUrl?: string | null
+      websiteUrl?: string | null
+      instagramUrl?: string | null
       legalName?: string | null
       taxId?: string | null
       address?: string | null
@@ -276,6 +284,9 @@ class ApiService {
       marketplaceLatitude: 'marketplace_latitude',
       marketplaceLongitude: 'marketplace_longitude',
       businessCategory: 'business_category',
+      whatsappUrl: 'whatsapp_url',
+      websiteUrl: 'website_url',
+      instagramUrl: 'instagram_url',
     }
     const body: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(data)) body[map[k] ?? k] = v
@@ -394,6 +405,7 @@ class ApiService {
       heroColor?: string | null
       bgUrl?: string | null
       bgOverlay?: boolean | null
+      captureViewerInfo?: boolean
     }
   ): Promise<ApiResponse<PriceList>> {
     // Only send the keys actually provided — the API distinguishes "absent"
@@ -404,6 +416,7 @@ class ApiService {
       heroColor: 'hero_color',
       bgUrl: 'bg_url',
       bgOverlay: 'bg_overlay',
+      captureViewerInfo: 'capture_viewer_info',
     }
     const body: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(data)) {
@@ -412,6 +425,55 @@ class ApiService {
     return this.request(`/lists/${listId}`, {
       method: 'PATCH',
       body: JSON.stringify(body),
+    })
+  }
+
+  async getPublicViewers(tenantId: string): Promise<ApiResponse<PublicViewer[]>> {
+    return this.request(`/tenants/${tenantId}/public-viewers`)
+  }
+
+  async getPublicViewerStats(
+    tenantId: string
+  ): Promise<ApiResponse<PublicViewerStats>> {
+    return this.request(`/tenants/${tenantId}/public-viewers/stats`)
+  }
+
+  async promotePublicViewer(
+    tenantId: string,
+    viewerId: string
+  ): Promise<ApiResponse<Customer>> {
+    return this.request(`/tenants/${tenantId}/public-viewers/${viewerId}/promote`, {
+      method: 'POST',
+    })
+  }
+
+  async recordPublicViewerDismissal(
+    subdomain: string,
+    listId: string
+  ): Promise<ApiResponse<{ ok: boolean }>> {
+    return this.request(`/public/${subdomain}/viewer-dismissed`, {
+      method: 'POST',
+      body: JSON.stringify({ list_id: listId }),
+    })
+  }
+
+  async submitPublicViewer(
+    subdomain: string,
+    data: {
+      listId: string
+      name: string
+      email?: string
+      phone?: string
+    }
+  ): Promise<ApiResponse<{ ok: boolean }>> {
+    return this.request(`/public/${subdomain}/viewer`, {
+      method: 'POST',
+      body: JSON.stringify({
+        list_id: data.listId,
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null,
+      }),
     })
   }
 
@@ -855,7 +917,11 @@ class ApiService {
   async getPublicMenu(
     subdomain: string,
     listId?: string
-  ): Promise<ApiResponse<{ tenant: Tenant; lists: PriceList[] }>> {
+  ): Promise<ApiResponse<{
+    tenant: Tenant
+    lists: PriceList[]
+    viewerIdentified?: boolean
+  }>> {
     const listFilter = listId ? `?list=${encodeURIComponent(listId)}` : ''
     return this.request(`/public/${subdomain}${listFilter}`)
   }

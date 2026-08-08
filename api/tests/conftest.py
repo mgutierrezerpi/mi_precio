@@ -15,7 +15,9 @@ from models import (
     Invitation,
     Product,
     Customer,
-    TenantMembership,
+    PublicViewer,
+    PublicViewerDismissal,
+    TenantMembership
 )
 
 
@@ -34,6 +36,8 @@ def db():
         Invitation,
         Product,
         Customer,
+        PublicViewer,
+        PublicViewerDismissal,
         TenantMembership,
     ]
     test_db.bind(models)

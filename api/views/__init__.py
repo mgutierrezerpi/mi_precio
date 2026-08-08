@@ -14,7 +14,7 @@ from views.public_list_view import PublicListView as PublicListView
 from views.public_menu_view import PublicMenuView as PublicMenuView
 from views.public_tenant_view import PublicTenantView as PublicTenantView
 from views.customer_view import CustomerView as CustomerView
-from views.lead_view import LeadView as LeadView
+from views.public_viewer_view import PublicViewerView as PublicViewerView
 from views.order_view import OrderView as OrderView
 from views.order_item_view import OrderItemView as OrderItemView
 from views.activity_view import ActivityView as ActivityView
