@@ -3,6 +3,7 @@
 from lib.ctx import identity, items, lists, versions
 from lib.list_content import deserialize_content
 from views.list_version_view import ListVersionView
+from views.price_list_view import PriceListView
 
 CONTENT = {
     "schema_version": 1,
@@ -173,3 +174,14 @@ def test_version_view_exposes_deserialized_content(db):
 
     assert view.content == CONTENT
     assert view.content_revision == 1
+
+
+def test_price_list_view_accepts_a_list_with_versioned_content(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    created = lists.create_list(tenant.id, "Menu")
+    versions.update_content(created.version.id, CONTENT, 0)
+
+    view = PriceListView.render(created.price_list, include_versions=True)
+
+    assert view.versions is not None
+    assert view.versions[0].content == CONTENT

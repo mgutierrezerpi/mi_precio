@@ -76,6 +76,9 @@ the five price lists shown in `pencil.pen` without deleting current data:
 python demo/seed_pencil_price_lists.py
 ```
 
+An authenticated local shell can instead provide `DEMO_TOKEN`,
+`DEMO_TENANT_ID`, and optionally `DEMO_SUBDOMAIN`; no token file is required.
+
 It creates or updates Lista principal, Mayoristas, Promociones de invierno,
 Cliente Distrimax, and Catálogo 2025 with distinct versioned public content.
 Only the first four are published; Catálogo 2025 remains a draft.

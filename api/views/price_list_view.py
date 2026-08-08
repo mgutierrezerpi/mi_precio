@@ -1,4 +1,7 @@
 from datetime import datetime
+
+from pydantic import field_validator
+
 from views.base_view import BaseView
 from views.list_version_view import ListVersionView
 
@@ -18,7 +21,7 @@ def _item_count(price_list) -> int:
     Catalog-linked items follow the current product availability. Manual items and
     snapshots whose source product was deleted remain part of the count.
     """
-    from models import ListVersion, Item, Product
+    from models import Item, ListVersion, Product
 
     version = (
         ListVersion.select()
@@ -30,9 +33,9 @@ def _item_count(price_list) -> int:
         return 0
 
     availability: dict[str, bool] = {}
-    for product in Product.select(
-        Product.id, Product.name, Product.available
-    ).where(Product.tenant == price_list.tenant_id):
+    for product in Product.select(Product.id, Product.name, Product.available).where(
+        Product.tenant == price_list.tenant_id
+    ):
         availability[str(product.id)] = product.available
         availability[_norm_name(product.name)] = product.available
 
@@ -81,6 +84,23 @@ class PriceListView(BaseView):
     updated_at: datetime
     versions: list[ListVersionView] | None = None
 
+    @field_validator("versions", mode="before")
+    @classmethod
+    def render_version_content(cls, versions):
+        """Deserialize version content before Pydantic reads relationship rows.
+
+        Peewee exposes the `versions` backref while validating a list, even
+        when callers did not request versions explicitly. Each row stores its
+        content document as JSON text, so routing it through `ListVersionView`
+        keeps list responses consistent with direct version responses.
+        """
+        if versions is None:
+            return None
+        return [
+            ListVersionView.render(version) if hasattr(version, "content") else version
+            for version in versions
+        ]
+
     @classmethod
     def render(cls, price_list, include_versions=False, live_ids=None):
         view = cls.model_validate(price_list)
@@ -97,4 +117,6 @@ class PriceListView(BaseView):
         lists = list(lists)
         # One lookup for the whole page instead of one per list.
         live_ids = _live_ids(lists[0].tenant_id) if lists else set()
-        return [cls.render(price_list, include_versions, live_ids) for price_list in lists]
+        return [
+            cls.render(price_list, include_versions, live_ids) for price_list in lists
+        ]

@@ -12,10 +12,20 @@ import urllib.request
 
 BASE = "http://localhost:8000/api/v1"
 HERE = os.path.dirname(__file__)
-with open(os.path.join(HERE, "tok.json"), encoding="utf-8") as token_file:
-    TOKEN_DATA = json.load(token_file)
-TOKEN = TOKEN_DATA["token"]
-TENANT_ID = TOKEN_DATA["tenant"]["id"]
+TOKEN_DATA = None
+token_path = os.path.join(HERE, "tok.json")
+if os.path.exists(token_path):
+    with open(token_path, encoding="utf-8") as token_file:
+        TOKEN_DATA = json.load(token_file)
+TOKEN = os.environ.get("DEMO_TOKEN") or (TOKEN_DATA or {}).get("token")
+TENANT_ID = os.environ.get("DEMO_TENANT_ID") or (TOKEN_DATA or {}).get(
+    "tenant", {}
+).get("id")
+SUBDOMAIN = os.environ.get("DEMO_SUBDOMAIN") or (TOKEN_DATA or {}).get(
+    "tenant", {}
+).get("subdomain")
+if not TOKEN or not TENANT_ID:
+    raise RuntimeError("Set DEMO_TOKEN and DEMO_TENANT_ID or create demo/tok.json")
 HEADERS = {"Content-Type": "application/json", "Authorization": f"Bearer {TOKEN}"}
 
 
@@ -197,7 +207,8 @@ def main() -> None:
     existing = {row["name"]: row for row in rows}
     for definition in LISTS:
         ensure_list(definition, existing)
-    print(f"Open http://localhost:3000/p/{TOKEN_DATA['tenant']['subdomain']}")
+    if SUBDOMAIN:
+        print(f"Open http://localhost:3000/p/{SUBDOMAIN}")
 
 
 if __name__ == "__main__":
