@@ -67,3 +67,15 @@ python build_tour.py      # re-embeber
 
 > `tok.json` (contiene un JWT) y `node_modules/` están gitignoreados: no se commitean.
 > El dataset demo vive en el volumen Docker local `api_data`, no en el repo.
+# Pencil price-list content demo
+
+After the local API and web app are running and `demo/tok.json` exists, seed
+the five price lists shown in `pencil.pen` without deleting current data:
+
+```bash
+python demo/seed_pencil_price_lists.py
+```
+
+It creates or updates Lista principal, Mayoristas, Promociones de invierno,
+Cliente Distrimax, and Catálogo 2025 with distinct versioned public content.
+Only the first four are published; Catálogo 2025 remains a draft.
