@@ -103,6 +103,7 @@ def content(title: str, body: str, promotions: list[str]) -> dict:
 LISTS = [
     (
         "Lista principal",
+        "store",
         True,
         True,
         content(
@@ -113,6 +114,7 @@ LISTS = [
     ),
     (
         "Mayoristas",
+        "catalog",
         True,
         False,
         content(
@@ -123,6 +125,7 @@ LISTS = [
     ),
     (
         "Promociones de invierno",
+        "photo",
         True,
         False,
         content(
@@ -133,6 +136,7 @@ LISTS = [
     ),
     (
         "Cliente Distrimax",
+        "tech",
         True,
         False,
         content(
@@ -143,6 +147,7 @@ LISTS = [
     ),
     (
         "Catálogo 2025",
+        "classic",
         False,
         False,
         content(
@@ -169,7 +174,7 @@ def ensure_items(version: dict) -> None:
 
 
 def ensure_list(definition: tuple, existing: dict[str, dict]) -> None:
-    name, published, show_on_index, list_content = definition
+    name, design, published, show_on_index, list_content = definition
     price_list = existing.get(name)
     if price_list is None:
         status, price_list = call("POST", f"/tenants/{TENANT_ID}/lists", {"name": name})
@@ -193,7 +198,11 @@ def ensure_list(definition: tuple, existing: dict[str, dict]) -> None:
     status, response = call(
         "PATCH",
         f"/lists/{price_list['id']}",
-        {"published": published, "show_on_index": show_on_index},
+        {
+            "design": design,
+            "published": published,
+            "show_on_index": show_on_index,
+        },
     )
     if status != 200:
         raise RuntimeError(f"Could not update {name}: {status} {response}")
