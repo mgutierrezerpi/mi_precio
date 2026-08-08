@@ -18,6 +18,7 @@ from controllers import (
     notifications_router,
     billing_router,
     support_router,
+    designs_router,
 )
 
 
@@ -51,5 +52,6 @@ def register_routes(app):
     api.include_router(notifications_router, dependencies=plan_gated)
     api.include_router(billing_router)
     api.include_router(support_router, dependencies=plan_gated)
+    api.include_router(designs_router, dependencies=plan_gated)
 
     app.include_router(api)

@@ -51,6 +51,7 @@ def create_tables():
 
 def ensure_columns():
     _ensure_list_columns()
+    _ensure_list_version_columns()
     _ensure_product_columns()
     _ensure_optional_columns()
     _ensure_item_columns()
@@ -74,6 +75,16 @@ def _ensure_list_columns():
             ("starts_at", "starts_at DATETIME"),
             ("ends_at", "ends_at DATETIME"),
             ("capture_viewer_info", "capture_viewer_info INTEGER NOT NULL DEFAULT 0"),
+        ],
+    )
+
+
+def _ensure_list_version_columns():
+    _add_missing_columns(
+        "list_versions",
+        [
+            ("content", "content TEXT"),
+            ("content_revision", "content_revision INTEGER NOT NULL DEFAULT 0"),
         ],
     )
 

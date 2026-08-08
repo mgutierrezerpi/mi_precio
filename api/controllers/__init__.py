@@ -13,6 +13,7 @@ from controllers.team_controller import router as team_router
 from controllers.notifications_controller import router as notifications_router
 from controllers.billing_controller import router as billing_router
 from controllers.support_controller import router as support_router
+from controllers.designs_controller import router as designs_router
 
 # Explicit re-exports
 auth_router = auth_router
@@ -30,3 +31,4 @@ team_router = team_router
 notifications_router = notifications_router
 billing_router = billing_router
 support_router = support_router
+designs_router = designs_router

@@ -6,6 +6,9 @@ from controllers.input_types.create_list import CreateList as CreateList
 from controllers.input_types.update_list import UpdateList as UpdateList
 from controllers.input_types.create_version import CreateVersion as CreateVersion
 from controllers.input_types.update_version import UpdateVersion as UpdateVersion
+from controllers.input_types.update_version_content import (
+    UpdateVersionContent as UpdateVersionContent,
+)
 from controllers.input_types.create_item import CreateItem as CreateItem
 from controllers.input_types.update_item import UpdateItem as UpdateItem
 from controllers.input_types.create_product import CreateProduct as CreateProduct

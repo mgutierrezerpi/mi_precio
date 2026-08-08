@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from lib.ctx import versions
 from controllers import ownership
 from controllers.deps import get_current_user, require_editor
-from controllers.input_types import CreateVersion, UpdateVersion
+from controllers.input_types import CreateVersion, UpdateVersion, UpdateVersionContent
 from views import ListVersionView
 
 router = APIRouter(tags=["versions"])
@@ -43,6 +43,27 @@ def update_version_endpoint(
     version = versions.update_version(version_id, **data.model_dump(exclude_unset=True))
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
+    return ListVersionView.render(version)
+
+
+@router.patch("/versions/{version_id}/content")
+def update_version_content_endpoint(
+    version_id: str,
+    data: UpdateVersionContent,
+    current_user: dict = Depends(require_editor),
+):
+    ownership.own_version(version_id, current_user)
+    try:
+        version = versions.update_content(
+            version_id, data.content, data.content_revision
+        )
+    except (TypeError, ValueError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    if not version:
+        raise HTTPException(
+            status_code=409,
+            detail="This version content changed. Reload before saving again.",
+        )
     return ListVersionView.render(version)
 
 

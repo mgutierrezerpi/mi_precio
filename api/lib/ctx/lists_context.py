@@ -81,6 +81,9 @@ def create_list(
             .first()
         )
         if source:
+            version.content = source.content
+            version.content_revision = 0
+            version.save()
             for item in source.items.order_by(Item.position):
                 item.duplicate(list_version=version)
 
