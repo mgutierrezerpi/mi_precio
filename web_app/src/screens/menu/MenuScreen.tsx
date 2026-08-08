@@ -3,7 +3,13 @@ import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
 import { getT, localeOf, type TFn } from '../../lib/i18n'
-import type { Tenant, ListVersion, Item, ListDesign } from '../../types'
+import type {
+  Tenant,
+  ListVersion,
+  Item,
+  ListDesign,
+  ListContent,
+} from '../../types'
 import {
   lighten,
   readableOn,
@@ -157,7 +163,11 @@ export function MenuScreen() {
     const last = recentViews.get(key)
     if (last && now - last < 3000) return
     recentViews.set(key, now)
-    api.recordPublicView(subdomain, listId ? displayLists[0]?.id : undefined, viewSource)
+    api.recordPublicView(
+      subdomain,
+      listId ? displayLists[0]?.id : undefined,
+      viewSource
+    )
   }, [
     subdomain,
     listId,
@@ -219,6 +229,9 @@ export function MenuScreen() {
       : allItems
   }, [allItems, q])
 
+  const list = displayLists.length === 1 ? displayLists[0] : null
+  const content = list?.version.content ?? null
+
   const sections = useMemo(() => {
     const map = new Map<string, { key: string; name: string; items: Item[] }>()
     for (const it of base) {
@@ -227,7 +240,7 @@ export function MenuScreen() {
         map.set(k, { key: k, name: disp(it.category), items: [] })
       map.get(k)!.items.push(it)
     }
-    return Array.from(map.values()).map((s) => {
+    const inferred = Array.from(map.values()).map((s) => {
       const prices = s.items
         .map((i) => parseFloat(i.price))
         .filter((n) => !Number.isNaN(n))
@@ -237,10 +250,22 @@ export function MenuScreen() {
         max: prices.length ? Math.max(...prices) : 0,
       }
     })
-  }, [base])
+    const catalog = content?.blocks.find((block) => block.type === 'catalog')
+    if (!catalog || catalog.type !== 'catalog') return inferred
 
-  const list = displayLists.length === 1 ? displayLists[0] : null
-  const viewerPromptEnabled = Boolean(list?.captureViewerInfo && !viewerSubmitted)
+    const remaining = new Map(inferred.map((section) => [section.key, section]))
+    const ordered = catalog.sections.flatMap((definition) => {
+      const key = norm(definition.source.value)
+      const section = remaining.get(key)
+      if (!section) return []
+      remaining.delete(key)
+      return [{ ...section, name: definition.title }]
+    })
+    return [...ordered, ...remaining.values()]
+  }, [base, content])
+  const viewerPromptEnabled = Boolean(
+    list?.captureViewerInfo && !viewerSubmitted
+  )
   const submitViewer = async () => {
     if (!list || !subdomain) return
     const name = viewerContact.name.trim()
@@ -342,7 +367,10 @@ export function MenuScreen() {
         {/* Why they are here. Its own half, so the pitch can never bury it. */}
         {/* `overflow-y-auto`, not `hidden`: the page never scrolls, but on a very
             short phone a half scrolls itself rather than clipping its CTA. */}
-        <div className="flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-6 text-center md:gap-6 md:px-8" style={{ background: BASE.bg }}>
+        <div
+          className="flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-6 text-center md:gap-6 md:px-8"
+          style={{ background: BASE.bg }}
+        >
           {/* Sized to break in two. `text-balance` keeps the split even here and
               degrades sanely for the longer en/pt strings. */}
           <h1
@@ -351,7 +379,10 @@ export function MenuScreen() {
           >
             {t('pub.shopNotFound')}
           </h1>
-          <p className="max-w-sm text-[13px] font-medium leading-relaxed sm:text-sm md:text-lg" style={{ color: BASE.muted }}>
+          <p
+            className="max-w-sm text-[13px] font-medium leading-relaxed sm:text-sm md:text-lg"
+            style={{ color: BASE.muted }}
+          >
             {t('pub.shopNotFoundHint')}
           </p>
         </div>
@@ -359,18 +390,31 @@ export function MenuScreen() {
         {/* Ours to use: whoever reached this already scans QR menus. */}
         <div
           className="flex flex-col items-center justify-center gap-4 overflow-y-auto px-6 py-6 text-center text-white sm:gap-6 md:gap-11 md:px-8"
-          style={{ background: `linear-gradient(150deg, ${BASE.accent2} 0%, ${BASE.accent} 55%, ${lighten(BASE.accent, 0.3)} 100%)` }}
+          style={{
+            background: `linear-gradient(150deg, ${BASE.accent2} 0%, ${BASE.accent} 55%, ${lighten(BASE.accent, 0.3)} 100%)`,
+          }}
         >
-          <img src={MIPRECIO_LOGO_WHITE} alt="MiPrecio" className="h-9 w-auto sm:h-12 md:h-20 lg:h-24" />
+          <img
+            src={MIPRECIO_LOGO_WHITE}
+            alt="MiPrecio"
+            className="h-9 w-auto sm:h-12 md:h-20 lg:h-24"
+          />
 
           <div className="flex max-w-lg flex-col gap-2 md:gap-3">
-            <h2 className="text-[20px] font-extrabold leading-[1.15] sm:text-[24px] md:text-[36px] lg:text-[42px]">{t('pub.lpHeadline')}</h2>
-            <p className="text-xs font-medium leading-relaxed text-white/80 sm:text-[13px] md:text-base lg:text-lg">{t('pub.lpSub')}</p>
+            <h2 className="text-[20px] font-extrabold leading-[1.15] sm:text-[24px] md:text-[36px] lg:text-[42px]">
+              {t('pub.lpHeadline')}
+            </h2>
+            <p className="text-xs font-medium leading-relaxed text-white/80 sm:text-[13px] md:text-base lg:text-lg">
+              {t('pub.lpSub')}
+            </p>
           </div>
 
           <ul className="flex flex-col gap-1.5 text-left sm:gap-2 md:gap-3">
             {['pub.lpFeat1', 'pub.lpFeat2', 'pub.lpFeat3'].map((key) => (
-              <li key={key} className="flex items-center gap-2.5 text-xs font-semibold text-white/90 sm:text-[13px] md:gap-3 md:text-base lg:text-[17px]">
+              <li
+                key={key}
+                className="flex items-center gap-2.5 text-xs font-semibold text-white/90 sm:text-[13px] md:gap-3 md:text-base lg:text-[17px]"
+              >
                 <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-white/20 sm:h-5 sm:w-5 md:h-7 md:w-7">
                   <SIco name="check" size={12} />
                 </span>
@@ -394,7 +438,15 @@ export function MenuScreen() {
   // plan. The shop exists, so send its customer to the rest of its catalogue —
   // never to MiPrecio's landing, which sells them nothing they came for.
   if (listId && displayLists.length === 0) {
-    return <ListNotFound tenant={tenant} lists={lists} t={t} accent={accent} brandGradient={brandGradient} />
+    return (
+      <ListNotFound
+        tenant={tenant}
+        lists={lists}
+        t={t}
+        accent={accent}
+        brandGradient={brandGradient}
+      />
+    )
   }
 
   // Appearance falls back field by field: this list's own override → the
@@ -510,6 +562,7 @@ export function MenuScreen() {
                 norm={norm}
                 isService={isService}
                 openCart={() => setShowCart(true)}
+                content={content}
               />
             ) : design === 'nordic' ? (
               <NordicMenu {...designProps} />
@@ -550,7 +603,10 @@ export function MenuScreen() {
                 .recordPublicViewerDismissal(subdomain, list.id)
                 .then((response) => {
                   if (response.error) {
-                    console.warn('[public] could not record anonymous dismissal', response.error)
+                    console.warn(
+                      '[public] could not record anonymous dismissal',
+                      response.error
+                    )
                   }
                 })
             }
@@ -717,8 +773,12 @@ function ViewerCapturePrompt({
               <SIco name="message-circle" size={21} color="#fff" />
             </span>
             <div className="flex min-w-0 flex-col gap-1">
-              <h2 className="text-xl font-extrabold leading-tight text-[#0F0D1A]">{t('viewer.title')}</h2>
-              <p className="text-sm font-medium leading-5 text-[#84818E]">{t('viewer.subtitle')}</p>
+              <h2 className="text-xl font-extrabold leading-tight text-[#0F0D1A]">
+                {t('viewer.title')}
+              </h2>
+              <p className="text-sm font-medium leading-5 text-[#84818E]">
+                {t('viewer.subtitle')}
+              </p>
             </div>
           </div>
 
@@ -737,10 +797,14 @@ function ViewerCapturePrompt({
                       background: active ? accent : 'transparent',
                       borderColor: active ? accent : 'transparent',
                       color: active ? readableOn(accent) : '#84818E',
-                      boxShadow: active ? '0 4px 12px rgba(15,13,26,0.16)' : 'none',
+                      boxShadow: active
+                        ? '0 4px 12px rgba(15,13,26,0.16)'
+                        : 'none',
                     }}
                   >
-                    {active && <SIco name="check" size={13} color={readableOn(accent)} />}
+                    {active && (
+                      <SIco name="check" size={13} color={readableOn(accent)} />
+                    )}
                     {method === 'email' ? t('viewer.email') : t('viewer.phone')}
                   </button>
                 )
@@ -750,7 +814,9 @@ function ViewerCapturePrompt({
 
           <div className="mt-4 flex flex-col gap-3">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-[#44424E]">{t('viewer.name')}</span>
+              <span className="text-xs font-bold text-[#44424E]">
+                {t('viewer.name')}
+              </span>
               <input
                 autoFocus
                 value={values.name}
@@ -762,21 +828,37 @@ function ViewerCapturePrompt({
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-bold text-[#44424E]">
-                {contactMethod === 'email' ? t('viewer.email') : t('viewer.phone')}
+                {contactMethod === 'email'
+                  ? t('viewer.email')
+                  : t('viewer.phone')}
               </span>
               <input
                 type={contactMethod === 'email' ? 'email' : 'tel'}
                 inputMode={contactMethod === 'email' ? 'email' : 'tel'}
                 value={values[contactMethod]}
-                onChange={(event) => onChange(contactMethod, event.target.value)}
-                placeholder={contactMethod === 'email' ? t('viewer.emailPlaceholder') : t('viewer.phonePlaceholder')}
+                onChange={(event) =>
+                  onChange(contactMethod, event.target.value)
+                }
+                placeholder={
+                  contactMethod === 'email'
+                    ? t('viewer.emailPlaceholder')
+                    : t('viewer.phonePlaceholder')
+                }
                 className={fieldClass}
                 required
               />
             </label>
-            <p className="text-[11px] font-medium text-[#84818E]">{t('viewer.contactHint')}</p>
-            <p className="text-[10px] font-medium leading-4 text-[#A19EAA]">{t('viewer.privacy')}</p>
-            {error && <p className="text-xs font-bold text-[#DC2626]">{t('viewer.required')}</p>}
+            <p className="text-[11px] font-medium text-[#84818E]">
+              {t('viewer.contactHint')}
+            </p>
+            <p className="text-[10px] font-medium leading-4 text-[#A19EAA]">
+              {t('viewer.privacy')}
+            </p>
+            {error && (
+              <p className="text-xs font-bold text-[#DC2626]">
+                {t('viewer.required')}
+              </p>
+            )}
           </div>
           <div className="mt-5 flex flex-col gap-2">
             <button
@@ -801,7 +883,13 @@ function ViewerCapturePrompt({
   )
 }
 
-function ListNotFound({ tenant, lists, t, accent, brandGradient }: {
+function ListNotFound({
+  tenant,
+  lists,
+  t,
+  accent,
+  brandGradient,
+}: {
   tenant: Tenant
   lists: PublicList[]
   t: ReturnType<typeof getT>
@@ -817,32 +905,68 @@ function ListNotFound({ tenant, lists, t, accent, brandGradient }: {
   const bgOverlay = main?.bgUrl ? !!main.bgOverlay : !!tenant.listBgOverlay
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 py-12 font-sans" style={{ background: skin.bg }}>
+    <div
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 py-12 font-sans"
+      style={{ background: skin.bg }}
+    >
       {bgUrl && (
-        <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: `url(${bgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-          {bgOverlay && <div className="absolute inset-0" style={{ background: accent, opacity: 0.5, mixBlendMode: 'multiply' }} />}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: `url(${bgUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          {bgOverlay && (
+            <div
+              className="absolute inset-0"
+              style={{
+                background: accent,
+                opacity: 0.5,
+                mixBlendMode: 'multiply',
+              }}
+            />
+          )}
         </div>
       )}
 
       <div className="relative flex flex-col items-center gap-3 text-center">
-        {tenant.logoUrl
-          ? <img src={tenant.logoUrl} alt={tenant.name} className="h-16 w-16 rounded-2xl object-cover" />
-          : (
-            <span className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-extrabold" style={{ background: brandGradient, color: onBrand }}>
-              {tenant.name.slice(0, 2).toUpperCase()}
-            </span>
-          )}
-        <h1 className="text-xl font-extrabold" style={{ color: skin.ink }}>{tenant.name}</h1>
+        {tenant.logoUrl ? (
+          <img
+            src={tenant.logoUrl}
+            alt={tenant.name}
+            className="h-16 w-16 rounded-2xl object-cover"
+          />
+        ) : (
+          <span
+            className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-extrabold"
+            style={{ background: brandGradient, color: onBrand }}
+          >
+            {tenant.name.slice(0, 2).toUpperCase()}
+          </span>
+        )}
+        <h1 className="text-xl font-extrabold" style={{ color: skin.ink }}>
+          {tenant.name}
+        </h1>
       </div>
 
       <div className="relative flex w-full max-w-sm flex-col gap-4">
-        <p className="text-center text-sm font-medium" style={{ color: skin.body }}>
+        <p
+          className="text-center text-sm font-medium"
+          style={{ color: skin.body }}
+        >
           {lists.length > 0 ? t('pub.listGone') : t('pub.catalogUnavailable')}
         </p>
 
         {lists.length > 0 ? (
           <>
-            <p className="text-center text-xs font-bold uppercase tracking-wide" style={{ color: skin.muted }}>{t('pub.listGoneOthers')}</p>
+            <p
+              className="text-center text-xs font-bold uppercase tracking-wide"
+              style={{ color: skin.muted }}
+            >
+              {t('pub.listGoneOthers')}
+            </p>
             <div className="flex flex-col gap-2">
               {lists.map((l) => {
                 const count = l.version?.items?.length ?? 0
@@ -851,10 +975,17 @@ function ListNotFound({ tenant, lists, t, accent, brandGradient }: {
                     key={l.id}
                     to={`/p/${tenant.subdomain}/${l.slug || l.id}`}
                     className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 transition-transform active:scale-[0.99]"
-                    style={{ background: skin.surface, border: `1px solid ${skin.line}`, color: skin.ink }}
+                    style={{
+                      background: skin.surface,
+                      border: `1px solid ${skin.line}`,
+                      color: skin.ink,
+                    }}
                   >
                     <span className="truncate text-sm font-bold">{l.name}</span>
-                    <span className="shrink-0 text-xs font-semibold" style={{ color: skin.muted }}>
+                    <span
+                      className="shrink-0 text-xs font-semibold"
+                      style={{ color: skin.muted }}
+                    >
                       {count} {t(count === 1 ? 'pub.product' : 'pub.products')}
                     </span>
                   </Link>
@@ -872,7 +1003,12 @@ function ListNotFound({ tenant, lists, t, accent, brandGradient }: {
         ) : (
           /* Nothing of this shop is being served — most often an expired
              subscription. Say so and stop: there is nowhere useful to send them. */
-          <p className="text-center text-sm font-medium" style={{ color: skin.muted }}>{t('pub.catalogUnavailableHint')}</p>
+          <p
+            className="text-center text-sm font-medium"
+            style={{ color: skin.muted }}
+          >
+            {t('pub.catalogUnavailableHint')}
+          </p>
         )}
       </div>
     </div>
@@ -905,6 +1041,7 @@ interface StoreProps {
   norm: (s?: string | null) => string
   isService: boolean
   openCart: () => void
+  content: ListContent | null
 }
 
 function Storefront(p: StoreProps) {
@@ -933,6 +1070,7 @@ function Storefront(p: StoreProps) {
     norm,
     isService,
     openCart,
+    content,
   } = p
   const grad = {
     background: `linear-gradient(135deg, ${accent} 0%, ${C.accent2} 100%)`,
@@ -952,8 +1090,20 @@ function Storefront(p: StoreProps) {
       )[0],
     [allItems]
   )
+  const hero = content?.hero
   const heroTitle =
-    tenant.description || t('store.heroTitle', { name: tenant.name })
+    hero?.title ||
+    tenant.description ||
+    t('store.heroTitle', { name: tenant.name })
+  const heroStats = hero?.stats?.map((stat) => [stat.value, stat.label]) ?? [
+    [`${allItems.length}`, t('store.statProducts')],
+    ['24/7', t('store.statShipping')],
+    [updated, t('store.statUpdated')],
+  ]
+  const promotion = content?.blocks.find(
+    (block) => block.type === 'promotion_strip'
+  )
+  const contact = content?.blocks.find((block) => block.type === 'contact')
 
   return (
     <div>
@@ -1023,7 +1173,7 @@ function Storefront(p: StoreProps) {
               className="w-fit rounded-full px-3 py-1 text-[11px] font-bold tracking-[2px]"
               style={{ background: heroChip, color: heroInk }}
             >
-              {t('store.badge')}
+              {hero?.eyebrow || t('store.badge')}
             </span>
             <h1
               className="text-3xl font-black leading-tight md:text-[40px]"
@@ -1035,14 +1185,10 @@ function Storefront(p: StoreProps) {
               className="max-w-[560px] text-[15px] font-medium"
               style={{ color: heroInk, opacity: 0.82 }}
             >
-              {t('store.heroSub')}
+              {hero?.body || t('store.heroSub')}
             </p>
             <div className="mt-2 flex flex-wrap gap-8">
-              {[
-                [`${allItems.length}`, t('store.statProducts')],
-                ['24/7', t('store.statShipping')],
-                [updated, t('store.statUpdated')],
-              ].map(([v, l]) => (
+              {heroStats.map(([v, l]) => (
                 <div key={l} className="flex flex-col gap-0.5">
                   <span
                     className="text-[22px] font-extrabold"
@@ -1168,6 +1314,22 @@ function Storefront(p: StoreProps) {
         </div>
       </div>
 
+      {promotion?.type === 'promotion_strip' && promotion.items.length > 0 && (
+        <div className="border-b bg-violet-50" style={{ borderColor: C.line }}>
+          <div className="mx-auto flex w-full max-w-[1280px] flex-wrap gap-x-6 gap-y-2 px-5 py-3 text-[12px] font-bold md:px-16">
+            {promotion.items.map((item) => (
+              <span
+                key={item}
+                className="flex items-center gap-2"
+                style={{ color: accent }}
+              >
+                <SIco name="sparkles" size={14} color={accent} /> {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Main */}
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-5 py-8 md:px-16 lg:flex-row">
         {/* Sidebar */}
@@ -1258,6 +1420,21 @@ function Storefront(p: StoreProps) {
             >
               {t('store.waBtn')}
             </a>
+            {contact?.type === 'contact' &&
+              contact.hours &&
+              contact.hours.length > 0 && (
+                <div className="mt-1 border-t border-white/20 pt-3 text-[12px] font-medium text-white/90">
+                  {contact.hours.map((entry) => (
+                    <div
+                      key={entry.days}
+                      className="flex justify-between gap-3"
+                    >
+                      <span>{entry.days}</span>
+                      <span>{entry.hours}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
           </div>
         </aside>
 

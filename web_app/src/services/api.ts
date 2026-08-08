@@ -109,6 +109,25 @@ function productBody<
   }
 }
 
+function listContentBody(content: NonNullable<ListVersion['content']>) {
+  return {
+    schema_version: content.schemaVersion,
+    ...(content.hero ? { hero: content.hero } : {}),
+    blocks: content.blocks.map((block) => {
+      if (block.type === 'contact') {
+        const { showWhatsapp, ...rest } = block
+        return {
+          ...rest,
+          ...(showWhatsapp === undefined
+            ? {}
+            : { show_whatsapp: showWhatsapp }),
+        }
+      }
+      return block
+    }),
+  }
+}
+
 class ApiService {
   private baseUrl: string
   private token: string | null = null
@@ -340,6 +359,22 @@ class ApiService {
     })
   }
 
+  /** Cancel at the end of the paid period: access stays until `billing.endsAt`. */
+  async cancelSubscription(tenantId: string): Promise<ApiResponse<Tenant>> {
+    return this.request('/billing/cancellations', {
+      method: 'POST',
+      body: JSON.stringify({ tenant_id: tenantId }),
+    })
+  }
+
+  /** Undo a cancellation that has not lapsed yet. */
+  async resumeSubscription(tenantId: string): Promise<ApiResponse<Tenant>> {
+    return this.request('/billing/resumptions', {
+      method: 'POST',
+      body: JSON.stringify({ tenant_id: tenantId }),
+    })
+  }
+
   // Support (Zoho Desk ticket). Requester identity comes from the JWT server-side.
   async createSupportTicket(
     subject: string,
@@ -428,7 +463,9 @@ class ApiService {
     })
   }
 
-  async getPublicViewers(tenantId: string): Promise<ApiResponse<PublicViewer[]>> {
+  async getPublicViewers(
+    tenantId: string
+  ): Promise<ApiResponse<PublicViewer[]>> {
     return this.request(`/tenants/${tenantId}/public-viewers`)
   }
 
@@ -442,9 +479,12 @@ class ApiService {
     tenantId: string,
     viewerId: string
   ): Promise<ApiResponse<Customer>> {
-    return this.request(`/tenants/${tenantId}/public-viewers/${viewerId}/promote`, {
-      method: 'POST',
-    })
+    return this.request(
+      `/tenants/${tenantId}/public-viewers/${viewerId}/promote`,
+      {
+        method: 'POST',
+      }
+    )
   }
 
   async recordPublicViewerDismissal(
@@ -508,6 +548,26 @@ class ApiService {
       method: 'PATCH',
       body: JSON.stringify(data),
     })
+  }
+
+  async updateVersionContent(
+    versionId: string,
+    content: NonNullable<ListVersion['content']>,
+    contentRevision: number
+  ): Promise<ApiResponse<ListVersion>> {
+    return this.request(`/versions/${versionId}/content`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        content: listContentBody(content),
+        content_revision: contentRevision,
+      }),
+    })
+  }
+
+  async getListDesigns(): Promise<
+    ApiResponse<{ id: ListDesign; blocks: string[] }[]>
+  > {
+    return this.request('/list-designs')
   }
 
   async duplicateVersion(
@@ -917,11 +977,13 @@ class ApiService {
   async getPublicMenu(
     subdomain: string,
     listId?: string
-  ): Promise<ApiResponse<{
-    tenant: Tenant
-    lists: PriceList[]
-    viewerIdentified?: boolean
-  }>> {
+  ): Promise<
+    ApiResponse<{
+      tenant: Tenant
+      lists: PriceList[]
+      viewerIdentified?: boolean
+    }>
+  > {
     const listFilter = listId ? `?list=${encodeURIComponent(listId)}` : ''
     return this.request(`/public/${subdomain}${listFilter}`)
   }

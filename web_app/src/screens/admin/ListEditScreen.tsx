@@ -20,11 +20,37 @@ import { toast } from '../../components/Toast'
 import api from '../../services/api'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import { ListItems, type ItemDraft } from './list-edit/ListItems'
+import { trackEvent } from '../../lib/analytics'
+import type { ListContent } from '../../types'
 
 interface ExtractedItem {
   name: string
   price: number
   description: string | null
+}
+
+function starterListContent(name: string): ListContent {
+  return {
+    schemaVersion: 1,
+    hero: {
+      eyebrow: 'CATÁLOGO ACTUALIZADO',
+      title: name,
+      body: 'Encontrá nuestros productos y precios actualizados.',
+    },
+    blocks: [
+      {
+        id: 'promotion-main',
+        type: 'promotion_strip',
+        items: ['Consultanos por envíos y compras mayoristas'],
+      },
+      {
+        id: 'contact-main',
+        type: 'contact',
+        showWhatsapp: true,
+        hours: [{ days: 'Lun — Vie', hours: '09:00 — 18:00' }],
+      },
+    ],
+  }
 }
 
 export function ListEditScreen() {
@@ -55,6 +81,8 @@ export function ListEditScreen() {
     description: '',
     category: '',
   })
+  const [contentDraft, setContentDraft] = useState('')
+  const [isSavingContent, setIsSavingContent] = useState(false)
 
   // Import state
   const [showImportModal, setShowImportModal] = useState(false)
@@ -109,6 +137,14 @@ export function ListEditScreen() {
       setEditedSlug(list.slug || '')
     }
   }, [list])
+
+  const defaultContentDraft = currentVersion
+    ? JSON.stringify(
+        currentVersion.content || starterListContent(list?.name || 'Mi lista'),
+        null,
+        2
+      )
+    : ''
 
   const handleUpdateName = async () => {
     if (!id || !editedName.trim() || editedName === list?.name) {
@@ -175,11 +211,38 @@ export function ListEditScreen() {
     }
   }
 
+  const handleSaveContent = async () => {
+    if (!currentVersion || !id) return
+    let content: ListContent
+    try {
+      content = JSON.parse(contentDraft || defaultContentDraft) as ListContent
+    } catch {
+      toast.error('El contenido debe ser JSON válido')
+      return
+    }
+    setIsSavingContent(true)
+    const response = await api.updateVersionContent(
+      currentVersion.id,
+      content,
+      currentVersion.contentRevision || 0
+    )
+    setIsSavingContent(false)
+    if (response.error) {
+      toast.error(response.error)
+      return
+    }
+    if (response.data) {
+      setContentDraft(JSON.stringify(response.data.content, null, 2))
+      dispatch(fetchVersions(id))
+      toast.success('Contenido público actualizado')
+    }
+  }
+
   const handleAddItem = async () => {
     const versionId = currentVersion?.id
     if (!versionId || !newItem.name.trim() || !newItem.price) return
 
-    await dispatch(
+    const result = await dispatch(
       createItem({
         versionId,
         data: {
@@ -189,6 +252,12 @@ export function ListEditScreen() {
         },
       })
     )
+    if (createItem.fulfilled.match(result)) {
+      trackEvent('Added List Item', {
+        source: 'manual',
+        has_description: Boolean(newItem.description.trim()),
+      })
+    }
     setNewItem({ name: '', price: '', description: '' })
     setShowAddItem(false)
     toast.success('Producto agregado')
@@ -391,8 +460,9 @@ export function ListEditScreen() {
 
     // Add deduplicated items
     const itemCount = itemsByName.size
+    let createdItemCount = 0
     for (const item of itemsByName.values()) {
-      await dispatch(
+      const result = await dispatch(
         createItem({
           versionId,
           data: {
@@ -402,6 +472,13 @@ export function ListEditScreen() {
           },
         })
       )
+      if (createItem.fulfilled.match(result)) createdItemCount += 1
+    }
+    if (createdItemCount > 0) {
+      trackEvent('Added List Items', {
+        source: 'import',
+        item_count: createdItemCount,
+      })
     }
 
     // Reset import state
@@ -611,6 +688,57 @@ export function ListEditScreen() {
           )}
         </div>
       </div>
+
+      {/* Public content — this first implementation exposes the versioned
+          document directly so every supported block can be tested before the
+          visual block editor is expanded. */}
+      <section className="mb-6 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--shadow-soft)]">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-border)] p-6">
+          <div>
+            <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
+              Contenido público
+            </h2>
+            <p className="mt-1 text-sm text-[var(--color-text-subtle)]">
+              Titular, promociones, secciones y horarios de esta versión.
+            </p>
+          </div>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() =>
+                setContentDraft(
+                  JSON.stringify(starterListContent(list.name), null, 2)
+                )
+              }
+              className="soft-button"
+            >
+              Cargar ejemplo
+            </button>
+          )}
+        </div>
+        <div className="p-6">
+          <textarea
+            value={contentDraft || defaultContentDraft}
+            onChange={(event) => setContentDraft(event.target.value)}
+            disabled={!canEdit || !currentVersion}
+            spellCheck={false}
+            aria-label="Definición de contenido público"
+            className="min-h-72 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 font-mono text-xs leading-5 text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-70"
+          />
+          {canEdit && currentVersion && (
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => void handleSaveContent()}
+                disabled={isSavingContent}
+                className="soft-button-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSavingContent ? 'Guardando…' : 'Guardar contenido'}
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Items Section */}
       <div className="bg-gradient-to-br from-[var(--color-bg-card)] to-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-2xl overflow-hidden shadow-[var(--shadow-soft)]">

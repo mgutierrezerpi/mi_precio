@@ -2,6 +2,18 @@
 
 export type PlanId = 'free' | 'micro' | 'plus' | 'pro'
 
+/** Lemon Squeezy subscription states we surface. `cancelled` still has access
+ *  until `endsAt`; `expired` is when the plan actually drops back to free. */
+export type BillingStatus =
+  | 'on_trial'
+  | 'active'
+  | 'paid'
+  | 'past_due'
+  | 'unpaid'
+  | 'cancelled'
+  | 'expired'
+  | 'paused'
+
 export interface PlanInfo {
   plan: PlanId
   limits: {
@@ -14,19 +26,22 @@ export interface PlanInfo {
   billingEnabled?: boolean
   /** True while the tenant still has to pick a plan before the CRM opens up. */
   planRequired?: boolean
+  /** camelCase: `api.request` camelizes every response key. Declaring these in
+   *  snake_case used to silently break every read (the portal link never
+   *  rendered) because the type lied and TS could not catch it. */
   billing?: {
     provider: string | null
-    customer_id: string | null
-    subscription_id: string | null
-    variant_id: string | null
-    status: string | null
-    renews_at: string | null
-    ends_at: string | null
-    trial_ends_at: string | null
-    portal_url: string | null
-    update_payment_url: string | null
-    card_brand: string | null
-    card_last_four: string | null
+    customerId: string | null
+    subscriptionId: string | null
+    variantId: string | null
+    status: BillingStatus | null
+    renewsAt: string | null
+    endsAt: string | null
+    trialEndsAt: string | null
+    portalUrl: string | null
+    updatePaymentUrl: string | null
+    cardBrand: string | null
+    cardLastFour: string | null
   }
 }
 
@@ -116,6 +131,11 @@ export interface PriceList {
   bgOverlay: boolean | null
   captureViewerInfo?: boolean
   itemCount: number
+  /** `published` is intent; `live` is what the plan actually serves. A published
+   *  list goes `live: false` when the plan allows fewer lists than are published
+   *  (downgrade) or the subscription expired. Nothing is unpublished: paying
+   *  again brings it back on its own. */
+  live: boolean
   createdAt: string
   updatedAt: string
   versions?: ListVersion[]
@@ -149,8 +169,41 @@ export interface ListVersion {
   publishedAt: string | null
   createdAt: string
   updatedAt: string
+  /** Authored public-list copy and layout. Null keeps legacy category rendering. */
+  content: ListContent | null
+  contentRevision: number
   items?: Item[]
 }
+
+export interface ListContent {
+  schemaVersion: 1
+  hero?: {
+    eyebrow?: string
+    title?: string
+    body?: string
+    stats?: { value: string; label: string }[]
+  }
+  blocks: ListContentBlock[]
+}
+
+export type ListContentBlock =
+  | {
+      id: string
+      type: 'catalog'
+      sections: {
+        id: string
+        title: string
+        body?: string
+        source: { kind: 'category'; value: string }
+      }[]
+    }
+  | { id: string; type: 'promotion_strip'; items: string[] }
+  | {
+      id: string
+      type: 'contact'
+      showWhatsapp?: boolean
+      hours?: { days: string; hours: string }[]
+    }
 
 export interface Item {
   id: string
