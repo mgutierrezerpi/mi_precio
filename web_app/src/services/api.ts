@@ -25,6 +25,8 @@ import type {
   User,
   PublicViewer,
   PublicViewerStats,
+  Magazine,
+  MagazinePage,
 } from '../types'
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
@@ -125,6 +127,21 @@ function listContentBody(content: NonNullable<ListVersion['content']>) {
       }
       return block
     }),
+  }
+}
+
+function magazinePageBody(data: {
+  position?: number
+  pageType?: string
+  title?: string | null
+  imageUrl?: string | null
+  content?: Record<string, unknown> | null
+}) {
+  const { pageType, imageUrl, ...rest } = data
+  return {
+    ...rest,
+    ...(pageType === undefined ? {} : { page_type: pageType }),
+    ...(imageUrl === undefined ? {} : { image_url: imageUrl }),
   }
 }
 
@@ -519,6 +536,108 @@ class ApiService {
 
   async deleteList(listId: string): Promise<ApiResponse<{ deleted: boolean }>> {
     return this.request(`/lists/${listId}`, { method: 'DELETE' })
+  }
+
+  // Magazine endpoints
+  async getMagazines(tenantId: string): Promise<ApiResponse<Magazine[]>> {
+    return this.request(`/tenants/${tenantId}/magazines`)
+  }
+
+  async createMagazine(
+    tenantId: string,
+    data: {
+      name: string
+      issue?: string | null
+      description?: string | null
+      design?: string
+      coverImageUrl?: string | null
+      published?: boolean
+      showOnIndex?: boolean
+    }
+  ): Promise<ApiResponse<Magazine>> {
+    const { showOnIndex, coverImageUrl, ...rest } = data
+    return this.request(`/tenants/${tenantId}/magazines`, {
+      method: 'POST',
+      body: JSON.stringify({
+        ...rest,
+        ...(coverImageUrl === undefined ? {} : { cover_image_url: coverImageUrl }),
+        ...(showOnIndex === undefined ? {} : { show_on_index: showOnIndex }),
+      }),
+    })
+  }
+
+  async updateMagazine(
+    magazineId: string,
+    data: {
+      name?: string
+      slug?: string
+      issue?: string | null
+      description?: string | null
+      design?: string
+      coverImageUrl?: string | null
+      published?: boolean
+      showOnIndex?: boolean
+    }
+  ): Promise<ApiResponse<Magazine>> {
+    const body: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(data)) {
+      if (value === undefined) continue
+      const apiKey =
+        key === 'showOnIndex'
+          ? 'show_on_index'
+          : key === 'coverImageUrl'
+            ? 'cover_image_url'
+            : key
+      body[apiKey] = value
+    }
+    return this.request(`/magazines/${magazineId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
+  }
+
+  async deleteMagazine(
+    magazineId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/magazines/${magazineId}`, { method: 'DELETE' })
+  }
+
+  async createMagazinePage(
+    magazineId: string,
+    data: {
+      position: number
+      pageType?: string
+      title?: string | null
+      imageUrl?: string | null
+      content?: Record<string, unknown> | null
+    }
+  ): Promise<ApiResponse<MagazinePage>> {
+    return this.request(`/magazines/${magazineId}/pages`, {
+      method: 'POST',
+      body: JSON.stringify(magazinePageBody(data)),
+    })
+  }
+
+  async updateMagazinePage(
+    pageId: string,
+    data: {
+      position?: number
+      pageType?: string
+      title?: string | null
+      imageUrl?: string | null
+      content?: Record<string, unknown> | null
+    }
+  ): Promise<ApiResponse<MagazinePage>> {
+    return this.request(`/magazine-pages/${pageId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(magazinePageBody(data)),
+    })
+  }
+
+  async deleteMagazinePage(
+    pageId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/magazine-pages/${pageId}`, { method: 'DELETE' })
   }
 
   // Version endpoints
@@ -981,11 +1100,19 @@ class ApiService {
     ApiResponse<{
       tenant: Tenant
       lists: PriceList[]
+      magazines: Magazine[]
       viewerIdentified?: boolean
     }>
   > {
     const listFilter = listId ? `?list=${encodeURIComponent(listId)}` : ''
     return this.request(`/public/${subdomain}${listFilter}`)
+  }
+
+  async getPublicMagazine(
+    subdomain: string,
+    magazineId: string
+  ): Promise<ApiResponse<{ tenant: Tenant; magazine: Magazine }>> {
+    return this.request(`/public/${subdomain}/magazines/${encodeURIComponent(magazineId)}`)
   }
 
   async recordPublicView(

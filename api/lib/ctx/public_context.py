@@ -2,31 +2,73 @@
 
 from math import asin, cos, radians, sin, sqrt
 
-from models import PriceList, ListVersion, Item, Product, Tenant
+from models import PriceList, ListVersion, Item, Product, Tenant, Magazine
+from lib.ctx import plans_context as plans
 from lib.ctx.identity_context import find_tenant_by_subdomain
 from lib.value_objects import PublishedList
+
+
+def live_list_ids(tenant: Tenant) -> list[str]:
+    """Ids of the published lists the tenant's plan actually allows on air.
+
+    Publishing is the owner's intent; the plan decides how much of that intent is
+    served. When a plan no longer covers everything that is published we keep the
+    oldest lists — the main catalogue is almost always the first one created, and
+    silently dropping it would be worse than dropping a recent addition.
+
+    Nothing is unpublished to make this true: paying again restores the whole
+    storefront on its own, with no republishing to do.
+    """
+    published = list(
+        PriceList.select(PriceList.id)
+        .where(
+            (PriceList.tenant == tenant.id)
+            & PriceList.published
+            & (PriceList.design.is_null(True) | (PriceList.design != "pencil-journal"))
+        )
+        .order_by(PriceList.created_at, PriceList.id)
+    )
+    allowance = plans.live_list_allowance(tenant)
+    if allowance is not None:
+        published = published[:allowance]
+    return [price_list.id for price_list in published]
 
 
 def get_published_lists(
     tenant: Tenant, requested_list: str | None = None
 ) -> list[PublishedList]:
-    """Get published lists with their published versions and items.
+    """Get plan-allowed published lists with their versions and items.
 
-    Catalog-linked items inherit the current product description and image. A
-    name-based fallback keeps older items working when they predate product IDs.
+    Catalog-linked items inherit the current product metadata. A name-based
+    fallback keeps older rows working while the startup backfill completes.
+    The tenant-wide index is capped by the plan; an explicitly shared list URL
+    remains reachable so existing QR codes and shared variants keep working.
     """
+    allowed = live_list_ids(tenant)
+    if not allowed:
+        return []
+
     product_details = _product_details(tenant.id)
-    result = []
-    # Variants stay hidden from the tenant-wide catalog. Their own ID/slug URL
-    # may resolve one published variant, which is how special lists are shared.
-    conditions = [(PriceList.tenant == tenant.id) & PriceList.published]
+    conditions = [
+        (PriceList.tenant == tenant.id),
+        PriceList.published,
+        PriceList.design.is_null(True) | (PriceList.design != "pencil-journal"),
+    ]
     if requested_list:
+        # A directly shared variant remains reachable by its own URL. The plan
+        # allowance applies to the tenant-wide index, not to an explicit link.
         conditions.append(
             (PriceList.id == requested_list) | (PriceList.slug == requested_list)
         )
     else:
-        conditions.append(PriceList.parent_list.is_null(True))
-    for price_list in PriceList.select().where(*conditions):
+        conditions.extend(
+            [PriceList.id << allowed, PriceList.parent_list.is_null(True)]
+        )
+
+    result = []
+    for price_list in PriceList.select().where(*conditions).order_by(
+        PriceList.created_at, PriceList.id
+    ):
         version = ListVersion.get_or_none(
             (ListVersion.list == price_list.id) & ListVersion.published
         )
@@ -43,12 +85,13 @@ def get_published_lists(
                     # created before product_id was stored on list items.
                     continue
                 if fallback:
-                    # Products are the source of truth for catalog-linked details.
+                    # Products are the source of truth for catalog-linked details;
+                    # only the list-specific price remains on the item snapshot.
+                    item.name = fallback["name"]
                     item.description = fallback["description"]
-                    if not item.image_url:
-                        item.image_url = fallback["image_url"]
-                    if not item.image_thumb_url:
-                        item.image_thumb_url = fallback["image_thumb_url"]
+                    item.category = fallback["category"]
+                    item.image_url = fallback["image_url"]
+                    item.image_thumb_url = fallback["image_thumb_url"]
                 visible_items.append(item)
             result.append(PublishedList(price_list, version, visible_items))
     return result
@@ -61,13 +104,16 @@ def _product_details(tenant_id: str) -> dict[str, dict[str, str | bool | None]]:
         Product.id,
         Product.name,
         Product.available,
+        Product.category,
         Product.description,
         Product.image_url,
         Product.image_thumb_url,
     ).where(Product.tenant == tenant_id):
         value = {
+            "name": product.name,
             "available": product.available,
             "description": product.description,
+            "category": product.category,
             "image_url": product.image_url,
             "image_thumb_url": product.image_thumb_url,
         }
@@ -127,3 +173,17 @@ def _distance_km(lat_a: float, lon_a: float, lat_b: float, lon_b: float) -> floa
 def get_tenant_by_subdomain(subdomain: str) -> Tenant | None:
     """Get tenant by subdomain for public access."""
     return find_tenant_by_subdomain(subdomain)
+
+
+def get_published_magazines(
+    tenant: Tenant, requested_magazine: str | None = None
+) -> list[Magazine]:
+    from lib.ctx import magazines_context
+
+    return magazines_context.get_published_magazines(tenant, requested_magazine)
+
+
+def get_public_magazine(tenant: Tenant, requested_magazine: str) -> Magazine | None:
+    from lib.ctx import magazines_context
+
+    return magazines_context.get_public_magazine(tenant, requested_magazine)

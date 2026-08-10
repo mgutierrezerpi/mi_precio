@@ -4,6 +4,10 @@ from controllers.input_types.create_tenant import CreateTenant as CreateTenant
 from controllers.input_types.update_tenant import UpdateTenant as UpdateTenant
 from controllers.input_types.create_list import CreateList as CreateList
 from controllers.input_types.update_list import UpdateList as UpdateList
+from controllers.input_types.create_magazine import CreateMagazine as CreateMagazine
+from controllers.input_types.update_magazine import UpdateMagazine as UpdateMagazine
+from controllers.input_types.create_magazine_page import CreateMagazinePage as CreateMagazinePage
+from controllers.input_types.update_magazine_page import UpdateMagazinePage as UpdateMagazinePage
 from controllers.input_types.create_version import CreateVersion as CreateVersion
 from controllers.input_types.update_version import UpdateVersion as UpdateVersion
 from controllers.input_types.update_version_content import (

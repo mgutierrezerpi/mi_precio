@@ -16,6 +16,7 @@ from lib.ctx import team_context as team
 from lib.ctx import notifications_context as notifications
 from lib.ctx import push_context as push
 from lib.ctx import plans_context as plans
+from lib.ctx import magazines_context as magazines
 
 # Explicit re-exports
 identity = identity
@@ -34,3 +35,4 @@ team = team
 notifications = notifications
 push = push
 plans = plans
+magazines = magazines

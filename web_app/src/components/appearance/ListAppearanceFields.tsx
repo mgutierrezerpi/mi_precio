@@ -17,6 +17,34 @@ export const LIST_DESIGNS: ListDesign[] = [
   'cards',
   'catalog',
   'tech',
+  'pencil-bakery',
+  'pencil-garden',
+  'pencil-market',
+  'pencil-evening',
+  'pencil-workshop',
+  'pencil-cheese',
+  'pencil-flower',
+  'pencil-flower-summer',
+  'pencil-flower-winter',
+  'pencil-flower-spring',
+  'pencil-wine',
+  'pencil-cheese-alternating',
+  'pencil-hardware-alternating',
+  'pencil-hardware-weekend',
+  'pencil-hardware-shelf',
+  'pencil-casa-ritual',
+  'pencil-casa-bath',
+  'pencil-casa-signature',
+  'pencil-casa-services',
+  'pencil-auto-detail',
+  'pencil-blush-bloom',
+  'pencil-nova',
+  'pencil-beardy',
+  'pencil-calm-spa',
+  'pencil-union-barber',
+  'pencil-studio-mono',
+  'pencil-beauty-issue',
+  'pencil-obsidian-quarterly',
 ]
 
 export const BRAND_SWATCHES = [
@@ -59,13 +87,13 @@ export function DesignThumb({
   design: ListDesign
   accent: string
 }) {
-  const Thumb = thumbs[design]
+  const Thumb = thumbs[design] ?? PencilExtendedThumb
   return <Thumb accent={accent} />
 }
 
 type ThumbProps = { accent: string }
 
-const thumbs: Record<ListDesign, (props: ThumbProps) => React.ReactNode> = {
+const thumbs: Partial<Record<ListDesign, (props: ThumbProps) => React.ReactNode>> = {
   store: StoreThumb,
   classic: ClassicThumb,
   nordic: NordicThumb,
@@ -75,6 +103,12 @@ const thumbs: Record<ListDesign, (props: ThumbProps) => React.ReactNode> = {
   cards: CardsThumb,
   catalog: CatalogThumb,
   tech: TechThumb,
+  'pencil-bakery': PencilBakeryThumb,
+  'pencil-garden': PencilGardenThumb,
+  'pencil-market': PencilMarketThumb,
+  'pencil-evening': PencilEveningThumb,
+  'pencil-workshop': PencilWorkshopThumb,
+  'pencil-journal': PencilJournalThumb,
 }
 
 function StoreThumb({ accent }: ThumbProps) {
@@ -306,6 +340,132 @@ function PhotoThumb({ accent }: ThumbProps) {
             />
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+function PencilThumb({
+  accent,
+  background,
+  image,
+  darkPanel,
+  imageFirst = false,
+}: {
+  accent: string
+  background: string
+  image: string
+  darkPanel: string
+  imageFirst?: boolean
+}) {
+  const imageBlock = (
+    <div
+      className="h-7 w-full bg-cover bg-center"
+      style={{ backgroundImage: `url(${image})` }}
+    />
+  )
+  const promo = <div className="h-7 w-2/3" style={{ background: darkPanel }} />
+  return (
+    <div className="flex h-24 w-full flex-col gap-1.5 p-2" style={{ background }}>
+      {imageFirst ? imageBlock : promo}
+      <div className="flex flex-col items-center gap-1">
+        <span className="h-1 w-14 rounded-full" style={{ background: accent }} />
+        <span className="h-1 w-24 rounded-full" style={{ background: '#6D6A63' }} />
+      </div>
+      {imageFirst ? promo : imageBlock}
+      <div className="grid grid-cols-2 gap-1">
+        <span className="h-1 rounded-full" style={{ background: '#9B988F' }} />
+        <span className="h-1 rounded-full" style={{ background: accent }} />
+      </div>
+    </div>
+  )
+}
+
+function PencilBakeryThumb({ accent }: ThumbProps) {
+  return (
+    <PencilThumb
+      accent={accent}
+      background="#F4F2EF"
+      darkPanel="#1B1B1B"
+      image="https://images.unsplash.com/photo-1753826366896-170e04691b1c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=480"
+    />
+  )
+}
+
+function PencilGardenThumb({ accent }: ThumbProps) {
+  return (
+    <PencilThumb
+      accent={accent}
+      background="#FBF7EF"
+      darkPanel="#1B1B1B"
+      imageFirst
+      image="https://images.unsplash.com/photo-1726950189914-8fe1016eb9c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=480"
+    />
+  )
+}
+
+function PencilMarketThumb({ accent }: ThumbProps) {
+  return (
+    <PencilThumb
+      accent={accent}
+      background="#F8F1E7"
+      darkPanel="#1B1B1B"
+      image="https://images.unsplash.com/photo-1693140539040-aa567b436278?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=480"
+    />
+  )
+}
+
+function PencilEveningThumb({ accent }: ThumbProps) {
+  return (
+    <PencilThumb
+      accent={accent}
+      background="#F2EFE9"
+      darkPanel="#1B1B1B"
+      imageFirst
+      image="https://images.unsplash.com/photo-1779282620211-810663eac20e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=480"
+    />
+  )
+}
+
+function PencilWorkshopThumb({ accent }: ThumbProps) {
+  return (
+    <PencilThumb
+      accent={accent}
+      background="#E7ECE7"
+      darkPanel="#20322C"
+      image="https://images.unsplash.com/photo-1695728130932-7b5967d59f52?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=480"
+    />
+  )
+}
+
+function PencilExtendedThumb({ accent }: ThumbProps) {
+  return (
+    <div className="flex h-24 w-full flex-col gap-2 p-3" style={{ background: '#F4F0E8' }}>
+      <div className="h-3 w-2/3 rounded-sm" style={{ background: '#252525' }} />
+      <div className="grid flex-1 grid-cols-2 gap-2">
+        {[0, 1, 2, 3].map((index) => (
+          <div key={index} className="flex items-end justify-between border-b pb-1" style={{ borderColor: '#D5CEC2' }}>
+            <span className="h-1 w-2/3 rounded-full" style={{ background: '#8C857A' }} />
+            <span className="h-1 w-5 rounded-full" style={{ background: accent }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PencilJournalThumb({ accent }: ThumbProps) {
+  return (
+    <div className="flex h-24 w-full flex-col gap-1 p-2" style={{ background: '#EEE5D7' }}>
+      <div className="h-8 w-full bg-cover bg-center" style={{ backgroundImage: 'url(/pencil/cheese-factory/zLZId.png)' }} />
+      <div className="flex items-center gap-1">
+        <span className="h-1 w-1/3 rounded-full" style={{ background: '#A76D3E' }} />
+        <span className="h-1 w-1/2 rounded-full" style={{ background: '#6D5B4A' }} />
+      </div>
+      <div className="grid flex-1 grid-cols-3 gap-1">
+        <span style={{ background: '#3A2A1D' }} />
+        <span style={{ background: '#E75B39' }} />
+        <span style={{ background: accent }} />
       </div>
     </div>
   )

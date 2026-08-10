@@ -1,5 +1,5 @@
 import { getT } from '../../lib/i18n'
-import type { Item, Tenant, ListDesign } from '../../types'
+import type { Item, Tenant, ListDesign, ListContent } from '../../types'
 
 /* ── Shared helpers (used by MenuScreen's Storefront/CartView and the designs) ── */
 
@@ -238,7 +238,7 @@ export interface CartTheme {
   footerText: string
 }
 
-const CART_THEMES: Record<ListDesign, CartTheme> = {
+const CART_THEMES: Partial<Record<ListDesign, CartTheme>> = {
   store: {
     isDark: false,
     bg: '#FFFFFF',
@@ -356,9 +356,87 @@ const CART_THEMES: Record<ListDesign, CartTheme> = {
     footerBg: '#070A11',
     footerText: '#7C879B',
   },
+  'pencil-bakery': {
+    isDark: false,
+    bg: '#F4F2EF',
+    surface: '#F4F2EF',
+    field: '#FFFFFF',
+    divider: '#E3DED5',
+    line: '#C8B496',
+    ink: '#1A1A1A',
+    body: '#4A4A4A',
+    muted: '#777168',
+    footerBg: '#1B1B1B',
+    footerText: '#D9D3C8',
+  },
+  'pencil-garden': {
+    isDark: false,
+    bg: '#FBF7EF',
+    surface: '#FBF7EF',
+    field: '#FFFFFF',
+    divider: '#E7E3D7',
+    line: '#A6AD91',
+    ink: '#2A3029',
+    body: '#5D665B',
+    muted: '#7A8373',
+    footerBg: '#1B1B1B',
+    footerText: '#D9D3C8',
+  },
+  'pencil-market': {
+    isDark: false,
+    bg: '#F8F1E7',
+    surface: '#F8F1E7',
+    field: '#FFFFFF',
+    divider: '#E9DCD0',
+    line: '#C86E4E',
+    ink: '#2B211D',
+    body: '#665650',
+    muted: '#85736B',
+    footerBg: '#1B1B1B',
+    footerText: '#D9D3C8',
+  },
+  'pencil-evening': {
+    isDark: false,
+    bg: '#F2EFE9',
+    surface: '#F2EFE9',
+    field: '#FFFFFF',
+    divider: '#E4DED4',
+    line: '#A99476',
+    ink: '#28231F',
+    body: '#655E55',
+    muted: '#82786B',
+    footerBg: '#1B1B1B',
+    footerText: '#D9D3C8',
+  },
+  'pencil-workshop': {
+    isDark: true,
+    bg: '#E7ECE7',
+    surface: '#F4F6F2',
+    field: '#FFFFFF',
+    divider: '#D4DDD4',
+    line: '#809589',
+    ink: '#20322C',
+    body: '#53625B',
+    muted: '#6B7A71',
+    footerBg: '#20322C',
+    footerText: '#C5D0C8',
+  },
+  'pencil-journal': {
+    isDark: false,
+    bg: '#EEE5D7',
+    surface: '#F7F2EA',
+    field: '#FAF5EC',
+    divider: '#DED1C0',
+    line: '#A76D3E',
+    ink: '#3A2A1D',
+    body: '#70583F',
+    muted: '#8A7561',
+    footerBg: '#3A2A1D',
+    footerText: '#F3EDE2',
+  },
 }
 export const cartThemeFor = (design: ListDesign): CartTheme =>
-  CART_THEMES[design] ?? CART_THEMES.store
+  CART_THEMES[design] ?? CART_THEMES.store!
 
 export interface DesignProps {
   tenant: Tenant
@@ -379,17 +457,21 @@ export interface DesignProps {
   q: string
   setQ: (s: string) => void
   cart: Record<string, number>
+  cartCount: number
   addToCart: (id: string) => void
   decFromCart: (id: string) => void
+  openCart: () => void
+  waHref: string
   isService: boolean
   listName: string | null
   edition: string
   taxId: string | null
   hasBg: boolean
+  content?: ListContent | null
 }
 
 /* ── Shared add-to-cart control ── */
-function CartControl({
+export function CartControl({
   qty,
   id,
   addToCart,

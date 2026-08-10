@@ -36,12 +36,12 @@ def test_create_item_with_product_id_links_and_view_exposes_it(db):
     assert view.product_id == product.id
 
 
-def test_create_item_without_product_id_is_null(db):
+def test_create_item_without_product_id_creates_global_product(db):
     tenant = identity.create_tenant("Store", "store-fk2")
     created = lists.create_list(tenant.id, "Menu")
     item = items.create_item(created.version.id, name="Manual", price=10)
-    assert item.product_id is None
-    assert ItemView.render(Item.get_by_id(item.id)).product_id is None
+    assert item.product_id is not None
+    assert ItemView.render(Item.get_by_id(item.id)).product_id == item.product_id
 
 
 def test_create_item_auto_increments_position(db):

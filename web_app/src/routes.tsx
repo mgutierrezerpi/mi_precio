@@ -4,9 +4,12 @@ import { AdminExperienceLayout } from './components/AdminExperienceLayout'
 import { HomeScreen } from './screens/home/HomeScreen'
 import { OldLandingScreen } from './screens/home/OldLandingScreen'
 import { MenuScreen } from './screens/menu/MenuScreen'
+import { MagazineScreen } from './screens/menu/MagazineScreen'
 import { MarketplaceScreen } from './screens/marketplace/MarketplaceScreen'
 
 import { ListEditScreen } from './screens/admin/ListEditScreen'
+import { MagazinesScreen } from './screens/admin/MagazinesScreen'
+import { MagazineEditScreen } from './screens/admin/MagazineEditScreen'
 import { CategoriesScreen } from './screens/admin/CategoriesScreen'
 import { CodesScreen } from './screens/admin/CodesScreen'
 import { CustomersScreen } from './screens/admin/CustomersScreen'
@@ -45,6 +48,10 @@ export const router = createBrowserRouter([
     element: <MenuScreen />,
   },
   {
+    path: '/m/:subdomain/:magazineId',
+    element: <MagazineScreen />,
+  },
+  {
     path: '/login',
     element: <HomeScreen />,
   },
@@ -73,6 +80,14 @@ export const router = createBrowserRouter([
       {
         path: 'lists',
         element: <AdminListsRoute />,
+      },
+      {
+        path: 'magazines',
+        element: <MagazinesScreen />,
+      },
+      {
+        path: 'magazines/:magazineId/edit',
+        element: <MagazineEditScreen />,
       },
 
       {

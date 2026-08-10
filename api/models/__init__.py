@@ -4,6 +4,8 @@ from models.user import User as User
 from models.auth_code import AuthCode as AuthCode
 from models.price_list import PriceList as PriceList
 from models.list_version import ListVersion as ListVersion
+from models.magazine import Magazine as Magazine
+from models.magazine_page import MagazinePage as MagazinePage
 from models.item import Item as Item
 from models.product import Product as Product
 from models.category import Category as Category
@@ -30,6 +32,8 @@ def create_tables():
             AuthCode,
             PriceList,
             ListVersion,
+            Magazine,
+            MagazinePage,
             Item,
             Product,
             Category,

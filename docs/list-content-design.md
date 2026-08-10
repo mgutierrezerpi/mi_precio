@@ -7,10 +7,20 @@ of product rows.  `PriceList` keeps its identity, access, audience, and
 appearance override. `ListVersion` snapshots both the items and the content
 that surrounds them.
 
-The Pencil file is a design reference, not runtime data. We translate its
-reusable parts (hero, catalog, promotion strip, contact, and footer) into a
-small set of supported blocks. We must not store Pencil node trees, arbitrary
-CSS, or unsanitized HTML in customer data.
+Magazines are a separate publication domain. `Magazine` owns the issue identity,
+publication status, slug, and renderer design; `MagazinePage` owns the ordered
+page metadata and a validated JSON content document. They are exposed through
+`/magazines` admin endpoints and `/public/{subdomain}/magazines/{slug}`. A
+magazine is not a `PriceList`, does not participate in cart/order semantics, and
+uses the `/m/` public URL namespace.
+
+The Pencil file is the visual reference for five runtime templates:
+`pencil-bakery`, `pencil-garden`, `pencil-market`, `pencil-evening`, and
+`pencil-workshop`. Their reusable content (hero, catalog, promotion strip,
+contact, and footer) is stored as validated blocks, while their layout,
+typography, imagery, and responsive composition are owned by the frontend
+renderer. We must not store Pencil node trees, arbitrary CSS, or unsanitized
+HTML in customer data.
 
 ## Current state and gap
 
@@ -94,6 +104,11 @@ DESIGN_SPECS = {
     "store": {"blocks": {"catalog", "promotion_strip", "contact"}},
     "catalog": {"blocks": {"catalog", "promotion_strip", "contact"}},
     "tech": {"blocks": {"catalog", "promotion_strip", "contact"}},
+    "pencil-bakery": {"blocks": {"catalog", "promotion_strip", "contact"}},
+    "pencil-garden": {"blocks": {"catalog", "promotion_strip", "contact"}},
+    "pencil-market": {"blocks": {"catalog", "promotion_strip", "contact"}},
+    "pencil-evening": {"blocks": {"catalog", "promotion_strip", "contact"}},
+    "pencil-workshop": {"blocks": {"catalog", "promotion_strip", "contact"}},
     # existing designs are added with their actual supported block sets
 }
 ```

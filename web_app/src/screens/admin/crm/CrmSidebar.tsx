@@ -42,6 +42,13 @@ const navMain: {
     to: '/admin/lists',
   },
   {
+    icon: 'book-open',
+    id: 'Revistas',
+    tKey: 'nav.magazines',
+    label: 'Revistas',
+    to: '/admin/magazines',
+  },
+  {
     icon: 'package',
     id: 'Productos',
     tKey: 'nav.products',

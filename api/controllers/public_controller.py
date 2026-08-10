@@ -3,7 +3,7 @@ import ipaddress
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from lib.ctx import public, analytics, public_viewers
 from controllers.input_types import PublicViewerCapture, PublicViewerDismissal
-from views import PublicMenuView
+from views import PublicMagazineView, PublicMenuView, PublicTenantView
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -35,14 +35,32 @@ def nearby_marketplace_endpoint(
     ]
 
 
+@router.get("/{subdomain}/magazines/{magazine}")
+def get_public_magazine(subdomain: str, magazine: str):
+    tenant = public.get_tenant_by_subdomain(subdomain)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Not found")
+    published = public.get_public_magazine(tenant, magazine)
+    if not published:
+        raise HTTPException(status_code=404, detail="Not found")
+    return {
+        "tenant": PublicTenantView.render(tenant),
+        "magazine": PublicMagazineView.render(published),
+    }
+
+
 @router.get("/{subdomain}")
 def get_public_menu(
-    subdomain: str, request: Request, list: str | None = None
+    subdomain: str,
+    request: Request,
+    list: str | None = None,
+    magazine: str | None = None,
 ):
     tenant = public.get_tenant_by_subdomain(subdomain)
     if not tenant:
         raise HTTPException(status_code=404, detail="Not found")
     published_lists = public.get_published_lists(tenant, list)
+    published_magazines = public.get_published_magazines(tenant, magazine)
     viewer_token = request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE) if request else None
     selected_list_id = published_lists[0].price_list.id if list and published_lists else None
     viewer_identified = public_viewers.touch_viewer(
@@ -50,7 +68,12 @@ def get_public_menu(
     )
     if not viewer_identified:
         viewer_identified = public_viewers.has_viewer(str(tenant.id), viewer_token)
-    return PublicMenuView.render(tenant, published_lists, viewer_identified)
+    return PublicMenuView.render(
+        tenant,
+        published_lists,
+        viewer_identified,
+        published_magazines=published_magazines,
+    )
 
 
 @router.post("/{subdomain}/viewer")

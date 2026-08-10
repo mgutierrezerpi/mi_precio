@@ -40,15 +40,74 @@ def get_product(product_id: str) -> Product | None:
 
 
 def create_product(tenant_id: str, **attrs) -> Product | None:
-    """Create a new product for a tenant."""
+    """Create or update the tenant-global product with this name.
+
+    Product names are the human-facing identity used by imports and older list
+    data, so creating the same product twice should not create two catalogs.
+    """
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant:
         return None
+    existing = find_product_by_name(tenant_id, attrs.get("name"))
+    if existing:
+        return update_product(existing.id, **attrs)
     return Product.create(
         tenant=tenant,
         position=_next_position(tenant_id),
         **attrs,
     )
+
+
+def find_product_by_name(tenant_id: str, name: str | None) -> Product | None:
+    """Find a tenant product by its normalized, case-insensitive name."""
+    normalized = _norm_name(name)
+    if not normalized:
+        return None
+    for product in Product.select().where(Product.tenant == tenant_id):
+        if _norm_name(product.name) == normalized:
+            return product
+    return None
+
+
+def backfill_orphan_items() -> int:
+    """Attach legacy list items to tenant-global products.
+
+    Older imports created list snapshots without a product link. Reusing the
+    first product with the same name keeps those snapshots visible while making
+    the catalog complete for the Products screen. Rows whose old list relation
+    is already broken are skipped so a corrupt legacy snapshot cannot prevent
+    the API from starting.
+    """
+    linked = 0
+    tenant_field = PriceList.tenant_id.alias("tenant_id")
+    version_tenants = {
+        row["id"]: row["tenant_id"]
+        for row in ListVersion.select(ListVersion.id, tenant_field)
+        .join(PriceList)
+        .dicts()
+    }
+    for item in Item.select().where(Item.product.is_null()):
+        tenant_id = version_tenants.get(item.list_version_id)
+        if not tenant_id:
+            continue
+        product = find_product_by_name(tenant_id, item.name)
+        if not product:
+            tenant = Tenant.get_by_id(tenant_id)
+            product = Product.create(
+                tenant=tenant,
+                name=item.name,
+                price=item.price,
+                currency=item.currency,
+                description=item.description,
+                image_url=item.image_url,
+                image_thumb_url=item.image_thumb_url,
+                category=item.category,
+                position=_next_position(tenant_id),
+            )
+        item.product = product
+        item.save()
+        linked += 1
+    return linked
 
 
 def update_product(product_id: str, **updates) -> Product | None:
@@ -61,17 +120,14 @@ def update_product(product_id: str, **updates) -> Product | None:
     product = get_product(product_id)
     if not product:
         return None
-    original_name = product.name
     price_list_ids = updates.pop("price_list_ids", None)
     for key, value in updates.items():
         setattr(product, key, value)
     product.save()
     if "price" in updates:
-        _sync_item_prices(
-            product.tenant_id, original_name, product.price, price_list_ids
-        )
-    if "description" in updates:
-        _sync_item_description(product.id, original_name, product.description)
+        _sync_item_prices(product.tenant_id, product.id, product.price, price_list_ids)
+    if any(field in updates for field in ("name", "description", "category", "currency")):
+        _sync_item_profile(product.id, product)
     if "image_url" in updates or "image_thumb_url" in updates:
         _sync_item_images(product.id, product.image_url, product.image_thumb_url)
     return product
@@ -82,6 +138,7 @@ def delete_product(product_id: str) -> bool:
     product = get_product(product_id)
     if not product:
         return False
+    Item.delete().where(Item.product == product.id).execute()
     product.delete_instance()
     return True
 
@@ -125,7 +182,7 @@ def _next_position(tenant_id: str) -> int:
 
 
 def _sync_item_prices(
-    tenant_id: str, product_name: str, price, price_list_ids: list[str] | None
+    tenant_id: str, product_id: str, price, price_list_ids: list[str] | None
 ) -> None:
     version_ids = (
         ListVersion.select(ListVersion.id)
@@ -135,17 +192,18 @@ def _sync_item_prices(
     if price_list_ids is not None:
         version_ids = version_ids.where(PriceList.id.in_(price_list_ids))
     Item.update(price=price).where(
-        (Item.list_version.in_(version_ids)) & (Item.name == product_name)
+        (Item.list_version.in_(version_ids)) & (Item.product == product_id)
     ).execute()
 
 
-def _sync_item_description(
-    product_id: str, original_name: str, description: str | None
-) -> None:
-    """Keep catalog-linked list descriptions aligned with product edits."""
-    Item.update(description=description).where(
-        (Item.product == product_id) | (Item.name == original_name)
-    ).execute()
+def _sync_item_profile(product_id: str, product: Product) -> None:
+    """Keep all list snapshots aligned with global product metadata."""
+    Item.update(
+        name=product.name,
+        description=product.description,
+        category=product.category,
+        currency=product.currency,
+    ).where(Item.product == product_id).execute()
 
 
 def _sync_item_images(
@@ -182,3 +240,7 @@ def _encode_webp(image, max_side: int, quality: int) -> bytes:
     output = BytesIO()
     image.save(output, format="WEBP", quality=quality, method=6)
     return output.getvalue()
+
+
+def _norm_name(name: str | None) -> str:
+    return (name or "").strip().casefold()

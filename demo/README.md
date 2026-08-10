@@ -70,7 +70,7 @@ python build_tour.py      # re-embeber
 # Pencil price-list content demo
 
 After the local API and web app are running and `demo/tok.json` exists, seed
-the five price lists shown in `pencil.pen` without deleting current data:
+the price lists shown in `pretty lists` without deleting current data:
 
 ```bash
 python demo/seed_pencil_price_lists.py
@@ -79,6 +79,11 @@ python demo/seed_pencil_price_lists.py
 An authenticated local shell can instead provide `DEMO_TOKEN`,
 `DEMO_TENANT_ID`, and optionally `DEMO_SUBDOMAIN`; no token file is required.
 
-It creates or updates Lista principal, Mayoristas, Promociones de invierno,
-Cliente Distrimax, and Catálogo 2025 with distinct versioned public content.
-Only the first four are published; Catálogo 2025 remains a draft.
+It creates or updates the four Maison Étoile lists and Northline Hardware —
+Retail List as price lists. The Cheese Factory Journal is seeded separately as
+a `Magazine` with nine ordered `MagazinePage` records. The old demo journal
+price-list record is unpublished but kept intact; only the Northline list
+remains a draft.
+
+Price lists open at `http://localhost:3000/p/<subdomain>` and magazines at
+`http://localhost:3000/m/<subdomain>/<magazine-slug>`.

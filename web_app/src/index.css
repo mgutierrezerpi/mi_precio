@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Inter:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import 'tailwindcss';
 @plugin "@tailwindcss/forms";
 
@@ -1035,4 +1036,34 @@ a {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
+}
+
+@keyframes journal-page-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Magazine admin canvas: the rendered page stays faithful to the public
+   design while making its editable regions discoverable on hover/focus. */
+.magazine-editor-canvas [data-magazine-field] {
+  cursor: pointer;
+  outline: 1px solid transparent;
+  outline-offset: 4px;
+  transition: outline-color 0.15s ease, background-color 0.15s ease;
+}
+
+.magazine-editor-canvas [data-magazine-field]:hover,
+.magazine-editor-canvas [data-magazine-field]:focus-visible {
+  outline-color: rgb(167 109 62 / 70%);
+  background-color: rgb(255 255 255 / 10%);
+}
+
+.magazine-editor-canvas [data-magazine-field][data-magazine-editing="true"] {
+  visibility: hidden;
 }

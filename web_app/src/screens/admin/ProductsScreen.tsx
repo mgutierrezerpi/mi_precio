@@ -29,7 +29,10 @@ import api from '../../services/api'
 import { localeOf } from '../../lib/i18n'
 import { useCatalogT } from '../../lib/i18nDictionaryCatalog'
 
-const PAGE_SIZE = 8
+const DEFAULT_PAGE_SIZE = 8
+const PAGE_SIZE_OPTIONS = [8, 16, 32, 64] as const
+type PageSize = (typeof PAGE_SIZE_OPTIONS)[number]
+const PAGE_SIZE_STORAGE_KEY = 'mi_precio:products-page-size'
 type Status = 'all' | 'available' | 'unavailable' | 'nophoto' | 'recent'
 type SortKey = 'recent' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc'
 
@@ -48,6 +51,32 @@ const outlineBtn =
 function parseUtcDate(value: string) {
   const hasTimezone = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(value)
   return new Date(hasTimezone ? value : `${value}Z`)
+}
+
+function pageSizeStorageKey(tenantId: string) {
+  return `${PAGE_SIZE_STORAGE_KEY}:${tenantId}`
+}
+
+function isPageSize(value: number): value is PageSize {
+  return PAGE_SIZE_OPTIONS.includes(value as PageSize)
+}
+
+function readPageSize(tenantId: string | undefined): PageSize {
+  if (!tenantId || typeof window === 'undefined') return DEFAULT_PAGE_SIZE
+  try {
+    const stored = Number(window.localStorage.getItem(pageSizeStorageKey(tenantId)))
+    return isPageSize(stored) ? stored : DEFAULT_PAGE_SIZE
+  } catch {
+    return DEFAULT_PAGE_SIZE
+  }
+}
+
+function savePageSize(tenantId: string, pageSize: PageSize) {
+  try {
+    window.localStorage.setItem(pageSizeStorageKey(tenantId), String(pageSize))
+  } catch {
+    // Storage can be unavailable in private browsing; pagination still works.
+  }
 }
 
 /** Read an image file, downscale it, and return a compressed WebP blob. */
@@ -111,6 +140,8 @@ export function ProductsScreen() {
     searchParams.get('cat') || 'all'
   )
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE)
+  const [pageSizeTenantId, setPageSizeTenantId] = useState<string | null>(null)
   const [modal, setModal] = useState<{
     open: boolean
     product: Product | null
@@ -130,6 +161,18 @@ export function ProductsScreen() {
   useEffect(() => {
     if (tenant?.id) dispatch(fetchLists(tenant.id))
   }, [dispatch, tenant?.id])
+
+  useEffect(() => {
+    if (!tenant?.id) return
+    setPageSize(readPageSize(tenant.id))
+    setPageSizeTenantId(tenant.id)
+  }, [tenant?.id])
+
+  useEffect(() => {
+    if (tenant?.id && pageSizeTenantId === tenant.id) {
+      savePageSize(tenant.id, pageSize)
+    }
+  }, [pageSize, pageSizeTenantId, tenant?.id])
 
   // Distinct categories, deduped case-insensitively (keeps first-seen spelling).
   const categories = useMemo(() => {
@@ -189,11 +232,11 @@ export function ProductsScreen() {
     return [...arr].sort(cmp[sort])
   }, [base, status, sort])
 
-  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize))
   const safePage = Math.min(page, totalPages)
   const pageItems = visible.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE
+    (safePage - 1) * pageSize,
+    safePage * pageSize
   )
 
   const resetTo = (fn: () => void) => {
@@ -570,51 +613,71 @@ export function ProductsScreen() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-xs font-medium text-[var(--dash-muted)]">
-              {t('products.showing', {
-                shown: pageItems.length,
-                total: visible.length,
-              })}
-            </span>
-            <div className="flex items-center gap-1">
-              <PagerBtn
-                icon="chevrons-left"
-                disabled={safePage === 1}
-                onClick={() => setPage(1)}
-              />
-              <PagerBtn
-                icon="chevron-left"
-                disabled={safePage === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              />
-              {pageList(safePage, totalPages).map((n, i) =>
-                n === '…' ? (
-                  <span
-                    key={`e${i}`}
-                    className="px-1 text-xs font-bold text-[var(--dash-muted)]"
-                  >
-                    …
-                  </span>
-                ) : (
-                  <PagerNum
-                    key={n}
-                    n={n}
-                    active={n === safePage}
-                    onClick={() => setPage(n)}
-                  />
-                )
-              )}
-              <PagerBtn
-                icon="chevron-right"
-                disabled={safePage === totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              />
-              <PagerBtn
-                icon="chevrons-right"
-                disabled={safePage === totalPages}
-                onClick={() => setPage(totalPages)}
-              />
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center justify-between gap-4 sm:justify-start">
+              <span className="text-xs font-medium text-[var(--dash-muted)]">
+                {t('products.showing', {
+                  shown: pageItems.length,
+                  total: visible.length,
+                })}
+              </span>
+              <label className="flex items-center gap-2 text-xs font-medium text-[var(--dash-muted)]">
+                <span>{t('products.perPage')}</span>
+                <select
+                  value={pageSize}
+                  onChange={(event) => {
+                    setPageSize(Number(event.target.value) as PageSize)
+                    setPage(1)
+                  }}
+                  className="h-8 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-xs font-bold text-[var(--dash-text2)] outline-none focus:border-[var(--dash-link)]"
+                  aria-label={t('products.perPage')}
+                >
+                  {PAGE_SIZE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="flex items-center justify-end gap-1">
+                <PagerBtn
+                  icon="chevrons-left"
+                  disabled={safePage === 1}
+                  onClick={() => setPage(1)}
+                />
+                <PagerBtn
+                  icon="chevron-left"
+                  disabled={safePage === 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                />
+                {pageList(safePage, totalPages).map((n, i) =>
+                  n === '…' ? (
+                    <span
+                      key={`e${i}`}
+                      className="px-1 text-xs font-bold text-[var(--dash-muted)]"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <PagerNum
+                      key={n}
+                      n={n}
+                      active={n === safePage}
+                      onClick={() => setPage(n)}
+                    />
+                  )
+                )}
+                <PagerBtn
+                  icon="chevron-right"
+                  disabled={safePage === totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                />
+                <PagerBtn
+                  icon="chevrons-right"
+                  disabled={safePage === totalPages}
+                  onClick={() => setPage(totalPages)}
+                />
             </div>
           </div>
         </div>

@@ -108,7 +108,14 @@ def _usage(tenant_id: str) -> dict[str, int]:
     )
     return {
         "products": Product.select().where(Product.tenant == tenant_id).count(),
-        "lists": PriceList.select().where(PriceList.tenant == tenant_id).count(),
+        "lists": (
+            PriceList.select()
+            .where(
+                (PriceList.tenant == tenant_id)
+                & (PriceList.design.is_null(True) | (PriceList.design != "pencil-journal"))
+            )
+            .count()
+        ),
         "members": members,
     }
 

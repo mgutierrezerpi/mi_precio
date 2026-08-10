@@ -102,6 +102,35 @@ export type ListDesign =
   | 'cards'
   | 'catalog'
   | 'tech'
+  | 'pencil-bakery'
+  | 'pencil-garden'
+  | 'pencil-market'
+  | 'pencil-evening'
+  | 'pencil-workshop'
+  | 'pencil-cheese'
+  | 'pencil-flower'
+  | 'pencil-flower-summer'
+  | 'pencil-flower-winter'
+  | 'pencil-flower-spring'
+  | 'pencil-wine'
+  | 'pencil-cheese-alternating'
+  | 'pencil-hardware-alternating'
+  | 'pencil-hardware-weekend'
+  | 'pencil-hardware-shelf'
+  | 'pencil-casa-ritual'
+  | 'pencil-casa-bath'
+  | 'pencil-casa-signature'
+  | 'pencil-casa-services'
+  | 'pencil-auto-detail'
+  | 'pencil-blush-bloom'
+  | 'pencil-nova'
+  | 'pencil-beardy'
+  | 'pencil-calm-spa'
+  | 'pencil-union-barber'
+  | 'pencil-studio-mono'
+  | 'pencil-beauty-issue'
+  | 'pencil-obsidian-quarterly'
+  | 'pencil-journal'
 
 export type ListKind = 'product' | 'service'
 export type PriceListVariantType =
@@ -139,6 +168,42 @@ export interface PriceList {
   createdAt: string
   updatedAt: string
   versions?: ListVersion[]
+}
+
+export interface MagazinePage {
+  id: string
+  magazineId: string
+  position: number
+  pageType: string
+  title: string | null
+  imageUrl: string | null
+  content: Record<string, unknown> | null
+}
+
+export const MAGAZINE_DESIGNS = [
+  'pencil-journal',
+  'wild-stem',
+  'aqua-objects',
+  'editorial',
+  'catalog',
+] as const
+
+export type MagazineDesign = (typeof MAGAZINE_DESIGNS)[number]
+
+export interface Magazine {
+  id: string
+  tenantId?: string
+  name: string
+  slug: string | null
+  issue: string | null
+  description: string | null
+  design: MagazineDesign | string
+  coverImageUrl: string | null
+  published?: boolean
+  showOnIndex?: boolean
+  pages: MagazinePage[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface PublicViewer {
