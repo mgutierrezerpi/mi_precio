@@ -367,6 +367,7 @@ const navLinks = [
   ['#funciones', 'Funciones'],
   ['#precios', 'Precios'],
   ['#faq', 'Recursos'],
+  ['/linktree', 'Ver demo Link tree'],
 ]
 
 function Navbar({

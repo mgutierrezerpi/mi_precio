@@ -6,6 +6,7 @@ import { OldLandingScreen } from './screens/home/OldLandingScreen'
 import { MenuScreen } from './screens/menu/MenuScreen'
 import { MagazineScreen } from './screens/menu/MagazineScreen'
 import { MarketplaceScreen } from './screens/marketplace/MarketplaceScreen'
+import { LinkTreeScreen } from './screens/home/LinkTreeScreen'
 
 import { ListEditScreen } from './screens/admin/ListEditScreen'
 import { MagazinesScreen } from './screens/admin/MagazinesScreen'
@@ -38,6 +39,10 @@ export const router = createBrowserRouter([
   {
     path: '/marketplace',
     element: <MarketplaceScreen />,
+  },
+  {
+    path: '/linktree',
+    element: <LinkTreeScreen />,
   },
   {
     path: '/p/:subdomain',

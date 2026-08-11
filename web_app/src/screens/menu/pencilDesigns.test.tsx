@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { DesignProps } from './designs'
-import { PencilList, type PencilVariant } from './pencilDesigns'
+import { PencilList, pencilCartThemeFor, type PencilVariant } from './pencilDesigns'
 
 const variants: PencilVariant[] = [
   'pencil-bakery', 'pencil-garden', 'pencil-market', 'pencil-evening', 'pencil-workshop',
@@ -32,5 +32,14 @@ describe('Pencil price-list templates', () => {
     const view = render(<PencilList variant={variant} {...props} />)
     expect(view.container.textContent).toContain('Demo')
     view.unmount()
+  })
+
+  it.each(variants)('derives a readable cart theme for %s', (variant) => {
+    const theme = pencilCartThemeFor(variant)
+    expect(theme.bg).toMatch(/^#/)
+    expect(theme.accent ?? '').toMatch(/^#/)
+    expect(theme.actionAccent ?? '').toMatch(/^#/)
+    expect(theme.cardRadius).toBeTruthy()
+    expect(theme.buttonRadius).toBeTruthy()
   })
 })

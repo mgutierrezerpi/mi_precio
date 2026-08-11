@@ -228,7 +228,7 @@ export function MagazineEditScreen() {
             <button type="button" onClick={() => void leaveEditor()} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3A2A1D]/80 text-[#D6B58B] hover:bg-[#3A2A1D]" aria-label={t('magazines.backToMagazine')}><Icon name="chevron-left" size={16} /></button>
             <div className="min-w-0" style={{ fontFamily: MAGAZINE_MONO }}><p className="max-w-[190px] truncate text-[8px] uppercase tracking-[1.8px] text-[#D6B58B] sm:max-w-none">{magazine.name}</p><p className="mt-0.5 text-[8px] uppercase tracking-[1.3px] text-[#F3EDE2]/75">{t('magazines.editTitle')}</p></div>
           </div>
-          <div className="hidden flex-1 items-center justify-center gap-1.5 md:flex" aria-label="Magazine pages">
+          <div className="flex min-w-0 max-w-[28vw] flex-1 items-center justify-start gap-1.5 overflow-x-auto py-1 [scrollbar-width:none] md:max-w-none md:justify-center md:overflow-visible" aria-label="Magazine pages">
             {pages.map((page, index) => <button key={page.id} type="button" aria-label={`Go to page ${index + 1}`} aria-current={index === currentIndex ? 'page' : undefined} onClick={() => { setCurrentIndex(index); setSelection(null); historyGroupRef.current = null; setUndoCount(undoStacksRef.current.get(page.id)?.length ?? 0) }} className={`h-1.5 rounded-full transition-all ${index === currentIndex ? 'w-6 bg-[#D6B58B]' : 'w-1.5 bg-[#F3EDE2]/30 hover:bg-[#F3EDE2]/60'}`} />)}
           </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5" style={{ fontFamily: MAGAZINE_MONO }}>

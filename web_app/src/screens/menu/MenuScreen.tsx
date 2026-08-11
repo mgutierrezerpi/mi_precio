@@ -30,7 +30,7 @@ import {
   type DesignProps,
   type CartTheme,
 } from './designs'
-import { isPencilVariant, PencilList } from './pencilDesigns'
+import { isPencilVariant, pencilCartThemeFor, PencilList } from './pencilDesigns'
 import { PencilActionBar } from './pencilActions'
 import { PencilJournal } from './pencilJournal'
 
@@ -463,7 +463,15 @@ export function MenuScreen() {
   // when there happens to be a single list.
   const skin = listId ? list : null
   const design: ListDesign = skin?.design ?? tenant.listDesign ?? 'store'
-  const cartT = cartThemeFor(design)
+  const isPencilCartDesign = isPencilVariant(design) || design === 'pencil-journal'
+  const cartT = design === 'pencil-journal'
+    ? pencilCartThemeFor('pencil-journal')
+    : isPencilVariant(design)
+      ? pencilCartThemeFor(design)
+      : cartThemeFor(design)
+  const cartAccent = cartT.accent || accent
+  const cartActionAccent = cartT.actionAccent || cartAccent
+  const cartGradient = `linear-gradient(135deg, ${cartActionAccent} 0%, ${lighten(cartActionAccent, 0.22)} 100%)`
   const bgUrl = skin?.bgUrl ?? tenant.listBgUrl
   const bgOverlay = skin?.bgUrl ? !!skin.bgOverlay : !!tenant.listBgOverlay
   const hasBg = !!bgUrl
@@ -499,11 +507,12 @@ export function MenuScreen() {
     taxId: tenant.taxId,
     hasBg,
     content,
+    cartTheme: cartT,
   }
 
   return (
     <div
-      className="min-h-screen font-sans"
+      className="miprecio-public-list min-h-screen font-sans"
       style={{
         background: C.bg,
         color: C.ink,
@@ -517,10 +526,14 @@ export function MenuScreen() {
         html::-webkit-scrollbar-track { background: transparent; }
         html::-webkit-scrollbar-thumb { background: ${accent}; border-radius: 9999px; border: 3px solid ${C.bg}; }
         html::-webkit-scrollbar-thumb:hover { background: ${C.accent2}; }
+        .miprecio-public-list button:not(:disabled),
+        .miprecio-public-list a[href],
+        .miprecio-public-list [role="button"] { cursor: pointer; }
+        .miprecio-public-list button:disabled { cursor: not-allowed; }
       `}</style>
 
       {!showCart && (
-        <div className="relative">
+        <div className="relative overflow-x-clip">
           {/* Optional background image, with an optional brand-color filter on top. */}
           {hasBg && (
             <div
@@ -545,7 +558,7 @@ export function MenuScreen() {
               )}
             </div>
           )}
-          <div className={`relative ${isPencilVariant(design) && !isService ? 'pb-24' : ''}`} style={{ zIndex: 1 }}>
+          <div className={`relative ${isPencilCartDesign && !isService ? 'pb-24' : ''}`} style={{ zIndex: 1 }}>
             {!listId && magazines.length > 0 && (
               <MagazineShelf
                 tenant={tenant}
@@ -605,7 +618,7 @@ export function MenuScreen() {
               <ClassicList {...designProps} />
             )}
           </div>
-          {isPencilVariant(design) && !isService && !showCart && (
+          {isPencilCartDesign && !isService && !showCart && (
             <PencilActionBar props={designProps} />
           )}
         </div>
@@ -644,7 +657,7 @@ export function MenuScreen() {
         <CartView
           tenant={tenant}
           T={cartT}
-          accent={accent}
+          accent={cartAccent}
           t={t}
           money={money}
           cart={cart}
@@ -664,7 +677,7 @@ export function MenuScreen() {
       )}
 
       {/* Sticky cart bar — follows the selected design's theme; opens the full cart page. */}
-      {!isService && !isPencilVariant(design) && cartCount > 0 && !showCart && (
+      {!isService && !isPencilCartDesign && cartCount > 0 && !showCart && (
         <div
           className="fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur"
           style={{
@@ -681,7 +694,7 @@ export function MenuScreen() {
                 height="22"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke={accent}
+                stroke={cartActionAccent}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -694,7 +707,7 @@ export function MenuScreen() {
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span
                   className="hidden text-[11px] font-bold tracking-[1.6px] sm:block"
-                  style={{ color: accent }}
+                  style={{ color: cartActionAccent }}
                 >
                   {t('pub.cartTitle')}
                 </span>
@@ -724,7 +737,7 @@ export function MenuScreen() {
                 type="button"
                 onClick={() => setShowCart(true)}
                 className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-[13px] font-bold text-white hover:opacity-90 md:px-5 md:py-3 md:text-[14px]"
-                style={{ background: brandGradient }}
+                style={{ background: cartGradient }}
               >
                 <SIco name="shopping-cart" size={18} color="#fff" />
                 {t('store.myCart')}
@@ -1181,7 +1194,7 @@ function Storefront(p: StoreProps) {
   const contact = content?.blocks.find((block) => block.type === 'contact')
 
   return (
-    <div>
+    <div className="min-h-screen bg-[#FCFBF9]">
       {/* Top nav */}
       <header
         className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur"
@@ -1198,7 +1211,7 @@ function Storefront(p: StoreProps) {
             ) : (
               <>
                 <span
-                  className="flex h-11 w-11 items-center justify-center rounded-xl text-white"
+                  className="flex h-11 w-11 items-center justify-center rounded-[14px] text-white"
                   style={grad}
                 >
                   <SIco name="shopping-bag" size={22} color="#fff" />
@@ -1228,7 +1241,7 @@ function Storefront(p: StoreProps) {
               <button
                 type="button"
                 onClick={openCart}
-                className="flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-bold text-white"
+                className="flex h-10 items-center gap-2 rounded-[12px] px-4 text-[13px] font-bold text-white shadow-[0_8px_18px_-10px_rgba(15,13,26,0.55)]"
                 style={grad}
               >
                 <SIco name="shopping-cart" size={16} color="#fff" />{' '}
@@ -1241,7 +1254,7 @@ function Storefront(p: StoreProps) {
       </header>
 
       {/* Hero (uses the configurable hero color) */}
-      <section className="py-10 md:py-12" style={heroGrad}>
+      <section className="py-9 md:py-11" style={heroGrad}>
         <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center gap-10 px-5 md:px-16 lg:flex-row">
           <div className="flex flex-1 flex-col gap-4">
             <span
@@ -1282,9 +1295,9 @@ function Storefront(p: StoreProps) {
             </div>
           </div>
           {featured && (
-            <div className="w-full max-w-[380px] rounded-3xl bg-white p-6 shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
+            <div className="w-full max-w-[380px] rounded-[22px] bg-white p-5 shadow-[0_20px_42px_-18px_rgba(15,13,26,0.32)] md:p-6">
               <div
-                className="relative mb-4 flex h-44 items-end justify-between overflow-hidden rounded-2xl p-3"
+                className="relative mb-4 flex h-36 items-end justify-between overflow-hidden rounded-[16px] p-3 md:h-44"
                 style={{
                   background: `linear-gradient(135deg, ${accent}26 0%, #ffffff 100%)`,
                 }}
@@ -1333,7 +1346,7 @@ function Storefront(p: StoreProps) {
                   <button
                     type="button"
                     onClick={() => addToCart(featured.id)}
-                    className="flex items-center gap-1 rounded-xl px-4 py-2 text-[13px] font-bold text-white"
+                    className="flex items-center gap-1 rounded-[10px] px-4 py-2 text-[13px] font-bold text-white"
                     style={grad}
                   >
                     <SIco name="plus" size={14} color="#fff" /> {t('pub.add')}
@@ -1349,8 +1362,8 @@ function Storefront(p: StoreProps) {
       <div className="border-b bg-white" style={{ borderColor: C.line }}>
         <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-3 px-5 py-4 md:px-16">
           <label
-            className="flex h-12 flex-1 items-center gap-2.5 rounded-2xl border px-4"
-            style={{ borderColor: C.line, background: '#F5F3FF' }}
+            className="flex h-12 flex-1 items-center gap-2.5 rounded-[14px] border px-4"
+            style={{ borderColor: C.line, background: `${accent}08` }}
           >
             <SIco name="search" size={18} color={C.muted} />
             <input
@@ -1410,7 +1423,7 @@ function Storefront(p: StoreProps) {
         {/* Sidebar */}
         <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-[280px]">
           <div
-            className="flex flex-col gap-4 rounded-3xl border bg-white p-6"
+            className="flex flex-col gap-4 rounded-[20px] border bg-white p-5 shadow-[0_8px_24px_-20px_rgba(15,13,26,0.28)] md:p-6"
             style={{ borderColor: C.line }}
           >
             <div className="flex items-center justify-between">
@@ -1474,7 +1487,7 @@ function Storefront(p: StoreProps) {
 
           {/* WhatsApp card */}
           <div
-            className="flex flex-col gap-3 rounded-3xl p-6 text-white"
+            className="flex flex-col gap-3 rounded-[20px] p-5 text-white shadow-[0_18px_30px_-18px_rgba(15,13,26,0.35)] md:p-6"
             style={grad}
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white">
@@ -1560,11 +1573,11 @@ function Storefront(p: StoreProps) {
                 return (
                   <div
                     key={it.id}
-                    className="flex flex-col gap-2.5 rounded-3xl border bg-white p-3.5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]"
+                    className="flex flex-col gap-2.5 rounded-[20px] border bg-white p-3.5 shadow-[0_8px_20px_-16px_rgba(15,23,42,0.22)]"
                     style={{ borderColor: C.line }}
                   >
                     <div
-                      className="relative flex h-40 items-end justify-end overflow-hidden rounded-2xl p-2.5"
+                      className="relative flex h-32 items-end justify-end overflow-hidden rounded-[15px] p-2.5 sm:h-36 xl:h-40"
                       style={{
                         background: `linear-gradient(135deg, ${accent}22 0%, #ffffff 100%)`,
                       }}
@@ -1635,7 +1648,7 @@ function Storefront(p: StoreProps) {
                           <button
                             type="button"
                             onClick={() => addToCart(it.id)}
-                            className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-bold text-white"
+                            className="flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[12px] font-bold text-white"
                             style={grad}
                           >
                             <SIco name="plus" size={12} color="#fff" />{' '}
@@ -1741,30 +1754,46 @@ function CartView(p: CartProps) {
     norm,
     onBack,
   } = p
+  const cartAccent = T.accent || accent
+  const cartActionAccent = T.actionAccent || cartAccent
   const grad = {
-    background: `linear-gradient(135deg, ${accent} 0%, ${lighten(accent, 0.22)} 100%)`,
+    background: `linear-gradient(135deg, ${cartActionAccent} 0%, ${lighten(cartActionAccent, 0.22)} 100%)`,
   }
   const cartItems = allItems.filter((it) => (cart[it.id] ?? 0) > 0)
   const set = (patch: Partial<CartCustomer>) =>
     setCustomer((c) => ({ ...c, ...patch }))
   const field =
-    'h-[46px] w-full rounded-xl border px-3.5 text-[13px] font-semibold outline-none focus:ring-2'
-  const fieldStyle = { borderColor: T.line, color: T.ink, background: T.field }
+    'h-[46px] w-full border px-3.5 text-[13px] font-semibold outline-none focus:ring-2'
+  const fieldStyle = {
+    borderColor: T.line,
+    color: T.ink,
+    background: T.field,
+    borderRadius: T.controlRadius,
+    fontFamily: T.bodyFamily,
+  }
   const labelCls = 'text-[12px] font-bold'
   const cardCls =
-    'rounded-[24px] border p-5 shadow-[0_18px_50px_-20px_rgba(15,13,26,0.30)] md:p-7'
+    'border p-5 md:p-7'
+  const cardStyle = {
+    background: T.surface,
+    borderColor: T.line,
+    borderRadius: T.cardRadius,
+    boxShadow: T.cardShadow,
+  }
 
   return (
     <div
       className="min-h-screen font-sans"
       style={{
-        background: `linear-gradient(180deg, ${accent}22 0%, ${accent}0A 300px, transparent 460px), ${T.bg}`,
+        background: `linear-gradient(180deg, ${cartAccent}22 0%, ${cartAccent}0A 300px, transparent 460px), ${T.bg}`,
+        color: T.ink,
+        fontFamily: T.bodyFamily,
       }}
     >
       {/* Navbar */}
       <header
         className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b px-5 py-3.5 backdrop-blur md:px-16"
-        style={{ background: `${T.surface}F2`, borderColor: T.line }}
+        style={{ background: `${T.surface}F2`, borderColor: T.line, fontFamily: T.bodyFamily }}
       >
         <div className="flex items-center gap-3">
           {tenant.logoUrl ? (
@@ -1777,7 +1806,7 @@ function CartView(p: CartProps) {
             <>
               <span
                 className="flex h-11 w-11 items-center justify-center rounded-xl text-white"
-                style={grad}
+                style={{ ...grad, borderRadius: T.buttonRadius }}
               >
                 <SIco name="shopping-bag" size={22} color="#fff" />
               </span>
@@ -1804,10 +1833,10 @@ function CartView(p: CartProps) {
         <button
           type="button"
           onClick={onBack}
-          className="flex h-9 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-bold"
-          style={{ background: `${accent}22`, color: accent }}
-        >
-          <SIco name="arrow-left" size={14} color={accent} />{' '}
+          className="flex h-9 items-center gap-2 px-3.5 text-[13px] font-bold"
+            style={{ background: `${cartActionAccent}22`, color: cartActionAccent, borderRadius: T.buttonRadius }}
+          >
+          <SIco name="arrow-left" size={14} color={cartActionAccent} />{' '}
           {t('store.keepShopping')}
         </button>
       </header>
@@ -1834,9 +1863,9 @@ function CartView(p: CartProps) {
         <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center gap-5 px-5 py-24 text-center md:px-16">
           <span
             className="flex h-20 w-20 items-center justify-center rounded-3xl"
-            style={{ background: `${accent}1F` }}
+            style={{ background: `${cartAccent}1F`, borderRadius: T.cardRadius }}
           >
-            <SIco name="shopping-cart" size={36} color={accent} />
+            <SIco name="shopping-cart" size={36} color={cartAccent} />
           </span>
           <div className="flex flex-col gap-1">
             <p className="text-[20px] font-extrabold" style={{ color: T.ink }}>
@@ -1850,7 +1879,7 @@ function CartView(p: CartProps) {
             type="button"
             onClick={onBack}
             className="flex h-12 items-center gap-2 rounded-2xl px-6 text-[14px] font-bold text-white"
-            style={grad}
+            style={{ ...grad, borderRadius: T.buttonRadius }}
           >
             <SIco name="arrow-left" size={16} color="#fff" />{' '}
             {t('store.keepShopping')}
@@ -1865,7 +1894,7 @@ function CartView(p: CartProps) {
               <div className="flex flex-col gap-1">
                 <h1
                   className="text-[28px] font-black md:text-[32px]"
-                  style={{ color: T.ink }}
+                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
                 >
                   {t('store.yourCart')}
                 </h1>
@@ -1879,11 +1908,12 @@ function CartView(p: CartProps) {
               <button
                 type="button"
                 onClick={clearCart}
-                className="flex h-9 items-center gap-2 rounded-[10px] border px-3.5 text-[13px] font-bold"
+                className="flex h-9 items-center gap-2 border px-3.5 text-[13px] font-bold"
                 style={{
                   borderColor: '#EF444455',
                   color: '#EF4444',
                   background: '#EF444414',
+                  borderRadius: T.buttonRadius,
                 }}
               >
                 <SIco name="trash-2" size={14} color="#EF4444" />{' '}
@@ -1894,18 +1924,18 @@ function CartView(p: CartProps) {
             {/* Products card */}
             <div
               className={cardCls}
-              style={{ background: T.surface, borderColor: T.line }}
+              style={cardStyle}
             >
               <div className="flex items-center gap-2.5 pb-2">
                 <h2
                   className="text-[18px] font-extrabold md:text-[20px]"
-                  style={{ color: T.ink }}
+                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
                 >
                   {t('store.cartProducts')}
                 </h2>
                 <span
                   className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
-                  style={{ background: `${accent}22`, color: accent }}
+                  style={{ background: `${cartAccent}22`, color: cartAccent }}
                 >
                   {cartCount}{' '}
                   {cartCount === 1 ? t('pub.product') : t('pub.products')}
@@ -1923,7 +1953,7 @@ function CartView(p: CartProps) {
                     <div
                       className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[14px]"
                       style={{
-                        background: `linear-gradient(135deg, ${accent}2A 0%, ${T.field} 100%)`,
+                        background: `linear-gradient(135deg, ${cartAccent}2A 0%, ${T.field} 100%)`,
                       }}
                     >
                       {it.imageUrl ? (
@@ -1936,7 +1966,7 @@ function CartView(p: CartProps) {
                         <SIco
                           name={catIco(it.category)}
                           size={34}
-                          color={accent}
+                          color={cartAccent}
                           style={{ opacity: 0.7 }}
                         />
                       )}
@@ -1969,7 +1999,7 @@ function CartView(p: CartProps) {
                     </div>
                     <div
                       className="flex items-center rounded-xl border"
-                      style={{ borderColor: T.line, background: T.field }}
+                      style={{ borderColor: T.line, background: T.field, borderRadius: T.controlRadius }}
                     >
                       <button
                         type="button"
@@ -2014,8 +2044,8 @@ function CartView(p: CartProps) {
                       type="button"
                       onClick={() => removeFromCart(it.id)}
                       aria-label={t('store.cartRemove')}
-                      className="flex h-9 w-9 items-center justify-center rounded-[10px]"
-                      style={{ background: '#EF444418' }}
+                      className="flex h-9 w-9 items-center justify-center"
+                      style={{ background: '#EF444418', borderRadius: T.controlRadius }}
                     >
                       <SIco name="x" size={16} color="#EF4444" />
                     </button>
@@ -2034,7 +2064,7 @@ function CartView(p: CartProps) {
                 </span>
                 <span
                   className="text-[18px] font-extrabold"
-                  style={{ color: T.ink }}
+                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
                 >
                   {money(cartTotal)}
                 </span>
@@ -2044,12 +2074,12 @@ function CartView(p: CartProps) {
             {/* Contact card */}
             <div
               className={`flex flex-col gap-4 ${cardCls}`}
-              style={{ background: T.surface, borderColor: T.line }}
+              style={cardStyle}
             >
               <div className="flex flex-col gap-1">
                 <h2
                   className="text-[18px] font-extrabold"
-                  style={{ color: T.ink }}
+                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
                 >
                   {t('store.cartYourData')}
                 </h2>
@@ -2062,7 +2092,7 @@ function CartView(p: CartProps) {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body }}>
+                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                     {t('store.cartName')}
                   </span>
                   <input
@@ -2074,7 +2104,7 @@ function CartView(p: CartProps) {
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body }}>
+                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                     {t('store.cartPhone')}
                   </span>
                   <input
@@ -2086,7 +2116,7 @@ function CartView(p: CartProps) {
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body }}>
+                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                     {t('store.cartEmail')}
                   </span>
                   <input
@@ -2098,7 +2128,7 @@ function CartView(p: CartProps) {
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body }}>
+                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                     {t('store.cartDelivery')}
                   </span>
                   {tenant.deliveryEnabled ? (
@@ -2133,7 +2163,7 @@ function CartView(p: CartProps) {
                 </label>
                 {tenant.deliveryEnabled && customer.delivery === 'delivery' && (
                   <label className="flex flex-col gap-1.5 md:col-span-2">
-                    <span className={labelCls} style={{ color: T.body }}>
+                    <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                       {t('store.cartAddress')}
                     </span>
                     <input
@@ -2146,7 +2176,7 @@ function CartView(p: CartProps) {
                   </label>
                 )}
                 <label className="flex flex-col gap-1.5 md:col-span-2">
-                  <span className={labelCls} style={{ color: T.body }}>
+                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                     {t('store.cartNotes')}
                   </span>
                   <textarea
@@ -2154,7 +2184,7 @@ function CartView(p: CartProps) {
                     onChange={(e) => set({ notes: e.target.value })}
                     placeholder={t('store.cartNotesPh')}
                     rows={3}
-                    className="w-full rounded-xl border px-3.5 py-3 text-[13px] font-semibold outline-none focus:ring-2"
+                    className="w-full border px-3.5 py-3 text-[13px] font-semibold outline-none focus:ring-2"
                     style={fieldStyle}
                   />
                 </label>
@@ -2166,12 +2196,12 @@ function CartView(p: CartProps) {
           <div className="flex w-full flex-col gap-4 lg:w-[380px]">
             <div
               className={`flex flex-col gap-4 ${cardCls} lg:sticky lg:top-24`}
-              style={{ background: T.surface, borderColor: T.line }}
+              style={cardStyle}
             >
               <div className="flex flex-col gap-1">
                 <h2
                   className="text-[18px] font-extrabold"
-                  style={{ color: T.ink }}
+                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
                 >
                   {t('store.cartSummary')}
                 </h2>
@@ -2217,8 +2247,8 @@ function CartView(p: CartProps) {
                 href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-14 items-center justify-center gap-2 rounded-2xl text-[16px] font-extrabold text-white"
-                style={grad}
+                className="flex h-14 items-center justify-center gap-2 text-[16px] font-extrabold text-white"
+                style={{ ...grad, borderRadius: T.buttonRadius }}
               >
                 <SIco name="message-circle" size={22} color="#fff" />{' '}
                 {t('store.cartSend')}

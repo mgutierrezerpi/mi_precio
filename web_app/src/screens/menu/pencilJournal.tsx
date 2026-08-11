@@ -595,7 +595,8 @@ export function MagazineViewer({ pages, title, pageIndex, editorMode = false, em
       goTo(currentPage + delta)
     }
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return
+      const target = event.target
+      if (target instanceof HTMLElement && target.closest('button, a, input, textarea, select, [contenteditable="true"], [role="button"]')) return
       if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
         event.preventDefault()
         shiftPage(-1)
@@ -653,7 +654,7 @@ export function MagazineViewer({ pages, title, pageIndex, editorMode = false, em
           <p className="max-w-[125px] truncate text-[9px] uppercase tracking-[2px] text-[#D6B58B] sm:max-w-none" style={{ fontFamily: MONO }}>
             {title}
           </p>
-          <div className="flex items-center justify-center gap-1.5" aria-label="Magazine pages">
+          <div className="flex max-w-[42vw] items-center justify-start gap-1.5 overflow-x-auto py-1 [scrollbar-width:none] md:max-w-none md:justify-center md:overflow-visible" aria-label="Magazine pages">
             {pages.map((page, index) => (
               <button
                 key={page.label}

@@ -20,6 +20,7 @@ function pageDetails(pathname: string): { page_name: string; area: string } {
   if (pathname.startsWith('/p/')) return { page_name: 'Public Menu', area: 'public' }
   if (pathname.startsWith('/m/')) return { page_name: 'Public Magazine', area: 'public' }
   if (pathname === '/planes') return { page_name: 'Choose Plan', area: 'onboarding' }
+  if (pathname === '/linktree') return { page_name: 'Link Tree PoC', area: 'public' }
   if (pathname === '/admin') return { page_name: 'Admin Dashboard', area: 'admin' }
   if (pathname === '/admin/items') return { page_name: 'Products', area: 'admin' }
   if (pathname === '/admin/categories') return { page_name: 'Categories', area: 'admin' }

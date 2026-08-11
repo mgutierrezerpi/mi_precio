@@ -1,6 +1,7 @@
 import type { TFn } from '../../lib/i18n'
 import type { Magazine } from '../../types'
 import { Icon } from '../../screens/admin/crm/ui'
+import { MAGAZINE_TEMPLATES } from './templateCatalog'
 
 export function MagazineCard({
   magazine,
@@ -22,6 +23,8 @@ export function MagazineCard({
   t: TFn
 }) {
   const publicUrl = `/m/${subdomain || ''}/${magazine.slug || magazine.id}`
+  const template = MAGAZINE_TEMPLATES.find((entry) => entry.id === magazine.design)
+  const designLabel = template ? t(template.nameKey) : magazine.design
   return (
     <article className="flex min-h-[245px] flex-col overflow-hidden rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_10px_30px_-24px_rgba(15,23,42,0.8)]">
       <div className="relative flex h-28 items-end overflow-hidden bg-[#3A2A1D] p-4 text-[#F3EDE2]">
@@ -43,7 +46,7 @@ export function MagazineCard({
           <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${magazine.published ? 'bg-emerald-500/15 text-emerald-400' : 'bg-[var(--dash-soft)] text-[var(--dash-muted)]'}`}>
             {magazine.published ? t('magazines.published') : t('magazines.draft')}
           </span>
-          <span className="rounded-full bg-violet-500/15 px-2.5 py-1 text-[11px] font-bold text-violet-300">{magazine.design}</span>
+          <span className="rounded-full bg-violet-500/15 px-2.5 py-1 text-[11px] font-bold text-violet-300">{designLabel}</span>
           {magazine.showOnIndex && <span className="rounded-full bg-violet-500/15 px-2.5 py-1 text-[11px] font-bold text-violet-300">{t('magazines.onIndex')}</span>}
         </div>
         <div className="flex items-center gap-2 border-t border-[var(--dash-border)] pt-3">

@@ -236,6 +236,30 @@ export interface CartTheme {
   muted: string // muted text
   footerBg: string
   footerText: string
+  /** Optional template-specific visual tokens used by the cart surface. */
+  accent?: string
+  actionAccent?: string
+  cardRadius?: string
+  controlRadius?: string
+  buttonRadius?: string
+  barRadius?: string
+  bodyFamily?: string
+  headingFamily?: string
+  labelFamily?: string
+  headingTracking?: string
+  cardShadow?: string
+}
+
+const CART_DEFAULTS: Required<Pick<CartTheme, 'cardRadius' | 'controlRadius' | 'buttonRadius' | 'barRadius' | 'bodyFamily' | 'headingFamily' | 'labelFamily' | 'headingTracking' | 'cardShadow'>> = {
+  cardRadius: '24px',
+  controlRadius: '12px',
+  buttonRadius: '16px',
+  barRadius: '16px',
+  bodyFamily: "Inter, system-ui, sans-serif",
+  headingFamily: "Inter, system-ui, sans-serif",
+  labelFamily: "Inter, system-ui, sans-serif",
+  headingTracking: 'normal',
+  cardShadow: '0 18px 50px -20px rgba(15,13,26,0.30)',
 }
 
 const CART_THEMES: Partial<Record<ListDesign, CartTheme>> = {
@@ -433,10 +457,23 @@ const CART_THEMES: Partial<Record<ListDesign, CartTheme>> = {
     muted: '#8A7561',
     footerBg: '#3A2A1D',
     footerText: '#F3EDE2',
+    accent: '#A76D3E',
+    actionAccent: '#A76D3E',
+    cardRadius: '0px',
+    controlRadius: '0px',
+    buttonRadius: '0px',
+    barRadius: '0px',
+    bodyFamily: 'Inter, system-ui, sans-serif',
+    headingFamily: '"Playfair Display", Georgia, serif',
+    labelFamily: '"IBM Plex Mono", "Courier New", monospace',
+    headingTracking: '-0.03em',
+    cardShadow: '0 16px 40px -22px rgba(58,42,29,0.32)',
   },
 }
-export const cartThemeFor = (design: ListDesign): CartTheme =>
-  CART_THEMES[design] ?? CART_THEMES.store!
+export const cartThemeFor = (design: ListDesign): CartTheme => ({
+  ...CART_DEFAULTS,
+  ...(CART_THEMES[design] ?? CART_THEMES.store!),
+})
 
 export interface DesignProps {
   tenant: Tenant
@@ -468,6 +505,7 @@ export interface DesignProps {
   taxId: string | null
   hasBg: boolean
   content?: ListContent | null
+  cartTheme?: CartTheme
 }
 
 /* ── Shared add-to-cart control ── */

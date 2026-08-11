@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { CartControl, type DesignProps, type Section } from './designs'
+import { CartControl, cartThemeFor, type CartTheme, type DesignProps, type Section } from './designs'
 import type { ListDesign } from '../../types'
 import { SpecialPencilList } from './pencilSpecialDesigns'
 
@@ -478,6 +478,69 @@ const SPECIAL_CONFIG: Partial<Record<PencilVariant, PencilConfig>> = {
   }),
 }
 
+const CART_SHARP_VARIANTS = new Set<PencilVariant>([
+  'pencil-casa-ritual', 'pencil-casa-bath', 'pencil-casa-signature',
+  'pencil-casa-services', 'pencil-auto-detail', 'pencil-blush-bloom',
+  'pencil-beardy', 'pencil-union-barber', 'pencil-studio-mono',
+  'pencil-obsidian-quarterly',
+])
+const CART_ROUNDED_VARIANTS = new Set<PencilVariant>([
+  'pencil-nova', 'pencil-calm-spa',
+])
+
+const isSolidHex = (value: string) => /^#[\da-f]{6}$/i.test(value)
+
+const hexLuminance = (value: string) => {
+  if (!isSolidHex(value)) return 1
+  const channels = [1, 3, 5].map((offset) => Number.parseInt(value.slice(offset, offset + 2), 16) / 255)
+  const linear = channels.map((channel) => (channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4))
+  return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+}
+
+const actionAccentFor = (config: PencilConfig) => {
+  if (hexLuminance(config.accent) < 0.62) return config.accent
+  if (isSolidHex(config.darkPanel) && hexLuminance(config.darkPanel) < 0.32) return config.darkPanel
+  if (hexLuminance(config.background) < 0.32) return config.background
+  return config.ink
+}
+
+/** Build cart tokens from the same visual config used by each Pencil list. */
+export function pencilCartThemeFor(variant: PencilVariant | 'pencil-journal'): CartTheme {
+  if (variant === 'pencil-journal') return cartThemeFor('pencil-journal')
+  const config = PENCIL_CONFIG[variant] ?? SPECIAL_CONFIG[variant] ?? SPECIAL_BASE
+  const isDark = config.ink === '#FFFFFF' || config.background === '#050505' || variant === 'pencil-calm-spa' || variant === 'pencil-auto-detail'
+  const sharp = CART_SHARP_VARIANTS.has(variant)
+  const rounded = CART_ROUNDED_VARIANTS.has(variant)
+  const radius = sharp ? '4px' : rounded ? '28px' : '14px'
+  const controlRadius = sharp ? '2px' : rounded ? '16px' : '8px'
+  const footerBg = config.darkPanel.startsWith('#') ? config.darkPanel : (isDark ? '#111111' : '#1B1B1B')
+  return {
+    ...cartThemeFor('pencil-journal'),
+    isDark,
+    bg: config.background,
+    surface: isDark ? '#111111' : config.background,
+    field: isDark ? '#1A1A1A' : '#FFFFFF',
+    divider: `${config.accent}33`,
+    line: `${config.accent}88`,
+    ink: config.ink,
+    body: config.muted,
+    muted: config.muted,
+    footerBg,
+    footerText: isDark ? '#D7D7D7' : config.muted,
+    accent: config.accent,
+    actionAccent: actionAccentFor(config),
+    cardRadius: radius,
+    controlRadius,
+    buttonRadius: sharp ? '2px' : rounded ? '999px' : '8px',
+    barRadius: sharp ? '0px' : rounded ? '24px' : '12px',
+    bodyFamily: 'Inter, system-ui, sans-serif',
+    headingFamily: '"Playfair Display", Georgia, serif',
+    labelFamily: '"IBM Plex Mono", "Courier New", monospace',
+    headingTracking: sharp ? '0.02em' : '-0.03em',
+    cardShadow: sharp ? '0 12px 30px -20px rgba(0,0,0,0.5)' : '0 18px 50px -20px rgba(15,13,26,0.30)',
+  }
+}
+
 const SERIF = '"Playfair Display", Georgia, serif'
 const MONO = '"IBM Plex Mono", "Courier New", monospace'
 const SANS = 'Inter, system-ui, sans-serif'
@@ -534,7 +597,7 @@ function Masthead({
       </h1>
       {body && (
         <p
-          className="max-w-[48ch] text-[13px] italic sm:text-[17px]"
+          className="max-w-[48ch] text-[13px] italic sm:text-[15px]"
           style={{ color: color.muted, fontFamily: SERIF }}
         >
           {body}
@@ -560,10 +623,10 @@ function PencilImage({
         className="absolute bottom-3 left-3 flex flex-col gap-0.5 px-3 py-2"
         style={{ background: `${config.background}e8`, color: config.ink }}
       >
-        <span className="text-[8px] uppercase tracking-[1.6px]" style={{ fontFamily: MONO }}>
+        <span className="text-[9px] uppercase tracking-[1.6px] sm:text-[10px]" style={{ fontFamily: MONO }}>
           {config.imageLabel}
         </span>
-        <span className="text-[16px] italic leading-none" style={{ fontFamily: SERIF }}>
+        <span className="text-[17px] italic leading-none sm:text-[18px]" style={{ fontFamily: SERIF }}>
           {config.imageTitle}
         </span>
       </div>
@@ -604,17 +667,17 @@ function PencilItem({ item, color, props }: { item: Section['items'][number]; co
   return (
     <div className="flex min-w-0 items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
-        <p className="break-words text-[18px] leading-tight sm:text-[21px]" style={{ color: color.ink, fontFamily: SERIF }}>
+        <p className="break-words text-[18px] leading-[1.08] sm:text-[20px]" style={{ color: color.ink, fontFamily: SERIF }}>
           {item.name}
         </p>
         {item.description && (
-          <p className="mt-0.5 break-words text-[10px] leading-tight sm:text-[11px]" style={{ color: color.muted, fontFamily: SANS }}>
+          <p className="mt-0.5 break-words text-[11px] leading-[1.25] sm:text-[12px]" style={{ color: color.muted, fontFamily: SANS }}>
             {item.description}
           </p>
         )}
       </div>
-      <div className="flex shrink-0 items-start gap-2">
-        <span className="pt-0.5 text-[11px] sm:text-[12px]" style={{ color: color.ink, fontFamily: MONO }}>
+      <div className="flex w-[136px] shrink-0 items-center justify-end gap-3">
+        <span className="w-[64px] text-right text-[12px] tabular-nums sm:text-[13px]" style={{ color: color.ink, fontFamily: MONO }}>
           {price(item.price)}
         </span>
         {!props.isService && <CartControl qty={props.cart[item.id] ?? 0} id={item.id} addToCart={props.addToCart} decFromCart={props.decFromCart} accent={color.accent} ink={color.ink} />}
@@ -639,6 +702,13 @@ function PencilSection({ section, config, props }: { section: Section; config: P
 }
 
 function PencilCatalog({ sections, config, props }: { sections: Section[]; config: PencilConfig; props: DesignProps }) {
+  if (sections.length === 0) {
+    return (
+      <p className="border-y py-8 text-center text-[12px]" style={{ borderColor: `${config.accent}55`, color: config.muted }}>
+        {props.t('pub.empty')}
+      </p>
+    )
+  }
   return (
     <div className="grid min-w-0 grid-cols-1 gap-8 md:grid-cols-2 md:gap-x-10 md:gap-y-7">
       {sections.map((section) => (
