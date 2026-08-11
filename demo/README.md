@@ -87,3 +87,20 @@ remains a draft.
 
 Price lists open at `http://localhost:3000/p/<subdomain>` and magazines at
 `http://localhost:3000/m/<subdomain>/<magazine-slug>`.
+
+To create every Pencil design for every tenant in the local SQLite database,
+run the database-local seeder. It is additive and skips a design that already
+exists for a tenant:
+
+```bash
+docker compose cp demo/seed_pencil_price_lists.py api:/tmp/seed_pencil_price_lists.py
+docker compose cp demo/seed_all_pencil_price_lists.py api:/tmp/seed_all_pencil_price_lists.py
+docker compose exec api python /tmp/seed_all_pencil_price_lists.py --dry-run
+docker compose exec api python /tmp/seed_all_pencil_price_lists.py
+```
+
+Users who belong to the same tenant share that tenant's generated lists. Only
+tenants associated with at least one local user or membership are included; the
+new lists are published but hidden from the tenant's list index, and contain the
+sample items used by the Pencil templates. Use `--database PATH` when running
+the script outside Docker.
