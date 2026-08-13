@@ -386,11 +386,19 @@ export function MenuScreen() {
   const hasBg = !!bgUrl
   const heroColor = skin?.heroColor || tenant.listHeroColor || accent
   const edition = String(list?.version?.versionNumber ?? 1).padStart(3, '0')
+  // On the public list the accent IS the hero colour. It already falls back to
+  // the brand colour when the shop set none, so nothing changes for shops that
+  // never picked one — but a shop that did was getting a design split between
+  // two colours: badges and rules on the brand colour, everything else on the
+  // hero. One accent per page, chosen by the shop.
+  const listAccent = heroColor
+  const designC = { ...C, accent: listAccent, accent2: listAccent }
+  const designGradient = `linear-gradient(135deg, ${listAccent} 0%, ${lighten(listAccent, 0.42)} 100%)`
   const designProps: DesignProps = {
     tenant,
-    C,
-    accent,
-    brandGradient,
+    C: designC,
+    accent: listAccent,
+    brandGradient: designGradient,
     heroColor,
     t,
     money,
