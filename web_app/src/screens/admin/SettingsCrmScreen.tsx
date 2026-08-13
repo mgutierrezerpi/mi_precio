@@ -27,6 +27,8 @@ import {
   type PushStatus,
 } from '../../lib/push'
 import { fileToDataUrl } from '../../lib/image'
+import { SOCIALS, socialError, type SocialId } from '../../lib/socials'
+import { SocialIcon } from '../../components/SocialIcon'
 import {
   ListAppearanceFields,
   Toggle,
@@ -591,6 +593,7 @@ function BrandSection({
   savedKey,
 }: Ctx) {
   const identity = useBrandIdentity(tenant, canManage, save)
+  const socials = useSocialLinks(tenant, canManage, save)
   const editor = useAppearanceEditor(tenant, canManage, save)
 
   return (
@@ -611,6 +614,12 @@ function BrandSection({
         tenant={tenant}
         t={t}
       />
+      <SocialLinksFields
+        {...socials}
+        accent={identity.color}
+        canManage={canManage}
+        t={t}
+      />
       <AppearanceFields
         {...editor}
         accent={identity.color}
@@ -618,6 +627,113 @@ function BrandSection({
         t={t}
       />
     </>
+  )
+}
+
+/** The shop's social links. Same autosave shape as the other brand fields, but
+ *  a field with an error is held back rather than sent: a rejected PATCH comes
+ *  back as a bare "Error 422", which tells the shop nothing. */
+function useSocialLinks(
+  tenant: Tenant | null,
+  canManage: boolean,
+  save: Ctx['save']
+) {
+  const [values, setValues] = useState<Record<SocialId, string>>(() =>
+    Object.fromEntries(
+      SOCIALS.map((social) => {
+        const stored = tenant?.[social.id] ?? ''
+        // WhatsApp is stored as bare digits; showing "59899123456" back at a
+        // shop that typed "+598 99 123 456" does not read as its phone number.
+        // The API strips the + again on the way in, so this round-trips.
+        return [
+          social.id,
+          social.id === 'socialWhatsapp' && stored ? `+${stored}` : stored,
+        ]
+      })
+    ) as Record<SocialId, string>
+  )
+  const touched = useRef(false)
+  const saveRef = useLatest(save)
+
+  const errors = Object.fromEntries(
+    SOCIALS.map((social) => [social.id, socialError(social.id, values[social.id])])
+  ) as Record<SocialId, string | null>
+
+  useEffect(() => {
+    if (!canManage || !touched.current) return
+    if (SOCIALS.some((social) => errors[social.id])) return
+    const timer = setTimeout(() => {
+      touched.current = false
+      void saveRef.current(
+        Object.fromEntries(
+          SOCIALS.map((social) => [social.id, values[social.id].trim() || null])
+        ),
+        'brand'
+      )
+    }, 600)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values, canManage])
+
+  const change = (id: SocialId, value: string) => {
+    markTouched(touched)
+    setValues((current) => ({ ...current, [id]: value }))
+  }
+  return { values, errors, change }
+}
+
+function SocialLinksFields({
+  accent,
+  canManage,
+  change,
+  errors,
+  t,
+  values,
+}: {
+  accent: string
+  canManage: boolean
+  change: (id: SocialId, value: string) => void
+  errors: Record<SocialId, string | null>
+  t: TFn
+  values: Record<SocialId, string>
+}) {
+  return (
+    <div className="flex flex-col gap-3 border-t border-[var(--dash-border)] pt-5">
+      <div className="flex flex-col gap-0.5">
+        <p className="text-sm font-bold text-[var(--dash-text)]">
+          {t('social.title')}
+        </p>
+        <p className="text-xs font-medium text-[var(--dash-muted)]">
+          {t('social.subtitle')}
+        </p>
+      </div>
+      {SOCIALS.map((social) => (
+        <Field key={social.id} label={t(social.tKey)}>
+          <div className="flex items-center gap-2">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+              style={{ background: `${accent}1A`, color: accent }}
+            >
+              <SocialIcon id={social.id} size={17} />
+            </span>
+            <input
+              type={social.id === 'socialWhatsapp' ? 'tel' : 'text'}
+              value={values[social.id]}
+              onChange={(e) => change(social.id, e.target.value)}
+              disabled={!canManage}
+              placeholder={social.placeholder}
+              aria-invalid={!!errors[social.id]}
+              className={inputCls}
+            />
+          </div>
+          {errors[social.id] && (
+            <span className="mt-1 block text-xs font-semibold text-[var(--tone-red-fg)]">
+              {t(errors[social.id]!)}
+            </span>
+          )}
+        </Field>
+      ))}
+    </div>
   )
 }
 

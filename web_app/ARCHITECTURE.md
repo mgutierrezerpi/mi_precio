@@ -207,6 +207,13 @@ Sharing is the one step with no server-side trace, so `markQrShared` records it
 (copy link in the sidebar or dashboard, any QR download) and fires
 `FIRST_STEPS_EVENT` so the row ticks without waiting for a remount.
 
+The card retires itself. Completion is persisted the moment it happens, so it
+never returns — a finished checklist is clutter on a dashboard opened daily.
+Two cases are deliberately different: already complete when the screen opened
+means nothing was achieved here and it does not render at all; completed while
+the shop watched holds the "¡Listo!" state for `CELEBRATION_MS` and then fades,
+rather than vanishing from under the cursor that just completed it.
+
 ### List appearance
 
 Each list may override the business defaults for `design`, `heroColor`, `bgUrl`
@@ -222,6 +229,57 @@ and `bgOverlay`; `null` on a list means "inherit". `ListAppearanceFields`
 `MenuScreen` resolves the cascade per field, and only when the URL targets a
 single list — the index route merges all published lists and keeps the business
 default.
+
+### Social links in the public footer
+
+`lib/socials.ts` is the single definition of the shop's networks — used by the
+Settings → Marca fields that capture them and the footer that renders them.
+`activeSocials(tenant)` returns only the ones filled in, so a shop with none
+gets no icon row at all rather than a line of placeholders advertising that it
+has no presence anywhere.
+
+`hrefOf` builds `wa.me/<digits>` for WhatsApp and passes the rest through. It
+also re-adds a missing scheme defensively: a scheme-less href resolves as a
+*relative path*, which would trap the customer inside `/p/shop/...` instead of
+sending them off-site.
+
+`socialError` mirrors only the **rejection** rules of the API's normaliser,
+never its rewriting — there is one canonical form and it is server-side. It
+exists because a rejected PATCH surfaces as a bare `Error 422`: FastAPI sends
+validation detail as a list, which `api.request` cannot turn into a sentence a
+shop can act on. A field with an error is held back rather than sent.
+
+The footer is **not one component**: besides Storefront and CartView in
+`MenuScreen`, each of the eight templates in `designs.tsx` has its own footer
+with its own palette. All nine render the shared `components/SocialLinks`.
+That component draws bare glyphs with no chip behind them on purpose — the
+designs run from near-black to off-white footers, and any fixed overlay colour
+is invisible on half of them.
+
+Layout follows each design's character: the left-aligned footers put the shop's
+details on the left and the icons on the right, while the three editorial
+templates (`classic`, `nordic`, `fine`) and the cart keep everything centred,
+because centring is what those designs are.
+
+### Hero colour across the designs
+
+`heroColor` resolves as list override → tenant default → brand colour, so it is
+always a real colour. Every design uses it, but not on the same surface —
+painting the same element everywhere would wreck templates built around a fixed
+palette:
+
+| Design | What the hero colour paints |
+|---|---|
+| `modern`, `cards`, `catalog`, `tech` | the coloured header band |
+| `fine` | the stage framing the menu card (cream paper and gold rules stay) |
+| `classic` | top bar, masthead tint and accents |
+| `nordic` | the accents; the page stays cream |
+| `photo` | prices and controls; the page stays dark so photos lead |
+
+The rule is "whatever reads as that design's header", not "the background".
+`nordic` and `photo` deliberately keep their page colour: a saturated cream
+page loses its legibility, and a coloured page competes with the photographs
+that are the point of that template.
 
 ### Dead ends on a public link
 

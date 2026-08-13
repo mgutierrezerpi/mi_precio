@@ -249,6 +249,11 @@ class ApiService {
       listBgUrl?: string | null
       listBgOverlay?: boolean
       listHeroColor?: string | null
+      socialInstagram?: string | null
+      socialFacebook?: string | null
+      socialTiktok?: string | null
+      socialWebsite?: string | null
+      socialWhatsapp?: string | null
       language?: string
       timezone?: string
       deliveryEnabled?: boolean
@@ -269,6 +274,11 @@ class ApiService {
       listBgUrl: 'list_bg_url',
       listBgOverlay: 'list_bg_overlay',
       listHeroColor: 'list_hero_color',
+      socialInstagram: 'social_instagram',
+      socialFacebook: 'social_facebook',
+      socialTiktok: 'social_tiktok',
+      socialWebsite: 'social_website',
+      socialWhatsapp: 'social_whatsapp',
       legalName: 'legal_name',
       taxId: 'tax_id',
       deliveryEnabled: 'delivery_enabled',

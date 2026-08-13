@@ -47,6 +47,15 @@ class Tenant(BaseModel):
     # Optional hero/header color for the public list (falls back to brand_color when null).
     list_hero_color = CharField(max_length=9, null=True)
 
+    # Social links shown in the public list footer. Each is optional: a null one
+    # simply has no icon. All hold a ready-to-open URL except whatsapp, which
+    # holds digits only (the public page builds wa.me/<digits> from it).
+    social_instagram = TextField(null=True)
+    social_facebook = TextField(null=True)
+    social_tiktok = TextField(null=True)
+    social_website = TextField(null=True)
+    social_whatsapp = CharField(max_length=20, null=True)
+
     # Language & region
     language = CharField(max_length=5, default="es")
     timezone = CharField(max_length=64, default="America/Montevideo")

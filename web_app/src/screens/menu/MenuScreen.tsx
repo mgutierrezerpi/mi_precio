@@ -3,6 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
 import { getT, localeOf } from '../../lib/i18n'
+import { SocialLinks } from '../../components/SocialLinks'
 import type { Tenant, ListVersion, Item, ListDesign } from '../../types'
 import {
   lighten,
@@ -1203,25 +1204,30 @@ function Storefront(p: StoreProps) {
       {/* Footer */}
       <footer className="py-10" style={{ background: '#0F172A' }}>
         <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-3 px-5 md:px-16">
-          <span className="text-[16px] font-bold text-white">
-            {tenant.name}
-          </span>
-          {tenant.address && (
-            <span
-              className="text-[12px] font-medium"
-              style={{ color: '#94A3B8' }}
-            >
-              {tenant.address}
-            </span>
-          )}
-          {tenant.taxId && (
-            <span
-              className="text-[12px] font-medium"
-              style={{ color: '#94A3B8' }}
-            >
-              {t('pub.taxId')} {tenant.taxId}
-            </span>
-          )}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-col gap-3">
+              <span className="text-[16px] font-bold text-white">
+                {tenant.name}
+              </span>
+              {tenant.address && (
+                <span
+                  className="text-[12px] font-medium"
+                  style={{ color: '#94A3B8' }}
+                >
+                  {tenant.address}
+                </span>
+              )}
+              {tenant.taxId && (
+                <span
+                  className="text-[12px] font-medium"
+                  style={{ color: '#94A3B8' }}
+                >
+                  {t('pub.taxId')} {tenant.taxId}
+                </span>
+              )}
+            </div>
+            <SocialLinks tenant={tenant} color="#94A3B8" hoverColor="#FFFFFF" />
+          </div>
           <div
             className="my-2 h-px w-full"
             style={{ background: 'rgba(255,255,255,0.1)' }}
@@ -1788,10 +1794,16 @@ function CartView(p: CartProps) {
 
       {/* Footer */}
       <footer
-        className="flex flex-col items-center gap-2 px-5 py-8 md:px-16"
+        className="flex flex-col items-center gap-5 px-5 py-10 md:px-16"
         style={{ background: T.footerBg }}
       >
         <span className="text-[14px] font-bold text-white">{tenant.name}</span>
+        <SocialLinks
+          tenant={tenant}
+          color={T.footerText}
+          hoverColor="#FFFFFF"
+          align="center"
+        />
         <span
           className="text-[12px] font-medium"
           style={{ color: T.footerText }}

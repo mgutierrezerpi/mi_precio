@@ -678,6 +678,41 @@ Valid design ids and the hex-colour rule live in
 cascade. Only a URL targeting a single list applies them; `/p/{subdomain}`
 merges every published list into one view and stays on the business default.
 
+### Social links
+
+Five optional tenant columns feed the icons in the public list footer:
+`social_instagram`, `social_facebook`, `social_tiktok`, `social_website` and
+`social_whatsapp`. Null means the shop does not use that network and no icon is
+shown. They ship through `ensure_columns()` like every other tenant column.
+
+`controllers/input_types/socials.py` normalises them on the way in, because a
+shop pastes three different things and all of them have to end up openable:
+
+| Typed | Stored |
+|---|---|
+| `@micafe` | `https://instagram.com/micafe` |
+| `instagram.com/micafe` | `https://instagram.com/micafe` |
+| `https://instagram.com/micafe` | unchanged |
+| `+598 99 123 456` (whatsapp) | `59899123456` |
+
+A bare handle only becomes a profile URL on the networks with a known shape
+(`_HANDLE_BASE`); everywhere else a scheme-less value is treated as a host.
+After rewriting, the result must still match an `http(s)://host.tld` pattern —
+that is what stops `javascript:alert(1)`, which prefixing would otherwise turn
+into the innocent-looking `https://javascript:alert(1)`.
+
+WhatsApp is the exception that stores digits rather than a URL: shops know
+their phone number, not their wa.me link, so the public page builds
+`wa.me/<digits>` at render time. A leading `00` is dropped along with `+` —
+wa.me wants neither.
+
+Empty, blank and a lone `@` all normalise to `None` instead of raising: a shop
+that starts typing and gives up must not be blocked from saving the rest of its
+brand settings.
+
+`PublicTenantView` exposes all five so the footer can render without an
+authenticated call.
+
 ### Endpoints
 
 #### Health
