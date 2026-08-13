@@ -58,6 +58,10 @@ const publicUrl = (sub: string | undefined, l: PriceList) =>
   `${window.location.origin}${publicPath(sub, l)}`
 const qrUrl = (sub: string | undefined, l: PriceList) =>
   `${publicUrl(sub, l)}?src=qr`
+/** The list's own public page, which captures itself into a PDF on arrival.
+ *  Exporting does not redraw the list anywhere — the sheet is the design. */
+const pdfExportUrl = (sub: string | undefined, l: PriceList) =>
+  `${publicUrl(sub, l)}?pdf=1`
 const qrFileName = (l: PriceList) =>
   (l.slug || l.name)
     .toLowerCase()
@@ -320,6 +324,9 @@ export function PriceListsScreen() {
                   window.open(publicUrl(tenant?.subdomain, l), '_blank')
                 }
                 onReports={() => navigate(`/admin/reportes?list=${l.id}`)}
+                onExportPdf={() =>
+                  window.open(pdfExportUrl(tenant?.subdomain, l), '_blank')
+                }
                 onCreateVariant={() => setVariantParent(l)}
               />
               {lists
@@ -360,6 +367,9 @@ export function PriceListsScreen() {
                       window.open(publicUrl(tenant?.subdomain, variant), '_blank')
                     }
                     onReports={() => navigate(`/admin/reportes?list=${variant.id}`)}
+                    onExportPdf={() =>
+                      window.open(pdfExportUrl(tenant?.subdomain, variant), '_blank')
+                    }
                   />
                 ))}
               </Fragment>
@@ -415,6 +425,7 @@ function ListRow({
   onOpen,
   onReports,
   onCreateVariant,
+  onExportPdf,
   variant = false,
   variantDetail,
 }: {
@@ -430,6 +441,7 @@ function ListRow({
   onOpen: () => void
   onReports: () => void
   onCreateVariant?: () => void
+  onExportPdf?: () => void
   variant?: boolean
   variantDetail?: string
 }) {
@@ -549,6 +561,7 @@ function ListRow({
             onCreateVariant={onCreateVariant}
             isVariant={variant}
             onReports={onReports}
+            onExportPdf={onExportPdf}
           />
         )}
       </div>
@@ -565,6 +578,7 @@ function RowMenu({
   onCreateVariant,
   isVariant = false,
   onReports,
+  onExportPdf,
 }: {
   list: PriceList
   onEdit: () => void
@@ -574,13 +588,16 @@ function RowMenu({
   onCreateVariant?: () => void
   isVariant?: boolean
   onReports: () => void
+  onExportPdf?: () => void
 }) {
   const t = useT()
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const H = isVariant ? 180 : 230
+  // Rough menu height, used to flip it above the button when it would fall off
+  // the viewport. Keep in step with the items rendered below.
+  const H = (isVariant ? 180 : 230) + (list.published && list.live ? 34 : 0)
 
   const toggle = () => {
     if (open) {
@@ -673,6 +690,16 @@ function RowMenu({
               label={t('nav.reports')}
               onClick={act(onReports)}
             />
+            {/* Exporting prints the real public page, so it is only offered for
+                a list the plan actually serves — there is nothing to render
+                for a draft or an offline one. */}
+            {list.published && list.live && onExportPdf && (
+              <MenuItemBtn
+                icon="file-spreadsheet"
+                label={t('pl.menu.exportPdf')}
+                onClick={act(onExportPdf)}
+              />
+            )}
             <div className="my-1 h-px bg-[var(--dash-divider)]" />
             <MenuItemBtn
               icon="circle-x"

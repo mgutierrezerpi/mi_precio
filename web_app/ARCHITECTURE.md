@@ -261,6 +261,44 @@ details on the left and the icons on the right, while the three editorial
 templates (`classic`, `nordic`, `fine`) and the cart keep everything centred,
 because centring is what those designs are.
 
+### Exporting a list to PDF
+
+"Exportar a PDF" in a list's row menu opens its own public page with `?pdf=1`.
+That page renders the list, captures itself and downloads the file
+(`lib/exportListPdf` + `hooks/useExportPdfWhenReady`).
+
+The sheet is a **picture of the real page**, not a redrawing of it. The nine
+designs stay the single source of truth, so the export cannot drift from what a
+customer sees and a template added later needs no work here. The trade, chosen
+deliberately, is that the text lands as image: not selectable, not searchable.
+Vector output would mean either rebuilding all nine designs or running headless
+Chromium on a 1GB Fly VM — see [[pdf-export-decisions]] in memory.
+
+Three properties are load-bearing:
+
+- **One page, exactly as tall as the list.** No pagination means nothing can be
+  cut across sheets — not a product row, not a framed card, not a section. An
+  earlier `@page`/print-dialog version fought this and lost: paper size is
+  chosen in the browser's dialog, so the content always had to break somewhere.
+- **Width measured, not assumed.** `contentWidthOf` finds where the content
+  column actually starts and ends and captures that plus a margin. The designs
+  centre themselves in a `max-width`, so capturing at the browser's width
+  buried the menu in background — on a 1905px window a 1235px column wasted
+  363px a side. Elements spanning the full width are skipped: a full-bleed hero
+  says nothing about where the content sits. Only the captured box is resized,
+  never the window, so media queries still answer to the real viewport and the
+  design keeps its desktop layout.
+- **Height read after narrowing.** A narrower column rewraps text and grows;
+  measuring first would cut the tail off.
+
+The capture waits for `document.fonts.ready` and every image to decode, or
+6 seconds — a shop with one broken photo still gets its PDF. The page wears
+`.mp-exporting` (index.css) meanwhile, which hides what only makes sense on a
+screen: search, category chips, add-to-cart and the cart button.
+
+`html2canvas-pro` and `jspdf` are imported dynamically, so ~600KB of libraries
+load only on the export route and stay out of the main bundle.
+
 ### Hero colour across the designs
 
 `heroColor` resolves as list override → tenant default → brand colour, so it is

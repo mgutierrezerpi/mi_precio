@@ -1036,3 +1036,32 @@ a {
     animation-duration: 0.01ms !important;
   }
 }
+
+
+/* ==========================================
+   Exporting a public price list to PDF
+   ==========================================
+   The export captures the real page (lib/exportListPdf), so the sheet is the
+   design itself rather than a copy of it that drifts. This class is worn only
+   while the capture runs, and only removes what belongs to a screen. */
+.mp-exporting button,
+.mp-exporting input,
+.mp-exporting select,
+.mp-exporting [data-no-export] {
+  display: none !important;
+}
+
+/* A hero sized to fill the viewport would leave a screen-tall gap of colour at
+   the top of the PDF, and `min-h-screen` pads a short menu the same way. */
+.mp-exporting.min-h-screen,
+.mp-exporting .min-h-screen,
+.mp-exporting .h-screen {
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+/* Sticky bars are anchored to a scrolling viewport that the PDF does not have;
+   left alone they land halfway down the capture. */
+.mp-exporting .sticky {
+  position: static !important;
+}
