@@ -107,6 +107,21 @@ function triggerDownload(href: string, filename: string): void {
   a.remove()
 }
 
+/** Renders the QR offscreen and hands back a PNG data URL.
+ *
+ *  The printable poster needs the code as a plain `<img>` rather than as the
+ *  `QrCode` canvas: an image is loaded before it is drawn, so the capture can
+ *  simply wait for it instead of racing the canvas's own async draw. */
+export async function qrToPngDataUrl(
+  value: string,
+  opts: QrRenderOptions = {},
+  size = 1024
+): Promise<string> {
+  const canvas = document.createElement('canvas')
+  await drawQrToCanvas(canvas, value, size, opts)
+  return canvas.toDataURL('image/png')
+}
+
 /** Renders the QR offscreen and downloads it as a PNG. */
 export async function downloadQrPng(
   value: string,
