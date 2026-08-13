@@ -155,6 +155,58 @@ The gate lifts as soon as the plan is not `free` — via the Lemon Squeezy check
 or immediately when `billingEnabled` is false (local dev, no gateway). Tenants
 created before the gate have `planGate` false and are never blocked.
 
+### First-login onboarding
+
+Two pieces, both **CRM-only** — `/p/*` belongs to the shop and never shows a
+MiPrecio tour (see the dead-ends rule below).
+
+`OnboardingTour` (`screens/admin/crm/`) is a guided spotlight mounted by
+`AdminExperienceLayout`, i.e. **past the plan gate** — an account still on
+`/planes` has no CRM to be taught. It opens once per user on first login
+(`isTourSeen`, localStorage keyed by user id, so a second team member gets its
+own run) and again from "Volver a ver el recorrido" in Soporte and on the
+checklist, via `uiSlice.tourOpen`.
+
+Every step points at the **sidebar**, which is on screen on every admin route,
+so the tour never navigates the user mid-run. Steps are declared in
+`lib/onboardingTour.ts` and anchored by `data-tour` attributes on `CrmSidebar`
+items. Two mechanics are easy to break:
+
+- The overlay renders **outside** the `CrmLayout` tree, so it must carry `dash`
+  (the class that scopes `--dash-*`) and `font-sans` itself — without them the
+  card is transparent and set in the body serif.
+- The spotlight's dimming is an inline `boxShadow` spread past the viewport.
+  An inline `boxShadow` **replaces** Tailwind's `ring-*`, so the ring and the
+  dimming have to live in that one declaration.
+
+An anchor that is missing or off-screen (the sidebar below `lg` is a drawer
+parked outside the viewport) measures to `null`, and the step degrades to a
+centered card with the whole page dimmed. Highlighting something the user
+cannot see is worse than not highlighting at all.
+
+`FirstSteps` is the checklist the tour leaves behind on the dashboard. Its five
+rows are **derived from real data on every render**, never stored:
+
+| Step | Done when |
+|---|---|
+| Agregá tus productos | the catalog has any product |
+| Configurá cómo se ve tu lista | any of `logoUrl` / `brandColor` / `listDesign` / `listHeroColor` / `listBgUrl` is set |
+| Configurá tu lista | any list exists |
+| Publicá tu lista | some list is `published && live` |
+| Compartí tu QR o tu link | `markQrShared` fired |
+
+There is deliberately **no "pick a plan" step**: the plan gate means an account
+without one never reaches this screen. "Products" counts the catalog rather
+than list items because it now precedes list creation — which is why
+`DashboardScreen` dispatches `fetchProducts`. "Design" reads the appearance
+fields because all of them are `null` on a fresh tenant, so a value there is
+always a deliberate choice and never a default we handed out. "Publish"
+insists on `live`: a list the plan no longer serves is not published to anyone.
+
+Sharing is the one step with no server-side trace, so `markQrShared` records it
+(copy link in the sidebar or dashboard, any QR download) and fires
+`FIRST_STEPS_EVENT` so the row ticks without waiting for a remount.
+
 ### List appearance
 
 Each list may override the business defaults for `design`, `heroColor`, `bgUrl`

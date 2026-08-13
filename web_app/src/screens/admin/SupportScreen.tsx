@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useAppSelector } from '../../store/hooks'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant, selectUser } from '../../store/slices/authSlice'
+import { setTourOpen } from '../../store/slices/uiSlice'
 import api from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon } from './crm/ui'
@@ -45,6 +46,7 @@ export function SupportScreen() {
     >
       <main className="mx-auto flex min-h-full w-full max-w-[820px] flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
         <SupportHeader />
+        <ReplayTour />
         {form.ticketId !== null ? (
           <TicketSuccess
             email={email}
@@ -102,6 +104,23 @@ function useSupportForm() {
     submit,
     reset,
   }
+}
+
+/** The tour's last step promises the recording is replayable from here, so this
+ *  button has to exist on this screen. */
+function ReplayTour() {
+  const dispatch = useAppDispatch()
+  const t = useT()
+  return (
+    <button
+      type="button"
+      onClick={() => dispatch(setTourOpen(true))}
+      className="flex items-center gap-2 self-start rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 py-2 text-xs font-bold text-[var(--dash-link)] hover:bg-[var(--dash-soft)]"
+    >
+      <Icon name="eye" size={15} />
+      {t('tour.replay')}
+    </button>
+  )
 }
 
 function SupportHeader() {

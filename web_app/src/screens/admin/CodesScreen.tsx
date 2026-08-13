@@ -8,6 +8,7 @@ import { Icon } from './crm/ui'
 import { QrCode } from './crm/QrCode'
 import { gradient } from './crm/theme'
 import { useCatalogT } from '../../lib/i18nDictionaryCatalog'
+import { markQrShared } from '../../lib/onboardingTour'
 import {
   downloadQrPng,
   downloadQrSvg,
@@ -78,6 +79,7 @@ export function CodesScreen() {
 
   const copy = (l: PriceList) => {
     navigator.clipboard?.writeText(urlOf(l))
+    markQrShared(tenant?.id)
     setCopied(l.id)
     setTimeout(() => setCopied(null), 1500)
   }
@@ -87,10 +89,19 @@ export function CodesScreen() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') || l.id
   const downloadCard = (l: PriceList) => {
+    markQrShared(tenant?.id)
     void downloadQrPng(qrUrlOf(l), `qr-${slugOf(l)}.png`, {
       fg: color,
       logoUrl,
     })
+  }
+  const downloadPreviewPng = () => {
+    markQrShared(tenant?.id)
+    void downloadQrPng(previewUrl, `qr-${sub}.png`, { fg: color, logoUrl })
+  }
+  const downloadPreviewSvg = () => {
+    markQrShared(tenant?.id)
+    downloadQrSvg(previewUrl, `qr-${sub}.svg`, { fg: color })
   }
 
   return (
@@ -257,12 +268,7 @@ export function CodesScreen() {
               <button
                 type="button"
                 disabled={lists.length === 0}
-                onClick={() =>
-                  void downloadQrPng(previewUrl, `qr-${sub}.png`, {
-                    fg: color,
-                    logoUrl,
-                  })
-                }
+                onClick={downloadPreviewPng}
                 className={`flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 ${gradient}`}
               >
                 <Icon name="download" size={16} /> {t('codes.downloadPng')}
@@ -275,9 +281,7 @@ export function CodesScreen() {
               <button
                 type="button"
                 disabled={lists.length === 0}
-                onClick={() =>
-                  downloadQrSvg(previewUrl, `qr-${sub}.svg`, { fg: color })
-                }
+                onClick={downloadPreviewSvg}
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Icon name="download" size={15} /> {t('codes.downloadSvg')}

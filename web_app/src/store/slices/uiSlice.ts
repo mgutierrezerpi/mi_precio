@@ -13,6 +13,10 @@ interface UiState {
   theme: 'light' | 'dark' | 'system'
   viewMode: 'grid' | 'list'
   density: Density
+  /** Onboarding tour overlay. Opened once on first login by the CRM shell, and
+   *  again from "Volver a ver el recorrido"; whether it was already seen lives
+   *  in localStorage (lib/onboardingTour), not here. */
+  tourOpen: boolean
 }
 
 const initialState: UiState = {
@@ -21,6 +25,7 @@ const initialState: UiState = {
   theme: 'system',
   viewMode: 'grid',
   density: loadDensity(),
+  tourOpen: false,
 }
 
 const uiSlice = createSlice({
@@ -49,6 +54,9 @@ const uiSlice = createSlice({
       state.density = action.payload
       localStorage.setItem(DENSITY_KEY, action.payload)
     },
+    setTourOpen: (state, action: PayloadAction<boolean>) => {
+      state.tourOpen = action.payload
+    },
   },
 })
 
@@ -60,6 +68,7 @@ export const {
   setTheme,
   setViewMode,
   setDensity,
+  setTourOpen,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -72,3 +81,4 @@ export const selectMobileMenuOpen = (state: { ui: UiState }) =>
 export const selectTheme = (state: { ui: UiState }) => state.ui.theme
 export const selectViewMode = (state: { ui: UiState }) => state.ui.viewMode
 export const selectDensity = (state: { ui: UiState }) => state.ui.density
+export const selectTourOpen = (state: { ui: UiState }) => state.ui.tourOpen

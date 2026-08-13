@@ -7,6 +7,7 @@ import { fetchLists, selectLists } from '../../../store/slices/menuSlice'
 import type { PlanId } from '../../../types'
 import { planById } from '../../../lib/plans'
 import { useT } from '../../../lib/i18n'
+import { markQrShared } from '../../../lib/onboardingTour'
 import { Icon, type IconName } from './ui'
 import { tone, gradient } from './theme'
 
@@ -19,6 +20,7 @@ const NEXT_PLAN: Partial<Record<PlanId, PlanId>> = {
 }
 
 // `id` is the stable (Spanish) key screens pass as CrmLayout `active`; `tKey` is the display label.
+// `tour` marks the item as an anchor for the onboarding spotlight (lib/onboardingTour).
 const navMain: {
   icon: IconName
   id: string
@@ -26,6 +28,7 @@ const navMain: {
   label: string
   to?: string
   badge?: string
+  tour?: string
 }[] = [
   {
     icon: 'layout-dashboard',
@@ -40,6 +43,7 @@ const navMain: {
     tKey: 'nav.lists',
     label: 'Listas',
     to: '/admin/lists',
+    tour: 'nav-lists',
   },
   {
     icon: 'package',
@@ -47,6 +51,7 @@ const navMain: {
     tKey: 'nav.products',
     label: 'Productos',
     to: '/admin/items',
+    tour: 'nav-products',
   },
   {
     icon: 'qr-code',
@@ -54,6 +59,7 @@ const navMain: {
     tKey: 'nav.qr',
     label: 'Códigos QR',
     to: '/admin/qr',
+    tour: 'nav-qr',
   },
   {
     icon: 'users',
@@ -76,6 +82,7 @@ const navSettings: {
   tKey: string
   label: string
   to?: string
+  tour?: string
 }[] = [
   {
     icon: 'user-plus',
@@ -90,6 +97,7 @@ const navSettings: {
     tKey: 'nav.settings',
     label: 'Configuración',
     to: '/admin/settings',
+    tour: 'nav-settings',
   },
   {
     icon: 'life-buoy',
@@ -97,6 +105,7 @@ const navSettings: {
     tKey: 'nav.support',
     label: 'Soporte',
     to: '/admin/soporte',
+    tour: 'nav-support',
   },
 ]
 
@@ -108,6 +117,7 @@ function NavItem({
   active,
   onNavigate,
   collapsed,
+  tour,
 }: {
   icon: IconName
   label: string
@@ -116,6 +126,7 @@ function NavItem({
   active: boolean
   onNavigate?: () => void
   collapsed?: boolean
+  tour?: string
 }) {
   const inner = (
     <>
@@ -148,11 +159,11 @@ function NavItem({
   )
   const cls = `flex h-9 items-center gap-2 rounded-[8px] ${collapsed ? 'justify-center px-0' : 'px-3'} ${active ? 'bg-[var(--dash-sidebar-active)] text-[var(--dash-sidebar-active-text)]' : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`
   return to ? (
-    <Link to={to} onClick={onNavigate} className={cls}>
+    <Link to={to} onClick={onNavigate} className={cls} data-tour={tour}>
       {inner}
     </Link>
   ) : (
-    <button type="button" className={`${cls} w-full text-left`}>
+    <button type="button" className={`${cls} w-full text-left`} data-tour={tour}>
       {inner}
     </button>
   )
@@ -235,6 +246,7 @@ function PublicListAction({
         title={label}
         aria-label={label}
         className={className}
+        data-tour="share-link"
       >
         <Icon name={linkCopied ? 'circle-check' : 'link-2'} size={15} />
         {!collapsed && label}
@@ -247,6 +259,7 @@ function PublicListAction({
       title={t('side.createMainList')}
       aria-label={t('side.createMainList')}
       className={className}
+      data-tour="share-link"
     >
       <Icon name="list-plus" size={15} />
       {!collapsed && t('side.createMainList')}
@@ -270,6 +283,7 @@ function SidebarNav({
     tKey: string
     to?: string
     badge?: string
+    tour?: string
   }[]
   onClose?: () => void
   title: string
@@ -292,6 +306,7 @@ function SidebarNav({
           active={item.id === active}
           onNavigate={onClose}
           collapsed={collapsed}
+          tour={item.tour}
         />
       ))}
     </>
@@ -330,6 +345,7 @@ export function CrmSidebar({
     if (!tenant || !mainList) return
     const publicUrl = `${window.location.origin}/p/${tenant.subdomain || 'mi-negocio'}/${mainList.slug || mainList.id}`
     navigator.clipboard?.writeText(publicUrl)
+    markQrShared(tenant.id)
     setLinkCopied(true)
     window.setTimeout(() => setLinkCopied(false), 1800)
   }
