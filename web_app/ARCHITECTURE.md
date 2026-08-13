@@ -264,22 +264,38 @@ because centring is what those designs are.
 ### Hero colour across the designs
 
 `heroColor` resolves as list override → tenant default → brand colour, so it is
-always a real colour. Every design uses it, but not on the same surface —
-painting the same element everywhere would wreck templates built around a fixed
-palette:
+always a real colour.
+
+**On the public list the accent IS the hero colour.** `MenuScreen` builds the
+palette it hands the designs (`C`, `accent`, `brandGradient`) from `heroColor`
+rather than from `brandColor`. That is a single point, and it exists because
+without it a shop that set a hero colour got a page split between two: badges
+and section rules on the brand colour, everything else on the hero. Shops that
+never chose a hero colour see no change — it falls back to their brand.
+
+Each design still decides *which surface* wears it, because painting the same
+element everywhere would wreck templates built around a fixed palette:
 
 | Design | What the hero colour paints |
 |---|---|
 | `modern`, `cards`, `catalog`, `tech` | the coloured header band |
 | `fine` | the stage framing the menu card (cream paper and gold rules stay) |
 | `classic` | top bar, masthead tint and accents |
-| `nordic` | the accents; the page stays cream |
-| `photo` | prices and controls; the page stays dark so photos lead |
+| `nordic` | a light wash of it becomes the paper, plus the accents |
+| `photo` | a dark shade of it becomes the page, plus prices and controls |
 
-The rule is "whatever reads as that design's header", not "the background".
-`nordic` and `photo` deliberately keep their page colour: a saturated cream
-page loses its legibility, and a coloured page competes with the photographs
-that are the point of that template.
+`nordic` and `photo` tint rather than replace on purpose: `nordic` is text on a
+warm ground and a saturated ground costs the legibility that is its point,
+while `photo` needs to stay dark so the photographs lead. Both use `lighten` /
+`darken` from `designs.tsx`.
+
+**`darken(hex, amt)` is not `lighten(hex, -amt)`.** `lighten` mixes toward
+white, so a negative amount subtracts a share of the distance *to white*: a
+bright channel barely moves and a dark one runs past zero, serialising as
+`-d1` and making the whole colour unparseable — the browser then drops it and
+the element loses its background. `#F59E0B` at `-0.9` came out `#ec47-d1`,
+lighter and invalid. Both helpers clamp their channels now, and
+`designColors.test.ts` pins the case.
 
 ### Dead ends on a public link
 

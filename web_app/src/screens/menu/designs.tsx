@@ -5,21 +5,46 @@ import type { Item, Tenant, ListDesign } from '../../types'
 /* ── Shared helpers (used by MenuScreen's Storefront/CartView and the designs) ── */
 
 // Lighten a hex color toward white (0..1). Builds a brand gradient from a single color.
-export function lighten(hex: string, amt = 0.4): string {
+/** Expand `#abc` / `#aabbcc` to the six hex digits, so every helper below can
+ *  assume the same shape. */
+function hexDigits(hex: string): string {
   const m = hex.replace('#', '')
-  const n =
-    m.length === 3
-      ? m
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : m.padEnd(6, '0').slice(0, 6)
-  const ch = (i: number) =>
-    Math.round(
-      parseInt(n.slice(i, i + 2), 16) +
-        (255 - parseInt(n.slice(i, i + 2), 16)) * amt
-    )
-  return `#${[ch(0), ch(2), ch(4)].map((v) => v.toString(16).padStart(2, '0')).join('')}`
+  return m.length === 3
+    ? m
+        .split('')
+        .map((c) => c + c)
+        .join('')
+    : m.padEnd(6, '0').slice(0, 6)
+}
+
+const toHex = (channels: number[]) =>
+  `#${channels
+    // Clamping is not paranoia: without it an out-of-range channel serialises
+    // as "-d1" and the whole colour becomes an unparseable string, which the
+    // browser then drops — taking the element's background with it.
+    .map((v) => Math.min(255, Math.max(0, Math.round(v))))
+    .map((v) => v.toString(16).padStart(2, '0'))
+    .join('')}`
+
+/** Mix a colour toward white. `amt` is how far, 0..1. */
+export function lighten(hex: string, amt = 0.4): string {
+  const n = hexDigits(hex)
+  const ch = (i: number) => {
+    const v = parseInt(n.slice(i, i + 2), 16)
+    return v + (255 - v) * amt
+  }
+  return toHex([ch(0), ch(2), ch(4)])
+}
+
+/** Mix a colour toward black. `amt` is how far, 0..1.
+ *
+ *  Not `lighten(hex, -amt)`: that subtracts a share of the distance to *white*,
+ *  so a bright channel barely moves while a dark one runs past zero. On
+ *  #F59E0B at 0.9 it produced `#ec47-d1` — lighter, and invalid. */
+export function darken(hex: string, amt = 0.4): string {
+  const n = hexDigits(hex)
+  const ch = (i: number) => parseInt(n.slice(i, i + 2), 16) * (1 - amt)
+  return toHex([ch(0), ch(2), ch(4)])
 }
 
 // Append an alpha channel to a hex color (a in 0..1). Used to scrim a design over a background image.
@@ -458,13 +483,11 @@ const code = (it: Item, i: number) =>
    1) CLASSIC — the previous "compact" read-only price list (brand-tinted)
    ══════════════════════════════════════════════════════════════════════ */
 export function ClassicList(p: DesignProps) {
-  // The page is white by design; the shop's hero colour paints the top bar and
-  // the tint under the masthead, which is this template's coloured header.
-  const accent = p.heroColor
-  const brandGradient = `linear-gradient(135deg, ${accent} 0%, ${lighten(accent, 0.42)} 100%)`
   const {
     tenant,
     C,
+    accent,
+    brandGradient,
     t,
     money,
     currency,
@@ -912,13 +935,15 @@ export function NordicMenu(p: DesignProps) {
     addToCart,
     decFromCart,
   } = p
-  const paper = '#F3EBE2',
+  // The paper is a wash of the shop's colour rather than a fixed cream: this
+  // template is a page of text on a warm ground, and a saturated ground would
+  // cost the legibility that is its whole point. `lighten` at 0.9 keeps it a
+  // near-white that is unmistakably theirs.
+  const paper = lighten(p.accent, 0.9),
     ink = '#2B2620',
     soft = '#6B6156',
-    line = '#C5BEB6',
-    // The page is cream by design; the shop's hero colour drives the accents
-    // instead, which is this template's equivalent of a coloured header.
-    accent = p.heroColor
+    line = lighten(p.accent, 0.62),
+    accent = p.accent
 
   return (
     <div
@@ -1425,13 +1450,14 @@ export function PhotoLookbook(p: DesignProps) {
     addToCart,
     decFromCart,
   } = p
-  // Photo panels need a dark neutral behind them to keep the images the
-  // subject, so the hero colour drives the accents rather than the page.
-  const bg = '#0A0A0A',
-    panel = '#161616',
+  // The page stays dark — photographs are the subject here and a bright ground
+  // competes with them — but it is now a dark shade *of the shop's colour*
+  // instead of a fixed near-black, so the template is theirs too.
+  const bg = darken(p.accent, 0.94),
+    panel = darken(p.accent, 0.88),
     ink = '#F5F5F5',
     soft = '#9A9A9A',
-    accent = p.heroColor
+    accent = p.accent
   const featured = [...allItems]
     .sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0))
     .slice(0, 3)
@@ -1873,7 +1899,7 @@ export function ImageCatalog(p: DesignProps) {
   } = p
   const accent = p.accent,
     hero = p.heroColor,
-    heroDark = lighten(p.heroColor, -0.16),
+    heroDark = darken(p.heroColor, 0.16),
     heroInk = readableOn(p.heroColor),
     ink = '#0F172A',
     soft = '#64748B',
