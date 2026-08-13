@@ -29,6 +29,7 @@ export const DICT_LISTS: Record<string, TranslationEntry> = {
   'pl.menu.publish': { es: 'Publicar', en: 'Publish', pt: 'Publicar' },
   'pl.menu.removeMain': { es: 'Quitar de principal', en: 'Remove as main', pt: 'Remover como principal' },
   'pl.menu.makeMain': { es: 'Marcar principal', en: 'Make main', pt: 'Definir como principal' },
+  'pl.menu.exportPdf': { es: 'Exportar a PDF', en: 'Export to PDF', pt: 'Exportar para PDF' },
   'pl.menu.delete': { es: 'Eliminar', en: 'Delete', pt: 'Excluir' },
   'pl.wizard.edit': { es: 'Editar lista', en: 'Edit list', pt: 'Editar lista' },
   'pl.wizard.new': { es: 'Nueva lista', en: 'New list', pt: 'Nova lista' },

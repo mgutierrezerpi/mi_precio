@@ -3,6 +3,11 @@ import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
 import { getT, localeOf } from '../../lib/i18n'
+import {
+  useExportPdfWhenReady,
+  type ExportState,
+} from '../../hooks/useExportPdfWhenReady'
+import { pdfFileName } from '../../lib/exportListPdf'
 import { SocialLinks } from '../../components/SocialLinks'
 import type { Tenant, ListVersion, Item, ListDesign } from '../../types'
 import {
@@ -61,6 +66,7 @@ const BASE = {
 // The white mark is the one that sits on the purple half.
 const MIPRECIO_LOGO_WHITE = '/miprecio-logo-white-pencil.webp'
 
+
 export function MenuScreen() {
   const { subdomain, listId } = useParams<{
     subdomain: string
@@ -68,6 +74,9 @@ export function MenuScreen() {
   }>()
   const [searchParams] = useSearchParams()
   const viewSource = searchParams.get('src') === 'qr' ? 'qr' : 'link'
+  // The CRM's "Exportar a PDF" opens the real list with ?pdf=1 rather than
+  // redrawing it: the sheet is then the design itself, not a copy that drifts.
+  const pdfMode = searchParams.get('pdf') === '1'
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [lists, setLists] = useState<PublicList[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -275,6 +284,13 @@ export function MenuScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, allItems, cartTotal, customer])
 
+  // Called before the early returns below so the hook order never changes.
+  const exportState = useExportPdfWhenReady(
+    pdfMode && !isLoading && !error && !!tenant,
+    '.mp-public',
+    pdfFileName(tenant?.name, list?.name)
+  )
+
   if (isLoading)
     return (
       <div
@@ -400,13 +416,15 @@ export function MenuScreen() {
 
   return (
     <div
-      className="min-h-screen font-sans"
+      className="mp-public min-h-screen font-sans"
       style={{
         background: C.bg,
         color: C.ink,
         fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
       }}
     >
+      {pdfMode && <ExportOverlay state={exportState} accent={accent} />}
+
       {/* Tint the page scrollbar with the tenant's brand color while this public list is shown. */}
       <style>{`
         html { scrollbar-color: ${accent} transparent; }
@@ -1811,6 +1829,41 @@ function CartView(p: CartProps) {
           {t('pub.footer', { currency: tenant.currency || 'UYU' })}
         </span>
       </footer>
+    </div>
+  )
+}
+
+/** What the shop sees in the tab that exists only to produce a file.
+ *
+ *  `data-no-export` keeps it out of the capture — otherwise the notice would be
+ *  baked into the PDF it is announcing. */
+function ExportOverlay({
+  state,
+  accent,
+}: {
+  state: ExportState
+  accent: string
+}) {
+  const message =
+    state === 'error'
+      ? 'No pudimos generar el PDF. Cerrá esta pestaña y probá de nuevo.'
+      : state === 'done'
+        ? 'Listo. Buscá el PDF en tus descargas.'
+        : 'Generando tu PDF…'
+
+  return (
+    <div
+      data-no-export
+      className="fixed inset-x-0 top-0 z-[200] flex items-center justify-center gap-3 px-5 py-3 text-[13px] font-bold text-white"
+      style={{ background: state === 'error' ? '#B91C1C' : accent }}
+    >
+      {state === 'working' && (
+        <span
+          aria-hidden
+          className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+        />
+      )}
+      <span>{message}</span>
     </div>
   )
 }
