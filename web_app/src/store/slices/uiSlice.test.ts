@@ -6,6 +6,7 @@ import uiReducer, {
   setTheme,
   setViewMode,
   setDensity,
+  setTourOpen,
 } from './uiSlice'
 
 describe('uiSlice', () => {
@@ -15,6 +16,7 @@ describe('uiSlice', () => {
     theme: 'system' as const,
     viewMode: 'grid' as const,
     density: 'full' as const,
+    tourOpen: false,
   }
 
   it('should return the initial state', () => {
@@ -52,5 +54,11 @@ describe('uiSlice', () => {
   it('should handle setDensity', () => {
     const actual = uiReducer(initialState, setDensity('compact'))
     expect(actual.density).toBe('compact')
+  })
+
+  it('should handle setTourOpen', () => {
+    const opened = uiReducer(initialState, setTourOpen(true))
+    expect(opened.tourOpen).toBe(true)
+    expect(uiReducer(opened, setTourOpen(false)).tourOpen).toBe(false)
   })
 })

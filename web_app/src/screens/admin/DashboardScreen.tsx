@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
+import { fetchProducts, selectProducts } from '../../store/slices/productsSlice'
 import type {
   Product,
   CustomerStats,
@@ -12,12 +13,14 @@ import type {
 } from '../../types'
 import api, { type VisitStats } from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
+import { FirstSteps } from './crm/FirstSteps'
 import { Icon, type IconName } from './crm/ui'
 import { QrCode } from './crm/QrCode'
 import { QrModal } from './PriceListsScreen'
 import { tone, gradient, type Tone } from './crm/theme'
 import { DEFAULT_QR_COLOR, QR_COLOR_STORAGE_PREFIX } from '../../lib/qrRender'
 import { localeOf, normalizeLang, useT, type TFn } from '../../lib/i18n'
+import { markQrShared } from '../../lib/onboardingTour'
 import { DICT_ANALYTICS } from '../../lib/i18nDictionaryAnalytics'
 import { ActivityRow } from './crm/activity'
 import {
@@ -70,7 +73,9 @@ export function DashboardScreen() {
     goCreateList,
     goProducts,
     goQr,
+    lists,
     principalList,
+    products,
     publicUrlDisplay,
     qrColor,
     qrList,
@@ -109,6 +114,7 @@ export function DashboardScreen() {
     >
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
         <DashboardTitle t={t} />
+        <FirstSteps lists={lists} productCount={products.length} />
         <DashboardHero
           copied={copied}
           goCreateList={goCreateList}
@@ -159,12 +165,18 @@ function useDashboardData(navigate: ReturnType<typeof useNavigate>) {
   const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
   const lists = useAppSelector(selectLists)
+  const products = useAppSelector(selectProducts)
   const [visits, setVisits] = useState<VisitStats | null>(null)
   const [custStats, setCustStats] = useState<CustomerStats | null>(null)
   const [search, setSearch] = useState('')
   const { copied, copyUrl, qrColor } = usePublicListUrls(tenant)
   useEffect(() => {
     if (tenant?.id) dispatch(fetchLists(tenant.id))
+  }, [dispatch, tenant?.id])
+  // The first-steps checklist asks "does the catalog have anything in it?",
+  // which no list-shaped data can answer before the first list exists.
+  useEffect(() => {
+    if (tenant?.id) dispatch(fetchProducts(tenant.id))
   }, [dispatch, tenant?.id])
   useEffect(() => {
     if (!tenant?.id) return
@@ -201,8 +213,10 @@ function useDashboardData(navigate: ReturnType<typeof useNavigate>) {
     goCreateList: () => navigate('/admin/lists?new=1'),
     goProducts: () => navigate('/admin/items'),
     goQr: () => navigate('/admin/qr'),
+    lists,
     metrics,
     principalList,
+    products,
     publicUrlDisplay,
     qrColor,
     qrList,
@@ -225,6 +239,7 @@ function usePublicListUrls(tenant: Tenant | null) {
   const copyUrl = (url: string) => {
     if (!url) return
     navigator.clipboard?.writeText(url)
+    markQrShared(tenant?.id)
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }

@@ -1,5 +1,6 @@
 import type { Lang } from './i18n'
 import { DICT_EXTRA } from './i18nDictionaryExtra'
+import { DICT_TOUR } from './i18nDictionaryTour'
 
 export type TranslationEntry = Record<Lang, string>
 
@@ -945,4 +946,4 @@ const DICT_BASE: Record<string, TranslationEntry> = {
   'set.marketplace.noLocation': { es: 'Este navegador no puede compartir tu ubicación.', en: 'This browser cannot share your location.', pt: 'Este navegador não pode compartilhar sua localização.' },
   'set.marketplace.locationDenied': { es: 'Necesitamos permiso de ubicación para mostrar tu negocio cerca de las personas.', en: 'Location permission is required to show your business nearby.', pt: 'A permissão de localização é necessária para mostrar seu negócio nas proximidades.' },
 }
-export const DICT = { ...DICT_BASE, ...DICT_EXTRA }
+export const DICT = { ...DICT_BASE, ...DICT_EXTRA, ...DICT_TOUR }
