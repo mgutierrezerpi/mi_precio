@@ -64,6 +64,14 @@ export interface Tenant {
   listBgUrl: string | null
   listBgOverlay: boolean
   listHeroColor: string | null
+  /** Social links for the public footer. Null = the shop does not use it, so
+   *  no icon is shown. All are ready-to-open URLs except `socialWhatsapp`,
+   *  which holds digits only and becomes wa.me/<digits> on the page. */
+  socialInstagram: string | null
+  socialFacebook: string | null
+  socialTiktok: string | null
+  socialWebsite: string | null
+  socialWhatsapp: string | null
   language: string
   timezone: string
   deliveryEnabled: boolean

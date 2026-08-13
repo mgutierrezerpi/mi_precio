@@ -17,6 +17,12 @@ class PublicTenantView(BaseView):
     delivery_enabled: bool = False
     tax_id: str | None = None
     address: str | None = None
+    # Footer social links. `social_whatsapp` is digits; the page builds wa.me.
+    social_instagram: str | None = None
+    social_facebook: str | None = None
+    social_tiktok: str | None = None
+    social_website: str | None = None
+    social_whatsapp: str | None = None
 
     @classmethod
     def render(cls, tenant):
@@ -34,4 +40,9 @@ class PublicTenantView(BaseView):
             delivery_enabled=bool(getattr(tenant, "delivery_enabled", False)),
             tax_id=getattr(tenant, "tax_id", None),
             address=getattr(tenant, "address", None),
+            social_instagram=getattr(tenant, "social_instagram", None),
+            social_facebook=getattr(tenant, "social_facebook", None),
+            social_tiktok=getattr(tenant, "social_tiktok", None),
+            social_website=getattr(tenant, "social_website", None),
+            social_whatsapp=getattr(tenant, "social_whatsapp", None),
         )

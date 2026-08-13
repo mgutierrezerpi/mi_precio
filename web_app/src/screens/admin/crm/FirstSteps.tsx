@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { selectTenant } from '../../../store/slices/authSlice'
@@ -17,11 +17,21 @@ import type { PriceList } from '../../../types'
 import { Icon } from './ui'
 import { gradient } from './theme'
 
+/** How long a just-finished checklist stays on screen before retiring itself.
+ *  Long enough to read "¡Listo!", short enough not to become furniture. */
+const CELEBRATION_MS = 5000
+/** Keep in step with the `duration-500` on the card. */
+const FADE_MS = 500
+
 /** "First steps" card on the dashboard — what the guided tour leaves behind.
  *
  *  Rows tick themselves off real data on every render, so a shop that already
- *  created its list sees that step done the first time it looks. It disappears
- *  for good once dismissed, or once all five are done and the shop closes it. */
+ *  created its list sees that step done the first time it looks.
+ *
+ *  It retires itself: dismissed by hand, or automatically once all five are
+ *  done. Completion is persisted the moment it happens, so the card never
+ *  returns — a finished checklist is clutter on a dashboard the shop will open
+ *  every day. */
 export function FirstSteps({
   lists,
   productCount,
@@ -35,6 +45,8 @@ export function FirstSteps({
   const tenantId = tenant?.id
   const [hidden, setHidden] = useState(() => isChecklistHidden(tenantId))
   const [shared, setShared] = useState(() => isQrShared(tenantId))
+  const [leaving, setLeaving] = useState(false)
+  const sawUnfinished = useRef(false)
 
   // The tenant arrives a tick after mount on a cold load, and sharing can be
   // marked from the sidebar or the QR screen — re-read on both.
@@ -67,12 +79,37 @@ export function FirstSteps({
   })
   const { done, total, complete } = checklistProgress(items)
 
+  // Remember having seen unfinished work, so "completed just now" can be told
+  // apart from "was already complete when this screen opened".
+  useEffect(() => {
+    if (!complete) sawUnfinished.current = true
+  }, [complete])
+
+  useEffect(() => {
+    if (!complete || !tenantId) return
+    hideChecklist(tenantId)
+    // Already done on arrival: nothing was achieved here, so do not show it.
+    if (!sawUnfinished.current) {
+      setHidden(true)
+      return
+    }
+    // Finished under the shop's eyes: hold the "¡Listo!" state for a beat
+    // rather than vanishing from under the cursor that completed it, then fade
+    // so leaving reads as intentional rather than as a glitch.
+    const fade = setTimeout(() => setLeaving(true), CELEBRATION_MS)
+    const gone = setTimeout(() => setHidden(true), CELEBRATION_MS + FADE_MS)
+    return () => {
+      clearTimeout(fade)
+      clearTimeout(gone)
+    }
+  }, [complete, tenantId])
+
   if (hidden || !tenantId) return null
 
   return (
     <section
       aria-labelledby="first-steps-title"
-      className="flex flex-col gap-3 rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 md:p-5"
+      className={`flex flex-col gap-3 rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 transition-opacity duration-500 ease-out motion-reduce:transition-none md:p-5 ${leaving ? 'opacity-0' : 'opacity-100'}`}
     >
       <header className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
