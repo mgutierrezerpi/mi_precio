@@ -261,6 +261,46 @@ details on the left and the icons on the right, while the three editorial
 templates (`classic`, `nordic`, `fine`) and the cart keep everything centred,
 because centring is what those designs are.
 
+### The printable QR poster
+
+Códigos QR downloads an **A4 poster**, never a bare code: a shop tapes a sheet
+to its counter, not a PNG of a square. Both buttons produce the same poster —
+SVG for a print shop, PNG (300dpi) for a WhatsApp.
+
+The sheet is **MiPrecio's, not the shop's**: our violet gradient, our mark, and
+"Hecho con MiPrecio · miprecio.app" at the foot. It hangs where strangers see
+it every day, so it works as advertising for the product — the same reason a
+Mercado Pago sticker is Mercado Pago yellow. Nothing of the shop appears on it;
+which list a poster opens lives in the code and in the file name, since the
+customer is already standing in the shop.
+
+`lib/qrPosterSvg.ts` builds it as **one SVG**, and `lib/exportQrPoster.ts`
+saves that string or rasterises it. Deliberately not a captured DOM node: an
+SVG holding a screenshot is useless to a printer, while this one keeps the code
+as vector paths and weighs ~8KB. It is also why the poster needs no React
+component, no off-screen mount and no html2canvas.
+
+Load-bearing details:
+
+- **The code always sits on a white card.** Scanners need the contrast, and it
+  keeps the violet branding instead of fighting the code.
+- **Positions are computed, not written.** Each element stacks off the previous
+  one and text baselines derive from their font size, so changing a size cannot
+  silently misalign everything below it. A test pins that the air above the
+  mark and below the footer stay within a quarter of each other.
+- **The mark is sized by width** (it is a wordmark) and clamped, so a future
+  logo file cannot run off the sheet.
+- **The mark is re-encoded to PNG and inlined.** It ships as WebP, which print
+  software may refuse inside an SVG, and neither export can fetch anything
+  later: an SVG saved to disk shows a broken image, and an SVG rasterised
+  through an `<img>` may not load external resources at all. The `<image>`
+  carries both `href` and `xlink:href` because old renderers only know the
+  latter.
+
+There is no QR colour picker or centre-logo toggle any more. Both only changed
+a preview the poster ignored, and a control that promises something it does not
+deliver is worse than no control.
+
 ### Exporting a list to PDF
 
 "Exportar a PDF" in a list's row menu opens its own public page with `?pdf=1`.
