@@ -20,11 +20,12 @@ ACTION_CATEGORY = {
     "list.created": "catalog",
     "list.published": "catalog",
     "customer.created": "customers",
+    "lead.created": "leads",
     "member.invited": "team",
     "member.role_changed": "team",
     "member.removed": "team",
 }
-CATEGORIES = ("sales", "catalog", "customers", "team")
+CATEGORIES = ("sales", "catalog", "customers", "leads", "team")
 DEFAULT_PREFS = {c: True for c in CATEGORIES}
 
 

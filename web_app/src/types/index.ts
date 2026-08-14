@@ -15,6 +15,9 @@ export interface PlanInfo {
     members: number | null
   }
   usage: { products: number; lists: number; members: number }
+  /** Whole features this tier unlocks, e.g. `['leads']`. The server is the
+   *  authority; the UI uses it to show or hide, never to enforce. */
+  features?: string[]
   /** When false there is no payment gateway, so plan changes apply immediately. */
   billingEnabled?: boolean
   /** True while the tenant still has to pick a plan before the CRM opens up. */
@@ -72,6 +75,9 @@ export interface Tenant {
   socialTiktok: string | null
   socialWebsite: string | null
   socialWhatsapp: string | null
+  /** Whether the public list shows the lead form. Only has an effect on the
+   *  tiers that include leads — the server decides, this just drives the UI. */
+  leadsEnabled: boolean
   language: string
   timezone: string
   deliveryEnabled: boolean
@@ -228,6 +234,28 @@ export interface Order {
   items: OrderItem[]
 }
 
+/** Someone who left their details on a shop's public list. Not a Customer:
+ *  that one means a contact with a purchase history, and a lead becomes one
+ *  only when the shop converts it. */
+export type LeadStatus = 'new' | 'contacted' | 'converted' | 'discarded'
+export type LeadSource = 'form' | 'cart'
+
+export interface Lead {
+  id: string
+  tenantId: string
+  name: string
+  phone: string | null
+  email: string | null
+  message: string | null
+  /** Which list they were reading. Kept as a plain id so the lead outlives it. */
+  listId: string | null
+  listName: string | null
+  source: LeadSource
+  status: LeadStatus
+  createdAt: string
+  updatedAt: string
+}
+
 export interface CustomerStats {
   total: number
   active: number
@@ -256,6 +284,7 @@ export interface NotifPrefs {
   sales: boolean
   catalog: boolean
   customers: boolean
+  leads: boolean
   team: boolean
 }
 

@@ -10,6 +10,8 @@ import type {
   Category,
   AuthToken,
   Customer,
+  Lead,
+  LeadStatus,
   CustomerStats,
   CustomerDetail,
   Order,
@@ -254,6 +256,7 @@ class ApiService {
       socialTiktok?: string | null
       socialWebsite?: string | null
       socialWhatsapp?: string | null
+      leadsEnabled?: boolean
       language?: string
       timezone?: string
       deliveryEnabled?: boolean
@@ -279,6 +282,7 @@ class ApiService {
       socialTiktok: 'social_tiktok',
       socialWebsite: 'social_website',
       socialWhatsapp: 'social_whatsapp',
+      leadsEnabled: 'leads_enabled',
       legalName: 'legal_name',
       taxId: 'tax_id',
       deliveryEnabled: 'delivery_enabled',
@@ -780,6 +784,36 @@ class ApiService {
   }
 
   // Customer endpoints (CRM)
+  // Leads: the inbox of people who left their details on a public list.
+  async getLeads(
+    tenantId: string,
+    status?: LeadStatus
+  ): Promise<ApiResponse<Lead[]>> {
+    const query = status ? `?status=${status}` : ''
+    return this.request(`/tenants/${tenantId}/leads${query}`)
+  }
+
+  async setLeadStatus(
+    tenantId: string,
+    leadId: string,
+    status: LeadStatus
+  ): Promise<ApiResponse<Lead>> {
+    return this.request(`/tenants/${tenantId}/leads/${leadId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    })
+  }
+
+  /** Promotes a lead into the customers book. Answers 409 if it already is one. */
+  async convertLead(
+    tenantId: string,
+    leadId: string
+  ): Promise<ApiResponse<Customer>> {
+    return this.request(`/tenants/${tenantId}/leads/${leadId}/convert`, {
+      method: 'POST',
+    })
+  }
+
   async getCustomers(tenantId: string): Promise<ApiResponse<Customer[]>> {
     return this.request(`/tenants/${tenantId}/customers`)
   }
@@ -878,6 +912,30 @@ class ApiService {
   ): Promise<ApiResponse<{ tenant: Tenant; lists: PriceList[] }>> {
     const listFilter = listId ? `?list=${encodeURIComponent(listId)}` : ''
     return this.request(`/public/${subdomain}${listFilter}`)
+  }
+
+  /** Someone left their details on a shop's public list. Answers ok even when
+   *  the shop is not taking leads — the server never tells a visitor about the
+   *  business's plan. */
+  async createLead(
+    subdomain: string,
+    data: {
+      name: string
+      phone?: string
+      email?: string
+      message?: string
+      listId?: string | null
+      listName?: string | null
+      source?: 'form' | 'cart'
+      /** Honeypot: kept hidden and empty on the real form. */
+      website?: string
+    }
+  ): Promise<ApiResponse<{ ok: boolean }>> {
+    const { listId, listName, ...rest } = data
+    return this.request(`/public/${subdomain}/leads`, {
+      method: 'POST',
+      body: JSON.stringify({ ...rest, list_id: listId, list_name: listName }),
+    })
   }
 
   async recordPublicView(

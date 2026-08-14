@@ -1,5 +1,6 @@
 """Tenant data that is safe to return from public catalog endpoints."""
 
+from lib.ctx import leads_context as leads
 from views.base_view import BaseView
 
 
@@ -23,6 +24,10 @@ class PublicTenantView(BaseView):
     social_tiktok: str | None = None
     social_website: str | None = None
     social_whatsapp: str | None = None
+    # Already resolved: tier includes leads AND the shop turned the form on.
+    # Sending the raw toggle would have the page offer a form the server then
+    # silently drops, which is the shop's customer typing for nothing.
+    leads_enabled: bool = False
 
     @classmethod
     def render(cls, tenant):
@@ -45,4 +50,5 @@ class PublicTenantView(BaseView):
             social_tiktok=getattr(tenant, "social_tiktok", None),
             social_website=getattr(tenant, "social_website", None),
             social_whatsapp=getattr(tenant, "social_whatsapp", None),
+            leads_enabled=leads.leads_open(tenant),
         )

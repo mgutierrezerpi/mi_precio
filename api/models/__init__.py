@@ -9,6 +9,7 @@ from models.product import Product as Product
 from models.category import Category as Category
 from models.page_view import PageView as PageView
 from models.customer import Customer as Customer
+from models.lead import Lead as Lead
 from models.order import Order as Order
 from models.order_item import OrderItem as OrderItem
 from models.activity import Activity as Activity
@@ -33,6 +34,7 @@ def create_tables():
             Category,
             PageView,
             Customer,
+            Lead,
             Order,
             OrderItem,
             Activity,
@@ -145,6 +147,7 @@ def _ensure_tenant_columns():
             ("social_tiktok", "social_tiktok TEXT"),
             ("social_website", "social_website TEXT"),
             ("social_whatsapp", "social_whatsapp VARCHAR(20)"),
+            ("leads_enabled", "leads_enabled INTEGER NOT NULL DEFAULT 0"),
             ("language", "language VARCHAR(5) NOT NULL DEFAULT 'es'"),
             ("timezone", "timezone VARCHAR(64) NOT NULL DEFAULT 'America/Montevideo'"),
             ("delivery_enabled", "delivery_enabled INTEGER NOT NULL DEFAULT 0"),

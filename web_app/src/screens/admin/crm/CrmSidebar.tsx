@@ -69,6 +69,13 @@ const navMain: {
     to: '/admin/clientes',
   },
   {
+    icon: 'user-plus',
+    id: 'Leads',
+    tKey: 'leads.title',
+    label: 'Leads',
+    to: '/admin/leads',
+  },
+  {
     icon: 'bar-chart',
     id: 'Reportes',
     tKey: 'nav.reports',

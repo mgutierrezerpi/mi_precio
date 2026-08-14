@@ -19,7 +19,7 @@ import type {
 } from '../../types'
 import api from '../../services/api'
 import { useT, localeOf, type TFn } from '../../lib/i18n'
-import { PLANS, planById } from '../../lib/plans'
+import { PLANS, planById, planHasFeature } from '../../lib/plans'
 import {
   getPushStatus,
   enablePush,
@@ -620,6 +620,13 @@ function BrandSection({
         canManage={canManage}
         t={t}
       />
+      <LeadsToggle
+        canManage={canManage}
+        enabled={!!tenant?.leadsEnabled}
+        unlocked={tenant ? planHasFeature(tenant.plan, 'leads') : false}
+        onToggle={(value) => void save({ leadsEnabled: value }, 'brand')}
+        t={t}
+      />
       <AppearanceFields
         {...editor}
         accent={identity.color}
@@ -680,6 +687,50 @@ function useSocialLinks(
     setValues((current) => ({ ...current, [id]: value }))
   }
   return { values, errors, change }
+}
+
+/** Turns the public lead form on. Off by default: a shop that is not going to
+ *  answer is better off without one, and an unanswered form is worse than no
+ *  form at all. Locked rather than hidden on the cheaper tiers — a shop cannot
+ *  ask for what it never sees. */
+function LeadsToggle({
+  canManage,
+  enabled,
+  unlocked,
+  onToggle,
+  t,
+}: {
+  canManage: boolean
+  enabled: boolean
+  unlocked: boolean
+  onToggle: (value: boolean) => void
+  t: TFn
+}) {
+  const on = enabled && unlocked
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-[12px] border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3 py-3">
+      <div className="flex flex-col">
+        <span className="text-sm font-bold text-[var(--dash-text)]">
+          {t('set.leads.title')}
+        </span>
+        <span className="max-w-[46ch] text-xs font-medium text-[var(--dash-muted)]">
+          {unlocked ? t('set.leads.help') : t('set.leads.locked')}
+        </span>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        disabled={!canManage || !unlocked}
+        onClick={() => onToggle(!enabled)}
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-40 ${on ? 'bg-[#10B981]' : 'bg-[var(--dash-border)]'}`}
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${on ? 'left-[22px]' : 'left-0.5'}`}
+        />
+      </button>
+    </div>
+  )
 }
 
 function SocialLinksFields({
@@ -1063,6 +1114,7 @@ const NOTIF_ROWS: { key: keyof NotifPrefs; tKey: string; descKey: string }[] = [
     tKey: 'set.notif.customers',
     descKey: 'set.notif.customersDesc',
   },
+  { key: 'leads', tKey: 'notif.leads', descKey: 'notif.leadsDesc' },
   { key: 'team', tKey: 'set.notif.team', descKey: 'set.notif.teamDesc' },
 ]
 
