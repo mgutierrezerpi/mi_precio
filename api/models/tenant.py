@@ -56,6 +56,11 @@ class Tenant(BaseModel):
     social_website = TextField(null=True)
     social_whatsapp = CharField(max_length=20, null=True)
 
+    # Whether the public list shows the lead form. Off by default: a shop that
+    # is not going to answer is better off without one, and an unanswered form
+    # is worse than no form. Only takes effect on tiers that include leads.
+    leads_enabled = BooleanField(default=False)
+
     # Language & region
     language = CharField(max_length=5, default="es")
     timezone = CharField(max_length=64, default="America/Montevideo")

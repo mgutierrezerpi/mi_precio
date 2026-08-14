@@ -71,6 +71,7 @@ describe('authSlice', () => {
       socialTiktok: null,
       socialWebsite: null,
       socialWhatsapp: null,
+      leadsEnabled: false,
       language: 'es',
       timezone: 'America/Montevideo',
       deliveryEnabled: false,

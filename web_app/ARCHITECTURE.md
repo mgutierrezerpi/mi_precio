@@ -140,6 +140,7 @@ interface Item {
 | `/admin` | DashboardScreen | Admin dashboard |
 | `/admin/lists` | ListsScreen | Manage price lists |
 | `/admin/items` | ItemsScreen | Manage menu items |
+| `/admin/leads` | LeadsScreen | Contacts left on public lists (Plus/Pro) |
 
 ### Plan gate
 
@@ -260,6 +261,36 @@ Layout follows each design's character: the left-aligned footers put the shop's
 details on the left and the icons on the right, while the three editorial
 templates (`classic`, `nordic`, `fine`) and the cart keep everything centred,
 because centring is what those designs are.
+
+### Leads
+
+A contact form at the foot of a public list, and an inbox for what it catches.
+A **Plus/Pro feature**: `planHasFeature(plan, 'leads')` in `lib/plans.ts`
+mirrors the API's `PLAN_FEATURES`, and the server is the authority — the front
+end only decides what to draw.
+
+`components/LeadForm` renders on the public page. It takes the design's palette
+(`ink`, `accent`, `accentInk`, `dark`) instead of carrying colours of its own,
+because it has to belong to nine templates that run from off-white to
+near-black. Two columns on a wide page — the question at display size on the
+left, the fields and a full-width submit on the right; below `md` it stacks.
+It returns `null` unless `tenant.leadsEnabled`, which `PublicTenantView`
+resolves to tier **and** toggle, so a shop on Micro never sees a form whose
+submissions the API would drop.
+
+It carries `data-no-export`, which keeps the whole block out of the PDF.
+`.mp-exporting` only hides inputs and buttons, and that left the card shell and
+its heading in the export — a form nobody can fill in.
+
+`LeadsScreen` is an inbox, not a table: newest first, status tabs, and every
+row one tap from what a shop here actually does next, which is writing on
+WhatsApp. Actions re-read the list rather than patching local state, so a row
+never shows something the server did not confirm. Cheaper tiers get an upsell
+panel instead of the inbox — a dead tab teaches nothing.
+
+The shop name is hidden next to the logo across the four templates that showed
+both: the logo already says the name. Without a logo the name stays, or the
+header would be unidentified.
 
 ### The printable QR poster
 

@@ -10,6 +10,7 @@ import { ListEditScreen } from './screens/admin/ListEditScreen'
 import { CategoriesScreen } from './screens/admin/CategoriesScreen'
 import { CodesScreen } from './screens/admin/CodesScreen'
 import { CustomersScreen } from './screens/admin/CustomersScreen'
+import { LeadsScreen } from './screens/admin/LeadsScreen'
 import { ReportsScreen } from './screens/admin/ReportsScreen'
 import { TeamScreen } from './screens/admin/TeamScreen'
 import { SupportScreen } from './screens/admin/SupportScreen'
@@ -81,6 +82,10 @@ export const router = createBrowserRouter([
       {
         path: 'clientes',
         element: <CustomersScreen />,
+      },
+      {
+        path: 'leads',
+        element: <LeadsScreen />,
       },
       {
         path: 'reportes',

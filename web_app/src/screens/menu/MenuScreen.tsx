@@ -9,6 +9,7 @@ import {
 } from '../../hooks/useExportPdfWhenReady'
 import { pdfFileName } from '../../lib/exportListPdf'
 import { SocialLinks } from '../../components/SocialLinks'
+import { LeadForm } from '../../components/LeadForm'
 import type { Tenant, ListVersion, Item, ListDesign } from '../../types'
 import {
   lighten,
@@ -258,6 +259,33 @@ export function MenuScreen() {
     setTimeout(() => setCopied(false), 1500)
   }
 
+  /** Records the cart's contact details as a lead.
+   *
+   *  Called on the way to WhatsApp, never in its place: whoever built a cart
+   *  is the warmest lead a shop gets, and today that contact evaporates every
+   *  time the WhatsApp message is composed but never actually sent.
+   *
+   *  Deliberately fire-and-forget. If this fails the order still goes through
+   *  — nobody loses a sale over a problem of ours. */
+  const rememberCartContact = () => {
+    if (!tenant?.leadsEnabled || !customer.name.trim()) return
+    const ordered = allItems
+      .filter((it) => cart[it.id])
+      .map((it) => `${cart[it.id]}× ${it.name}`)
+      .join(', ')
+    void api
+      .createLead(tenant.subdomain, {
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email,
+        message: ordered ? `Pedido: ${ordered}` : undefined,
+        listId: list?.id ?? null,
+        listName: list?.name ?? null,
+        source: 'cart',
+      })
+      .catch(() => {})
+  }
+
   // Compose a WhatsApp order message from the cart (no phone on file → opens the chooser).
   const waHref = useMemo(() => {
     const lines = allItems
@@ -418,6 +446,7 @@ export function MenuScreen() {
     isService,
     listName: list?.name ?? null,
     edition,
+    listId: list?.id ?? null,
     taxId: tenant.taxId,
     hasBg,
   }
@@ -492,6 +521,7 @@ export function MenuScreen() {
                 shareLink={shareLink}
                 copied={copied}
                 waHref={waHref}
+                onOrder={rememberCartContact}
                 list={list}
                 norm={norm}
                 isService={isService}
@@ -536,6 +566,7 @@ export function MenuScreen() {
           customer={customer}
           setCustomer={setCustomer}
           waHref={waHref}
+          onOrder={rememberCartContact}
           norm={norm}
           onBack={() => setShowCart(false)}
         />
@@ -729,6 +760,9 @@ interface StoreProps {
   shareLink: () => void
   copied: boolean
   waHref: string
+  /** Fired on the way to WhatsApp, so the cart's contact is not lost when the
+   *  message is composed and never sent. */
+  onOrder: () => void
   list: PublicList | null
   norm: (s?: string | null) => string
   isService: boolean
@@ -757,6 +791,7 @@ function Storefront(p: StoreProps) {
     shareLink,
     copied,
     waHref,
+    onOrder,
     list,
     norm,
     isService,
@@ -1079,6 +1114,7 @@ function Storefront(p: StoreProps) {
             </span>
             <a
               href={waHref}
+              onClick={onOrder}
               target="_blank"
               rel="noopener noreferrer"
               className="w-fit rounded-lg bg-white px-3.5 py-2 text-[13px] font-bold"
@@ -1227,6 +1263,17 @@ function Storefront(p: StoreProps) {
         </main>
       </div>
 
+      <div className="mx-auto w-full max-w-[1280px] px-5 pb-12 md:px-16">
+        <LeadForm
+          tenant={tenant}
+          listId={list?.id ?? null}
+          listName={list?.name ?? null}
+          ink={C.ink}
+          accent={accent}
+          accentInk={readableOn(accent)}
+        />
+      </div>
+
       {/* Footer */}
       <footer className="py-10" style={{ background: '#0F172A' }}>
         <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-3 px-5 md:px-16">
@@ -1297,6 +1344,9 @@ interface CartProps {
   customer: CartCustomer
   setCustomer: React.Dispatch<React.SetStateAction<CartCustomer>>
   waHref: string
+  /** Fired on the way to WhatsApp, so the cart's contact is not lost when the
+   *  message is composed and never sent. */
+  onOrder: () => void
   norm: (s?: string | null) => string
   onBack: () => void
 }
@@ -1319,6 +1369,7 @@ function CartView(p: CartProps) {
     customer,
     setCustomer,
     waHref,
+    onOrder,
     norm,
     onBack,
   } = p
@@ -1796,6 +1847,7 @@ function CartView(p: CartProps) {
               </div>
               <a
                 href={waHref}
+                onClick={onOrder}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-14 items-center justify-center gap-2 rounded-2xl text-[16px] font-extrabold text-white"

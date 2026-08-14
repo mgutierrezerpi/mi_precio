@@ -1,5 +1,6 @@
 import { getT } from '../../lib/i18n'
 import { SocialLinks } from '../../components/SocialLinks'
+import { LeadForm } from '../../components/LeadForm'
 import type { Item, Tenant, ListDesign } from '../../types'
 
 /* ── Shared helpers (used by MenuScreen's Storefront/CartView and the designs) ── */
@@ -409,6 +410,8 @@ export interface DesignProps {
   decFromCart: (id: string) => void
   isService: boolean
   listName: string | null
+  /** Which list is on screen, so a lead records what it was about. */
+  listId: string | null
   edition: string
   taxId: string | null
   hasBg: boolean
@@ -820,6 +823,7 @@ export function ClassicList(p: DesignProps) {
             )}
           </main>
 
+          <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={C.ink} accent={C.accent} accentInk={readableOn(C.accent)} />
           <footer
             className="flex flex-col items-center gap-5 border-t py-12 text-center"
             style={{ borderColor: C.line }}
@@ -1056,6 +1060,7 @@ export function NordicMenu(p: DesignProps) {
           )}
         </main>
 
+        <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={accent} accentInk={readableOn(accent)} />
         <footer
           className="flex flex-col items-center gap-5 border-t py-12 text-center"
           style={{ borderColor: line }}
@@ -1228,6 +1233,7 @@ export function FineDining(p: DesignProps) {
             )}
           </main>
 
+          <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={gold} accentInk={paper} />
           <footer
             className="mt-14 flex flex-col items-center gap-5 border-t pt-10 pb-2 text-center"
             style={{ borderColor: `${gold}55` }}
@@ -1315,9 +1321,12 @@ export function ModernBrand(p: DesignProps) {
                 {(tenant.name || '·').charAt(0).toUpperCase()}
               </span>
             )}
-            <span className="text-[15px] font-bold" style={{ color: ink }}>
-              {tenant.name}
-            </span>
+            {/* The logo already says the name; beside it, it read twice. */}
+            {!tenant.logoUrl && (
+              <span className="text-[15px] font-bold" style={{ color: ink }}>
+                {tenant.name}
+              </span>
+            )}
           </div>
           <h1
             className="max-w-[820px] text-4xl font-black leading-[1.05] tracking-tight md:text-6xl"
@@ -1413,6 +1422,11 @@ export function ModernBrand(p: DesignProps) {
       </main>
 
       {/* Footer */}
+      {/* The footer below runs full-bleed, so the form needs the content
+       *  column's own width and gutters. */}
+      <div className="mx-auto w-full max-w-[1120px] px-6 pb-12 md:px-12">
+        <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={accent} accentInk={readableOn(accent)} dark />
+      </div>
       <footer className="py-10" style={{ background: '#111111' }}>
         <div className="mx-auto flex w-full max-w-[1120px] flex-wrap items-center justify-between gap-4 px-6 md:px-12">
           <div className="flex flex-col gap-2">
@@ -1509,9 +1523,12 @@ export function PhotoLookbook(p: DesignProps) {
                 {(tenant.name || '·').charAt(0).toUpperCase()}
               </span>
             )}
-            <span className="text-[14px] font-bold" style={{ color: ink }}>
-              {tenant.name}
-            </span>
+            {/* The logo already says the name; beside it, it read twice. */}
+            {!tenant.logoUrl && (
+              <span className="text-[14px] font-bold" style={{ color: ink }}>
+                {tenant.name}
+              </span>
+            )}
             <span
               className="ml-auto text-[11px] font-medium"
               style={{ color: soft }}
@@ -1643,6 +1660,7 @@ export function PhotoLookbook(p: DesignProps) {
           )}
         </main>
 
+        <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={accent} accentInk={readableOn(accent)} dark />
         <footer
           className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t pt-8"
           style={{ borderColor: '#262626' }}
@@ -1845,6 +1863,15 @@ export function ServiceCards(p: DesignProps) {
           )}
         </main>
 
+        <LeadForm
+          tenant={tenant}
+          listId={p.listId}
+          listName={p.listName}
+          ink={ink}
+          accent={accent}
+          accentInk={readableOn(accent)}
+        />
+
         {/* Contact CTA */}
         <div
           className="mt-10 flex flex-wrap items-center justify-between gap-4 rounded-3xl p-6 md:p-8"
@@ -1946,9 +1973,12 @@ export function ImageCatalog(p: DesignProps) {
                 {(tenant.name || '·').charAt(0).toUpperCase()}
               </span>
             )}
-            <span className="text-[14px] font-bold" style={{ color: heroInk }}>
-              {tenant.name}
-            </span>
+            {/* The logo already says the name; beside it, it read twice. */}
+            {!tenant.logoUrl && (
+              <span className="text-[14px] font-bold" style={{ color: heroInk }}>
+                {tenant.name}
+              </span>
+            )}
             <span
               className="ml-auto text-[11px] font-medium"
               style={{ color: heroInk, opacity: 0.55 }}
@@ -2096,6 +2126,10 @@ export function ImageCatalog(p: DesignProps) {
       </main>
 
       {/* Hero-colored footer */}
+      {/* Full-bleed footer below: the form takes the content column instead. */}
+      <div className="mx-auto w-full max-w-[1180px] px-5 pb-12 md:px-12">
+        <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={hero} accentInk={heroInk} />
+      </div>
       <footer style={{ background: hero }}>
         <div className="mx-auto flex w-full max-w-[1180px] flex-wrap items-center justify-between gap-4 px-5 py-8 md:px-12">
           <div className="flex flex-col gap-1">
@@ -2191,16 +2225,19 @@ export function TechGrid(p: DesignProps) {
                   {(tenant.name || '·').charAt(0).toUpperCase()}
                 </span>
               )}
-              <span
-                className="flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold"
-                style={{ borderColor: border, color: soft, fontFamily: MONO }}
-              >
+              {/* The logo already says the name; beside it, it read twice. */}
+              {!tenant.logoUrl && (
                 <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: accent, boxShadow: `0 0 8px ${accent}` }}
-                />{' '}
-                {tenant.name}
-              </span>
+                  className="flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold"
+                  style={{ borderColor: border, color: soft, fontFamily: MONO }}
+                >
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ background: accent, boxShadow: `0 0 8px ${accent}` }}
+                  />{' '}
+                  {tenant.name}
+                </span>
+              )}
               <span
                 className="ml-auto text-[11px]"
                 style={{ color: soft, fontFamily: MONO }}
@@ -2339,6 +2376,7 @@ export function TechGrid(p: DesignProps) {
           )}
         </main>
 
+        <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={accent} accentInk={readableOn(accent)} dark />
         <footer
           className="mt-8 flex items-center justify-between gap-3 border-t pt-6"
           style={{ borderColor: border }}

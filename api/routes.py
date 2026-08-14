@@ -13,6 +13,7 @@ from controllers import (
     public_router,
     import_router,
     customers_router,
+    leads_router,
     team_router,
     notifications_router,
     billing_router,
@@ -45,6 +46,7 @@ def register_routes(app):
     api.include_router(public_router)
     api.include_router(import_router, dependencies=plan_gated)
     api.include_router(customers_router, dependencies=plan_gated)
+    api.include_router(leads_router, dependencies=plan_gated)
     api.include_router(team_router)
     api.include_router(notifications_router, dependencies=plan_gated)
     api.include_router(billing_router)

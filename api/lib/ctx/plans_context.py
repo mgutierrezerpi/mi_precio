@@ -18,6 +18,17 @@ PLANS: dict[str, dict[str, int | None]] = {
 }
 PLAN_ORDER = ["free", "micro", "plus", "pro"]
 
+# Whole features a tier unlocks, as opposed to the numeric allowances above:
+# these are on or off, so they cannot live in PLANS without muddying its type.
+# Same rule as the limits — the marketing cards in web_app/src/lib/plans.ts are
+# the source of truth and this follows them.
+PLAN_FEATURES: dict[str, set[str]] = {
+    "free": set(),
+    "micro": set(),
+    "plus": {"leads"},
+    "pro": {"leads"},
+}
+
 # Limited resource → message shown when the limit is reached.
 LIMIT_MESSAGE = {
     "products": "Alcanzaste el límite de productos de tu plan. Subí de plan para agregar más.",
@@ -70,6 +81,18 @@ def live_list_allowance(tenant: Tenant | None) -> int | None:
     return PLANS[normalize_plan(getattr(tenant, "plan", "free"))]["lists"]
 
 
+def has_feature(tenant_id: str, feature: str) -> bool:
+    """True when the tenant's tier includes a whole feature, like lead capture.
+
+    A tier that has it loses it the moment a plan is required: an expired
+    subscription takes the paid features with it, exactly as it takes the
+    storefront offline."""
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant or plan_required(tenant_id):
+        return False
+    return feature in PLAN_FEATURES[normalize_plan(getattr(tenant, "plan", "free"))]
+
+
 def normalize_plan(plan: str | None) -> str:
     if plan == "pyme":
         return "plus"
@@ -99,6 +122,8 @@ def plan_info(tenant_id: str) -> dict:
     info = {
         "plan": plan,
         "limits": PLANS[plan],
+        # Sorted so the payload does not churn between requests.
+        "features": sorted(PLAN_FEATURES[plan]),
         "usage": _usage(tenant_id),
         "billing_enabled": settings.billing_enabled,
         # Lets the plan screen poll for the checkout/webhook to land.

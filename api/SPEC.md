@@ -713,6 +713,51 @@ brand settings.
 `PublicTenantView` exposes all five so the footer can render without an
 authenticated call.
 
+### Leads
+
+A visitor who leaves their details at the foot of a public list. Two things
+have to be true before a lead is stored: the tenant's plan must carry the
+feature, and the owner must have switched the form on.
+
+**The feature side.** `plans_context.PLAN_FEATURES` maps a plan to a set of
+on/off features, next to the numeric `PLANS` limits — `leads` belongs to `plus`
+and `pro`. `has_feature(tenant_id, "leads")` is the only thing anything asks;
+it answers false for a gated tenant too, so an expired subscription closes the
+form the same way a cheap plan does. `plan_info()` returns `features` so the
+CRM renders the same answer without a second call.
+
+**The switch.** `tenant.leads_enabled` (default false) is the owner's own
+toggle, in Settings → Brand. `leads_context.leads_open(tenant)` is the
+conjunction: tier **and** toggle. Both columns ship through `ensure_columns()`,
+and the `leads` table through `create_tables()`.
+
+`POST /public/{subdomain}/leads` is unauthenticated and takes the form. It
+**always answers 201**, even when the shop is not taking leads — the response
+must not tell a stranger which plan a shop is on, and a visitor cannot fix it
+anyway. The 4xx replies are the ones the visitor *can* act on: a missing name,
+or neither phone nor email. Two guards sit in front: a `website` honeypot
+(filled in means a bot, discarded silently) and `rate_limit.hit()`, 5 per 600s
+per tenant+IP. The limiter is in-process — good enough for one Fly machine,
+and it is documented as such.
+
+`Lead.list_id` is a plain `CharField`, not a foreign key, and `list_name` is
+copied at write time. The lead outlives the list it came from: deleting a menu
+must not delete the people who asked about it.
+
+CRM side, all under `require_editor` and a `_assert_tier()` that answers 402
+`plan_required` for a tier without the feature:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/leads` | Inbox, newest first (`?status=` to filter) |
+| PATCH | `/api/v1/leads/{id}` | Set status: `new`/`contacted`/`converted`/`discarded` |
+| POST | `/api/v1/leads/{id}/convert` | Create a Customer from the lead |
+
+`convert_to_customer` is idempotent — converting twice returns the customer
+already made rather than a duplicate. Every arriving lead writes a
+`lead.created` activity and a `leads` notification, which is the row a shop
+actually sees first.
+
 ### Endpoints
 
 #### Health
@@ -773,6 +818,7 @@ authenticated call.
 | GET | `/api/v1/public/{subdomain}` | Get tenant's public menu |
 | GET | `/api/v1/public/{subdomain}/lists` | Get published lists |
 | GET | `/api/v1/public/{subdomain}/lists/{id}` | Get published list with items |
+| POST | `/api/v1/public/{subdomain}/leads` | Leave contact details (always 201) |
 
 ### Response Format
 
