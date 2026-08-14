@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '../../../hooks/useTheme'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
-import { selectTenant } from '../../../store/slices/authSlice'
+import { selectIsSuperAdmin, selectTenant, setTenant } from '../../../store/slices/authSlice'
 import { fetchLists, selectLists } from '../../../store/slices/menuSlice'
+import api from '../../../services/api'
 import type { PlanId } from '../../../types'
 import { planById } from '../../../lib/plans'
 import { useT } from '../../../lib/i18n'
@@ -40,6 +41,13 @@ const navMain: {
     tKey: 'nav.lists',
     label: 'Listas',
     to: '/admin/lists',
+  },
+  {
+    icon: 'share-2',
+    id: 'Links',
+    tKey: 'nav.links',
+    label: 'Links',
+    to: '/admin/links',
   },
   {
     icon: 'book-open',
@@ -106,6 +114,14 @@ const navSettings: {
     to: '/admin/soporte',
   },
 ]
+
+const navDeveloper = {
+  icon: 'paintbrush' as IconName,
+  id: 'Developer',
+  tKey: 'nav.developer',
+  label: 'Developer',
+  to: '/admin/developer',
+}
 
 function NavItem({
   icon,
@@ -324,13 +340,18 @@ export function CrmSidebar({
   const t = useT()
   const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
+  const isSuperAdmin = useAppSelector(selectIsSuperAdmin)
   const lists = useAppSelector(selectLists)
   const mainList = lists.find((list) => list.showOnIndex)
   const nextPlan = tenant ? NEXT_PLAN[tenant.plan] : undefined
   const [linkCopied, setLinkCopied] = useState(false)
 
   useEffect(() => {
-    if (tenant?.id) dispatch(fetchLists(tenant.id))
+    if (!tenant?.id) return
+    dispatch(fetchLists(tenant.id))
+    api.getTenant(tenant.id).then((response) => {
+      if (response.data) dispatch(setTenant(response.data))
+    })
   }, [dispatch, tenant?.id])
 
   const copyPublicLink = () => {
@@ -375,7 +396,11 @@ export function CrmSidebar({
         <SidebarNav
           active={active}
           collapsed={collapsed}
-          items={navMain}
+          items={
+            tenant?.features?.magazines
+              ? navMain
+              : navMain.filter((item) => item.id !== 'Revistas')
+          }
           onClose={onClose}
           title={t('side.main')}
           t={t}
@@ -383,7 +408,7 @@ export function CrmSidebar({
         <SidebarNav
           active={active}
           collapsed={collapsed}
-          items={navSettings}
+          items={isSuperAdmin ? [...navSettings, navDeveloper] : navSettings}
           onClose={onClose}
           title={t('side.settings')}
           t={t}

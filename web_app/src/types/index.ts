@@ -87,8 +87,24 @@ export interface Tenant {
   legalName: string | null
   taxId: string | null
   address: string | null
+  features?: Record<string, boolean>
   createdAt: string
   updatedAt: string
+}
+
+export interface FeatureFlagTenant {
+  id: string
+  name: string
+  subdomain: string
+  enabled: boolean
+  hasOverride: boolean
+}
+
+export interface FeatureFlag {
+  key: string
+  description: string | null
+  defaultEnabled: boolean
+  tenants: FeatureFlagTenant[]
 }
 
 /** Visual template for the public price list. */
@@ -423,6 +439,8 @@ export interface User {
   email: string
   tenantId: string
   role: Role
+  /** Optional for sessions persisted before platform-level access existed. */
+  isSuperAdmin?: boolean
   name: string
   createdAt: string
   updatedAt: string
@@ -432,6 +450,40 @@ export interface AuthToken {
   token: string
   user: User
   tenant: Tenant
+}
+
+export type LinkTreeLinkStyle = 'featured' | 'dark' | 'light'
+export type LinkTreeTemplate = 'botanical' | 'editorial' | 'atelier'
+
+export interface LinkTreeLink {
+  id: string | null
+  title: string
+  description: string | null
+  url: string
+  icon: string
+  style: LinkTreeLinkStyle
+  enabled: boolean
+}
+
+export interface LinkTree {
+  id: string
+  tenantId: string
+  displayName: string
+  handle: string | null
+  bio: string | null
+  avatarUrl: string | null
+  accentColor: string
+  backgroundColor: string
+  template: LinkTreeTemplate
+  tags: string[]
+  links: LinkTreeLink[]
+  instagramUrl: string | null
+  whatsappUrl: string | null
+  websiteUrl: string | null
+  locationUrl: string | null
+  published: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 // UI State types

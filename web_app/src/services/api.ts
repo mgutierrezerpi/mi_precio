@@ -27,6 +27,8 @@ import type {
   PublicViewerStats,
   Magazine,
   MagazinePage,
+  LinkTree,
+  FeatureFlag,
 } from '../types'
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
@@ -145,6 +147,30 @@ function magazinePageBody(data: {
   }
 }
 
+function linkTreeBody(data: Partial<LinkTree>) {
+  const body = { ...data }
+  delete body.tenantId
+  delete body.id
+  delete body.createdAt
+  delete body.updatedAt
+  return {
+    ...(body.displayName === undefined ? {} : { display_name: body.displayName }),
+    ...(body.handle === undefined ? {} : { handle: body.handle }),
+    ...(body.bio === undefined ? {} : { bio: body.bio }),
+    ...(body.avatarUrl === undefined ? {} : { avatar_url: body.avatarUrl }),
+    ...(body.accentColor === undefined ? {} : { accent_color: body.accentColor }),
+    ...(body.backgroundColor === undefined ? {} : { background_color: body.backgroundColor }),
+    ...(body.template === undefined ? {} : { template: body.template }),
+    ...(body.tags === undefined ? {} : { tags: body.tags }),
+    ...(body.links === undefined ? {} : { links: body.links }),
+    ...(body.instagramUrl === undefined ? {} : { instagram_url: body.instagramUrl }),
+    ...(body.whatsappUrl === undefined ? {} : { whatsapp_url: body.whatsappUrl }),
+    ...(body.websiteUrl === undefined ? {} : { website_url: body.websiteUrl }),
+    ...(body.locationUrl === undefined ? {} : { location_url: body.locationUrl }),
+    ...(body.published === undefined ? {} : { published: body.published }),
+  }
+}
+
 class ApiService {
   private baseUrl: string
   private token: string | null = null
@@ -256,6 +282,20 @@ class ApiService {
 
   async switchTenant(tenantId: string): Promise<ApiResponse<AuthToken>> {
     return this.request(`/tenants/${tenantId}/switch`, { method: 'POST' })
+  }
+
+  async getLinkTree(tenantId: string): Promise<ApiResponse<LinkTree>> {
+    return this.request(`/tenants/${tenantId}/linktree`)
+  }
+
+  async updateLinkTree(
+    tenantId: string,
+    data: Partial<LinkTree>
+  ): Promise<ApiResponse<LinkTree>> {
+    return this.request(`/tenants/${tenantId}/linktree`, {
+      method: 'PATCH',
+      body: JSON.stringify(linkTreeBody(data)),
+    })
   }
 
   async getMarketplaceNearby(
@@ -866,6 +906,36 @@ class ApiService {
 
   async getCurrentUser(): Promise<ApiResponse<User>> {
     return this.request('/users/me')
+  }
+
+  async getPublicLinkTree(
+    subdomain: string
+  ): Promise<ApiResponse<{ tenant: { name: string; subdomain: string }; linktree: LinkTree }>> {
+    return this.request(`/public/${encodeURIComponent(subdomain)}/linktree`)
+  }
+
+  async getDeveloperAccess(): Promise<
+    ApiResponse<{ enabled: boolean; userId: string }>
+  > {
+    return this.request('/developer/access')
+  }
+
+  async getDeveloperFeatureFlags(): Promise<ApiResponse<FeatureFlag[]>> {
+    return this.request('/developer/feature-flags')
+  }
+
+  async setDeveloperFeatureFlag(
+    key: string,
+    tenantId: string,
+    enabled: boolean
+  ): Promise<ApiResponse<{ key: string; tenantId: string; enabled: boolean }>> {
+    return this.request(
+      `/developer/feature-flags/${encodeURIComponent(key)}/tenants/${encodeURIComponent(tenantId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ enabled }),
+      }
+    )
   }
 
   async updateMember(

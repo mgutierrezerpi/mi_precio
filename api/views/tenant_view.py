@@ -1,4 +1,8 @@
 from datetime import datetime
+
+from pydantic import Field
+
+from lib.ctx import feature_flags
 from views.base_view import BaseView
 
 
@@ -37,6 +41,7 @@ class TenantView(BaseView):
     legal_name: str | None = None
     tax_id: str | None = None
     address: str | None = None
+    features: dict[str, bool] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
 
@@ -72,6 +77,7 @@ class TenantView(BaseView):
             legal_name=g("legal_name"),
             tax_id=g("tax_id"),
             address=g("address"),
+            features=feature_flags.all_for_tenant(tenant.id),
             created_at=tenant.created_at,
             updated_at=tenant.updated_at,
         )

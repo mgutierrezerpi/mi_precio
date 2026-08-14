@@ -7,6 +7,7 @@ class UserView(BaseView):
     email: str
     tenant_id: str
     role: str
+    is_super_admin: bool = False
     name: str
 
     created_at: datetime
@@ -20,6 +21,7 @@ class UserView(BaseView):
             email=user.email,
             tenant_id=user.tenant_id,
             role=role or getattr(user, "_team_role", None) or user.role or "owner",
+            is_super_admin=bool(getattr(user, "is_super_admin", False)),
             name=user.name or user.email.split("@")[0],
             created_at=user.created_at,
             updated_at=user.updated_at,

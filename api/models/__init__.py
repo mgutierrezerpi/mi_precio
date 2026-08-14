@@ -19,6 +19,9 @@ from models.activity import Activity as Activity
 from models.invitation import Invitation as Invitation
 from models.push_subscription import PushSubscription as PushSubscription
 from models.tenant_membership import TenantMembership as TenantMembership
+from models.link_tree import LinkTree as LinkTree
+from models.feature_flag import FeatureFlag as FeatureFlag
+from models.feature_flag import FeatureFlagAssignment as FeatureFlagAssignment
 
 # Resolve deferred foreign key
 Item.list_version.set_model(ListVersion)
@@ -47,6 +50,9 @@ def create_tables():
             Invitation,
             PushSubscription,
             TenantMembership,
+            LinkTree,
+            FeatureFlag,
+            FeatureFlagAssignment,
         ]
     )
     ensure_columns()
@@ -60,7 +66,9 @@ def ensure_columns():
     _ensure_optional_columns()
     _ensure_item_columns()
     _ensure_tenant_columns()
+    _ensure_link_tree_columns()
     _ensure_user_columns()
+    _ensure_user_indexes()
 
 
 def _ensure_list_columns():
@@ -185,6 +193,13 @@ def _ensure_tenant_columns():
     )
 
 
+def _ensure_link_tree_columns():
+    _add_missing_columns(
+        "link_trees",
+        [("template", "template VARCHAR(32) NOT NULL DEFAULT 'botanical'")],
+    )
+
+
 def _ensure_user_columns():
     columns = _columns("users")
     if columns is None:
@@ -194,6 +209,7 @@ def _ensure_user_columns():
         [
             ("name", "name VARCHAR(255)"),
             ("role", "role VARCHAR(20) NOT NULL DEFAULT 'owner'"),
+            ("is_super_admin", "is_super_admin INTEGER NOT NULL DEFAULT 0"),
             ("last_seen_at", "last_seen_at DATETIME"),
             ("notif_prefs", "notif_prefs TEXT"),
             ("notifications_seen_at", "notifications_seen_at DATETIME"),
@@ -202,6 +218,23 @@ def _ensure_user_columns():
     for column in ("simple_admin_ui", "admin_ui_mode"):
         if column in columns:
             db.execute_sql(f'ALTER TABLE users DROP COLUMN "{column}"')
+
+
+def _ensure_user_indexes():
+    """Keep indexes added alongside compatibility columns valid on old DBs.
+
+    Local databases predate the migration runner and are upgraded through
+    ``ensure_columns`` during startup. Recreating this small index here makes
+    that path equivalent to the model definition and repairs an interrupted
+    index build without touching user data.
+    """
+    if not db.table_exists("users"):
+        return
+    db.execute_sql(
+        'CREATE INDEX IF NOT EXISTS "user_is_super_admin" '
+        'ON "users" ("is_super_admin")'
+    )
+    db.execute_sql('REINDEX "user_is_super_admin"')
 
 
 def _add_missing_columns(table_name: str, columns_to_add: list[tuple[str, str]]):

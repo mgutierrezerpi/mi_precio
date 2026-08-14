@@ -9,7 +9,7 @@
   --olive: #59614b;
   position: relative;
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
   background: var(--cream);
   color: var(--ink);
   font-family: 'DM Sans', Arial, sans-serif;
@@ -25,7 +25,7 @@
   z-index: 0;
   inset: 0;
   pointer-events: none;
-  opacity: 0.25;
+  opacity: 0.1;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.07'/%3E%3C/svg%3E");
   mix-blend-mode: multiply;
 }
@@ -33,9 +33,9 @@
 .link-tree-orb {
   position: absolute;
   z-index: 0;
-  width: 410px;
-  height: 410px;
-  border: 1px solid rgba(91, 100, 72, 0.18);
+  width: 360px;
+  height: 360px;
+  border: 1px solid rgba(91, 100, 72, 0.13);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -43,19 +43,19 @@
 .link-tree-orb::after {
   position: absolute;
   inset: 32px;
-  border: 1px solid rgba(91, 100, 72, 0.15);
+  border: 1px solid rgba(91, 100, 72, 0.1);
   border-radius: inherit;
   content: '';
 }
 
 .link-tree-orb--top {
-  top: -210px;
+  top: -205px;
   right: -180px;
 }
 
 .link-tree-orb--bottom {
-  bottom: -240px;
-  left: -210px;
+  bottom: -220px;
+  left: -195px;
   transform: rotate(28deg);
 }
 
@@ -67,7 +67,7 @@
   justify-content: space-between;
   max-width: 1160px;
   margin: 0 auto;
-  padding: 28px clamp(20px, 5vw, 64px);
+  padding: 22px clamp(20px, 5vw, 64px);
 }
 
 .link-tree-brand {
@@ -171,9 +171,12 @@
 .link-tree-content {
   position: relative;
   z-index: 1;
+  display: grid;
+  align-content: center;
+  min-height: calc(100svh - 78px);
   width: min(100% - 40px, 560px);
   margin: 0 auto;
-  padding: 25px 0 58px;
+  padding: 28px 0 46px;
 }
 
 .link-tree-profile {
@@ -186,9 +189,9 @@
 .profile-avatar {
   position: relative;
   display: grid;
-  width: 94px;
-  height: 94px;
-  margin-bottom: 19px;
+  width: 88px;
+  height: 88px;
+  margin-bottom: 17px;
   overflow: hidden;
   place-items: center;
   border: 1px solid rgba(32, 36, 29, 0.16);
@@ -198,7 +201,13 @@
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 27px;
   font-style: italic;
-  box-shadow: 0 10px 25px rgba(71, 82, 48, 0.14);
+  box-shadow: 0 8px 20px rgba(71, 82, 48, 0.1);
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .profile-avatar::before {
@@ -267,7 +276,7 @@
   place-items: center;
   border-radius: 50%;
   background: var(--ink);
-  color: var(--lime);
+  color: var(--cream);
 }
 
 .profile-handle {
@@ -279,10 +288,11 @@
 }
 
 .profile-bio {
-  margin: 18px 0 0;
+  max-width: 390px;
+  margin: 15px 0 0;
   color: #4c5445;
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.45;
 }
 
@@ -314,25 +324,35 @@
 .link-tree-links {
   display: grid;
   gap: 11px;
-  margin-top: 35px;
+  margin-top: 31px;
 }
 
 .link-card {
   position: relative;
   display: flex;
-  min-height: 78px;
+  min-height: 72px;
   align-items: center;
   gap: 14px;
   width: 100%;
   padding: 11px 14px 11px 12px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 17px;
+  border-radius: 15px;
   color: var(--ink);
   cursor: pointer;
   text-align: left;
   animation: link-card-in 0.55s both cubic-bezier(0.2, 0.8, 0.2, 1);
   animation-delay: var(--link-delay);
+  text-decoration: none;
+}
+
+.link-tree-empty {
+  padding: 24px;
+  border: 1px dashed var(--line);
+  border-radius: 17px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
 }
 
 .link-card::before {
@@ -362,8 +382,8 @@
 }
 
 .link-card--featured {
-  border-color: #20241d;
-  background: var(--lime);
+  border-color: color-mix(in srgb, var(--ink) 72%, transparent);
+  background: color-mix(in srgb, var(--lime) 35%, var(--cream));
 }
 
 .link-card--dark {
@@ -373,16 +393,16 @@
 }
 
 .link-card--light {
-  background: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.52);
 }
 
 .link-card-icon {
   display: grid;
-  width: 52px;
-  height: 52px;
-  flex: 0 0 52px;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 11px;
   background: rgba(255, 255, 255, 0.38);
 }
 
@@ -401,7 +421,7 @@
 }
 
 .link-card-copy strong {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -432,7 +452,7 @@
 
 .link-tree-feature-grid {
   display: grid;
-  grid-template-columns: 1.05fr .95fr;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 11px;
   margin-top: 11px;
 }
@@ -485,6 +505,10 @@
 
 .feature-card--location {
   background: #eeeee4;
+}
+
+.feature-card--website {
+  background: color-mix(in srgb, var(--lime) 15%, var(--cream));
 }
 
 .feature-eyebrow {
@@ -550,23 +574,29 @@
 
 .link-tree-socials {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 19px;
-  margin-top: 32px;
+  gap: 8px;
+  margin-top: 24px;
 }
 
 .link-tree-socials a,
 .link-tree-socials button {
-  display: grid;
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  place-items: center;
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 50%;
+  border-radius: 100px;
   background: transparent;
   color: var(--ink);
   cursor: pointer;
+  font: 10px 'DM Mono', monospace;
+  letter-spacing: .04em;
+  text-decoration: none;
+  text-transform: uppercase;
 }
 
 .link-tree-socials a:hover,
@@ -577,7 +607,7 @@
 }
 
 .link-tree-footer {
-  margin: 18px 0 0;
+  margin: 16px 0 0;
   color: #969b8c;
   font-family: 'DM Mono', monospace;
   font-size: 9px;
@@ -589,6 +619,143 @@
 .link-tree-footer span {
   color: #96ae3a;
   font-size: 13px;
+}
+
+/* Templates keep the same content structure and interaction model. They only
+   tune the visual language so a business can change direction without
+   creating a second Linktree renderer. */
+.link-tree-page--editorial {
+  --ink: #302823;
+  --muted: #8b766b;
+  --line: rgba(48, 40, 35, 0.16);
+  --olive: #765d50;
+}
+
+.link-tree-page--editorial .link-tree-orb {
+  width: 470px;
+  height: 470px;
+  border-color: rgba(130, 91, 72, 0.2);
+  border-radius: 34%;
+  transform: rotate(18deg);
+}
+
+.link-tree-page--editorial .link-tree-orb::after {
+  border-color: rgba(130, 91, 72, 0.14);
+  border-radius: 34%;
+}
+
+.link-tree-page--editorial .profile-avatar {
+  border-radius: 20px;
+  background: #e2c1ad;
+  box-shadow: 0 12px 28px rgba(107, 72, 55, 0.16);
+}
+
+.link-tree-page--editorial .profile-avatar::before,
+.link-tree-page--editorial .profile-avatar::after {
+  border-radius: 20%;
+}
+
+.link-tree-page--editorial .profile-name-row h1 {
+  font-weight: 600;
+  letter-spacing: -0.06em;
+}
+
+.link-tree-page--editorial .profile-bio {
+  max-width: 430px;
+  font-style: italic;
+}
+
+.link-tree-page--editorial .profile-tags span {
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.link-tree-page--editorial .link-tree-links {
+  gap: 9px;
+  margin-top: 32px;
+}
+
+.link-tree-page--editorial .link-card {
+  min-height: 70px;
+  border-radius: 7px;
+}
+
+.link-tree-page--editorial .link-card-icon {
+  width: 46px;
+  height: 46px;
+  flex-basis: 46px;
+  border-radius: 7px;
+}
+
+.link-tree-page--editorial .link-card-copy strong {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.link-tree-page--atelier {
+  --ink: #25363b;
+  --muted: #718187;
+  --line: rgba(37, 54, 59, 0.15);
+  --olive: #5c747b;
+}
+
+.link-tree-page--atelier .link-tree-orb {
+  width: 520px;
+  height: 520px;
+  border-color: rgba(72, 105, 111, 0.16);
+  border-style: dashed;
+}
+
+.link-tree-page--atelier .link-tree-orb::after {
+  border-color: rgba(72, 105, 111, 0.12);
+  border-style: dashed;
+}
+
+.link-tree-page--atelier .profile-avatar {
+  width: 98px;
+  height: 98px;
+  border-radius: 28px;
+  background: #d9e5e5;
+  box-shadow: 0 12px 28px rgba(59, 84, 87, 0.14);
+}
+
+.link-tree-page--atelier .profile-name-row h1 {
+  font-family: 'DM Sans', Arial, sans-serif;
+  font-size: clamp(28px, 5.5vw, 39px);
+  font-weight: 700;
+  letter-spacing: -0.065em;
+}
+
+.link-tree-page--atelier .profile-tags span {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.link-tree-page--atelier .link-tree-links {
+  gap: 13px;
+  margin-top: 32px;
+}
+
+.link-tree-page--atelier .link-card {
+  min-height: 74px;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(57, 79, 82, 0.06);
+}
+
+.link-tree-page--atelier .link-card:hover {
+  box-shadow: 0 14px 26px rgba(57, 79, 82, 0.12);
+}
+
+.link-tree-page--atelier .link-card-icon {
+  width: 50px;
+  height: 50px;
+  flex-basis: 50px;
+  border-radius: 50%;
+}
+
+.link-tree-page--atelier .link-card-arrow {
+  border: 0;
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .catalog-modal-backdrop {
@@ -772,7 +939,7 @@
 
 @media (min-width: 720px) {
   .link-tree-content {
-    padding-top: 35px;
+    padding-top: 30px;
   }
 
   .link-tree-header-note {
@@ -785,18 +952,16 @@
     padding-top: 20px;
   }
 
-  .link-tree-header-note,
-  .link-tree-icon-button {
+  .link-tree-header-note {
     display: none;
   }
 
-  .link-tree-menu-button {
-    display: grid;
-  }
-
   .link-tree-content {
+    display: block;
+    min-height: auto;
     width: min(100% - 32px, 560px);
-    padding-top: 20px;
+    padding-top: 30px;
+    padding-bottom: 40px;
   }
 
   .link-tree-feature-grid {
@@ -809,6 +974,19 @@
 
   .feature-card--location {
     min-height: 130px;
+  }
+
+  .profile-name-row h1 {
+    font-size: clamp(30px, 10vw, 38px);
+  }
+
+  .profile-bio {
+    font-size: 16px;
+  }
+
+  .link-tree-page--atelier .profile-avatar {
+    width: 88px;
+    height: 88px;
   }
 }
 

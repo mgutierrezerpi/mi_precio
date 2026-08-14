@@ -22,3 +22,4 @@ from views.order_view import OrderView as OrderView
 from views.order_item_view import OrderItemView as OrderItemView
 from views.activity_view import ActivityView as ActivityView
 from views.invitation_view import InvitationView as InvitationView
+from views.link_tree_view import LinkTreeView as LinkTreeView

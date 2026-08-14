@@ -8,17 +8,22 @@ from controllers.input_types import (
     UpdateMagazine,
     UpdateMagazinePage,
 )
-from lib.ctx import activity, magazines
+from lib.ctx import activity, feature_flags, magazines
 from views import DeletedView, MagazinePageView, MagazineView
 
-
 router = APIRouter(tags=["magazines"])
+
+
+def _require_magazines(tenant_id: str) -> None:
+    if not feature_flags.magazines_enabled(tenant_id):
+        raise HTTPException(status_code=404, detail="Not found")
 
 
 @router.get("/tenants/{tenant_id}/magazines")
 def list_magazines_endpoint(
     tenant_id: str, current_user: dict = Depends(get_current_user)
 ):
+    _require_magazines(tenant_id)
     return MagazineView.render_many(
         magazines.list_magazines(tenant_id), include_pages=True
     )
@@ -30,6 +35,7 @@ def create_magazine_endpoint(
     data: CreateMagazine,
     current_user: dict = Depends(require_editor),
 ):
+    _require_magazines(tenant_id)
     magazine = magazines.create_magazine(
         tenant_id, **data.model_dump(exclude_unset=True)
     )
@@ -53,6 +59,7 @@ def get_magazine_endpoint(
     magazine_id: str, current_user: dict = Depends(get_current_user)
 ):
     magazine = ownership.own_magazine(magazine_id, current_user)
+    _require_magazines(magazine.tenant_id)
     return MagazineView.render(magazine, include_pages=True)
 
 
@@ -62,7 +69,8 @@ def update_magazine_endpoint(
     data: UpdateMagazine,
     current_user: dict = Depends(require_editor),
 ):
-    ownership.own_magazine(magazine_id, current_user)
+    magazine = ownership.own_magazine(magazine_id, current_user)
+    _require_magazines(magazine.tenant_id)
     magazine = magazines.update_magazine(
         magazine_id, **data.model_dump(exclude_unset=True)
     )
@@ -86,7 +94,8 @@ def update_magazine_endpoint(
 def delete_magazine_endpoint(
     magazine_id: str, current_user: dict = Depends(require_editor)
 ):
-    ownership.own_magazine(magazine_id, current_user)
+    magazine = ownership.own_magazine(magazine_id, current_user)
+    _require_magazines(magazine.tenant_id)
     if not magazines.delete_magazine(magazine_id):
         raise HTTPException(status_code=404, detail="Magazine not found")
     return DeletedView()
@@ -98,7 +107,8 @@ def create_magazine_page_endpoint(
     data: CreateMagazinePage,
     current_user: dict = Depends(require_editor),
 ):
-    ownership.own_magazine(magazine_id, current_user)
+    magazine = ownership.own_magazine(magazine_id, current_user)
+    _require_magazines(magazine.tenant_id)
     page = magazines.create_page(
         magazine_id, **data.model_dump(exclude_unset=True)
     )
@@ -113,7 +123,8 @@ def update_magazine_page_endpoint(
     data: UpdateMagazinePage,
     current_user: dict = Depends(require_editor),
 ):
-    ownership.own_magazine_page(page_id, current_user)
+    page = ownership.own_magazine_page(page_id, current_user)
+    _require_magazines(page.magazine.tenant_id)
     page = magazines.update_page(page_id, **data.model_dump(exclude_unset=True))
     if not page:
         raise HTTPException(status_code=404, detail="Magazine page not found")
@@ -124,7 +135,8 @@ def update_magazine_page_endpoint(
 def delete_magazine_page_endpoint(
     page_id: str, current_user: dict = Depends(require_editor)
 ):
-    ownership.own_magazine_page(page_id, current_user)
+    page = ownership.own_magazine_page(page_id, current_user)
+    _require_magazines(page.magazine.tenant_id)
     if not magazines.delete_page(page_id):
         raise HTTPException(status_code=404, detail="Magazine page not found")
     return DeletedView()

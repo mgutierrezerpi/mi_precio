@@ -19,7 +19,10 @@ from models import (
     Customer,
     PublicViewer,
     PublicViewerDismissal,
-    TenantMembership
+    TenantMembership,
+    LinkTree,
+    FeatureFlag,
+    FeatureFlagAssignment,
 )
 
 
@@ -43,6 +46,9 @@ def db():
         PublicViewer,
         PublicViewerDismissal,
         TenantMembership,
+        LinkTree,
+        FeatureFlag,
+        FeatureFlagAssignment,
     ]
     test_db.bind(models)
     test_db.connect()

@@ -20,6 +20,8 @@ from controllers import (
     support_router,
     designs_router,
     magazines_router,
+    developer_router,
+    link_trees_router,
 )
 
 
@@ -55,5 +57,7 @@ def register_routes(app):
     api.include_router(support_router, dependencies=plan_gated)
     api.include_router(designs_router, dependencies=plan_gated)
     api.include_router(magazines_router, dependencies=plan_gated)
+    api.include_router(developer_router)
+    api.include_router(link_trees_router)
 
     app.include_router(api)

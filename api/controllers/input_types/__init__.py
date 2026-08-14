@@ -44,3 +44,5 @@ from controllers.input_types.billing import (
 )
 from controllers.input_types.billing import ReconcileCheckout as ReconcileCheckout
 from controllers.input_types.support import CreateSupportTicket as CreateSupportTicket
+from controllers.input_types.update_feature_flag import UpdateFeatureFlag as UpdateFeatureFlag
+from controllers.input_types.link_tree import UpdateLinkTree as UpdateLinkTree

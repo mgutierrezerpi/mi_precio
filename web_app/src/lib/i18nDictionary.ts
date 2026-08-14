@@ -330,6 +330,7 @@ const DICT_BASE: Record<string, TranslationEntry> = {
     en: 'Price lists',
     pt: 'Listas de preços',
   },
+  'nav.links': { es: 'Links', en: 'Links', pt: 'Links' },
   'nav.magazines': { es: 'Revistas', en: 'Magazines', pt: 'Revistas' },
   'nav.qr': { es: 'Códigos QR', en: 'QR codes', pt: 'Códigos QR' },
   'nav.customers': { es: 'Clientes', en: 'Customers', pt: 'Clientes' },
@@ -337,6 +338,7 @@ const DICT_BASE: Record<string, TranslationEntry> = {
   'nav.team': { es: 'Equipo', en: 'Team', pt: 'Equipe' },
   'nav.settings': { es: 'Configuración', en: 'Settings', pt: 'Configurações' },
   'nav.support': { es: 'Soporte', en: 'Support', pt: 'Suporte' },
+  'nav.developer': { es: 'Developer', en: 'Developer', pt: 'Developer' },
   'magazines.eyebrow': { es: 'PUBLICACIONES', en: 'PUBLICATIONS', pt: 'PUBLICAÇÕES' },
   'magazines.subtitle': {
     es: 'Creá y publicá revistas independientes de tus listas de precios.',

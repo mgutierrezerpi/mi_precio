@@ -17,6 +17,8 @@ from lib.ctx import notifications_context as notifications
 from lib.ctx import push_context as push
 from lib.ctx import plans_context as plans
 from lib.ctx import magazines_context as magazines
+from lib.ctx import linktrees_context as linktrees
+from lib.ctx import feature_flags_context as feature_flags
 
 # Explicit re-exports
 identity = identity
@@ -36,3 +38,5 @@ notifications = notifications
 push = push
 plans = plans
 magazines = magazines
+linktrees = linktrees
+feature_flags = feature_flags

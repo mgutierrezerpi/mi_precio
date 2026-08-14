@@ -7,6 +7,7 @@ import { MenuScreen } from './screens/menu/MenuScreen'
 import { MagazineScreen } from './screens/menu/MagazineScreen'
 import { MarketplaceScreen } from './screens/marketplace/MarketplaceScreen'
 import { LinkTreeScreen } from './screens/home/LinkTreeScreen'
+import { LinkTreePublicScreen } from './screens/menu/LinkTreePublicScreen'
 
 import { ListEditScreen } from './screens/admin/ListEditScreen'
 import { MagazinesScreen } from './screens/admin/MagazinesScreen'
@@ -25,6 +26,8 @@ import {
   AdminSettingsRoute,
 } from './screens/admin/AdminRouteSwitches'
 import { ChoosePlanScreen } from './screens/onboarding/ChoosePlanScreen'
+import { DeveloperPortalScreen } from './screens/admin/DeveloperPortalScreen'
+import { LinksScreen } from './screens/admin/LinksScreen'
 
 export const router = createBrowserRouter([
   // Public routes
@@ -43,6 +46,10 @@ export const router = createBrowserRouter([
   {
     path: '/linktree',
     element: <LinkTreeScreen />,
+  },
+  {
+    path: '/l/:subdomain',
+    element: <LinkTreePublicScreen />,
   },
   {
     path: '/p/:subdomain',
@@ -87,6 +94,10 @@ export const router = createBrowserRouter([
         element: <AdminListsRoute />,
       },
       {
+        path: 'links',
+        element: <LinksScreen />,
+      },
+      {
         path: 'magazines',
         element: <MagazinesScreen />,
       },
@@ -122,6 +133,10 @@ export const router = createBrowserRouter([
       {
         path: 'settings',
         element: <AdminSettingsRoute />,
+      },
+      {
+        path: 'developer',
+        element: <DeveloperPortalScreen />,
       },
       {
         element: <MinimalLayout />,

@@ -18,6 +18,7 @@ python-multipart = ">=0.0.32"
 pywebpush = ">=2.4.0"
 huey = ">=3.3.4"
 pillow = ">=12.3.0"
+openfeature-sdk = "==0.10.0"
 
 [dev-packages]
 ruff = ">=0.16.2"
