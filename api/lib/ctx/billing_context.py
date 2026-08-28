@@ -18,6 +18,23 @@ class BillingError(Exception):
     """Raised when billing configuration or provider calls fail."""
 
 
+def is_expired(tenant_id: str) -> bool:
+    """Whether the tenant is already in the expired state (before a sync runs)."""
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    return bool(tenant and tenant.billing_status == "expired")
+
+
+def expiry_notice_target(tenant_id: str) -> tuple[str, str] | None:
+    """Return the owner email and business name for an expiry notice."""
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant:
+        return None
+    owner = User.get_or_none((User.tenant == tenant_id) & (User.role == "owner"))
+    if not owner or not owner.email:
+        return None
+    return owner.email, tenant.name
+
+
 # Human-readable Spanish labels for Lemon Squeezy events/statuses so the
 # activity feed never surfaces raw snake_case codes to the user.
 _EVENT_ES = {
@@ -392,6 +409,88 @@ def defer_pending_subscription(
     }
 
 
+def _cancel_without_gateway(tenant_id: str) -> Tenant | None:
+    """Mirror a period-end cancellation locally when billing is disabled."""
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant:
+        raise BillingError("Tenant not found")
+    if tenant.plan == "free":
+        raise BillingError("Esta cuenta no tiene una suscripción activa.")
+    tenant.billing_status = "cancelled"
+    tenant.billing_ends_at = (
+        tenant.billing_ends_at
+        or tenant.billing_renews_at
+        or (datetime.utcnow() + timedelta(days=30))
+    )
+    tenant.billing_renews_at = None
+    tenant.save()
+    return tenant
+
+
+def _resume_without_gateway(tenant_id: str) -> Tenant | None:
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant:
+        raise BillingError("Tenant not found")
+    if tenant.billing_status != "cancelled":
+        raise BillingError("Esta suscripción no está cancelada.")
+    tenant.billing_status = "active"
+    tenant.billing_renews_at = tenant.billing_ends_at
+    tenant.billing_ends_at = None
+    tenant.save()
+    return tenant
+
+
+def _subscription_of(tenant_id: str) -> tuple[Tenant, str]:
+    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
+    if not tenant:
+        raise BillingError("Tenant not found")
+    if tenant.billing_provider != "lemonsqueezy" or not tenant.billing_subscription_id:
+        raise BillingError(
+            "Esta cuenta no tiene una suscripción de Lemon Squeezy para gestionar."
+        )
+    return tenant, tenant.billing_subscription_id
+
+
+def cancel_subscription(tenant_id: str) -> Tenant | None:
+    """Cancel at period end and immediately sync the provider response."""
+    if not settings.billing_enabled:
+        return _cancel_without_gateway(tenant_id)
+    tenant, subscription_id = _subscription_of(tenant_id)
+    if tenant.billing_status in ("cancelled", "expired"):
+        return tenant
+    data = _ls_request("DELETE", f"subscriptions/{subscription_id}")
+    attrs = data.get("data", {}).get("attributes", {})
+    if not attrs:
+        raise BillingError("Lemon Squeezy did not return the cancelled subscription")
+    attrs.setdefault("id", subscription_id)
+    return sync_subscription_from_attributes(attrs, tenant_id=tenant_id)
+
+
+def resume_subscription(tenant_id: str) -> Tenant | None:
+    """Undo a period-end cancellation before the subscription has lapsed."""
+    if not settings.billing_enabled:
+        return _resume_without_gateway(tenant_id)
+    tenant, subscription_id = _subscription_of(tenant_id)
+    if tenant.billing_status == "expired":
+        raise BillingError("La suscripción ya venció. Elegí un plan para volver a activarla.")
+    data = _ls_request(
+        "PATCH",
+        f"subscriptions/{subscription_id}",
+        {
+            "data": {
+                "type": "subscriptions",
+                "id": str(subscription_id),
+                "attributes": {"cancelled": False},
+            }
+        },
+    )
+    attrs = data.get("data", {}).get("attributes", {})
+    if not attrs:
+        raise BillingError("Lemon Squeezy did not return the resumed subscription")
+    attrs.setdefault("id", subscription_id)
+    return sync_subscription_from_attributes(attrs, tenant_id=tenant_id)
+
+
 def sync_subscription_from_attributes(
     attrs: dict[str, Any], tenant_id: str | None = None
 ) -> Tenant | None:
@@ -460,17 +559,20 @@ def sync_manual_subscription(
     return tenant
 
 
-def expire_ended_subscriptions(now: datetime | None = None) -> int:
+def expire_ended_subscriptions(now: datetime | None = None) -> list[str]:
     """Downgrade tenants whose paid subscription end date has passed.
 
     Webhooks should normally perform this immediately. The worker uses this as a
     backstop for missed manual updates or delayed provider webhooks.
     """
     cutoff = now or datetime.utcnow()
-    query = Tenant.update(plan="free", billing_status="expired").where(
+    condition = (
         (Tenant.billing_ends_at.is_null(False))
         & (Tenant.billing_ends_at <= cutoff)
         & (Tenant.billing_status != "expired")
         & (Tenant.plan != "free")
     )
-    return query.execute()
+    expired = [tenant.id for tenant in Tenant.select(Tenant.id).where(condition)]
+    if expired:
+        Tenant.update(plan="free", billing_status="expired").where(condition).execute()
+    return expired
