@@ -14,7 +14,21 @@ import {
   downloadQrPosterSvg,
   type PosterRequest,
 } from '../../lib/exportQrPoster'
-import { POSTER_QR_COLOR } from '../../lib/qrPosterSvg'
+import { QR_COLOR_STORAGE_PREFIX, DEFAULT_QR_COLOR } from '../../lib/qrRender'
+
+/** The palette the shop picks from. Every swatch is dark enough to hold its
+ *  contrast against the white card a code always sits on, so none of them can
+ *  produce a sheet a scanner struggles with. */
+const QR_COLORS: { key: string; value: string }[] = [
+  { key: 'violet', value: DEFAULT_QR_COLOR },
+  { key: 'black', value: '#0F172A' },
+  { key: 'blue', value: '#2563EB' },
+  { key: 'green', value: '#059669' },
+  { key: 'pink', value: '#DB2777' },
+  { key: 'amber', value: '#D97706' },
+  { key: 'sky', value: '#0EA5E9' },
+  { key: 'slate', value: '#475569' },
+]
 
 export function CodesScreen() {
   const t = useCatalogT()
@@ -24,7 +38,24 @@ export function CodesScreen() {
 
   const [search, setSearch] = useState('')
   const [copied, setCopied] = useState<string | null>(null)
+  // Códigos QR is the only place the colour is chosen, but Listas and the
+  // dashboard both read it back from this key — so it is stored, not local.
+  const [color, setColor] = useState(DEFAULT_QR_COLOR)
   const [busy, setBusy] = useState<'png' | 'svg' | null>(null)
+
+  const colorStorageKey = tenant?.id
+    ? `${QR_COLOR_STORAGE_PREFIX}${tenant.id}`
+    : null
+  const chooseColor = (value: string) => {
+    setColor(value)
+    if (colorStorageKey) localStorage.setItem(colorStorageKey, value)
+  }
+
+  useEffect(() => {
+    if (!colorStorageKey) return
+    const saved = localStorage.getItem(colorStorageKey)
+    if (saved && QR_COLORS.some((c) => c.value === saved)) setColor(saved)
+  }, [colorStorageKey])
 
   useEffect(() => {
     if (tenant?.id) dispatch(fetchLists(tenant.id))
@@ -74,6 +105,7 @@ export function CodesScreen() {
       headline: t('codes.posterHeadline'),
       footer: t('codes.posterFooter'),
       fileName: `qr-${slugOf(l)}`,
+      qrColor: color,
     }
   }
 
@@ -146,7 +178,7 @@ export function CodesScreen() {
                         value={qrUrlOf(l)}
                         size={128}
                         margin={2}
-                        fg={POSTER_QR_COLOR}
+                        fg={color}
                         className="!h-full !w-full rounded-lg object-contain"
                       />
                     </div>
@@ -203,9 +235,31 @@ export function CodesScreen() {
                 value={previewUrl}
                 size={128}
                 margin={2}
-                fg={POSTER_QR_COLOR}
+                fg={color}
                 className="!h-full !w-full rounded-lg object-contain"
               />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-[var(--dash-text2)]">
+                {t('codes.color')}
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {QR_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => chooseColor(c.value)}
+                    aria-label={t(`codes.color.${c.key}`)}
+                    aria-pressed={color === c.value}
+                    title={t(`codes.color.${c.key}`)}
+                    className={`h-7 w-7 rounded-lg ${color === c.value ? 'ring-2 ring-offset-2 ring-offset-[var(--dash-surface)] ring-[var(--dash-link)]' : ''}`}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+                {t('codes.colorHelp')}
+              </span>
             </div>
             {/* Both downloads are the same A4 poster in two formats: the
                 SVG is the vector a print shop wants, the PNG is what goes into
