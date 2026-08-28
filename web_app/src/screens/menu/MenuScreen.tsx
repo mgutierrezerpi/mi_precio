@@ -30,6 +30,7 @@ import {
   type DesignProps,
   type CartTheme,
 } from './designs'
+import { parseUtc } from '../../lib/datetime'
 
 interface PublicList {
   id: string
@@ -236,12 +237,6 @@ export function MenuScreen() {
   const list = displayLists.length === 1 ? displayLists[0] : null
   // Backend stores naive UTC timestamps (datetime.utcnow, no offset). Tag them as UTC
   // so the browser converts to the correct local date instead of treating UTC as local.
-  const parseUtc = (iso?: string | null) => {
-    if (!iso) return null
-    const hasTz = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(iso)
-    const d = new Date(hasTz ? iso : `${iso}Z`)
-    return Number.isNaN(d.getTime()) ? null : d
-  }
   const vDate = parseUtc(list?.version?.updatedAt || list?.version?.createdAt)
   const updated = (vDate ?? new Date()).toLocaleDateString(locale, {
     day: 'numeric',

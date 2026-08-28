@@ -10,6 +10,7 @@ import { tone, gradient, type Tone } from './crm/theme'
 import { trackEvent } from '../../lib/analytics'
 import { localeOf, normalizeLang, useT } from '../../lib/i18n'
 import { DICT_OPERATIONS } from '../../lib/i18nDictionaryOperations'
+import { parseUtc } from '../../lib/datetime'
 
 function useOperationsT() {
   const fallbackT = useT()
@@ -55,12 +56,6 @@ const initials = (n: string) =>
     .toUpperCase() || '?'
 
 // Backend stores naive UTC; tag as UTC so the browser converts to the right local time.
-function parseUtc(iso?: string | null): Date | null {
-  if (!iso) return null
-  const hasTz = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(iso)
-  const d = new Date(hasTz ? iso : `${iso}Z`)
-  return Number.isNaN(d.getTime()) ? null : d
-}
 function relativeTime(iso: string | null | undefined, t: (key: string, vars?: Record<string, string | number>) => string): string {
   const d = parseUtc(iso)
   if (!d) return t('time.noPurchases')
