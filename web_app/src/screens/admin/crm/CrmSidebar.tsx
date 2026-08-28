@@ -75,14 +75,14 @@ const navMain: {
     id: 'Clientes',
     tKey: 'nav.customers',
     label: 'Clientes',
-    to: '/admin/clientes',
+    to: '/admin/customers',
   },
   {
     icon: 'bar-chart',
     id: 'Reportes',
     tKey: 'nav.reports',
     label: 'Reportes',
-    to: '/admin/reportes',
+    to: '/admin/reports',
   },
 ]
 const navSettings: {
@@ -97,7 +97,7 @@ const navSettings: {
     id: 'Equipo',
     tKey: 'nav.team',
     label: 'Equipo',
-    to: '/admin/equipo',
+    to: '/admin/team',
   },
   {
     icon: 'settings',
@@ -111,7 +111,7 @@ const navSettings: {
     id: 'Soporte',
     tKey: 'nav.support',
     label: 'Soporte',
-    to: '/admin/soporte',
+    to: '/admin/support',
   },
 ]
 

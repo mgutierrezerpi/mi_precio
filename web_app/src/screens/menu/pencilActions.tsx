@@ -2,7 +2,7 @@ import type { DesignProps } from './designs'
 import { cartThemeFor, SIco } from './designs'
 
 export function PencilActionBar({ props }: { props: DesignProps }) {
-  const { cartCount, openCart, t, waHref } = props
+  const { cartCount, openCart, t, waHref, checkoutChannel, onCheckout } = props
   const cartTheme = props.cartTheme ?? cartThemeFor('pencil-journal')
   const cartLabel = cartCount > 0 ? `${t('store.myCart')} · ${cartCount}` : t('store.myCart')
   const cartAccent = cartTheme.actionAccent || cartTheme.accent || props.accent
@@ -13,13 +13,14 @@ export function PencilActionBar({ props }: { props: DesignProps }) {
       <div className="grid grid-cols-2 gap-2">
         <a
           href={waHref}
+          onClick={onCheckout}
           target="_blank"
           rel="noopener noreferrer"
           className="flex min-h-12 items-center justify-center gap-2 px-3 text-center text-[12px] font-bold text-white transition-opacity hover:opacity-90 sm:text-[13px]"
-          style={{ background: '#25D366', borderRadius: cartTheme.buttonRadius }}
+          style={{ background: checkoutChannel === 'instagram' ? 'linear-gradient(135deg, #833AB4, #E1306C, #FCAF45)' : '#25D366', borderRadius: cartTheme.buttonRadius }}
         >
           <SIco name="message-circle" size={18} color="#fff" />
-          {t('pub.cartWhatsApp')}
+          {checkoutChannel === 'instagram' ? 'Copiar pedido · Instagram' : t('pub.cartWhatsApp')}
         </a>
         <button
           type="button"

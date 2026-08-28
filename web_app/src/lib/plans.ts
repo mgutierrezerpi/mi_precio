@@ -22,6 +22,12 @@ export interface PlanContent {
   popular?: boolean
 }
 
+export type PlanFeature = 'leads'
+
+const FEATURE_PLANS: Record<PlanFeature, readonly PlanId[]> = {
+  leads: ['plus', 'pro'],
+}
+
 const FREE_PLAN: PlanContent = {
   id: 'free',
   name: 'Sin plan',
@@ -85,3 +91,6 @@ export const PLANS: PlanContent[] = [
 
 export const planById = (id: PlanId): PlanContent =>
   id === 'free' ? FREE_PLAN : PLANS.find((p) => p.id === id) || FREE_PLAN
+
+export const planHasFeature = (plan: PlanId, feature: PlanFeature): boolean =>
+  FEATURE_PLANS[feature].includes(plan)

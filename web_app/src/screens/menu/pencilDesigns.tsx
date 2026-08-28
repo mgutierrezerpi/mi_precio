@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { CartControl, cartThemeFor, type CartTheme, type DesignProps, type Section } from './designs'
-import type { ListDesign } from '../../types'
+import type { ListContent, ListDesign } from '../../types'
 import { SpecialPencilList } from './pencilSpecialDesigns'
 
 export type PencilVariant =
@@ -46,6 +46,26 @@ export function isPencilVariant(design: ListDesign): design is PencilVariant {
   return PENCIL_VARIANTS.has(design as PencilVariant)
 }
 
+/** The authored copy/media a Pencil layout starts with. Exposed to the admin
+ * editor so an untouched template is editable rather than looking blank. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function pencilTemplateDefaults(design: ListDesign): ListContent['template'] | undefined {
+  if (!isPencilVariant(design)) return undefined
+  const config = PENCIL_CONFIG[design] ?? SPECIAL_CONFIG[design] ?? SPECIAL_BASE
+  return {
+    image: config.image,
+    imageLabel: config.imageLabel,
+    imageTitle: config.imageTitle,
+    promoEyebrow: config.promoEyebrow,
+    promoTitle: config.promoTitle,
+    promoBody: config.promoBody,
+    promoPrice: config.promoPrice,
+    promoNote: config.promoNote,
+    footerLeft: config.footerLeft,
+    footerRight: config.footerRight,
+  }
+}
+
 export type PencilConfig = {
   background: string
   ink: string
@@ -62,6 +82,8 @@ export type PencilConfig = {
   promoNote: string
   footerLeft: string
   footerRight: string
+  font?: 'sans' | 'editorial' | 'serif' | 'mono' | 'code-pro'
+  priceFormat?: '$' | 'U$D' | 'USD'
   layout:
     | 'left-image'
     | 'top-image'
@@ -545,10 +567,37 @@ const SERIF = '"Playfair Display", Georgia, serif'
 const MONO = '"IBM Plex Mono", "Courier New", monospace'
 const SANS = 'Inter, system-ui, sans-serif'
 
-const price = (value: string | number) => {
+const fontFor = (config: PencilConfig, role: 'body' | 'heading' | 'label') => {
+  if (config.font === 'code-pro') return "'Code Pro', Inter, system-ui, sans-serif"
+  if (config.font === 'mono') return MONO
+  if (config.font === 'serif' || config.font === 'editorial') return SERIF
+  return role === 'heading' ? SERIF : role === 'label' ? MONO : SANS
+}
+
+const withTemplateOverrides = (config: PencilConfig, template: NonNullable<DesignProps['content']>['template']): PencilConfig => {
+  if (!template) return config
+  return {
+    ...config,
+    ...(template.image ? { image: template.image } : {}),
+    ...(template.imageLabel ? { imageLabel: template.imageLabel } : {}),
+    ...(template.imageTitle ? { imageTitle: template.imageTitle } : {}),
+    ...(template.promoEyebrow ? { promoEyebrow: template.promoEyebrow } : {}),
+    ...(template.promoTitle ? { promoTitle: template.promoTitle } : {}),
+    ...(template.promoBody ? { promoBody: template.promoBody } : {}),
+    ...(template.promoPrice ? { promoPrice: template.promoPrice } : {}),
+    ...(template.promoNote ? { promoNote: template.promoNote } : {}),
+    ...(template.footerLeft ? { footerLeft: template.footerLeft } : {}),
+    ...(template.footerRight ? { footerRight: template.footerRight } : {}),
+    ...(template.font ? { font: template.font } : {}),
+    ...(template.priceFormat ? { priceFormat: template.priceFormat } : {}),
+  }
+}
+
+const price = (value: string | number, prefix = '$') => {
   const amount = typeof value === 'number' ? value : Number.parseFloat(value)
   if (Number.isNaN(amount)) return '$—'
-  return `$${amount.toFixed(2).replace(/\.00$/, '')}`
+  const display = amount.toFixed(2).replace(/\.00$/, '')
+  return prefix === '$' ? `$${display}` : `${prefix} ${display}`
 }
 
 function Rule({ color, background }: { color: string; background: string }) {
@@ -558,7 +607,9 @@ function Rule({ color, background }: { color: string; background: string }) {
         className="absolute left-1/2 top-1/2 flex h-10 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
         style={{ background }}
       >
-        <span style={{ color, fontFamily: SERIF, fontSize: 22 }}>✦</span>
+        <svg width="22" height="22" viewBox="0 0 32 32" fill={color} aria-hidden="true">
+          <path d="M7 12h16v9a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7v-9Zm17 3h1a4 4 0 0 1 0 8h-1v-3h1a1 1 0 0 0 0-2h-1v-3ZM11 5.5c0-1.4.7-2.4 1.7-3.5.5 1 .8 1.9.8 2.9 0 1.2-.6 2.2-1.7 3.1-.5-.4-.8-.9-.8-1.5Zm6 0c0-1.4.7-2.4 1.7-3.5.5 1 .8 1.9.8 2.9 0 1.2-.6 2.2-1.7 3.1-.5-.4-.8-.9-.8-1.5Z" />
+        </svg>
       </span>
     </div>
   )
@@ -584,21 +635,21 @@ function Masthead({
       {eyebrow && (
         <p
           className="text-[10px] uppercase tracking-[2px] sm:text-[11px]"
-          style={{ color: color.muted, fontFamily: MONO }}
+          style={{ color: color.muted, fontFamily: fontFor(color, 'label') }}
         >
           {eyebrow}
         </p>
       )}
       <h1
         className="max-w-full break-words text-balance text-[44px] leading-none sm:text-[60px]"
-        style={{ color: color.ink, fontFamily: SERIF, fontWeight: 400 }}
+        style={{ color: color.ink, fontFamily: fontFor(color, 'heading'), fontWeight: 400 }}
       >
         {title}
       </h1>
       {body && (
         <p
           className="max-w-[48ch] text-[13px] italic sm:text-[15px]"
-          style={{ color: color.muted, fontFamily: SERIF }}
+          style={{ color: color.muted, fontFamily: fontFor(color, 'body') }}
         >
           {body}
         </p>
@@ -623,10 +674,10 @@ function PencilImage({
         className="absolute bottom-3 left-3 flex flex-col gap-0.5 px-3 py-2"
         style={{ background: `${config.background}e8`, color: config.ink }}
       >
-        <span className="text-[9px] uppercase tracking-[1.6px] sm:text-[10px]" style={{ fontFamily: MONO }}>
+        <span className="text-[9px] uppercase tracking-[1.6px] sm:text-[10px]" style={{ fontFamily: fontFor(config, 'label') }}>
           {config.imageLabel}
         </span>
-        <span className="text-[17px] italic leading-none sm:text-[18px]" style={{ fontFamily: SERIF }}>
+        <span className="text-[17px] italic leading-none sm:text-[18px]" style={{ fontFamily: fontFor(config, 'heading') }}>
           {config.imageTitle}
         </span>
       </div>
@@ -641,21 +692,21 @@ function PencilPromo({ config }: { config: PencilConfig }) {
       style={{ background: config.darkPanel, color: '#F8F5EE' }}
     >
       <div className="flex flex-col gap-2">
-        <span className="text-[10px] uppercase tracking-[1.6px]" style={{ color: config.accent, fontFamily: MONO }}>
+        <span className="text-[10px] uppercase tracking-[1.6px]" style={{ color: config.accent, fontFamily: fontFor(config, 'label') }}>
           {config.promoEyebrow}
         </span>
-        <h2 className="text-[32px] leading-none sm:text-[40px]" style={{ fontFamily: SERIF, fontWeight: 400 }}>
+        <h2 className="text-[32px] leading-none sm:text-[40px]" style={{ fontFamily: fontFor(config, 'heading'), fontWeight: 400 }}>
           {config.promoTitle}
         </h2>
-        <p className="max-w-[32ch] text-[12px] leading-relaxed sm:text-[13px]" style={{ color: '#D9D3C8', fontFamily: SANS }}>
+        <p className="max-w-[32ch] text-[12px] leading-relaxed sm:text-[13px]" style={{ color: '#D9D3C8', fontFamily: fontFor(config, 'body') }}>
           {config.promoBody}
         </p>
       </div>
       <div className="flex items-end justify-between gap-4 pt-6">
-        <span className="text-[28px]" style={{ fontFamily: SERIF }}>
+        <span className="text-[28px]" style={{ fontFamily: fontFor(config, 'heading') }}>
           {config.promoPrice}
         </span>
-        <span className="text-right text-[10px] uppercase tracking-[1px]" style={{ color: config.accent, fontFamily: MONO }}>
+        <span className="text-right text-[10px] uppercase tracking-[1px]" style={{ color: config.accent, fontFamily: fontFor(config, 'label') }}>
           {config.promoNote}
         </span>
       </div>
@@ -665,22 +716,22 @@ function PencilPromo({ config }: { config: PencilConfig }) {
 
 function PencilItem({ item, color, props }: { item: Section['items'][number]; color: PencilConfig; props: DesignProps }) {
   return (
-    <div className="flex min-w-0 items-start justify-between gap-3">
+    <div className="flex min-w-0 items-start justify-between gap-4">
       <div className="min-w-0 flex-1">
-        <p className="break-words text-[18px] leading-[1.08] sm:text-[20px]" style={{ color: color.ink, fontFamily: SERIF }}>
+        <p className="break-words text-[18px] leading-[1.08] sm:text-[20px]" style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}>
           {item.name}
         </p>
         {item.description && (
-          <p className="mt-0.5 break-words text-[11px] leading-[1.25] sm:text-[12px]" style={{ color: color.muted, fontFamily: SANS }}>
+          <p className="mt-0.5 break-words text-[11px] leading-[1.25] sm:text-[12px]" style={{ color: color.muted, fontFamily: fontFor(color, 'body') }}>
             {item.description}
           </p>
         )}
       </div>
-      <div className="flex w-[136px] shrink-0 items-center justify-end gap-3">
-        <span className="w-[64px] text-right text-[12px] tabular-nums sm:text-[13px]" style={{ color: color.ink, fontFamily: MONO }}>
-          {price(item.price)}
-        </span>
+      <div className="flex shrink-0 items-center gap-3">
         {!props.isService && <CartControl qty={props.cart[item.id] ?? 0} id={item.id} addToCart={props.addToCart} decFromCart={props.decFromCart} accent={color.accent} ink={color.ink} />}
+        <span className="text-right text-[14px] tabular-nums sm:text-[15px]" style={{ color: color.ink, fontFamily: fontFor(color, 'label') }}>
+          {price(item.price, color.priceFormat)}
+        </span>
       </div>
     </div>
   )
@@ -689,7 +740,7 @@ function PencilItem({ item, color, props }: { item: Section['items'][number]; co
 function PencilSection({ section, config, props }: { section: Section; config: PencilConfig; props: DesignProps }) {
   return (
     <section className="flex min-w-0 flex-col gap-2.5">
-      <h2 className="text-[10px] uppercase tracking-[1.8px] sm:text-[11px]" style={{ color: config.accent, fontFamily: MONO }}>
+      <h2 className="text-[10px] uppercase tracking-[1.8px] sm:text-[11px]" style={{ color: config.accent, fontFamily: fontFor(config, 'label') }}>
         {section.name}
       </h2>
       <div className="flex flex-col gap-4 sm:gap-3.5">
@@ -701,7 +752,7 @@ function PencilSection({ section, config, props }: { section: Section; config: P
   )
 }
 
-function PencilCatalog({ sections, config, props }: { sections: Section[]; config: PencilConfig; props: DesignProps }) {
+function PencilCatalog({ sections, config, props, fullWidth = false }: { sections: Section[]; config: PencilConfig; props: DesignProps; fullWidth?: boolean }) {
   if (sections.length === 0) {
     return (
       <p className="border-y py-8 text-center text-[12px]" style={{ borderColor: `${config.accent}55`, color: config.muted }}>
@@ -710,7 +761,7 @@ function PencilCatalog({ sections, config, props }: { sections: Section[]; confi
     )
   }
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-8 md:grid-cols-2 md:gap-x-10 md:gap-y-7">
+    <div className={`grid min-w-0 grid-cols-1 gap-8 ${fullWidth ? '' : 'md:grid-cols-2 md:gap-x-10 md:gap-y-7'}`}>
       {sections.map((section) => (
         <PencilSection key={section.key} section={section} config={config} props={props} />
       ))}
@@ -721,10 +772,10 @@ function PencilCatalog({ sections, config, props }: { sections: Section[]; confi
 function PencilFooter({ config }: { config: PencilConfig }) {
   return (
     <footer className="flex min-w-0 flex-col gap-2 border-t pt-5 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: `${config.accent}66` }}>
-      <span className="break-words text-[10px] uppercase tracking-[1.5px] sm:text-[11px]" style={{ color: config.muted, fontFamily: MONO }}>
+      <span className="break-words text-[10px] uppercase tracking-[1.5px] sm:text-[11px]" style={{ color: config.muted, fontFamily: fontFor(config, 'label') }}>
         {config.footerLeft}
       </span>
-      <span className="break-words text-[10px] uppercase tracking-[1.5px] sm:text-right sm:text-[11px]" style={{ color: config.accent, fontFamily: MONO }}>
+      <span className="break-words text-[10px] uppercase tracking-[1.5px] sm:text-right sm:text-[11px]" style={{ color: config.accent, fontFamily: fontFor(config, 'label') }}>
         {config.footerRight}
       </span>
     </footer>
@@ -741,10 +792,10 @@ function PencilShell({
   const style: CSSProperties = {
     background: config.background,
     color: config.ink,
-    fontFamily: SANS,
+    fontFamily: fontFor(config, 'body'),
   }
   return (
-    <div className="min-h-[100svh] w-full min-w-0 overflow-x-clip" style={style}>
+    <div className="min-h-0 w-full min-w-0 overflow-x-clip" style={style}>
       <div className="mx-auto flex min-w-0 w-full max-w-[920px] flex-col px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
         {children}
       </div>
@@ -753,7 +804,10 @@ function PencilShell({
 }
 
 export function PencilList({ variant, ...props }: DesignProps & { variant: PencilVariant }) {
-  const config = PENCIL_CONFIG[variant] ?? SPECIAL_CONFIG[variant] ?? SPECIAL_BASE
+  const config = {
+    ...withTemplateOverrides(PENCIL_CONFIG[variant] ?? SPECIAL_CONFIG[variant] ?? SPECIAL_BASE, props.content?.template),
+    accent: props.accent,
+  }
   if (!['left-image', 'top-image', 'full-image', 'top-promo'].includes(config.layout)) {
     return <SpecialPencilList props={props} config={config} />
   }
@@ -769,7 +823,7 @@ export function PencilList({ variant, ...props }: DesignProps & { variant: Penci
       <Rule color={config.accent} background={config.background} />
     </>
   )
-  const catalog = <PencilCatalog sections={props.sections} config={config} props={props} />
+  const catalog = <PencilCatalog sections={props.sections} config={config} props={props} fullWidth={variant === 'pencil-flower-winter'} />
   const promo = <PencilPromo config={config} />
 
   if (layout === 'left-image') {

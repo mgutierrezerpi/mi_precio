@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, File, Query, UploadFile
 from config import settings
-from lib.ctx import identity, analytics, activity, plans
+from lib.ctx import identity, analytics, activity, brand_assets, plans
 from controllers.deps import (
     get_current_user,
     require_active_plan,
@@ -138,6 +138,24 @@ def update_tenant_endpoint(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
     return TenantView.render(tenant)
+
+
+@router.post("/{tenant_id}/logo", status_code=201, dependencies=plan_gated)
+async def upload_tenant_logo_endpoint(
+    tenant_id: str,
+    image: UploadFile = File(...),
+    current_user: dict = Depends(require_admin),
+):
+    try:
+        url = brand_assets.upload_brand_image(
+            tenant_id, await image.read(), image.content_type or ""
+        )
+    except brand_assets.BrandImageUploadError as e:
+        status = 413 if str(e) == "Image is too large" else 415 if str(e) == "Unsupported image type" else 503
+        raise HTTPException(status_code=status, detail=str(e)) from e
+    if not url:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    return {"url": url}
 
 
 @router.delete("/{tenant_id}")

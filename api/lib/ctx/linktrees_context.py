@@ -46,6 +46,7 @@ def get_linktree(tenant_id: str, create: bool = True) -> LinkTree | None:
     defaults[1]["enabled"] = bool(tenant.whatsapp_url)
     return LinkTree.create(
         tenant=tenant,
+        public_slug=tenant.subdomain,
         display_name=tenant.name,
         handle=f"@{tenant.subdomain}",
         bio=tenant.description or "Todo tu negocio en un solo link.",

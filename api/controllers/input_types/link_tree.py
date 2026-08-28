@@ -1,5 +1,7 @@
 from typing import Literal
 
+import re
+
 from pydantic import BaseModel, Field, field_validator
 
 from controllers.input_types.appearance import validate_hex_color
@@ -16,6 +18,7 @@ class LinkTreeLink(BaseModel):
 
 
 class UpdateLinkTree(BaseModel):
+    public_slug: str | None = Field(default=None, min_length=3, max_length=63)
     display_name: str | None = Field(default=None, min_length=1, max_length=255)
     handle: str | None = Field(default=None, max_length=255)
     bio: str | None = Field(default=None, max_length=500)
@@ -23,9 +26,12 @@ class UpdateLinkTree(BaseModel):
     accent_color: str | None = None
     background_color: str | None = None
     template: Literal["botanical", "editorial", "atelier"] | None = None
+    font: Literal["sans", "editorial", "mono", "code-pro"] | None = None
     tags: list[str] | None = Field(default=None, max_length=8)
     links: list[LinkTreeLink] | None = Field(default=None, max_length=12)
     instagram_url: str | None = Field(default=None, max_length=2000)
+    tiktok_url: str | None = Field(default=None, max_length=2000)
+    email_url: str | None = Field(default=None, max_length=2000)
     whatsapp_url: str | None = Field(default=None, max_length=2000)
     website_url: str | None = Field(default=None, max_length=2000)
     location_url: str | None = Field(default=None, max_length=2000)
@@ -42,3 +48,20 @@ class UpdateLinkTree(BaseModel):
         if value is None:
             return None
         return [tag.strip()[:32] for tag in value if tag.strip()][:8]
+
+    @field_validator("public_slug")
+    @classmethod
+    def validate_public_slug(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        slug = value.strip().lower()
+        if not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?", slug):
+            raise ValueError("Usá letras, números y guiones para tu link público")
+        return slug
+
+    @field_validator("avatar_url")
+    @classmethod
+    def validate_avatar_url(cls, value: str | None) -> str | None:
+        if value and value.startswith("data:"):
+            raise ValueError("Subí la imagen para guardarla en almacenamiento seguro")
+        return value

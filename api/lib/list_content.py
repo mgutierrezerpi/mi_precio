@@ -24,11 +24,12 @@ def serialize_content(content: dict[str, Any], design: str | None) -> str:
 
 
 def _validate_document(content: dict[str, Any], allowed_blocks: set[str]) -> None:
-    if set(content) - {"schema_version", "hero", "blocks"}:
+    if set(content) - {"schema_version", "hero", "template", "blocks"}:
         raise ValueError("content has unknown fields")
     if content.get("schema_version") != 1:
         raise ValueError("content.schema_version must be 1")
     _validate_hero(content.get("hero"))
+    _validate_template(content.get("template"))
     blocks = content.get("blocks")
     if not isinstance(blocks, list):
         raise TypeError("content.blocks must be a list")
@@ -69,6 +70,32 @@ def _validate_hero(hero: Any) -> None:
                 raise ValueError("each hero stat needs value and label")
             _string(stat["value"], "hero stat value")
             _string(stat["label"], "hero stat label")
+
+
+def _validate_template(template: Any) -> None:
+    """Template-specific editorial overrides. The renderer decides which apply."""
+    if template is None:
+        return
+    allowed = {
+        "font", "image", "image_label", "image_title", "promo_eyebrow",
+        "promo_title", "promo_body", "promo_price", "promo_note",
+        "footer_left", "footer_right", "checkout_channel", "instagram_handle", "price_format",
+    }
+    if not isinstance(template, dict) or set(template) - allowed:
+        raise ValueError("content.template has unknown fields")
+    if "font" in template and template["font"] not in {
+        "sans", "editorial", "serif", "mono", "code-pro",
+    }:
+        raise ValueError("content.template.font is not supported")
+    if "checkout_channel" in template and template["checkout_channel"] not in {
+        "whatsapp", "instagram",
+    }:
+        raise ValueError("content.template.checkout_channel is not supported")
+    if "price_format" in template and template["price_format"] not in {"$", "U$D", "USD"}:
+        raise ValueError("content.template.price_format is not supported")
+    for key, value in template.items():
+        if key not in {"font", "checkout_channel", "price_format"}:
+            _string(value, f"content.template.{key}")
 
 
 def _validate_catalog(block: dict[str, Any]) -> None:

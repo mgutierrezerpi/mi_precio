@@ -26,7 +26,6 @@ import {
   disablePush,
   type PushStatus,
 } from '../../lib/push'
-import { fileToDataUrl } from '../../lib/image'
 import {
   ListAppearanceFields,
   Toggle,
@@ -326,10 +325,11 @@ function InfoSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) {
   const publicUrl = `${window.location.origin}/p/${subdomain || ''}`
 
   const pickLogo = async (file?: File) => {
-    if (file) {
-      touch()
-      setLogo(await fileToDataUrl(file))
-    }
+    if (!file || !tenant) return
+    const response = await api.uploadTenantLogo(tenant.id, file)
+    if (!response.data) return
+    touch()
+    setLogo(response.data.url)
   }
   const copyUrl = () => {
     navigator.clipboard?.writeText(publicUrl)

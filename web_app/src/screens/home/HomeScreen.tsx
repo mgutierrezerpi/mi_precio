@@ -211,7 +211,7 @@ export function HomeScreen() {
 
   const openAuth: OpenAuth = () => {
     if (isAuthenticated) {
-      navigate(needsPlan ? '/planes' : '/admin')
+      navigate(needsPlan ? '/plans' : '/admin')
       return
     }
     setAuthOpen(true)
@@ -230,11 +230,11 @@ export function HomeScreen() {
   // Already-logged-in users hitting /login (e.g. from the static landing's
   // "Iniciar sesión" link, which can't know the session) go straight to the panel.
   if (isAuthenticated && location.pathname === '/login') {
-    return <Navigate to={needsPlan ? '/planes' : '/admin'} replace />
+    return <Navigate to={needsPlan ? '/plans' : '/admin'} replace />
   }
 
   return (
-    <main className="landing-page min-h-screen bg-white font-sans text-slate-900">
+    <main className="landing-page min-h-screen overflow-x-clip bg-white font-sans text-slate-900">
       <Navbar onAuth={openAuth} isAuthenticated={isAuthenticated} />
       <Hero onAuth={openAuth} />
       <Features />

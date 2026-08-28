@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
@@ -20,6 +20,7 @@ import type {
   PriceList,
   PriceListVariantType,
   Product,
+  ListContent,
 } from '../../types'
 import api from '../../services/api'
 import { localeOf, useT, type TFn } from '../../lib/i18n'
@@ -64,6 +65,12 @@ const qrFileName = (l: PriceList) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '') || l.id
 
+const starterTemplateContent = (name: string): ListContent => ({
+  schemaVersion: 1,
+  hero: { title: name },
+  blocks: [],
+})
+
 /* ── Screen ──────────────────────────────────────────────────────── */
 export function PriceListsScreen() {
   const t = useT()
@@ -90,6 +97,7 @@ export function PriceListsScreen() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const editId = searchParams.get('edit')
   const newList = searchParams.get('new') === '1'
+  const customize = searchParams.get('customize') === '1'
 
   useEffect(() => {
     if (tenant?.id) {
@@ -125,6 +133,7 @@ export function PriceListsScreen() {
       current.delete('new')
       current.delete('edit')
       current.delete('step')
+      current.delete('customize')
       return current
     })
   }
@@ -316,6 +325,9 @@ export function PriceListsScreen() {
                   setModal({ open: true, list: l })
                   setSearchParams({ edit: l.id })
                 }}
+                onCustomize={() => {
+                  navigate(`/admin/lists/${l.id}/customize`)
+                }}
                 onTogglePublished={() => togglePublished(l)}
                 onTogglePrincipal={() => togglePrincipal(l)}
                 onDelete={() => handleDelete(l)}
@@ -324,7 +336,7 @@ export function PriceListsScreen() {
                 onOpen={() =>
                   window.open(publicUrl(tenant?.subdomain, l), '_blank')
                 }
-                onReports={() => navigate(`/admin/reportes?list=${l.id}`)}
+                onReports={() => navigate(`/admin/reports?list=${l.id}`)}
                 onCreateVariant={() => setVariantParent(l)}
               />
               {lists
@@ -357,6 +369,9 @@ export function PriceListsScreen() {
                       setModal({ open: true, list: variant })
                       setSearchParams({ edit: variant.id })
                     }}
+                    onCustomize={() => {
+                      navigate(`/admin/lists/${variant.id}/customize`)
+                    }}
                     onTogglePublished={() => togglePublished(variant)}
                     onTogglePrincipal={() => undefined}
                     onDelete={() => handleDelete(variant)}
@@ -365,7 +380,7 @@ export function PriceListsScreen() {
                     onOpen={() =>
                       window.open(publicUrl(tenant?.subdomain, variant), '_blank')
                     }
-                    onReports={() => navigate(`/admin/reportes?list=${variant.id}`)}
+                    onReports={() => navigate(`/admin/reports?list=${variant.id}`)}
                   />
                 ))}
               </div>
@@ -379,6 +394,7 @@ export function PriceListsScreen() {
           key={modal.list?.id ?? 'new'}
           list={modal.list}
           initialStep={searchParams.get('step') === '2' ? 2 : 1}
+          initialCustomize={customize}
           tenantId={tenant?.id}
           products={availableProducts}
           lists={lists}
@@ -413,6 +429,7 @@ function ListRow({
   canEdit,
   first,
   onEdit,
+  onCustomize,
   onTogglePublished,
   onTogglePrincipal,
   onDelete,
@@ -428,6 +445,7 @@ function ListRow({
   canEdit: boolean
   first?: boolean
   onEdit: () => void
+  onCustomize: () => void
   onTogglePublished: () => void
   onTogglePrincipal: () => void
   onDelete: () => void
@@ -582,6 +600,7 @@ function ListRow({
           <RowMenu
             list={list}
             onEdit={onEdit}
+            onCustomize={onCustomize}
             onTogglePublished={onTogglePublished}
             onTogglePrincipal={onTogglePrincipal}
             onDelete={onDelete}
@@ -598,6 +617,7 @@ function ListRow({
 function RowMenu({
   list,
   onEdit,
+  onCustomize,
   onTogglePublished,
   onTogglePrincipal,
   onDelete,
@@ -607,6 +627,7 @@ function RowMenu({
 }: {
   list: PriceList
   onEdit: () => void
+  onCustomize: () => void
   onTogglePublished: () => void
   onTogglePrincipal: () => void
   onDelete: () => void
@@ -619,7 +640,7 @@ function RowMenu({
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const H = isVariant ? 180 : 230
+  const H = isVariant ? 220 : 270
 
   const toggle = () => {
     if (open) {
@@ -681,6 +702,11 @@ function RowMenu({
               icon="settings"
               label={t('pl.menu.edit')}
               onClick={act(onEdit)}
+            />
+            <MenuItemBtn
+              icon="paintbrush"
+              label="Personalizar plantilla"
+              onClick={act(onCustomize)}
             />
             {!isVariant && onCreateVariant && (
               <MenuItemBtn
@@ -1251,10 +1277,28 @@ export function QrModal({
   )
 }
 
+function DashField({
+  label,
+  wide = false,
+  children,
+}: {
+  label: string
+  wide?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <label className={`flex min-w-0 flex-col gap-1.5 ${wide ? 'sm:col-span-2' : ''}`}>
+      <span className="text-xs font-bold text-[var(--dash-text2)]">{label}</span>
+      {children}
+    </label>
+  )
+}
+
 /* ── Create wizard / edit modal ──────────────────────────────────── */
 function ListModal({
   list,
   initialStep,
+  initialCustomize,
   tenantId,
   products,
   lists,
@@ -1262,6 +1306,7 @@ function ListModal({
 }: {
   list: PriceList | null
   initialStep: 1 | 2
+  initialCustomize: boolean
   tenantId?: string
   products: Product[]
   lists: PriceList[]
@@ -1295,6 +1340,10 @@ function ListModal({
     bgOverlay: list?.bgOverlay ?? null,
   })
   const [showAppearance, setShowAppearance] = useState(false)
+  const [showTemplateContent, setShowTemplateContent] = useState(initialCustomize)
+  const [templateContent, setTemplateContent] = useState<ListContent | null>(null)
+  const [contentRevision, setContentRevision] = useState(0)
+  const [savingTemplateContent, setSavingTemplateContent] = useState(false)
   const versionId = useRef<string | undefined>(undefined)
   const [loadedItems, setLoadedItems] = useState<
     { id: string; name: string; productId: string | null }[]
@@ -1331,11 +1380,14 @@ function ListModal({
     let cancelled = false
     ;(async () => {
       const lres = await api.getList(list.id)
-      const vid = lres.data?.versions?.[0]?.id
+      const version = lres.data?.versions?.[0]
+      const vid = version?.id
       if (!vid) return
       const ires = await api.getItems(vid)
       if (cancelled) return
       versionId.current = vid
+      setTemplateContent(version?.content ?? starterTemplateContent(list.name))
+      setContentRevision(version?.contentRevision ?? 0)
       setLoadedItems(
         (ires.data ?? []).map((i) => ({
           id: i.id,
@@ -1401,6 +1453,49 @@ function ListModal({
   const goNext = (e: React.FormEvent) => {
     e.preventDefault()
     if (name.trim()) changeStep(2)
+  }
+
+  const updateTemplateContent = (patch: Partial<ListContent>) =>
+    setTemplateContent((current) => ({
+      ...(current ?? starterTemplateContent(list?.name ?? 'Mi lista')),
+      ...patch,
+    }))
+
+  const updateTemplateHero = (key: 'eyebrow' | 'title' | 'body', value: string) => {
+    const current = templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
+    updateTemplateContent({ hero: { ...current.hero, [key]: value } })
+  }
+
+  const updateTemplateField = (key: keyof NonNullable<ListContent['template']>, value: string) => {
+    const current = templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
+    updateTemplateContent({ template: { ...current.template, [key]: value } })
+  }
+
+  const uploadTemplateImage = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !tenant?.id) return
+    const response = await api.uploadListTemplateImage(tenant.id, file)
+    event.target.value = ''
+    if (!response.data) return
+    updateTemplateField('image', response.data.url)
+  }
+
+  const saveTemplateContent = async () => {
+    if (!versionId.current || !templateContent) return
+    setSavingTemplateContent(true)
+    try {
+      const response = await api.updateVersionContent(
+        versionId.current,
+        templateContent,
+        contentRevision
+      )
+      if (response.data) {
+        setTemplateContent(response.data.content)
+        setContentRevision(response.data.contentRevision)
+      }
+    } finally {
+      setSavingTemplateContent(false)
+    }
   }
 
   // Add the selected products as items / remove the ones deselected. Membership is
@@ -1500,9 +1595,13 @@ function ListModal({
   const panelWidth =
     step === 2
       ? 'max-w-[560px]'
-      : showAppearance
+      : showAppearance || showTemplateContent
         ? 'max-w-[720px]'
         : 'max-w-[440px]'
+  const activeTemplateContent =
+    templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
+  const selectedDesign = appearance.design ?? tenant?.listDesign
+  const supportsEditorialContent = selectedDesign?.startsWith('pencil-') ?? false
 
   return (
     <div
@@ -1519,7 +1618,9 @@ function ListModal({
         <div className="mb-5 flex items-center justify-between">
           <div className="flex flex-col">
             <h3 className="text-lg font-extrabold text-[var(--dash-text)]">
-              {step === 1
+              {initialCustomize
+                ? 'Personalizar lista'
+                : step === 1
                 ? editing
                   ? t('pl.wizard.edit')
                   : t('pl.wizard.new')
@@ -1702,6 +1803,55 @@ function ListModal({
                   />
                 </div>
               )}
+
+              {editing && (
+                <>
+                  {!initialCustomize && <button
+                    type="button"
+                    onClick={() => setShowTemplateContent((value) => !value)}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] p-3.5 text-left hover:bg-[var(--dash-soft)]"
+                  >
+                    <span className="flex flex-col gap-0.5">
+                      <span className="text-[13px] font-bold text-[var(--dash-text)]">
+                        Contenido y tipografía
+                      </span>
+                      <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+                        Textos, imagen y detalles de esta plantilla.
+                      </span>
+                    </span>
+                    <Icon name="chevron-down" size={16} className={`shrink-0 text-[var(--dash-muted)] transition-transform ${showTemplateContent ? 'rotate-180' : ''}`} />
+                  </button>}
+
+                  {showTemplateContent && (
+                    <div className={`flex flex-col gap-4 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-4 ${initialCustomize ? 'order-first' : ''}`}>
+                      {initialCustomize && <div className="flex items-start justify-between gap-3 border-b border-[var(--dash-border)] pb-4"><div><p className="text-sm font-bold text-[var(--dash-text)]">Personalizar plantilla</p><p className="mt-0.5 text-xs font-medium text-[var(--dash-muted)]">Cambios solo para esta lista.</p></div><span className="rounded-lg bg-[var(--dash-surface)] px-2 py-1 text-[10px] font-bold text-[var(--dash-link)]">{supportsEditorialContent ? 'EDITORIAL' : 'LISTA'}</span></div>}
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <DashField label="Antetítulo"><input value={activeTemplateContent.hero?.eyebrow ?? ''} onChange={(event) => updateTemplateHero('eyebrow', event.target.value)} className={inputCls} placeholder="NOVEDADES" /></DashField>
+                        <DashField label="Título"><input value={activeTemplateContent.hero?.title ?? ''} onChange={(event) => updateTemplateHero('title', event.target.value)} className={inputCls} placeholder={list?.name} /></DashField>
+                        <DashField label="Descripción" wide><textarea value={activeTemplateContent.hero?.body ?? ''} onChange={(event) => updateTemplateHero('body', event.target.value)} className={`${inputCls} h-20 py-3`} placeholder="Una breve introducción a la lista." /></DashField>
+                        <DashField label="Tipografía"><select value={activeTemplateContent.template?.font ?? 'sans'} onChange={(event) => updateTemplateField('font', event.target.value)} className={inputCls}><option value="sans">Sans · moderna</option><option value="editorial">Editorial · serif</option><option value="serif">Serif · clásica</option><option value="mono">Mono · técnica</option><option value="code-pro">Code Pro</option></select></DashField>
+                      </div>
+
+                      {supportsEditorialContent && (
+                        <div className="grid gap-3 border-t border-[var(--dash-border)] pt-4 sm:grid-cols-2">
+                          <DashField label="Imagen editorial" wide><div className="flex flex-wrap gap-2"><input value={activeTemplateContent.template?.image ?? ''} onChange={(event) => updateTemplateField('image', event.target.value)} className={`${inputCls} min-w-0 flex-1`} placeholder="https://…" /><label className="flex h-11 cursor-pointer items-center rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-link)] hover:bg-white"><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="sr-only" onChange={(event) => void uploadTemplateImage(event)} />Subir</label></div></DashField>
+                          {activeTemplateContent.template?.image && <img src={activeTemplateContent.template.image} alt="Vista previa" className="h-32 w-full rounded-xl object-cover sm:col-span-2" />}
+                          <DashField label="Etiqueta de imagen"><input value={activeTemplateContent.template?.imageLabel ?? ''} onChange={(event) => updateTemplateField('imageLabel', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Título de imagen"><input value={activeTemplateContent.template?.imageTitle ?? ''} onChange={(event) => updateTemplateField('imageTitle', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Antetítulo de promoción"><input value={activeTemplateContent.template?.promoEyebrow ?? ''} onChange={(event) => updateTemplateField('promoEyebrow', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Título de promoción"><input value={activeTemplateContent.template?.promoTitle ?? ''} onChange={(event) => updateTemplateField('promoTitle', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Texto de promoción" wide><textarea value={activeTemplateContent.template?.promoBody ?? ''} onChange={(event) => updateTemplateField('promoBody', event.target.value)} className={`${inputCls} h-20 py-3`} /></DashField>
+                          <DashField label="Precio o llamada"><input value={activeTemplateContent.template?.promoPrice ?? ''} onChange={(event) => updateTemplateField('promoPrice', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Nota de promoción"><input value={activeTemplateContent.template?.promoNote ?? ''} onChange={(event) => updateTemplateField('promoNote', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Pie izquierdo"><input value={activeTemplateContent.template?.footerLeft ?? ''} onChange={(event) => updateTemplateField('footerLeft', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Pie derecho"><input value={activeTemplateContent.template?.footerRight ?? ''} onChange={(event) => updateTemplateField('footerRight', event.target.value)} className={inputCls} /></DashField>
+                        </div>
+                      )}
+                      <div className="flex justify-end"><button type="button" onClick={() => void saveTemplateContent()} disabled={savingTemplateContent || !versionId.current} className={`flex h-10 items-center rounded-xl px-4 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 ${gradient}`}>{savingTemplateContent ? 'Guardando…' : 'Guardar contenido'}</button></div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -1712,10 +1862,11 @@ function ListModal({
                 {t('pl.cancel')}
               </button>
               <button
-                type="submit"
+                type={initialCustomize ? 'button' : 'submit'}
+                onClick={initialCustomize ? onClose : undefined}
                 className={`flex h-11 items-center gap-1.5 rounded-xl px-5 text-sm font-bold text-white ${gradient}`}
               >
-                {t('pl.next')} <Icon name="chevron-right" size={16} />
+                {initialCustomize ? 'Listo' : <>{t('pl.next')} <Icon name="chevron-right" size={16} /></>}
               </button>
             </div>
           </form>

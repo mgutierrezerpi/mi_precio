@@ -55,6 +55,8 @@ export interface MarketplaceBusiness {
   whatsappUrl: string | null
   websiteUrl: string | null
   instagramUrl: string | null
+  tiktokUrl: string | null
+  emailUrl: string | null
   distanceKm: number | null
 }
 
@@ -69,6 +71,7 @@ export interface Tenant {
   planGate?: boolean
   logoUrl: string | null
   brandColor: string | null
+  linktreeAccentColor?: string | null
   description: string | null
   listDesign: ListDesign | null
   listBgUrl: string | null
@@ -158,6 +161,7 @@ export type PriceListVariantType =
 export interface PriceList {
   id: string
   tenantId: string
+  publicSlug: string
   name: string
   slug: string | null
   published: boolean
@@ -263,6 +267,23 @@ export interface ListContent {
     title?: string
     body?: string
     stats?: { value: string; label: string }[]
+  }
+  /** Copy and media that only templates with editorial regions consume. */
+  template?: {
+    font?: 'sans' | 'editorial' | 'serif' | 'mono' | 'code-pro'
+    checkoutChannel?: 'whatsapp' | 'instagram'
+    instagramHandle?: string
+    priceFormat?: '$' | 'U$D' | 'USD'
+    image?: string
+    imageLabel?: string
+    imageTitle?: string
+    promoEyebrow?: string
+    promoTitle?: string
+    promoBody?: string
+    promoPrice?: string
+    promoNote?: string
+    footerLeft?: string
+    footerRight?: string
   }
   blocks: ListContentBlock[]
 }
@@ -454,6 +475,7 @@ export interface AuthToken {
 
 export type LinkTreeLinkStyle = 'featured' | 'dark' | 'light'
 export type LinkTreeTemplate = 'botanical' | 'editorial' | 'atelier'
+export type LinkTreeFont = 'sans' | 'editorial' | 'mono' | 'code-pro'
 
 export interface LinkTreeLink {
   id: string | null
@@ -475,6 +497,7 @@ export interface LinkTree {
   accentColor: string
   backgroundColor: string
   template: LinkTreeTemplate
+  font: LinkTreeFont
   tags: string[]
   links: LinkTreeLink[]
   instagramUrl: string | null

@@ -7,6 +7,7 @@ import { LinkTreeView } from './LinkTreeView'
 const tree: LinkTree = {
   id: 'tree-1',
   tenantId: 'tenant-1',
+  publicSlug: 'studio',
   displayName: 'Studio Objects',
   handle: '@studio',
   bio: 'Objetos para habitar despacio.',
@@ -14,6 +15,7 @@ const tree: LinkTree = {
   accentColor: '#D6EE4A',
   backgroundColor: '#F5F4ED',
   template: 'botanical',
+  font: 'sans',
   tags: ['cerámica'],
   links: [
     {
@@ -36,6 +38,8 @@ const tree: LinkTree = {
     },
   ],
   instagramUrl: null,
+  tiktokUrl: null,
+  emailUrl: null,
   whatsappUrl: null,
   websiteUrl: null,
   locationUrl: null,
@@ -55,8 +59,13 @@ describe('LinkTreeView', () => {
     expect(view.getByRole('heading', { name: 'Studio Objects' })).toBeTruthy()
     expect(view.getByText('Ver catálogo')).toBeTruthy()
     expect(view.queryByText('Oculto')).toBeNull()
-    expect(view.getByText('Vista previa')).toBeTruthy()
+    expect(view.queryByText('Vista previa')).toBeNull()
     expect(view.container.querySelector('.link-tree-page')?.classList.contains('link-tree-page--botanical')).toBe(true)
+  })
+
+  it('turns an email address into a mailto link', () => {
+    const view = render(<MemoryRouter><LinkTreeView data={{ ...tree, emailUrl: 'hola@studio.test' }} /></MemoryRouter>)
+    expect(view.getByLabelText('Enviar email').getAttribute('href')).toBe('mailto:hola@studio.test')
   })
 
   it('uses the selected visual template without changing the page content', () => {

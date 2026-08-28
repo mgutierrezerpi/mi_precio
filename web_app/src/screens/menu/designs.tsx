@@ -499,6 +499,8 @@ export interface DesignProps {
   decFromCart: (id: string) => void
   openCart: () => void
   waHref: string
+  checkoutChannel?: 'whatsapp' | 'instagram'
+  onCheckout?: () => void
   isService: boolean
   listName: string | null
   edition: string

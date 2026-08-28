@@ -22,6 +22,7 @@ from models.tenant_membership import TenantMembership as TenantMembership
 from models.link_tree import LinkTree as LinkTree
 from models.feature_flag import FeatureFlag as FeatureFlag
 from models.feature_flag import FeatureFlagAssignment as FeatureFlagAssignment
+from models.lead import Lead as Lead
 
 # Resolve deferred foreign key
 Item.list_version.set_model(ListVersion)
@@ -53,6 +54,7 @@ def create_tables():
             LinkTree,
             FeatureFlag,
             FeatureFlagAssignment,
+            Lead,
         ]
     )
     ensure_columns()

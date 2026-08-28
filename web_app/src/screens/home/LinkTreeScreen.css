@@ -1,19 +1,93 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
 
+@font-face {
+  font-family: 'Code Pro';
+  src: url('/fonts/code-pro-lc.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Code Pro';
+  src: url('/fonts/code-pro-bold-lc.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Code Pro';
+  src: url('/fonts/code-pro-black-lc.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 .link-tree-page {
-  --ink: #20241d;
-  --muted: #757b6b;
-  --line: rgba(32, 36, 29, 0.14);
   --cream: #f5f4ed;
   --lime: #d6ee4a;
-  --olive: #59614b;
+  --ink: color-mix(in srgb, var(--lime) 54%, #101310);
+  --muted: color-mix(in srgb, var(--lime) 35%, #566056);
+  --line: color-mix(in srgb, var(--lime) 24%, transparent);
+  --olive: color-mix(in srgb, var(--lime) 48%, #172018);
   position: relative;
+  display: flex;
   min-height: 100vh;
-  overflow-x: hidden;
+  min-height: 100dvh;
+  flex-direction: column;
+  overflow-x: clip;
   background: var(--cream);
   color: var(--ink);
-  font-family: 'DM Sans', Arial, sans-serif;
+  font-family: var(--brand-font, 'DM Sans', Arial, sans-serif);
 }
+
+html.linktree-public-document {
+  scrollbar-color: var(--linktree-scrollbar) transparent;
+}
+
+html.linktree-public-document,
+html.linktree-public-document body,
+html.linktree-public-document #root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--linktree-background);
+}
+
+html.linktree-public-document::-webkit-scrollbar-thumb {
+  background: var(--linktree-scrollbar);
+}
+
+html.linktree-public-document::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--linktree-scrollbar) 82%, #000);
+}
+
+.link-tree-page--font-sans .profile-name-row h1,
+.link-tree-page--font-sans .profile-bio,
+.link-tree-page--font-code-pro .profile-name-row h1,
+.link-tree-page--font-code-pro .profile-bio,
+.link-tree-page--font-code-pro .link-card-copy strong,
+.link-tree-page--font-editorial .profile-name-row h1,
+.link-tree-page--font-editorial .profile-bio,
+.link-tree-page--font-mono .profile-name-row h1,
+.link-tree-page--font-mono .profile-bio,
+.link-tree-page--font-mono .link-card-copy strong {
+  font-family: var(--brand-font) !important;
+}
+
+.link-tree-page--font-mono .profile-name-row h1,
+.link-tree-page--font-mono .profile-bio,
+.link-tree-page--font-mono .link-card-copy strong { letter-spacing: -0.05em; }
+
+.link-tree-page--font-code-pro .profile-name-row h1 {
+  font-size: clamp(24px, 4.5vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.link-tree-page--font-code-pro .profile-bio { font-weight: 700; }
+
+.link-tree-page--font-code-pro .link-card-copy strong { font-weight: 700; }
 
 .link-tree-page button,
 .link-tree-page a {
@@ -59,15 +133,24 @@
   transform: rotate(28deg);
 }
 
+/* Decorative orbs must not extend the document's scrollable area. The public
+   page keeps them fixed to the viewport; the editor preview retains its local
+   positioning inside the phone frame. */
+.link-tree-page:not(.link-tree-page--preview) .link-tree-orb {
+  position: fixed;
+}
+
 .link-tree-header {
   position: relative;
   z-index: 5;
   display: flex;
+  box-sizing: border-box;
   align-items: center;
-  justify-content: space-between;
-  max-width: 1160px;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: none;
   margin: 0 auto;
-  padding: 22px clamp(20px, 5vw, 64px);
+  padding: clamp(16px, 2.5vw, 32px);
 }
 
 .link-tree-brand {
@@ -95,6 +178,7 @@
 }
 
 .link-tree-header-actions {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -171,12 +255,21 @@
 .link-tree-content {
   position: relative;
   z-index: 1;
-  display: grid;
-  align-content: center;
-  min-height: calc(100svh - 78px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 0;
   width: min(100% - 40px, 560px);
   margin: 0 auto;
+  box-sizing: border-box;
   padding: 28px 0 46px;
+}
+
+.link-tree-main {
+  display: grid;
+  align-content: center;
+  min-height: 0;
+  flex: 1 1 0;
 }
 
 .link-tree-profile {
@@ -411,7 +504,7 @@
 }
 
 .link-card--light .link-card-icon {
-  background: #e4e8d2;
+  background: color-mix(in srgb, var(--lime) 22%, white);
 }
 
 .link-card-copy {
@@ -607,28 +700,139 @@
 }
 
 .link-tree-footer {
-  margin: 16px 0 0;
-  color: #969b8c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: fit-content;
+  margin: 28px auto 0;
+  color: var(--ink);
   font-family: 'DM Mono', monospace;
   font-size: 9px;
   letter-spacing: .08em;
   text-align: center;
+  text-decoration: none;
   text-transform: uppercase;
 }
 
-.link-tree-footer span {
-  color: #96ae3a;
-  font-size: 13px;
+.link-tree-footer-mark {
+  position: relative;
+  display: inline-flex;
+  width: 126px;
+  height: 34px;
+  align-items: center;
+  overflow: hidden;
 }
+
+.link-tree-footer-mark > span {
+  width: 100%;
+  height: 100%;
+  background: var(--lime);
+  -webkit-mask: url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat;
+  mask: url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat;
+}
+
+.link-tree-footer--dark { color: #fff; }
+
+/* Hide the marketing tagline exactly like the compact admin-sidebar logo. */
+.link-tree-footer-mark::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 30%;
+  height: 25%;
+  background: var(--cream);
+  content: '';
+}
+
+/* The editor is a deliberate, phone-sized window into the public page—not a
+   second full page squeezed into a dashboard column. */
+.link-tree-page--preview {
+  width: 100%;
+  max-width: 100%;
+  min-height: 560px;
+  overflow-x: clip;
+}
+
+.link-tree-page--preview .link-tree-header {
+  padding: 15px 18px;
+}
+
+.link-tree-page--preview .link-tree-header-note {
+  display: none;
+}
+
+.link-tree-page--preview .link-tree-icon-button {
+  width: 30px;
+  height: 30px;
+}
+
+.link-tree-page--preview .link-tree-content {
+  min-height: 0;
+  width: calc(100% - 32px);
+  padding: 12px 0 28px;
+}
+
+.link-tree-page--preview .link-tree-header,
+.link-tree-page--preview .link-tree-content,
+.link-tree-page--preview .link-tree-links,
+.link-tree-page--preview .link-card-copy {
+  min-width: 0;
+}
+
+.link-tree-page--preview .profile-avatar {
+  width: 68px;
+  height: 68px;
+  margin-bottom: 11px;
+  font-size: 22px;
+}
+
+.link-tree-page--preview .profile-name-row h1 {
+  font-size: 29px;
+}
+
+.link-tree-page--preview.link-tree-page--font-code-pro .profile-name-row h1 {
+  font-size: 24px;
+}
+
+.link-tree-page--preview .profile-bio {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.link-tree-page--preview .profile-tags {
+  margin-top: 11px;
+}
+
+.link-tree-page--preview .link-tree-links {
+  gap: 8px;
+  margin-top: 19px;
+}
+
+.link-tree-page--preview .link-card {
+  min-height: 60px;
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+
+.link-tree-page--preview .link-card-icon {
+  width: 39px;
+  height: 39px;
+  flex-basis: 39px;
+  border-radius: 9px;
+}
+
+.link-tree-page--preview .link-card-copy strong { font-size: 13px; }
+.link-tree-page--preview .link-card-copy small { font-size: 10px; }
+.link-tree-page--preview .link-card-arrow { width: 26px; height: 26px; flex-basis: 26px; }
+.link-tree-page--preview .link-tree-feature-grid { gap: 8px; }
+.link-tree-page--preview .feature-card { min-height: 115px; padding: 13px; }
+.link-tree-page--preview .link-tree-socials { margin-top: 16px; }
 
 /* Templates keep the same content structure and interaction model. They only
    tune the visual language so a business can change direction without
    creating a second Linktree renderer. */
 .link-tree-page--editorial {
-  --ink: #302823;
-  --muted: #8b766b;
-  --line: rgba(48, 40, 35, 0.16);
-  --olive: #765d50;
 }
 
 .link-tree-page--editorial .link-tree-orb {
@@ -694,10 +898,6 @@
 }
 
 .link-tree-page--atelier {
-  --ink: #25363b;
-  --muted: #718187;
-  --line: rgba(37, 54, 59, 0.15);
-  --olive: #5c747b;
 }
 
 .link-tree-page--atelier .link-tree-orb {
@@ -910,10 +1110,10 @@
 }
 
 .link-tree-toast {
-  position: fixed;
+  position: absolute;
   z-index: 30;
-  right: 20px;
-  bottom: 24px;
+  top: calc(100% + 8px);
+  right: 0;
   left: 20px;
   width: fit-content;
   max-width: calc(100% - 40px);
@@ -925,6 +1125,7 @@
   box-shadow: 0 11px 26px rgba(31, 39, 24, .22);
   font-size: 12px;
   text-align: center;
+  white-space: nowrap;
   animation: toast-in .3s ease both;
 }
 
@@ -948,6 +1149,10 @@
 }
 
 @media (max-width: 560px) {
+  .link-tree-page--preview {
+    min-height: 100dvh;
+  }
+
   .link-tree-header {
     padding-top: 20px;
   }
@@ -957,8 +1162,6 @@
   }
 
   .link-tree-content {
-    display: block;
-    min-height: auto;
     width: min(100% - 32px, 560px);
     padding-top: 30px;
     padding-bottom: 40px;

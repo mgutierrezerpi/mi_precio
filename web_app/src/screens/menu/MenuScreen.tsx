@@ -80,6 +80,9 @@ export function MenuScreen() {
   }>()
   const [searchParams] = useSearchParams()
   const viewSource = searchParams.get('src') === 'qr' ? 'qr' : 'link'
+  // Embedded in the admin template editor: show the list itself, never the
+  // visitor-identification interruption intended for real customers.
+  const isEditorPreview = searchParams.get('preview') === 'editor'
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [lists, setLists] = useState<PublicList[]>([])
   const [magazines, setMagazines] = useState<Magazine[]>([])
@@ -185,8 +188,8 @@ export function MenuScreen() {
     displayLists.length,
   ])
 
-  // Palette tinted by the tenant's brand color (falls back to the default purple).
-  const accent = tenant?.brandColor || BASE.accent
+  // Customer-facing catalog and Linktree intentionally share one accent.
+  const accent = tenant?.linktreeAccentColor || tenant?.brandColor || BASE.accent
   const C = { ...BASE, accent, accent2: accent }
   const brandGradient = `linear-gradient(135deg, ${accent} 0%, ${lighten(accent, 0.42)} 100%)`
 
@@ -271,7 +274,7 @@ export function MenuScreen() {
     return [...ordered, ...remaining.values()]
   }, [base, content])
   const viewerPromptEnabled = Boolean(
-    list?.captureViewerInfo && !viewerSubmitted
+    list?.captureViewerInfo && !viewerSubmitted && !isEditorPreview
   )
   const submitViewer = async () => {
     if (!list || !subdomain) return
@@ -321,8 +324,10 @@ export function MenuScreen() {
     setTimeout(() => setCopied(false), 1500)
   }
 
-  // Compose a WhatsApp order message from the cart (no phone on file → opens the chooser).
-  const waHref = useMemo(() => {
+  const checkoutChannel = content?.template?.checkoutChannel === 'instagram' && (content.template.instagramHandle || tenant?.instagramUrl)
+    ? 'instagram' as const
+    : 'whatsapp' as const
+  const orderMessage = useMemo(() => {
     const lines = allItems
       .filter((it) => cart[it.id])
       .map((it) => `• ${cart[it.id]}× ${it.name} — ${money(it.price)}`)
@@ -343,9 +348,18 @@ export function MenuScreen() {
       `Total: ${money(cartTotal)}`,
       datos.length ? `\n${datos.join('\n')}` : '',
     ].join('\n')
-    return `https://wa.me/?text=${encodeURIComponent(msg)}`
+    return msg
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, allItems, cartTotal, customer])
+  const waHref = useMemo(() => {
+    if (checkoutChannel === 'whatsapp') return `https://wa.me/?text=${encodeURIComponent(orderMessage)}`
+    const raw = content?.template?.instagramHandle || tenant?.instagramUrl || ''
+    const handle = raw.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').split(/[/?#]/)[0]
+    return handle ? `https://ig.me/m/${handle}` : 'https://instagram.com'
+  }, [checkoutChannel, content?.template?.instagramHandle, orderMessage, tenant?.instagramUrl])
+  const onCheckout = () => {
+    if (checkoutChannel === 'instagram') void navigator.clipboard?.writeText(orderMessage)
+  }
 
   if (isLoading)
     return (
@@ -464,14 +478,18 @@ export function MenuScreen() {
   const skin = listId ? list : null
   const design: ListDesign = skin?.design ?? tenant.listDesign ?? 'store'
   const isPencilCartDesign = isPencilVariant(design) || design === 'pencil-journal'
-  const cartT = design === 'pencil-journal'
+  const baseCartT = design === 'pencil-journal'
     ? pencilCartThemeFor('pencil-journal')
     : isPencilVariant(design)
       ? pencilCartThemeFor(design)
       : cartThemeFor(design)
+  const cartT = isPencilCartDesign
+    ? { ...baseCartT, accent, actionAccent: accent }
+    : baseCartT
   const cartAccent = cartT.accent || accent
   const cartActionAccent = cartT.actionAccent || cartAccent
   const cartGradient = `linear-gradient(135deg, ${cartActionAccent} 0%, ${lighten(cartActionAccent, 0.22)} 100%)`
+  const listSurface = isPencilCartDesign ? cartT.bg : C.bg
   const bgUrl = skin?.bgUrl ?? tenant.listBgUrl
   const bgOverlay = skin?.bgUrl ? !!skin.bgOverlay : !!tenant.listBgOverlay
   const hasBg = !!bgUrl
@@ -501,6 +519,8 @@ export function MenuScreen() {
     decFromCart,
     openCart: () => setShowCart(true),
     waHref,
+    checkoutChannel,
+    onCheckout,
     isService,
     listName: list?.name ?? null,
     edition,
@@ -509,14 +529,23 @@ export function MenuScreen() {
     content,
     cartTheme: cartT,
   }
+  const templateFont = content?.template?.font
+  const publicFont =
+    templateFont === 'code-pro'
+      ? "'Code Pro', Inter, system-ui, sans-serif"
+      : templateFont === 'mono'
+        ? "'IBM Plex Mono', 'Courier New', monospace"
+        : templateFont === 'editorial' || templateFont === 'serif'
+          ? "'Playfair Display', Georgia, serif"
+          : "'Inter', system-ui, -apple-system, sans-serif"
 
   return (
     <div
-      className="miprecio-public-list min-h-screen font-sans"
+      className="miprecio-public-list min-h-[100dvh] font-sans"
       style={{
-        background: C.bg,
+        background: listSurface,
         color: C.ink,
-        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+        fontFamily: publicFont,
       }}
     >
       {/* Tint the page scrollbar with the tenant's brand color while this public list is shown. */}
@@ -533,7 +562,7 @@ export function MenuScreen() {
       `}</style>
 
       {!showCart && (
-        <div className="relative overflow-x-clip">
+        <div className="relative flex min-h-[100dvh] flex-col overflow-x-clip">
           {/* Optional background image, with an optional brand-color filter on top. */}
           {hasBg && (
             <div
@@ -558,7 +587,7 @@ export function MenuScreen() {
               )}
             </div>
           )}
-          <div className={`relative ${isPencilCartDesign && !isService ? 'pb-24' : ''}`} style={{ zIndex: 1 }}>
+          <div className={`relative flex-1 ${isPencilCartDesign && !isService ? 'pb-24' : ''}`} style={{ zIndex: 1 }}>
             {!listId && magazines.length > 0 && (
               <MagazineShelf
                 tenant={tenant}
@@ -621,6 +650,27 @@ export function MenuScreen() {
           {isPencilCartDesign && !isService && !showCart && (
             <PencilActionBar props={designProps} />
           )}
+          <a
+            href="https://miprecio.app"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Powered by MiPrecio"
+            className="relative z-10 mx-auto flex w-fit items-center gap-2 px-5 py-7 text-[9px] font-bold uppercase tracking-[0.12em] no-underline"
+            style={{ color: C.muted, background: listSurface }}
+          >
+            <span>Powered by</span>
+            <span className="relative block h-6 w-[94px] overflow-hidden" aria-hidden="true">
+              <span
+                className="absolute inset-0"
+                style={{
+                  background: accent,
+                  WebkitMask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
+                  mask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
+                }}
+              />
+              <span className="absolute bottom-0 left-[30%] right-0 h-[25%]" style={{ background: listSurface }} />
+            </span>
+          </a>
         </div>
       )}
 
@@ -671,6 +721,8 @@ export function MenuScreen() {
           customer={customer}
           setCustomer={setCustomer}
           waHref={waHref}
+          checkoutChannel={checkoutChannel}
+          onCheckout={onCheckout}
           norm={norm}
           onBack={() => setShowCart(false)}
         />
@@ -804,18 +856,18 @@ function ViewerCapturePrompt({
       >
         <div className="h-1.5 w-full" style={{ background: accent }} />
         <div className="p-6 sm:p-7">
-          <div className="flex items-start gap-3">
+          <div className="-mx-6 -mt-6 flex items-start gap-3 px-6 py-6 sm:-mx-7 sm:-mt-7 sm:px-7" style={{ background: accent }}>
             <span
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white"
-              style={{ background: accent }}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              style={{ background: 'rgba(255,255,255,.18)' }}
             >
               <SIco name="message-circle" size={21} color="#fff" />
             </span>
             <div className="flex min-w-0 flex-col gap-1">
-              <h2 className="text-xl font-extrabold leading-tight text-[#0F0D1A]">
+              <h2 className="text-xl font-extrabold leading-tight" style={{ color: readableOn(accent) }}>
                 {t('viewer.title')}
               </h2>
-              <p className="text-sm font-medium leading-5 text-[#84818E]">
+              <p className="text-sm font-medium leading-5" style={{ color: `${readableOn(accent)}CC` }}>
                 {t('viewer.subtitle')}
               </p>
             </div>
@@ -1729,6 +1781,8 @@ interface CartProps {
   customer: CartCustomer
   setCustomer: React.Dispatch<React.SetStateAction<CartCustomer>>
   waHref: string
+  checkoutChannel: 'whatsapp' | 'instagram'
+  onCheckout: () => void
   norm: (s?: string | null) => string
   onBack: () => void
 }
@@ -1751,6 +1805,8 @@ function CartView(p: CartProps) {
     customer,
     setCustomer,
     waHref,
+    checkoutChannel,
+    onCheckout,
     norm,
     onBack,
   } = p
@@ -2245,13 +2301,14 @@ function CartView(p: CartProps) {
               </div>
               <a
                 href={waHref}
+                onClick={onCheckout}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-14 items-center justify-center gap-2 text-[16px] font-extrabold text-white"
                 style={{ ...grad, borderRadius: T.buttonRadius }}
               >
                 <SIco name="message-circle" size={22} color="#fff" />{' '}
-                {t('store.cartSend')}
+                {checkoutChannel === 'instagram' ? 'Copiar pedido y abrir Instagram' : t('store.cartSend')}
               </a>
               <div className="flex items-center justify-center gap-1.5">
                 <SIco name="shield-check" size={12} color="#10B981" />

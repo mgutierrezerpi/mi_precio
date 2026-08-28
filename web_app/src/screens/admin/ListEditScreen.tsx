@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState, type ChangeEvent } from 'react'
+import { useParams, Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import {
   fetchList,
@@ -53,7 +53,18 @@ function starterListContent(name: string): ListContent {
   }
 }
 
+/** Legacy deep link: list editing now happens in the current Lists panel. */
 export function ListEditScreen() {
+  const { id } = useParams<{ id: string }>()
+  return (
+    <Navigate
+      replace
+      to={id ? `/admin/lists/${id}/customize` : '/admin/lists'}
+    />
+  )
+}
+
+export function LegacyListEditScreen() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
@@ -81,7 +92,7 @@ export function ListEditScreen() {
     description: '',
     category: '',
   })
-  const [contentDraft, setContentDraft] = useState('')
+  const [contentDraft, setContentDraft] = useState<ListContent | null>(null)
   const [isSavingContent, setIsSavingContent] = useState(false)
 
   // Import state
@@ -137,14 +148,6 @@ export function ListEditScreen() {
       setEditedSlug(list.slug || '')
     }
   }, [list])
-
-  const defaultContentDraft = currentVersion
-    ? JSON.stringify(
-        currentVersion.content || starterListContent(list?.name || 'Mi lista'),
-        null,
-        2
-      )
-    : ''
 
   const handleUpdateName = async () => {
     if (!id || !editedName.trim() || editedName === list?.name) {
@@ -213,13 +216,7 @@ export function ListEditScreen() {
 
   const handleSaveContent = async () => {
     if (!currentVersion || !id) return
-    let content: ListContent
-    try {
-      content = JSON.parse(contentDraft || defaultContentDraft) as ListContent
-    } catch {
-      toast.error('El contenido debe ser JSON válido')
-      return
-    }
+    const content = contentDraft || starterListContent(list?.name || 'Mi lista')
     setIsSavingContent(true)
     const response = await api.updateVersionContent(
       currentVersion.id,
@@ -232,10 +229,40 @@ export function ListEditScreen() {
       return
     }
     if (response.data) {
-      setContentDraft(JSON.stringify(response.data.content, null, 2))
+      setContentDraft(response.data.content)
       dispatch(fetchVersions(id))
       toast.success('Contenido público actualizado')
     }
+  }
+
+  const updateContent = (updates: Partial<ListContent>) => {
+    setContentDraft((current) => ({
+      ...(current || starterListContent(list?.name || 'Mi lista')),
+      ...updates,
+    }))
+  }
+
+  const updateHero = (key: 'eyebrow' | 'title' | 'body', value: string) => {
+    const current = contentDraft || starterListContent(list?.name || 'Mi lista')
+    updateContent({ hero: { ...current.hero, [key]: value } })
+  }
+
+  const updateTemplate = (key: keyof NonNullable<ListContent['template']>, value: string) => {
+    const current = contentDraft || starterListContent(list?.name || 'Mi lista')
+    updateContent({ template: { ...current.template, [key]: value } })
+  }
+
+  const handleTemplateImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !tenant) return
+    const response = await api.uploadListTemplateImage(tenant.id, file)
+    event.target.value = ''
+    if (response.error || !response.data) {
+      toast.error(response.error || 'No pudimos subir la imagen')
+      return
+    }
+    updateTemplate('image', response.data.url)
+    toast.success('Imagen subida')
   }
 
   const handleAddItem = async () => {
@@ -529,6 +556,9 @@ export function ListEditScreen() {
 
   const publicListPath = `/p/${tenant?.subdomain || ''}/${list.slug || list.id}`
   const publicListUrl = `${window.location.origin}${publicListPath}`
+  const activeContent = contentDraft || starterListContent(list.name)
+  const activeDesign = list.design || tenant?.listDesign
+  const isEditorialTemplate = activeDesign?.startsWith('pencil-') ?? false
 
   return (
     <div className="max-w-4xl mx-auto pb-20">
@@ -689,9 +719,6 @@ export function ListEditScreen() {
         </div>
       </div>
 
-      {/* Public content — this first implementation exposes the versioned
-          document directly so every supported block can be tested before the
-          visual block editor is expanded. */}
       <section className="mb-6 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--shadow-soft)]">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-border)] p-6">
           <div>
@@ -699,16 +726,14 @@ export function ListEditScreen() {
               Contenido público
             </h2>
             <p className="mt-1 text-sm text-[var(--color-text-subtle)]">
-              Titular, promociones, secciones y horarios de esta versión.
+              Personalizá lo que se ve en esta versión pública.
             </p>
           </div>
           {canEdit && (
             <button
               type="button"
               onClick={() =>
-                setContentDraft(
-                  JSON.stringify(starterListContent(list.name), null, 2)
-                )
+                setContentDraft(starterListContent(list.name))
               }
               className="soft-button"
             >
@@ -716,15 +741,38 @@ export function ListEditScreen() {
             </button>
           )}
         </div>
-        <div className="p-6">
-          <textarea
-            value={contentDraft || defaultContentDraft}
-            onChange={(event) => setContentDraft(event.target.value)}
-            disabled={!canEdit || !currentVersion}
-            spellCheck={false}
-            aria-label="Definición de contenido público"
-            className="min-h-72 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 font-mono text-xs leading-5 text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-70"
-          />
+        <div className="space-y-6 p-6">
+          <div>
+            <h3 className="text-sm font-medium text-[var(--color-text-primary)]">Encabezado</h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <label className="text-sm text-[var(--color-text-muted)]">Antetítulo<input value={activeContent.hero?.eyebrow || ''} onChange={(event) => updateHero('eyebrow', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 w-full" placeholder="CATÁLOGO ACTUALIZADO" /></label>
+              <label className="text-sm text-[var(--color-text-muted)]">Título<input value={activeContent.hero?.title || ''} onChange={(event) => updateHero('title', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 w-full" placeholder={list.name} /></label>
+              <label className="text-sm text-[var(--color-text-muted)] sm:col-span-2">Bajada<textarea value={activeContent.hero?.body || ''} onChange={(event) => updateHero('body', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 min-h-20 w-full resize-y" placeholder="Una breve descripción de tu lista." /></label>
+              <label className="text-sm text-[var(--color-text-muted)]">Tipografía<select value={activeContent.template?.font || 'sans'} onChange={(event) => updateTemplate('font', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 w-full"><option value="sans">Sans · moderna</option><option value="editorial">Editorial · serif</option><option value="serif">Serif · clásica</option><option value="mono">Mono · técnica</option><option value="code-pro">Code Pro</option></select></label>
+            </div>
+          </div>
+
+          {isEditorialTemplate && (
+            <div className="border-t border-[var(--color-border)] pt-6">
+              <h3 className="text-sm font-medium text-[var(--color-text-primary)]">Contenido de la plantilla</h3>
+              <p className="mt-1 text-sm text-[var(--color-text-subtle)]">Esta plantilla usa una imagen, una promoción y textos de pie propios.</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="text-sm text-[var(--color-text-muted)] sm:col-span-2">Imagen editorial
+                  <div className="mt-1 flex flex-wrap items-center gap-3"><input value={activeContent.template?.image || ''} onChange={(event) => updateTemplate('image', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input min-w-0 flex-1" placeholder="https://…" /><label className="soft-button cursor-pointer"><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="sr-only" disabled={!canEdit || !currentVersion} onChange={(event) => void handleTemplateImageUpload(event)} />Subir imagen</label></div>
+                </label>
+                {activeContent.template?.image && <img src={activeContent.template.image} alt="Vista previa de la imagen editorial" className="h-36 w-full rounded-xl object-cover sm:col-span-2" />}
+                <label className="text-sm text-[var(--color-text-muted)]">Etiqueta de imagen<input value={activeContent.template?.imageLabel || ''} onChange={(event) => updateTemplate('imageLabel', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 w-full" /></label>
+                <label className="text-sm text-[var(--color-text-muted)]">Título de imagen<input value={activeContent.template?.imageTitle || ''} onChange={(event) => updateTemplate('imageTitle', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 w-full" /></label>
+                <label className="text-sm text-[var(--color-text-muted)]">Antetítulo de promoción<input value={activeContent.template?.promoEyebrow || ''} onChange={(event) => updateTemplate('promoEyebrow', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 w-full" /></label>
+                <label className="text-sm text-[var(--color-text-muted)]">Título de promoción<input value={activeContent.template?.promoTitle || ''} onChange={(event) => updateTemplate('promoTitle', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 w-full" /></label>
+                <label className="text-sm text-[var(--color-text-muted)] sm:col-span-2">Texto de promoción<textarea value={activeContent.template?.promoBody || ''} onChange={(event) => updateTemplate('promoBody', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 min-h-20 w-full resize-y" /></label>
+                <label className="text-sm text-[var(--color-text-muted)]">Precio o llamada<input value={activeContent.template?.promoPrice || ''} onChange={(event) => updateTemplate('promoPrice', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 w-full" /></label>
+                <label className="text-sm text-[var(--color-text-muted)]">Nota de promoción<input value={activeContent.template?.promoNote || ''} onChange={(event) => updateTemplate('promoNote', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 w-full" /></label>
+                <label className="text-sm text-[var(--color-text-muted)]">Pie izquierdo<input value={activeContent.template?.footerLeft || ''} onChange={(event) => updateTemplate('footerLeft', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 w-full" /></label>
+                <label className="text-sm text-[var(--color-text-muted)]">Pie derecho<input value={activeContent.template?.footerRight || ''} onChange={(event) => updateTemplate('footerRight', event.target.value)} disabled={!canEdit || !currentVersion} className="soft-input mt-1 w-full" /></label>
+              </div>
+            </div>
+          )}
           {canEdit && currentVersion && (
             <div className="mt-4 flex justify-end">
               <button

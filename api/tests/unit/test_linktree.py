@@ -38,6 +38,17 @@ def test_linktree_is_created_per_tenant_and_can_be_updated(db):
     assert view.template == "editorial"
 
 
+def test_linktree_uses_business_logo_when_no_custom_avatar_is_set(db):
+    tenant = Tenant.create(
+        name="Logo Studio", subdomain="logo-studio", logo_url="https://cdn.example.test/logo.png"
+    )
+
+    tree = linktrees.get_linktree(str(tenant.id))
+
+    assert tree is not None
+    assert LinkTreeView.render(tree).avatar_url == "https://cdn.example.test/logo.png"
+
+
 def test_linktree_public_lookup_does_not_create_drafts(db):
     tenant = Tenant.create(name="Draft Shop", subdomain="draft-shop")
 

@@ -2,6 +2,22 @@
 @import 'tailwindcss';
 @plugin "@tailwindcss/forms";
 
+@font-face {
+  font-family: 'Code Pro';
+  src: url('/fonts/code-pro-lc.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Code Pro';
+  src: url('/fonts/code-pro-bold-lc.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Custom theme - Soft Modern Aesthetic */
 :root {
   /* Typography */

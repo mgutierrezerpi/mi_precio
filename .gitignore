@@ -16,3 +16,5 @@ dogfood-output/
 
 # Marketing: piezas finales (PNG/MP4 pesados). Se generan desde marketing/<mes>/fuente/
 marketing/*/publicar/
+.qfile/
+.aicop/

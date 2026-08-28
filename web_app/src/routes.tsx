@@ -10,6 +10,7 @@ import { LinkTreeScreen } from './screens/home/LinkTreeScreen'
 import { LinkTreePublicScreen } from './screens/menu/LinkTreePublicScreen'
 
 import { ListEditScreen } from './screens/admin/ListEditScreen'
+import { ListCustomizeScreen } from './screens/admin/ListCustomizeScreen'
 import { MagazinesScreen } from './screens/admin/MagazinesScreen'
 import { MagazineEditScreen } from './screens/admin/MagazineEditScreen'
 import { CategoriesScreen } from './screens/admin/CategoriesScreen'
@@ -69,9 +70,11 @@ export const router = createBrowserRouter([
   },
   // Blocking plan selection: where a new signup lands until it has a plan.
   {
-    path: '/planes',
+    path: '/plans',
     element: <ChoosePlanScreen />,
   },
+  { path: '/planes', element: <Navigate to="/plans" replace /> },
+  { path: '/reports', element: <Navigate to="/admin/reports" replace /> },
   // Admin routes
   {
     path: '/admin',
@@ -94,6 +97,10 @@ export const router = createBrowserRouter([
         element: <AdminListsRoute />,
       },
       {
+        path: 'lists/:id/customize',
+        element: <ListCustomizeScreen />,
+      },
+      {
         path: 'links',
         element: <LinksScreen />,
       },
@@ -111,7 +118,7 @@ export const router = createBrowserRouter([
         element: <CodesScreen />,
       },
       {
-        path: 'clientes',
+        path: 'customers',
         element: <CustomersScreen />,
       },
       {
@@ -119,17 +126,21 @@ export const router = createBrowserRouter([
         element: <LeadsScreen />,
       },
       {
-        path: 'reportes',
+        path: 'reports',
         element: <ReportsScreen />,
       },
       {
-        path: 'equipo',
+        path: 'team',
         element: <TeamScreen />,
       },
       {
-        path: 'soporte',
+        path: 'support',
         element: <SupportScreen />,
       },
+      { path: 'clientes', element: <Navigate to="/admin/customers" replace /> },
+      { path: 'reportes', element: <Navigate to="/admin/reports" replace /> },
+      { path: 'equipo', element: <Navigate to="/admin/team" replace /> },
+      { path: 'soporte', element: <Navigate to="/admin/support" replace /> },
       {
         path: 'settings',
         element: <AdminSettingsRoute />,

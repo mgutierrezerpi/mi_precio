@@ -33,6 +33,12 @@ class Settings(BaseSettings):
     mailer_enabled: bool = False
     log_auth_codes: bool = True
 
+    # Error monitoring is opt-in. The DSN is supplied as a runtime secret in
+    # deployed environments and remains disabled for local development.
+    sentry_dsn: str = ""
+    sentry_environment: str = "development"
+    sentry_enable_logs: bool = False
+
     # Billing settings
     billing_enabled: bool = False
     billing_manual_secret: str = ""

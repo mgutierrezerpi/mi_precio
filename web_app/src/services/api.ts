@@ -117,6 +117,26 @@ function listContentBody(content: NonNullable<ListVersion['content']>) {
   return {
     schema_version: content.schemaVersion,
     ...(content.hero ? { hero: content.hero } : {}),
+    ...(content.template
+      ? {
+          template: {
+            ...(content.template.font ? { font: content.template.font } : {}),
+            ...(content.template.checkoutChannel ? { checkout_channel: content.template.checkoutChannel } : {}),
+            ...(content.template.instagramHandle ? { instagram_handle: content.template.instagramHandle } : {}),
+            ...(content.template.priceFormat ? { price_format: content.template.priceFormat } : {}),
+            ...(content.template.image ? { image: content.template.image } : {}),
+            ...(content.template.imageLabel ? { image_label: content.template.imageLabel } : {}),
+            ...(content.template.imageTitle ? { image_title: content.template.imageTitle } : {}),
+            ...(content.template.promoEyebrow ? { promo_eyebrow: content.template.promoEyebrow } : {}),
+            ...(content.template.promoTitle ? { promo_title: content.template.promoTitle } : {}),
+            ...(content.template.promoBody ? { promo_body: content.template.promoBody } : {}),
+            ...(content.template.promoPrice ? { promo_price: content.template.promoPrice } : {}),
+            ...(content.template.promoNote ? { promo_note: content.template.promoNote } : {}),
+            ...(content.template.footerLeft ? { footer_left: content.template.footerLeft } : {}),
+            ...(content.template.footerRight ? { footer_right: content.template.footerRight } : {}),
+          },
+        }
+      : {}),
     blocks: content.blocks.map((block) => {
       if (block.type === 'contact') {
         const { showWhatsapp, ...rest } = block
@@ -154,6 +174,7 @@ function linkTreeBody(data: Partial<LinkTree>) {
   delete body.createdAt
   delete body.updatedAt
   return {
+    ...(body.publicSlug === undefined ? {} : { public_slug: body.publicSlug }),
     ...(body.displayName === undefined ? {} : { display_name: body.displayName }),
     ...(body.handle === undefined ? {} : { handle: body.handle }),
     ...(body.bio === undefined ? {} : { bio: body.bio }),
@@ -161,9 +182,12 @@ function linkTreeBody(data: Partial<LinkTree>) {
     ...(body.accentColor === undefined ? {} : { accent_color: body.accentColor }),
     ...(body.backgroundColor === undefined ? {} : { background_color: body.backgroundColor }),
     ...(body.template === undefined ? {} : { template: body.template }),
+    ...(body.font === undefined ? {} : { font: body.font }),
     ...(body.tags === undefined ? {} : { tags: body.tags }),
     ...(body.links === undefined ? {} : { links: body.links }),
     ...(body.instagramUrl === undefined ? {} : { instagram_url: body.instagramUrl }),
+    ...(body.tiktokUrl === undefined ? {} : { tiktok_url: body.tiktokUrl }),
+    ...(body.emailUrl === undefined ? {} : { email_url: body.emailUrl }),
     ...(body.whatsappUrl === undefined ? {} : { whatsapp_url: body.whatsappUrl }),
     ...(body.websiteUrl === undefined ? {} : { website_url: body.websiteUrl }),
     ...(body.locationUrl === undefined ? {} : { location_url: body.locationUrl }),
@@ -298,6 +322,30 @@ class ApiService {
     })
   }
 
+  async uploadLinkTreeAvatar(
+    tenantId: string,
+    file: Blob
+  ): Promise<ApiResponse<{ url: string }>> {
+    const body = new FormData()
+    body.append('image', file, 'linktree-avatar')
+    return this.request(`/tenants/${tenantId}/linktree/avatar`, {
+      method: 'POST',
+      body,
+    })
+  }
+
+  async uploadListTemplateImage(
+    tenantId: string,
+    file: Blob
+  ): Promise<ApiResponse<{ url: string }>> {
+    const body = new FormData()
+    body.append('image', file, 'list-template-image')
+    return this.request(`/tenants/${tenantId}/list-template/image`, {
+      method: 'POST',
+      body,
+    })
+  }
+
   async getMarketplaceNearby(
     latitude?: number,
     longitude?: number,
@@ -369,6 +417,18 @@ class ApiService {
     return this.request(`/tenants/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(body),
+    })
+  }
+
+  async uploadTenantLogo(
+    tenantId: string,
+    file: Blob
+  ): Promise<ApiResponse<{ url: string }>> {
+    const body = new FormData()
+    body.append('image', file, 'business-logo')
+    return this.request(`/tenants/${tenantId}/logo`, {
+      method: 'POST',
+      body,
     })
   }
 

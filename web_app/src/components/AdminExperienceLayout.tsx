@@ -18,7 +18,7 @@ export function AdminExperienceLayout() {
 
   // No plan, no CRM. The API enforces the same rule (require_active_plan), this
   // just keeps the user on the plan screen instead of an empty panel.
-  if (needsPlan) return <Navigate to="/planes" replace />
+  if (needsPlan) return <Navigate to="/plans" replace />
 
   return <Outlet />
 }
