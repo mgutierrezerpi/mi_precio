@@ -20,7 +20,6 @@ import { Icon, type IconName } from './crm/ui'
 import { tone, gradient, type Tone } from './crm/theme'
 import { catTone, catIcon, normalizeCategory } from './crm/productFormat'
 import { useCatalogT } from '../../lib/i18nDictionaryCatalog'
-import { trackEvent } from '../../lib/analytics'
 
 const COLOR_OPTIONS: Tone[] = [
   'violet',
@@ -630,10 +629,8 @@ function useCategorySubmit({
       result &&
       (createCategory.fulfilled.match(result) ||
         updateCategory.fulfilled.match(result))
-    ) {
-      if (createCategory.fulfilled.match(result)) trackEvent('Created Category')
+    )
       onClose()
-    }
   }
 }
 

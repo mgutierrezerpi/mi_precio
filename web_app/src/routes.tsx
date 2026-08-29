@@ -4,9 +4,15 @@ import { AdminExperienceLayout } from './components/AdminExperienceLayout'
 import { HomeScreen } from './screens/home/HomeScreen'
 import { OldLandingScreen } from './screens/home/OldLandingScreen'
 import { MenuScreen } from './screens/menu/MenuScreen'
+import { MagazineScreen } from './screens/menu/MagazineScreen'
 import { MarketplaceScreen } from './screens/marketplace/MarketplaceScreen'
+import { LinkTreeScreen } from './screens/home/LinkTreeScreen'
+import { LinkTreePublicScreen } from './screens/menu/LinkTreePublicScreen'
 
 import { ListEditScreen } from './screens/admin/ListEditScreen'
+import { ListCustomizeScreen } from './screens/admin/ListCustomizeScreen'
+import { MagazinesScreen } from './screens/admin/MagazinesScreen'
+import { MagazineEditScreen } from './screens/admin/MagazineEditScreen'
 import { CategoriesScreen } from './screens/admin/CategoriesScreen'
 import { CodesScreen } from './screens/admin/CodesScreen'
 import { CustomersScreen } from './screens/admin/CustomersScreen'
@@ -21,6 +27,8 @@ import {
   AdminSettingsRoute,
 } from './screens/admin/AdminRouteSwitches'
 import { ChoosePlanScreen } from './screens/onboarding/ChoosePlanScreen'
+import { DeveloperPortalScreen } from './screens/admin/DeveloperPortalScreen'
+import { LinksScreen } from './screens/admin/LinksScreen'
 
 export const router = createBrowserRouter([
   // Public routes
@@ -37,6 +45,14 @@ export const router = createBrowserRouter([
     element: <MarketplaceScreen />,
   },
   {
+    path: '/linktree',
+    element: <LinkTreeScreen />,
+  },
+  {
+    path: '/l/:subdomain',
+    element: <LinkTreePublicScreen />,
+  },
+  {
     path: '/p/:subdomain',
     element: <MenuScreen />,
   },
@@ -45,14 +61,20 @@ export const router = createBrowserRouter([
     element: <MenuScreen />,
   },
   {
+    path: '/m/:subdomain/:magazineId',
+    element: <MagazineScreen />,
+  },
+  {
     path: '/login',
     element: <HomeScreen />,
   },
   // Blocking plan selection: where a new signup lands until it has a plan.
   {
-    path: '/planes',
+    path: '/plans',
     element: <ChoosePlanScreen />,
   },
+  { path: '/planes', element: <Navigate to="/plans" replace /> },
+  { path: '/reports', element: <Navigate to="/admin/reports" replace /> },
   // Admin routes
   {
     path: '/admin',
@@ -74,13 +96,29 @@ export const router = createBrowserRouter([
         path: 'lists',
         element: <AdminListsRoute />,
       },
+      {
+        path: 'lists/:id/customize',
+        element: <ListCustomizeScreen />,
+      },
+      {
+        path: 'links',
+        element: <LinksScreen />,
+      },
+      {
+        path: 'magazines',
+        element: <MagazinesScreen />,
+      },
+      {
+        path: 'magazines/:magazineId/edit',
+        element: <MagazineEditScreen />,
+      },
 
       {
         path: 'qr',
         element: <CodesScreen />,
       },
       {
-        path: 'clientes',
+        path: 'customers',
         element: <CustomersScreen />,
       },
       {
@@ -88,20 +126,28 @@ export const router = createBrowserRouter([
         element: <LeadsScreen />,
       },
       {
-        path: 'reportes',
+        path: 'reports',
         element: <ReportsScreen />,
       },
       {
-        path: 'equipo',
+        path: 'team',
         element: <TeamScreen />,
       },
       {
-        path: 'soporte',
+        path: 'support',
         element: <SupportScreen />,
       },
+      { path: 'clientes', element: <Navigate to="/admin/customers" replace /> },
+      { path: 'reportes', element: <Navigate to="/admin/reports" replace /> },
+      { path: 'equipo', element: <Navigate to="/admin/team" replace /> },
+      { path: 'soporte', element: <Navigate to="/admin/support" replace /> },
       {
         path: 'settings',
         element: <AdminSettingsRoute />,
+      },
+      {
+        path: 'developer',
+        element: <DeveloperPortalScreen />,
       },
       {
         element: <MinimalLayout />,

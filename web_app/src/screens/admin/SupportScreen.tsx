@@ -1,14 +1,12 @@
 import { useState } from 'react'
-import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { useAppSelector } from '../../store/hooks'
 import { selectTenant, selectUser } from '../../store/slices/authSlice'
-import { setTourOpen } from '../../store/slices/uiSlice'
 import api from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon } from './crm/ui'
 import { gradient, tone, type Tone } from './crm/theme'
 import { normalizeLang, useT } from '../../lib/i18n'
 import { DICT_OPERATIONS } from '../../lib/i18nDictionaryOperations'
-import { trackEvent } from '../../lib/analytics'
 
 function useOperationsT() {
   const t = useT()
@@ -46,7 +44,6 @@ export function SupportScreen() {
     >
       <main className="mx-auto flex min-h-full w-full max-w-[820px] flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
         <SupportHeader />
-        <ReplayTour />
         {form.ticketId !== null ? (
           <TicketSuccess
             email={email}
@@ -80,7 +77,6 @@ function useSupportForm() {
     )
     setSending(false)
     if (result.error) return setError(result.error)
-    trackEvent('Submitted Support Form', { priority })
     setTicketId(result.data?.id ?? '')
     setSubject('')
     setDescription('')
@@ -104,23 +100,6 @@ function useSupportForm() {
     submit,
     reset,
   }
-}
-
-/** The tour's last step promises the recording is replayable from here, so this
- *  button has to exist on this screen. */
-function ReplayTour() {
-  const dispatch = useAppDispatch()
-  const t = useT()
-  return (
-    <button
-      type="button"
-      onClick={() => dispatch(setTourOpen(true))}
-      className="flex items-center gap-2 self-start rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 py-2 text-xs font-bold text-[var(--dash-link)] hover:bg-[var(--dash-soft)]"
-    >
-      <Icon name="eye" size={15} />
-      {t('tour.replay')}
-    </button>
-  )
 }
 
 function SupportHeader() {

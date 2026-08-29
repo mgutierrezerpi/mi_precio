@@ -4,18 +4,25 @@ from models.user import User as User
 from models.auth_code import AuthCode as AuthCode
 from models.price_list import PriceList as PriceList
 from models.list_version import ListVersion as ListVersion
+from models.magazine import Magazine as Magazine
+from models.magazine_page import MagazinePage as MagazinePage
 from models.item import Item as Item
 from models.product import Product as Product
 from models.category import Category as Category
 from models.page_view import PageView as PageView
 from models.customer import Customer as Customer
-from models.lead import Lead as Lead
+from models.public_viewer import PublicViewer as PublicViewer
+from models.public_viewer_dismissal import PublicViewerDismissal as PublicViewerDismissal
 from models.order import Order as Order
 from models.order_item import OrderItem as OrderItem
 from models.activity import Activity as Activity
 from models.invitation import Invitation as Invitation
 from models.push_subscription import PushSubscription as PushSubscription
 from models.tenant_membership import TenantMembership as TenantMembership
+from models.link_tree import LinkTree as LinkTree
+from models.feature_flag import FeatureFlag as FeatureFlag
+from models.feature_flag import FeatureFlagAssignment as FeatureFlagAssignment
+from models.lead import Lead as Lead
 
 # Resolve deferred foreign key
 Item.list_version.set_model(ListVersion)
@@ -29,18 +36,25 @@ def create_tables():
             AuthCode,
             PriceList,
             ListVersion,
+            Magazine,
+            MagazinePage,
             Item,
             Product,
             Category,
             PageView,
             Customer,
-            Lead,
+            PublicViewer,
+            PublicViewerDismissal,
             Order,
             OrderItem,
             Activity,
             Invitation,
             PushSubscription,
             TenantMembership,
+            LinkTree,
+            FeatureFlag,
+            FeatureFlagAssignment,
+            Lead,
         ]
     )
     ensure_columns()
@@ -49,11 +63,14 @@ def create_tables():
 
 def ensure_columns():
     _ensure_list_columns()
+    _ensure_list_version_columns()
     _ensure_product_columns()
     _ensure_optional_columns()
     _ensure_item_columns()
     _ensure_tenant_columns()
+    _ensure_link_tree_columns()
     _ensure_user_columns()
+    _ensure_user_indexes()
 
 
 def _ensure_list_columns():
@@ -71,6 +88,17 @@ def _ensure_list_columns():
             ("customer_id", "customer_id VARCHAR(32)"),
             ("starts_at", "starts_at DATETIME"),
             ("ends_at", "ends_at DATETIME"),
+            ("capture_viewer_info", "capture_viewer_info INTEGER NOT NULL DEFAULT 0"),
+        ],
+    )
+
+
+def _ensure_list_version_columns():
+    _add_missing_columns(
+        "list_versions",
+        [
+            ("content", "content TEXT"),
+            ("content_revision", "content_revision INTEGER NOT NULL DEFAULT 0"),
         ],
     )
 
@@ -97,6 +125,14 @@ def _ensure_optional_columns():
     _add_missing_columns("activities", [("meta", "meta TEXT")])
     _add_missing_columns("customers", [("rut", "rut VARCHAR(32)")])
     _add_missing_columns("orders", [("reference", "reference VARCHAR(64)")])
+    _add_missing_columns(
+        "public_viewers",
+        [
+            ("customer_id", "customer_id VARCHAR(32)"),
+            ("visitor_token", "visitor_token VARCHAR(64)"),
+            ("ip_address", "ip_address VARCHAR(64)"),
+        ],
+    )
 
 
 def _ensure_item_columns():
@@ -155,10 +191,20 @@ def _ensure_tenant_columns():
             ("marketplace_latitude", "marketplace_latitude VARCHAR(32)"),
             ("marketplace_longitude", "marketplace_longitude VARCHAR(32)"),
             ("business_category", "business_category VARCHAR(32)"),
+            ("whatsapp_url", "whatsapp_url TEXT"),
+            ("website_url", "website_url TEXT"),
+            ("instagram_url", "instagram_url TEXT"),
             ("legal_name", "legal_name VARCHAR(255)"),
             ("tax_id", "tax_id VARCHAR(32)"),
             ("address", "address TEXT"),
         ],
+    )
+
+
+def _ensure_link_tree_columns():
+    _add_missing_columns(
+        "link_trees",
+        [("template", "template VARCHAR(32) NOT NULL DEFAULT 'botanical'")],
     )
 
 
@@ -171,6 +217,7 @@ def _ensure_user_columns():
         [
             ("name", "name VARCHAR(255)"),
             ("role", "role VARCHAR(20) NOT NULL DEFAULT 'owner'"),
+            ("is_super_admin", "is_super_admin INTEGER NOT NULL DEFAULT 0"),
             ("last_seen_at", "last_seen_at DATETIME"),
             ("notif_prefs", "notif_prefs TEXT"),
             ("notifications_seen_at", "notifications_seen_at DATETIME"),
@@ -179,6 +226,23 @@ def _ensure_user_columns():
     for column in ("simple_admin_ui", "admin_ui_mode"):
         if column in columns:
             db.execute_sql(f'ALTER TABLE users DROP COLUMN "{column}"')
+
+
+def _ensure_user_indexes():
+    """Keep indexes added alongside compatibility columns valid on old DBs.
+
+    Local databases predate the migration runner and are upgraded through
+    ``ensure_columns`` during startup. Recreating this small index here makes
+    that path equivalent to the model definition and repairs an interrupted
+    index build without touching user data.
+    """
+    if not db.table_exists("users"):
+        return
+    db.execute_sql(
+        'CREATE INDEX IF NOT EXISTS "user_is_super_admin" '
+        'ON "users" ("is_super_admin")'
+    )
+    db.execute_sql('REINDEX "user_is_super_admin"')
 
 
 def _add_missing_columns(table_name: str, columns_to_add: list[tuple[str, str]]):

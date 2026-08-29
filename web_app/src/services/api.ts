@@ -10,10 +10,10 @@ import type {
   Category,
   AuthToken,
   Customer,
-  Lead,
-  LeadStatus,
   CustomerStats,
   CustomerDetail,
+  Lead,
+  LeadStatus,
   Order,
   Activity,
   TeamMember,
@@ -25,6 +25,12 @@ import type {
   PlanInfo,
   PlanId,
   User,
+  PublicViewer,
+  PublicViewerStats,
+  Magazine,
+  MagazinePage,
+  LinkTree,
+  FeatureFlag,
 } from '../types'
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
@@ -109,6 +115,88 @@ function productBody<
   }
 }
 
+function listContentBody(content: NonNullable<ListVersion['content']>) {
+  return {
+    schema_version: content.schemaVersion,
+    ...(content.hero ? { hero: content.hero } : {}),
+    ...(content.template
+      ? {
+          template: {
+            ...(content.template.font !== undefined ? { font: content.template.font } : {}),
+            ...(content.template.checkoutChannel !== undefined ? { checkout_channel: content.template.checkoutChannel } : {}),
+            ...(content.template.instagramHandle !== undefined ? { instagram_handle: content.template.instagramHandle } : {}),
+            ...(content.template.priceFormat !== undefined ? { price_format: content.template.priceFormat } : {}),
+            ...(content.template.image !== undefined ? { image: content.template.image } : {}),
+            ...(content.template.imageLabel !== undefined ? { image_label: content.template.imageLabel } : {}),
+            ...(content.template.imageTitle !== undefined ? { image_title: content.template.imageTitle } : {}),
+            ...(content.template.promoEyebrow !== undefined ? { promo_eyebrow: content.template.promoEyebrow } : {}),
+            ...(content.template.promoTitle !== undefined ? { promo_title: content.template.promoTitle } : {}),
+            ...(content.template.promoBody !== undefined ? { promo_body: content.template.promoBody } : {}),
+            ...(content.template.promoPrice !== undefined ? { promo_price: content.template.promoPrice } : {}),
+            ...(content.template.promoNote !== undefined ? { promo_note: content.template.promoNote } : {}),
+            ...(content.template.footerLeft !== undefined ? { footer_left: content.template.footerLeft } : {}),
+            ...(content.template.footerRight !== undefined ? { footer_right: content.template.footerRight } : {}),
+          },
+        }
+      : {}),
+    blocks: content.blocks.map((block) => {
+      if (block.type === 'contact') {
+        const { showWhatsapp, ...rest } = block
+        return {
+          ...rest,
+          ...(showWhatsapp === undefined
+            ? {}
+            : { show_whatsapp: showWhatsapp }),
+        }
+      }
+      return block
+    }),
+  }
+}
+
+function magazinePageBody(data: {
+  position?: number
+  pageType?: string
+  title?: string | null
+  imageUrl?: string | null
+  content?: Record<string, unknown> | null
+}) {
+  const { pageType, imageUrl, ...rest } = data
+  return {
+    ...rest,
+    ...(pageType === undefined ? {} : { page_type: pageType }),
+    ...(imageUrl === undefined ? {} : { image_url: imageUrl }),
+  }
+}
+
+function linkTreeBody(data: Partial<LinkTree>) {
+  const body = { ...data }
+  delete body.tenantId
+  delete body.id
+  delete body.createdAt
+  delete body.updatedAt
+  return {
+    ...(body.publicSlug === undefined ? {} : { public_slug: body.publicSlug }),
+    ...(body.displayName === undefined ? {} : { display_name: body.displayName }),
+    ...(body.handle === undefined ? {} : { handle: body.handle }),
+    ...(body.bio === undefined ? {} : { bio: body.bio }),
+    ...(body.avatarUrl === undefined ? {} : { avatar_url: body.avatarUrl }),
+    ...(body.accentColor === undefined ? {} : { accent_color: body.accentColor }),
+    ...(body.backgroundColor === undefined ? {} : { background_color: body.backgroundColor }),
+    ...(body.template === undefined ? {} : { template: body.template }),
+    ...(body.font === undefined ? {} : { font: body.font }),
+    ...(body.tags === undefined ? {} : { tags: body.tags }),
+    ...(body.links === undefined ? {} : { links: body.links }),
+    ...(body.instagramUrl === undefined ? {} : { instagram_url: body.instagramUrl }),
+    ...(body.tiktokUrl === undefined ? {} : { tiktok_url: body.tiktokUrl }),
+    ...(body.emailUrl === undefined ? {} : { email_url: body.emailUrl }),
+    ...(body.whatsappUrl === undefined ? {} : { whatsapp_url: body.whatsappUrl }),
+    ...(body.websiteUrl === undefined ? {} : { website_url: body.websiteUrl }),
+    ...(body.locationUrl === undefined ? {} : { location_url: body.locationUrl }),
+    ...(body.published === undefined ? {} : { published: body.published }),
+  }
+}
+
 class ApiService {
   private baseUrl: string
   private token: string | null = null
@@ -150,6 +238,9 @@ class ApiService {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
         headers,
+        // Public viewer cookies must work when the local frontend and API run
+        // on different ports, while the production proxy remains same-origin.
+        credentials: options.credentials ?? 'include',
       })
 
       if (!response.ok) {
@@ -219,6 +310,44 @@ class ApiService {
     return this.request(`/tenants/${tenantId}/switch`, { method: 'POST' })
   }
 
+  async getLinkTree(tenantId: string): Promise<ApiResponse<LinkTree>> {
+    return this.request(`/tenants/${tenantId}/linktree`)
+  }
+
+  async updateLinkTree(
+    tenantId: string,
+    data: Partial<LinkTree>
+  ): Promise<ApiResponse<LinkTree>> {
+    return this.request(`/tenants/${tenantId}/linktree`, {
+      method: 'PATCH',
+      body: JSON.stringify(linkTreeBody(data)),
+    })
+  }
+
+  async uploadLinkTreeAvatar(
+    tenantId: string,
+    file: Blob
+  ): Promise<ApiResponse<{ url: string }>> {
+    const body = new FormData()
+    body.append('image', file, 'linktree-avatar')
+    return this.request(`/tenants/${tenantId}/linktree/avatar`, {
+      method: 'POST',
+      body,
+    })
+  }
+
+  async uploadListTemplateImage(
+    tenantId: string,
+    file: Blob
+  ): Promise<ApiResponse<{ url: string }>> {
+    const body = new FormData()
+    body.append('image', file, 'list-template-image')
+    return this.request(`/tenants/${tenantId}/list-template/image`, {
+      method: 'POST',
+      body,
+    })
+  }
+
   async getMarketplaceNearby(
     latitude?: number,
     longitude?: number,
@@ -251,12 +380,6 @@ class ApiService {
       listBgUrl?: string | null
       listBgOverlay?: boolean
       listHeroColor?: string | null
-      socialInstagram?: string | null
-      socialFacebook?: string | null
-      socialTiktok?: string | null
-      socialWebsite?: string | null
-      socialWhatsapp?: string | null
-      leadsEnabled?: boolean
       language?: string
       timezone?: string
       deliveryEnabled?: boolean
@@ -264,6 +387,9 @@ class ApiService {
       marketplaceLatitude?: number | null
       marketplaceLongitude?: number | null
       businessCategory?: string | null
+      whatsappUrl?: string | null
+      websiteUrl?: string | null
+      instagramUrl?: string | null
       legalName?: string | null
       taxId?: string | null
       address?: string | null
@@ -277,12 +403,6 @@ class ApiService {
       listBgUrl: 'list_bg_url',
       listBgOverlay: 'list_bg_overlay',
       listHeroColor: 'list_hero_color',
-      socialInstagram: 'social_instagram',
-      socialFacebook: 'social_facebook',
-      socialTiktok: 'social_tiktok',
-      socialWebsite: 'social_website',
-      socialWhatsapp: 'social_whatsapp',
-      leadsEnabled: 'leads_enabled',
       legalName: 'legal_name',
       taxId: 'tax_id',
       deliveryEnabled: 'delivery_enabled',
@@ -290,12 +410,27 @@ class ApiService {
       marketplaceLatitude: 'marketplace_latitude',
       marketplaceLongitude: 'marketplace_longitude',
       businessCategory: 'business_category',
+      whatsappUrl: 'whatsapp_url',
+      websiteUrl: 'website_url',
+      instagramUrl: 'instagram_url',
     }
     const body: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(data)) body[map[k] ?? k] = v
     return this.request(`/tenants/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(body),
+    })
+  }
+
+  async uploadTenantLogo(
+    tenantId: string,
+    file: Blob
+  ): Promise<ApiResponse<{ url: string }>> {
+    const body = new FormData()
+    body.append('image', file, 'business-logo')
+    return this.request(`/tenants/${tenantId}/logo`, {
+      method: 'POST',
+      body,
     })
   }
 
@@ -345,12 +480,18 @@ class ApiService {
 
   /** Cancel at the end of the paid period: access stays until `billing.endsAt`. */
   async cancelSubscription(tenantId: string): Promise<ApiResponse<Tenant>> {
-    return this.request('/billing/cancellations', { method: 'POST', body: JSON.stringify({ tenant_id: tenantId }) })
+    return this.request('/billing/cancellations', {
+      method: 'POST',
+      body: JSON.stringify({ tenant_id: tenantId }),
+    })
   }
 
   /** Undo a cancellation that has not lapsed yet. */
   async resumeSubscription(tenantId: string): Promise<ApiResponse<Tenant>> {
-    return this.request('/billing/resumptions', { method: 'POST', body: JSON.stringify({ tenant_id: tenantId }) })
+    return this.request('/billing/resumptions', {
+      method: 'POST',
+      body: JSON.stringify({ tenant_id: tenantId }),
+    })
   }
 
   // Support (Zoho Desk ticket). Requester identity comes from the JWT server-side.
@@ -418,6 +559,7 @@ class ApiService {
       heroColor?: string | null
       bgUrl?: string | null
       bgOverlay?: boolean | null
+      captureViewerInfo?: boolean
     }
   ): Promise<ApiResponse<PriceList>> {
     // Only send the keys actually provided — the API distinguishes "absent"
@@ -428,6 +570,7 @@ class ApiService {
       heroColor: 'hero_color',
       bgUrl: 'bg_url',
       bgOverlay: 'bg_overlay',
+      captureViewerInfo: 'capture_viewer_info',
     }
     const body: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(data)) {
@@ -439,8 +582,164 @@ class ApiService {
     })
   }
 
+  async getPublicViewers(
+    tenantId: string
+  ): Promise<ApiResponse<PublicViewer[]>> {
+    return this.request(`/tenants/${tenantId}/public-viewers`)
+  }
+
+  async getPublicViewerStats(
+    tenantId: string
+  ): Promise<ApiResponse<PublicViewerStats>> {
+    return this.request(`/tenants/${tenantId}/public-viewers/stats`)
+  }
+
+  async promotePublicViewer(
+    tenantId: string,
+    viewerId: string
+  ): Promise<ApiResponse<Customer>> {
+    return this.request(
+      `/tenants/${tenantId}/public-viewers/${viewerId}/promote`,
+      {
+        method: 'POST',
+      }
+    )
+  }
+
+  async recordPublicViewerDismissal(
+    subdomain: string,
+    listId: string
+  ): Promise<ApiResponse<{ ok: boolean }>> {
+    return this.request(`/public/${subdomain}/viewer-dismissed`, {
+      method: 'POST',
+      body: JSON.stringify({ list_id: listId }),
+    })
+  }
+
+  async submitPublicViewer(
+    subdomain: string,
+    data: {
+      listId: string
+      name: string
+      email?: string
+      phone?: string
+    }
+  ): Promise<ApiResponse<{ ok: boolean }>> {
+    return this.request(`/public/${subdomain}/viewer`, {
+      method: 'POST',
+      body: JSON.stringify({
+        list_id: data.listId,
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null,
+      }),
+    })
+  }
+
   async deleteList(listId: string): Promise<ApiResponse<{ deleted: boolean }>> {
     return this.request(`/lists/${listId}`, { method: 'DELETE' })
+  }
+
+  // Magazine endpoints
+  async getMagazines(tenantId: string): Promise<ApiResponse<Magazine[]>> {
+    return this.request(`/tenants/${tenantId}/magazines`)
+  }
+
+  async createMagazine(
+    tenantId: string,
+    data: {
+      name: string
+      issue?: string | null
+      description?: string | null
+      design?: string
+      coverImageUrl?: string | null
+      published?: boolean
+      showOnIndex?: boolean
+    }
+  ): Promise<ApiResponse<Magazine>> {
+    const { showOnIndex, coverImageUrl, ...rest } = data
+    return this.request(`/tenants/${tenantId}/magazines`, {
+      method: 'POST',
+      body: JSON.stringify({
+        ...rest,
+        ...(coverImageUrl === undefined ? {} : { cover_image_url: coverImageUrl }),
+        ...(showOnIndex === undefined ? {} : { show_on_index: showOnIndex }),
+      }),
+    })
+  }
+
+  async updateMagazine(
+    magazineId: string,
+    data: {
+      name?: string
+      slug?: string
+      issue?: string | null
+      description?: string | null
+      design?: string
+      coverImageUrl?: string | null
+      published?: boolean
+      showOnIndex?: boolean
+    }
+  ): Promise<ApiResponse<Magazine>> {
+    const body: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(data)) {
+      if (value === undefined) continue
+      const apiKey =
+        key === 'showOnIndex'
+          ? 'show_on_index'
+          : key === 'coverImageUrl'
+            ? 'cover_image_url'
+            : key
+      body[apiKey] = value
+    }
+    return this.request(`/magazines/${magazineId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
+  }
+
+  async deleteMagazine(
+    magazineId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/magazines/${magazineId}`, { method: 'DELETE' })
+  }
+
+  async createMagazinePage(
+    magazineId: string,
+    data: {
+      position: number
+      pageType?: string
+      title?: string | null
+      imageUrl?: string | null
+      content?: Record<string, unknown> | null
+    }
+  ): Promise<ApiResponse<MagazinePage>> {
+    return this.request(`/magazines/${magazineId}/pages`, {
+      method: 'POST',
+      body: JSON.stringify(magazinePageBody(data)),
+    })
+  }
+
+  async updateMagazinePage(
+    pageId: string,
+    data: {
+      position?: number
+      pageType?: string
+      title?: string | null
+      imageUrl?: string | null
+      content?: Record<string, unknown> | null
+    }
+  ): Promise<ApiResponse<MagazinePage>> {
+    return this.request(`/magazine-pages/${pageId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(magazinePageBody(data)),
+    })
+  }
+
+  async deleteMagazinePage(
+    pageId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/magazine-pages/${pageId}`, { method: 'DELETE' })
   }
 
   // Version endpoints
@@ -470,6 +769,26 @@ class ApiService {
       method: 'PATCH',
       body: JSON.stringify(data),
     })
+  }
+
+  async updateVersionContent(
+    versionId: string,
+    content: NonNullable<ListVersion['content']>,
+    contentRevision: number
+  ): Promise<ApiResponse<ListVersion>> {
+    return this.request(`/versions/${versionId}/content`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        content: listContentBody(content),
+        content_revision: contentRevision,
+      }),
+    })
+  }
+
+  async getListDesigns(): Promise<
+    ApiResponse<{ id: ListDesign; blocks: string[] }[]>
+  > {
+    return this.request('/list-designs')
   }
 
   async duplicateVersion(
@@ -651,6 +970,36 @@ class ApiService {
     return this.request('/users/me')
   }
 
+  async getPublicLinkTree(
+    subdomain: string
+  ): Promise<ApiResponse<{ tenant: { name: string; subdomain: string }; linktree: LinkTree }>> {
+    return this.request(`/public/${encodeURIComponent(subdomain)}/linktree`)
+  }
+
+  async getDeveloperAccess(): Promise<
+    ApiResponse<{ enabled: boolean; userId: string }>
+  > {
+    return this.request('/developer/access')
+  }
+
+  async getDeveloperFeatureFlags(): Promise<ApiResponse<FeatureFlag[]>> {
+    return this.request('/developer/feature-flags')
+  }
+
+  async setDeveloperFeatureFlag(
+    key: string,
+    tenantId: string,
+    enabled: boolean
+  ): Promise<ApiResponse<{ key: string; tenantId: string; enabled: boolean }>> {
+    return this.request(
+      `/developer/feature-flags/${encodeURIComponent(key)}/tenants/${encodeURIComponent(tenantId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ enabled }),
+      }
+    )
+  }
+
   async updateMember(
     tenantId: string,
     userId: string,
@@ -784,34 +1133,20 @@ class ApiService {
   }
 
   // Customer endpoints (CRM)
-  // Leads: the inbox of people who left their details on a public list.
-  async getLeads(
-    tenantId: string,
-    status?: LeadStatus
-  ): Promise<ApiResponse<Lead[]>> {
+  async getLeads(tenantId: string, status?: LeadStatus): Promise<ApiResponse<Lead[]>> {
     const query = status ? `?status=${status}` : ''
     return this.request(`/tenants/${tenantId}/leads${query}`)
   }
 
-  async setLeadStatus(
-    tenantId: string,
-    leadId: string,
-    status: LeadStatus
-  ): Promise<ApiResponse<Lead>> {
+  async setLeadStatus(tenantId: string, leadId: string, status: LeadStatus): Promise<ApiResponse<Lead>> {
     return this.request(`/tenants/${tenantId}/leads/${leadId}`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     })
   }
 
-  /** Promotes a lead into the customers book. Answers 409 if it already is one. */
-  async convertLead(
-    tenantId: string,
-    leadId: string
-  ): Promise<ApiResponse<Customer>> {
-    return this.request(`/tenants/${tenantId}/leads/${leadId}/convert`, {
-      method: 'POST',
-    })
+  async convertLead(tenantId: string, leadId: string): Promise<ApiResponse<Customer>> {
+    return this.request(`/tenants/${tenantId}/leads/${leadId}/convert`, { method: 'POST' })
   }
 
   async getCustomers(tenantId: string): Promise<ApiResponse<Customer[]>> {
@@ -909,27 +1244,28 @@ class ApiService {
   async getPublicMenu(
     subdomain: string,
     listId?: string
-  ): Promise<ApiResponse<{ tenant: Tenant; lists: PriceList[] }>> {
+  ): Promise<
+    ApiResponse<{
+      tenant: Tenant
+      lists: PriceList[]
+      magazines: Magazine[]
+      viewerIdentified?: boolean
+    }>
+  > {
     const listFilter = listId ? `?list=${encodeURIComponent(listId)}` : ''
     return this.request(`/public/${subdomain}${listFilter}`)
   }
 
-  /** Someone left their details on a shop's public list. Answers ok even when
-   *  the shop is not taking leads — the server never tells a visitor about the
-   *  business's plan. */
+  async getPublicMagazine(
+    subdomain: string,
+    magazineId: string
+  ): Promise<ApiResponse<{ tenant: Tenant; magazine: Magazine }>> {
+    return this.request(`/public/${subdomain}/magazines/${encodeURIComponent(magazineId)}`)
+  }
+
   async createLead(
     subdomain: string,
-    data: {
-      name: string
-      phone?: string
-      email?: string
-      message?: string
-      listId?: string | null
-      listName?: string | null
-      source?: 'form' | 'cart'
-      /** Honeypot: kept hidden and empty on the real form. */
-      website?: string
-    }
+    data: { name: string; phone?: string; email?: string; message?: string; listId?: string | null; listName?: string | null; source?: 'form' | 'cart'; website?: string }
   ): Promise<ApiResponse<{ ok: boolean }>> {
     const { listId, listName, ...rest } = data
     return this.request(`/public/${subdomain}/leads`, {

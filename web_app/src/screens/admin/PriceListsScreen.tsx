@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
@@ -20,9 +20,10 @@ import type {
   PriceList,
   PriceListVariantType,
   Product,
+  ListContent,
 } from '../../types'
 import api from '../../services/api'
-import { localeOf, useT } from '../../lib/i18n'
+import { localeOf, useT, type TFn } from '../../lib/i18n'
 import { DICT } from '../../lib/i18nDictionary'
 import { DICT_LISTS } from '../../lib/i18nDictionaryLists'
 import {
@@ -58,15 +59,17 @@ const publicUrl = (sub: string | undefined, l: PriceList) =>
   `${window.location.origin}${publicPath(sub, l)}`
 const qrUrl = (sub: string | undefined, l: PriceList) =>
   `${publicUrl(sub, l)}?src=qr`
-/** The list's own public page, which captures itself into a PDF on arrival.
- *  Exporting does not redraw the list anywhere — the sheet is the design. */
-const pdfExportUrl = (sub: string | undefined, l: PriceList) =>
-  `${publicUrl(sub, l)}?pdf=1`
 const qrFileName = (l: PriceList) =>
   (l.slug || l.name)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '') || l.id
+
+const starterTemplateContent = (name: string): ListContent => ({
+  schemaVersion: 1,
+  hero: { title: name },
+  blocks: [],
+})
 
 /* ── Screen ──────────────────────────────────────────────────────── */
 export function PriceListsScreen() {
@@ -94,6 +97,7 @@ export function PriceListsScreen() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const editId = searchParams.get('edit')
   const newList = searchParams.get('new') === '1'
+  const customize = searchParams.get('customize') === '1'
 
   useEffect(() => {
     if (tenant?.id) {
@@ -129,6 +133,7 @@ export function PriceListsScreen() {
       current.delete('new')
       current.delete('edit')
       current.delete('step')
+      current.delete('customize')
       return current
     })
   }
@@ -187,7 +192,7 @@ export function PriceListsScreen() {
     { key: 'inactive', label: t('pl.tab.inactive'), count: counts.inactive },
     // Only worth a tab when the plan is actually holding lists back.
     ...(counts.offline
-      ? [{ key: 'offline' as Tab, label: 'Fuera de línea', count: counts.offline }]
+      ? [{ key: 'offline' as Tab, label: t('pl.tab.offline'), count: counts.offline }]
       : []),
   ]
 
@@ -218,11 +223,13 @@ export function PriceListsScreen() {
               <div className="flex flex-col gap-0.5">
                 <p className="text-sm font-bold">
                   {counts.offline === 1
-                    ? 'Una de tus listas publicadas no se está viendo'
-                    : `${counts.offline} de tus listas publicadas no se están viendo`}
+                    ? t('pl.offline.oneTitle')
+                    : t('pl.offline.manyTitle', { count: counts.offline })}
                 </p>
                 <p className="text-xs font-medium opacity-80">
-                  Tu plan permite {counts.active} {counts.active === 1 ? 'lista publicada' : 'listas publicadas'}. Quien abra su link o escanee su QR no va a ver nada. No se borró nada: subí de plan y vuelven solas, tal como estaban.
+                  {counts.offline === 1
+                    ? t('pl.offline.oneDescription', { active: counts.active })
+                    : t('pl.offline.manyDescription', { active: counts.active })}
                 </p>
               </div>
             </div>
@@ -231,7 +238,7 @@ export function PriceListsScreen() {
               onClick={() => navigate('/admin/settings')}
               className="h-10 shrink-0 rounded-full bg-[var(--tone-red-fg)] px-4 text-xs font-bold text-[var(--dash-surface)]"
             >
-              Ver planes
+              {t('pl.offline.viewPlans')}
             </button>
           </div>
         )}
@@ -297,8 +304,8 @@ export function PriceListsScreen() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
-            <div className="flex min-w-[680px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+          <div className="overflow-visible rounded-xl border-0 bg-transparent lg:overflow-hidden lg:border lg:border-[var(--dash-border)] lg:bg-[var(--dash-surface)]">
+            <div className="hidden min-w-[680px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)] lg:flex">
               <span className="flex-1">{t('pl.column.list')}</span>
               <span className="w-[100px]">{t('pl.column.products')}</span>
               <span className="w-[110px]">{t('pl.column.status')}</span>
@@ -306,7 +313,10 @@ export function PriceListsScreen() {
               <span className="w-[144px]" />
             </div>
             {filtered.map((l, i) => (
-              <Fragment key={l.id}>
+              <div
+                key={l.id}
+                className="mx-2 my-2 overflow-hidden rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_8px_24px_-18px_rgba(15,23,42,0.45)] lg:contents"
+              >
               <ListRow
                 list={l}
                 canEdit={canEdit}
@@ -314,6 +324,9 @@ export function PriceListsScreen() {
                 onEdit={() => {
                   setModal({ open: true, list: l })
                   setSearchParams({ edit: l.id })
+                }}
+                onCustomize={() => {
+                  navigate(`/admin/lists/${l.id}/customize`)
                 }}
                 onTogglePublished={() => togglePublished(l)}
                 onTogglePrincipal={() => togglePrincipal(l)}
@@ -323,10 +336,7 @@ export function PriceListsScreen() {
                 onOpen={() =>
                   window.open(publicUrl(tenant?.subdomain, l), '_blank')
                 }
-                onReports={() => navigate(`/admin/reportes?list=${l.id}`)}
-                onExportPdf={() =>
-                  window.open(pdfExportUrl(tenant?.subdomain, l), '_blank')
-                }
+                onReports={() => navigate(`/admin/reports?list=${l.id}`)}
                 onCreateVariant={() => setVariantParent(l)}
               />
               {lists
@@ -352,11 +362,15 @@ export function PriceListsScreen() {
                     variant
                     variantDetail={variantDetail(
                       variant,
-                      customers.find((customer) => customer.id === variant.customerId)
+                      customers.find((customer) => customer.id === variant.customerId),
+                      t
                     )}
                     onEdit={() => {
                       setModal({ open: true, list: variant })
                       setSearchParams({ edit: variant.id })
+                    }}
+                    onCustomize={() => {
+                      navigate(`/admin/lists/${variant.id}/customize`)
                     }}
                     onTogglePublished={() => togglePublished(variant)}
                     onTogglePrincipal={() => undefined}
@@ -366,13 +380,10 @@ export function PriceListsScreen() {
                     onOpen={() =>
                       window.open(publicUrl(tenant?.subdomain, variant), '_blank')
                     }
-                    onReports={() => navigate(`/admin/reportes?list=${variant.id}`)}
-                    onExportPdf={() =>
-                      window.open(pdfExportUrl(tenant?.subdomain, variant), '_blank')
-                    }
+                    onReports={() => navigate(`/admin/reports?list=${variant.id}`)}
                   />
                 ))}
-              </Fragment>
+              </div>
             ))}
           </div>
         )}
@@ -383,6 +394,7 @@ export function PriceListsScreen() {
           key={modal.list?.id ?? 'new'}
           list={modal.list}
           initialStep={searchParams.get('step') === '2' ? 2 : 1}
+          initialCustomize={customize}
           tenantId={tenant?.id}
           products={availableProducts}
           lists={lists}
@@ -417,6 +429,7 @@ function ListRow({
   canEdit,
   first,
   onEdit,
+  onCustomize,
   onTogglePublished,
   onTogglePrincipal,
   onDelete,
@@ -425,7 +438,6 @@ function ListRow({
   onOpen,
   onReports,
   onCreateVariant,
-  onExportPdf,
   variant = false,
   variantDetail,
 }: {
@@ -433,6 +445,7 @@ function ListRow({
   canEdit: boolean
   first?: boolean
   onEdit: () => void
+  onCustomize: () => void
   onTogglePublished: () => void
   onTogglePrincipal: () => void
   onDelete: () => void
@@ -441,7 +454,6 @@ function ListRow({
   onOpen: () => void
   onReports: () => void
   onCreateVariant?: () => void
-  onExportPdf?: () => void
   variant?: boolean
   variantDetail?: string
 }) {
@@ -456,9 +468,9 @@ function ListRow({
 
   return (
     <div
-      className={`flex min-w-[680px] items-center gap-3 px-5 ${variant ? 'bg-[var(--dash-soft)] py-3' : 'bg-[var(--dash-surface)] py-4'} ${!first ? 'border-t border-[var(--dash-divider)]' : ''}`}
+      className={`flex min-w-0 flex-col gap-3 px-4 py-4 lg:min-w-[680px] lg:flex-row lg:items-center lg:gap-3 lg:px-5 ${variant ? 'border-t border-[var(--dash-divider)] bg-[var(--dash-soft)] lg:py-3' : 'bg-[var(--dash-surface)] lg:py-4'} ${!first ? 'lg:border-t lg:border-[var(--dash-divider)]' : ''}`}
     >
-      <div className={`relative flex min-w-0 flex-1 items-center gap-3 ${variant ? 'pl-12' : ''}`}>
+      <div className={`relative flex min-w-0 flex-1 items-start gap-3 lg:items-center ${variant ? 'pl-10 lg:pl-12' : ''}`}>
         {variant && (
           <span
             aria-hidden="true"
@@ -471,14 +483,20 @@ function ListRow({
         >
           <Icon name="list-checks" size={variant ? 15 : 19} />
         </span>
-        <div className="flex min-w-0 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {variant && (
+            <span className="flex items-center gap-1 whitespace-nowrap text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--dash-link)]">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
+              {t('pl.variant.main')}
+            </span>
+          )}
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <h4 className={`min-w-0 whitespace-normal break-words font-bold leading-snug text-[var(--dash-text)] ${variant ? 'text-[14px]' : 'text-base'}`}>
               {list.name}
             </h4>
             {variant ? (
               <span className="rounded-full border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 py-0.5 text-[10px] font-bold text-[var(--dash-text2)]">
-                {variantLabel(list)}
+                {variantLabel(list, t)}
               </span>
             ) : list.showOnIndex && (
               <span
@@ -489,7 +507,7 @@ function ListRow({
               </span>
             )}
           </div>
-          {variant && variantDetail && variantDetail !== variantLabel(list) && (
+          {variant && variantDetail && variantDetail !== variantLabel(list, t) && (
             <span className="text-[11px] font-medium text-[var(--dash-muted)]">
               {variantDetail}
             </span>
@@ -497,27 +515,54 @@ function ListRow({
         </div>
       </div>
 
-      <span className={`w-[100px] font-semibold text-[var(--dash-text2)] ${variant ? 'text-xs' : 'text-sm'}`}>
+      <div className="grid grid-cols-3 gap-x-3 border-t border-[var(--dash-divider)] pt-3 text-xs lg:hidden">
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('pl.column.products')}</span>
+          <span className="font-semibold text-[var(--dash-text2)]">{list.itemCount}</span>
+        </span>
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('pl.column.status')}</span>
+          <span
+            className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
+            style={tone(list.published && list.live ? 'green' : list.published ? 'red' : 'amber')}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            {list.published && !list.live
+              ? t('pl.status.offline')
+              : list.published
+                ? t('pl.status.active')
+                : t('pl.status.draft')}
+          </span>
+        </span>
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('pl.column.updated')}</span>
+          <span className="truncate font-medium text-[var(--dash-muted)]">
+            {formatListTimeAgo(list.updatedAt, localeOf(tenant?.language))}
+          </span>
+        </span>
+      </div>
+
+      <span className={`hidden w-[100px] font-semibold text-[var(--dash-text2)] lg:block ${variant ? 'text-xs' : 'text-sm'}`}>
         {list.itemCount}
       </span>
-      <span className="w-[110px]">
+      <span className="hidden w-[110px] lg:block">
         <span
           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
           style={tone(list.published && list.live ? 'green' : list.published ? 'red' : 'amber')}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current" />{' '}
           {list.published && !list.live
-            ? 'Fuera de línea'
+            ? t('pl.status.offline')
             : list.published
               ? t('pl.status.active')
               : t('pl.status.draft')}
         </span>
       </span>
-      <span className="w-[110px] text-xs font-medium text-[var(--dash-muted)]">
+      <span className="hidden w-[110px] text-xs font-medium text-[var(--dash-muted)] lg:block">
         {formatListTimeAgo(list.updatedAt, localeOf(tenant?.language))}
       </span>
 
-      <div className="flex w-[144px] shrink-0 items-center justify-end gap-1.5">
+      <div className="flex w-full shrink-0 items-center justify-end gap-2 border-t border-[var(--dash-divider)] pt-3 lg:w-[144px] lg:border-0 lg:pt-0">
         {list.published && (
           <button
             type="button"
@@ -555,13 +600,13 @@ function ListRow({
           <RowMenu
             list={list}
             onEdit={onEdit}
+            onCustomize={onCustomize}
             onTogglePublished={onTogglePublished}
             onTogglePrincipal={onTogglePrincipal}
             onDelete={onDelete}
             onCreateVariant={onCreateVariant}
             isVariant={variant}
             onReports={onReports}
-            onExportPdf={onExportPdf}
           />
         )}
       </div>
@@ -572,32 +617,30 @@ function ListRow({
 function RowMenu({
   list,
   onEdit,
+  onCustomize,
   onTogglePublished,
   onTogglePrincipal,
   onDelete,
   onCreateVariant,
   isVariant = false,
   onReports,
-  onExportPdf,
 }: {
   list: PriceList
   onEdit: () => void
+  onCustomize: () => void
   onTogglePublished: () => void
   onTogglePrincipal: () => void
   onDelete: () => void
   onCreateVariant?: () => void
   isVariant?: boolean
   onReports: () => void
-  onExportPdf?: () => void
 }) {
   const t = useT()
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  // Rough menu height, used to flip it above the button when it would fall off
-  // the viewport. Keep in step with the items rendered below.
-  const H = (isVariant ? 180 : 230) + (list.published && list.live ? 34 : 0)
+  const H = isVariant ? 220 : 270
 
   const toggle = () => {
     if (open) {
@@ -660,10 +703,15 @@ function RowMenu({
               label={t('pl.menu.edit')}
               onClick={act(onEdit)}
             />
+            <MenuItemBtn
+              icon="paintbrush"
+              label="Personalizar plantilla"
+              onClick={act(onCustomize)}
+            />
             {!isVariant && onCreateVariant && (
               <MenuItemBtn
                 icon="list-plus"
-                label="Crear lista especial"
+                label={t('pl.menu.createVariant')}
                 onClick={act(onCreateVariant)}
               />
             )}
@@ -690,16 +738,6 @@ function RowMenu({
               label={t('nav.reports')}
               onClick={act(onReports)}
             />
-            {/* Exporting prints the real public page, so it is only offered for
-                a list the plan actually serves — there is nothing to render
-                for a draft or an offline one. */}
-            {list.published && list.live && onExportPdf && (
-              <MenuItemBtn
-                icon="file-spreadsheet"
-                label={t('pl.menu.exportPdf')}
-                onClick={act(onExportPdf)}
-              />
-            )}
             <div className="my-1 h-px bg-[var(--dash-divider)]" />
             <MenuItemBtn
               icon="circle-x"
@@ -736,22 +774,22 @@ function MenuItemBtn({
   )
 }
 
-function variantLabel(list: PriceList): string {
-  if (list.variantType === 'customer') return 'Cliente'
-  if (list.variantType === 'promotion') return 'Promoción'
-  if (list.variantType === 'seasonal') return 'Temporada'
-  return 'Especial'
+function variantLabel(list: PriceList, t: TFn): string {
+  if (list.variantType === 'customer') return t('pl.variant.customer')
+  if (list.variantType === 'promotion') return t('pl.variant.promotion')
+  if (list.variantType === 'seasonal') return t('pl.variant.seasonal')
+  return t('pl.variant.custom')
 }
 
-function variantDetail(list: PriceList, customer?: Customer): string {
+function variantDetail(list: PriceList, customer: Customer | undefined, t: TFn): string {
   const audience = customer
-    ? `Cliente · ${customer.name}`
-    : variantLabel(list)
+    ? t('pl.variant.customerWithName', { name: customer.name })
+    : variantLabel(list, t)
   const date = list.startsAt
-    ? ` · desde ${new Date(list.startsAt).toLocaleDateString()}`
+    ? ` · ${t('pl.variant.from', { date: new Date(list.startsAt).toLocaleDateString() })}`
     : ''
   const end = list.endsAt
-    ? ` hasta ${new Date(list.endsAt).toLocaleDateString()}`
+    ? ` ${t('pl.variant.to', { date: new Date(list.endsAt).toLocaleDateString() })}`
     : ''
   return `${audience}${date}${end}`
 }
@@ -778,6 +816,7 @@ function VariantModal({
   onClose: () => void
 }) {
   const dispatch = useAppDispatch()
+  const t = useT()
   const [name, setName] = useState(`${parent.name} — `)
   const [variantType, setVariantType] =
     useState<PriceListVariantType>('customer')
@@ -913,24 +952,24 @@ function VariantModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-extrabold text-[var(--dash-text)]">
-              Crear lista especial
+              {t('pl.variant.modal.title')}
             </h3>
             <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">
-              Parte de “{parent.name}” y conserva una copia independiente de sus precios.
+              {t('pl.variant.modal.description', { parent: parent.name })}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80"
-            aria-label="Cerrar"
+            aria-label={t('pl.close')}
           >
             ✕
           </button>
         </div>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-[var(--dash-text2)]">Nombre</span>
+          <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.name')}</span>
           <input
             autoFocus
             value={name}
@@ -941,7 +980,7 @@ function VariantModal({
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-[var(--dash-text2)]">Propósito</span>
+          <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.purpose')}</span>
           <select
             value={variantType}
             onChange={(event) =>
@@ -949,22 +988,22 @@ function VariantModal({
             }
             className={inputCls}
           >
-            <option value="customer">Precios para un cliente</option>
-            <option value="promotion">Promoción</option>
-            <option value="seasonal">Lista de temporada</option>
-            <option value="custom">Lista especial</option>
+            <option value="customer">{t('pl.variant.customerPrices')}</option>
+            <option value="promotion">{t('pl.variant.promotion')}</option>
+            <option value="seasonal">{t('pl.variant.seasonalList')}</option>
+            <option value="custom">{t('pl.variant.modal.title')}</option>
           </select>
         </label>
 
         {variantType === 'customer' && (
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-[var(--dash-text2)]">Cliente</span>
+            <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.customer')}</span>
             <select
               value={customerId}
               onChange={(event) => setCustomerId(event.target.value)}
               className={inputCls}
             >
-              <option value="">Seleccionar después</option>
+              <option value="">{t('pl.variant.selectLater')}</option>
               {customers.map((customer) => (
                 <option key={customer.id} value={customer.id}>
                   {customer.name}
@@ -978,8 +1017,8 @@ function VariantModal({
           <div className="flex flex-col gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold text-[var(--dash-text2)]">Ajustar precios</p>
-                <p className="text-[11px] font-medium text-[var(--dash-muted)]">Solo cambia los productos elegidos en esta lista especial.</p>
+                <p className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.adjustPrices')}</p>
+                <p className="text-[11px] font-medium text-[var(--dash-muted)]">{t('pl.variant.adjustDescription')}</p>
               </div>
               <button
                 type="button"
@@ -990,7 +1029,7 @@ function VariantModal({
                 }}
                 className="text-[11px] font-bold text-[var(--dash-link)] hover:underline"
               >
-                Quitar
+                {t('pl.variant.remove')}
               </button>
             </div>
             <div className="flex gap-2">
@@ -1001,8 +1040,8 @@ function VariantModal({
                 }
                 className={`${inputCls} flex-1`}
               >
-                <option value="discount">Descuento</option>
-                <option value="surcharge">Recargo</option>
+                <option value="discount">{t('pl.variant.discount')}</option>
+                <option value="surcharge">{t('pl.variant.surcharge')}</option>
               </select>
               <label className="relative w-28">
                 <input
@@ -1026,8 +1065,8 @@ function VariantModal({
                   className="self-start text-[11px] font-bold text-[var(--dash-link)] hover:underline"
                 >
                   {selectedItemIds.size === sourceItems.length
-                    ? 'Quitar todos'
-                    : 'Seleccionar todos'}
+                    ? t('pl.removeAll')
+                    : t('pl.selectAll')}
                 </button>
                 <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)]">
                   {sourceItems.map((item) => (
@@ -1048,7 +1087,7 @@ function VariantModal({
                 </div>
               </>
             ) : (
-              <p className="text-xs font-medium text-[var(--dash-muted)]">Cargando productos de la lista…</p>
+              <p className="text-xs font-medium text-[var(--dash-muted)]">{t('pl.variant.loadingProducts')}</p>
             )}
           </div>
         ) : (
@@ -1057,8 +1096,8 @@ function VariantModal({
             onClick={() => setShowPriceAdjustment(true)}
             className="flex w-full items-center justify-between rounded-xl border border-dashed border-[var(--dash-border)] px-3.5 py-3 text-left hover:bg-[var(--dash-soft)]"
           >
-            <span className="text-sm font-bold text-[var(--dash-text2)]">Ajustar precios</span>
-            <span className="text-xs font-medium text-[var(--dash-muted)]">Descuento o recargo</span>
+            <span className="text-sm font-bold text-[var(--dash-text2)]">{t('pl.variant.adjustPrices')}</span>
+            <span className="text-xs font-medium text-[var(--dash-muted)]">{t('pl.variant.discount')} / {t('pl.variant.surcharge')}</span>
           </button>
         )}
 
@@ -1066,7 +1105,7 @@ function VariantModal({
           <>
             <div className="flex flex-col gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-bold text-[var(--dash-text2)]">Programación</span>
+                <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.schedule')}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -1077,27 +1116,27 @@ function VariantModal({
                   }}
                   className="text-[11px] font-bold text-[var(--dash-link)] hover:underline"
                 >
-                  Sin fechas
+                  {t('pl.variant.noDates')}
                 </button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">Empieza:</span>
-                <button type="button" onClick={() => setStart(new Date())} className={shortcutClass}>Ahora</button>
-                <button type="button" onClick={() => setStart(scheduledDate(1))} className={shortcutClass}>Mañana 9:00</button>
-                <button type="button" onClick={setNextMonday} className={shortcutClass}>Próximo lunes</button>
+                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">{t('pl.variant.starts')}</span>
+                <button type="button" onClick={() => setStart(new Date())} className={shortcutClass}>{t('pl.variant.now')}</button>
+                <button type="button" onClick={() => setStart(scheduledDate(1))} className={shortcutClass}>{t('pl.variant.tomorrow')}</button>
+                <button type="button" onClick={setNextMonday} className={shortcutClass}>{t('pl.variant.nextMonday')}</button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">Termina:</span>
-                <button type="button" onClick={() => setEndAfter(1)} className={shortcutClass}>En 1 día</button>
-                <button type="button" onClick={() => setEndAfter(7)} className={shortcutClass}>En 1 semana</button>
-                <button type="button" onClick={() => setEndAfter(30)} className={shortcutClass}>En 1 mes</button>
-                <button type="button" onClick={() => setEndsAt('')} className={shortcutClass}>Sin vencimiento</button>
+                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">{t('pl.variant.ends')}</span>
+                <button type="button" onClick={() => setEndAfter(1)} className={shortcutClass}>{t('pl.variant.inDay')}</button>
+                <button type="button" onClick={() => setEndAfter(7)} className={shortcutClass}>{t('pl.variant.inWeek')}</button>
+                <button type="button" onClick={() => setEndAfter(30)} className={shortcutClass}>{t('pl.variant.inMonth')}</button>
+                <button type="button" onClick={() => setEndsAt('')} className={shortcutClass}>{t('pl.variant.noExpiry')}</button>
                 <button
                   type="button"
                   onClick={() => setShowCustomSchedule(true)}
                   className={shortcutClass}
                 >
-                  Personalizar
+                  {t('pl.variant.customize')}
                 </button>
               </div>
             </div>
@@ -1105,7 +1144,7 @@ function VariantModal({
             {showCustomSchedule && (
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-[var(--dash-text2)]">Desde</span>
+                  <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.fromDate')}</span>
                   <input
                     type="datetime-local"
                     value={startsAt}
@@ -1114,7 +1153,7 @@ function VariantModal({
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-[var(--dash-text2)]">Hasta</span>
+                  <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.toDate')}</span>
                   <input
                     type="datetime-local"
                     value={endsAt}
@@ -1132,21 +1171,21 @@ function VariantModal({
             onClick={() => setShowSchedule(true)}
             className="flex w-full items-center justify-between rounded-xl border border-dashed border-[var(--dash-border)] px-3.5 py-3 text-left hover:bg-[var(--dash-soft)]"
           >
-            <span className="text-sm font-bold text-[var(--dash-text2)]">Agregar período</span>
-            <span className="text-xs font-medium text-[var(--dash-muted)]">Opcional</span>
+            <span className="text-sm font-bold text-[var(--dash-text2)]">{t('pl.variant.addPeriod')}</span>
+            <span className="text-xs font-medium text-[var(--dash-muted)]">{t('pl.variant.optional')}</span>
           </button>
         )}
 
         <div className="mt-1 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="h-10 rounded-xl px-4 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
-            Cancelar
+            {t('pl.cancel')}
           </button>
           <button
             type="submit"
             disabled={saving}
             className={`flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold text-white disabled:opacity-60 ${gradient}`}
           >
-            <Icon name="list-plus" size={16} /> {saving ? 'Creando…' : 'Crear variante'}
+            <Icon name="list-plus" size={16} /> {saving ? t('pl.saving') : t('pl.variant.create')}
           </button>
         </div>
       </form>
@@ -1238,10 +1277,28 @@ export function QrModal({
   )
 }
 
+function DashField({
+  label,
+  wide = false,
+  children,
+}: {
+  label: string
+  wide?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <label className={`flex min-w-0 flex-col gap-1.5 ${wide ? 'sm:col-span-2' : ''}`}>
+      <span className="text-xs font-bold text-[var(--dash-text2)]">{label}</span>
+      {children}
+    </label>
+  )
+}
+
 /* ── Create wizard / edit modal ──────────────────────────────────── */
 function ListModal({
   list,
   initialStep,
+  initialCustomize,
   tenantId,
   products,
   lists,
@@ -1249,6 +1306,7 @@ function ListModal({
 }: {
   list: PriceList | null
   initialStep: 1 | 2
+  initialCustomize: boolean
   tenantId?: string
   products: Product[]
   lists: PriceList[]
@@ -1267,6 +1325,7 @@ function ListModal({
   )
   const [published, setPublished] = useState(list?.published ?? false)
   const [principal, setPrincipal] = useState(list?.showOnIndex ?? false)
+  const [captureViewerInfo, setCaptureViewerInfo] = useState(list?.captureViewerInfo ?? false)
   const [parentListId, setParentListId] = useState(list?.parentListId ?? '')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [prodSearch, setProdSearch] = useState('')
@@ -1281,6 +1340,10 @@ function ListModal({
     bgOverlay: list?.bgOverlay ?? null,
   })
   const [showAppearance, setShowAppearance] = useState(false)
+  const [showTemplateContent, setShowTemplateContent] = useState(initialCustomize)
+  const [templateContent, setTemplateContent] = useState<ListContent | null>(null)
+  const [contentRevision, setContentRevision] = useState(0)
+  const [savingTemplateContent, setSavingTemplateContent] = useState(false)
   const versionId = useRef<string | undefined>(undefined)
   const [loadedItems, setLoadedItems] = useState<
     { id: string; name: string; productId: string | null }[]
@@ -1317,11 +1380,14 @@ function ListModal({
     let cancelled = false
     ;(async () => {
       const lres = await api.getList(list.id)
-      const vid = lres.data?.versions?.[0]?.id
+      const version = lres.data?.versions?.[0]
+      const vid = version?.id
       if (!vid) return
       const ires = await api.getItems(vid)
       if (cancelled) return
       versionId.current = vid
+      setTemplateContent(version?.content ?? starterTemplateContent(list.name))
+      setContentRevision(version?.contentRevision ?? 0)
       setLoadedItems(
         (ires.data ?? []).map((i) => ({
           id: i.id,
@@ -1389,6 +1455,49 @@ function ListModal({
     if (name.trim()) changeStep(2)
   }
 
+  const updateTemplateContent = (patch: Partial<ListContent>) =>
+    setTemplateContent((current) => ({
+      ...(current ?? starterTemplateContent(list?.name ?? 'Mi lista')),
+      ...patch,
+    }))
+
+  const updateTemplateHero = (key: 'eyebrow' | 'title' | 'body', value: string) => {
+    const current = templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
+    updateTemplateContent({ hero: { ...current.hero, [key]: value } })
+  }
+
+  const updateTemplateField = (key: keyof NonNullable<ListContent['template']>, value: string) => {
+    const current = templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
+    updateTemplateContent({ template: { ...current.template, [key]: value } })
+  }
+
+  const uploadTemplateImage = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !tenant?.id) return
+    const response = await api.uploadListTemplateImage(tenant.id, file)
+    event.target.value = ''
+    if (!response.data) return
+    updateTemplateField('image', response.data.url)
+  }
+
+  const saveTemplateContent = async () => {
+    if (!versionId.current || !templateContent) return
+    setSavingTemplateContent(true)
+    try {
+      const response = await api.updateVersionContent(
+        versionId.current,
+        templateContent,
+        contentRevision
+      )
+      if (response.data) {
+        setTemplateContent(response.data.content)
+        setContentRevision(response.data.contentRevision)
+      }
+    } finally {
+      setSavingTemplateContent(false)
+    }
+  }
+
   // Add the selected products as items / remove the ones deselected. Membership is
   // keyed off the product id (stable across renames); items store product_id and copy
   // the product's image so the public list shows the real photo, not a category icon.
@@ -1441,6 +1550,7 @@ function ListModal({
               slug: slug.trim() || undefined,
               published,
               showOnIndex: principal,
+              captureViewerInfo,
               kind,
               parentListId: parentListId || null,
               ...appearance,
@@ -1461,6 +1571,7 @@ function ListModal({
                 slug: slug.trim() || undefined,
                 published,
                 showOnIndex: principal,
+                captureViewerInfo,
                 ...appearance,
               },
             })
@@ -1484,9 +1595,13 @@ function ListModal({
   const panelWidth =
     step === 2
       ? 'max-w-[560px]'
-      : showAppearance
+      : showAppearance || showTemplateContent
         ? 'max-w-[720px]'
         : 'max-w-[440px]'
+  const activeTemplateContent =
+    templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
+  const selectedDesign = appearance.design ?? tenant?.listDesign
+  const supportsEditorialContent = selectedDesign?.startsWith('pencil-') ?? false
 
   return (
     <div
@@ -1503,7 +1618,9 @@ function ListModal({
         <div className="mb-5 flex items-center justify-between">
           <div className="flex flex-col">
             <h3 className="text-lg font-extrabold text-[var(--dash-text)]">
-              {step === 1
+              {initialCustomize
+                ? 'Personalizar lista'
+                : step === 1
                 ? editing
                   ? t('pl.wizard.edit')
                   : t('pl.wizard.new')
@@ -1587,14 +1704,14 @@ function ListModal({
               {editing && (
                 <label className="flex flex-col gap-1.5">
                   <span className="text-xs font-bold text-[var(--dash-text2)]">
-                    Lista base
+                    {t('pl.baseList')}
                   </span>
                   <select
                     value={parentListId}
                     onChange={(event) => setParentListId(event.target.value)}
                     className={inputCls}
                   >
-                    <option value="">Lista independiente</option>
+                    <option value="">{t('pl.independentList')}</option>
                     {lists
                       .filter(
                         (candidate) =>
@@ -1607,7 +1724,7 @@ function ListModal({
                       ))}
                   </select>
                   <span className="text-[11px] font-medium text-[var(--dash-muted)]">
-                    Seleccioná una lista base para mostrar esta lista como una variante anidada.
+                    {t('pl.baseListDescription')}
                   </span>
                 </label>
               )}
@@ -1633,6 +1750,12 @@ function ListModal({
                 desc={t('pl.makeMainDesc')}
                 value={principal}
                 onToggle={() => setPrincipal((v) => !v)}
+              />
+              <ToggleRow
+                label={t('list.viewerCapture')}
+                desc={t('list.viewerCaptureDesc')}
+                value={captureViewerInfo}
+                onToggle={() => setCaptureViewerInfo((v) => !v)}
               />
 
               {/* Appearance overrides, collapsed by default so creating a list
@@ -1680,6 +1803,55 @@ function ListModal({
                   />
                 </div>
               )}
+
+              {editing && (
+                <>
+                  {!initialCustomize && <button
+                    type="button"
+                    onClick={() => setShowTemplateContent((value) => !value)}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] p-3.5 text-left hover:bg-[var(--dash-soft)]"
+                  >
+                    <span className="flex flex-col gap-0.5">
+                      <span className="text-[13px] font-bold text-[var(--dash-text)]">
+                        Contenido y tipografía
+                      </span>
+                      <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+                        Textos, imagen y detalles de esta plantilla.
+                      </span>
+                    </span>
+                    <Icon name="chevron-down" size={16} className={`shrink-0 text-[var(--dash-muted)] transition-transform ${showTemplateContent ? 'rotate-180' : ''}`} />
+                  </button>}
+
+                  {showTemplateContent && (
+                    <div className={`flex flex-col gap-4 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-4 ${initialCustomize ? 'order-first' : ''}`}>
+                      {initialCustomize && <div className="flex items-start justify-between gap-3 border-b border-[var(--dash-border)] pb-4"><div><p className="text-sm font-bold text-[var(--dash-text)]">Personalizar plantilla</p><p className="mt-0.5 text-xs font-medium text-[var(--dash-muted)]">Cambios solo para esta lista.</p></div><span className="rounded-lg bg-[var(--dash-surface)] px-2 py-1 text-[10px] font-bold text-[var(--dash-link)]">{supportsEditorialContent ? 'EDITORIAL' : 'LISTA'}</span></div>}
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <DashField label="Antetítulo"><input value={activeTemplateContent.hero?.eyebrow ?? ''} onChange={(event) => updateTemplateHero('eyebrow', event.target.value)} className={inputCls} placeholder="NOVEDADES" /></DashField>
+                        <DashField label="Título"><input value={activeTemplateContent.hero?.title ?? ''} onChange={(event) => updateTemplateHero('title', event.target.value)} className={inputCls} placeholder={list?.name} /></DashField>
+                        <DashField label="Descripción" wide><textarea value={activeTemplateContent.hero?.body ?? ''} onChange={(event) => updateTemplateHero('body', event.target.value)} className={`${inputCls} h-20 py-3`} placeholder="Una breve introducción a la lista." /></DashField>
+                        <DashField label="Tipografía"><select value={activeTemplateContent.template?.font ?? 'sans'} onChange={(event) => updateTemplateField('font', event.target.value)} className={inputCls}><option value="sans">Sans · moderna</option><option value="editorial">Editorial · serif</option><option value="serif">Serif · clásica</option><option value="mono">Mono · técnica</option><option value="code-pro">Code Pro</option></select></DashField>
+                      </div>
+
+                      {supportsEditorialContent && (
+                        <div className="grid gap-3 border-t border-[var(--dash-border)] pt-4 sm:grid-cols-2">
+                          <DashField label="Imagen editorial" wide><div className="flex flex-wrap gap-2"><input value={activeTemplateContent.template?.image ?? ''} onChange={(event) => updateTemplateField('image', event.target.value)} className={`${inputCls} min-w-0 flex-1`} placeholder="https://…" /><label className="flex h-11 cursor-pointer items-center rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-link)] hover:bg-white"><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="sr-only" onChange={(event) => void uploadTemplateImage(event)} />Subir</label></div></DashField>
+                          {activeTemplateContent.template?.image && <img src={activeTemplateContent.template.image} alt="Vista previa" className="h-32 w-full rounded-xl object-cover sm:col-span-2" />}
+                          <DashField label="Etiqueta de imagen"><input value={activeTemplateContent.template?.imageLabel ?? ''} onChange={(event) => updateTemplateField('imageLabel', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Título de imagen"><input value={activeTemplateContent.template?.imageTitle ?? ''} onChange={(event) => updateTemplateField('imageTitle', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Antetítulo de promoción"><input value={activeTemplateContent.template?.promoEyebrow ?? ''} onChange={(event) => updateTemplateField('promoEyebrow', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Título de promoción"><input value={activeTemplateContent.template?.promoTitle ?? ''} onChange={(event) => updateTemplateField('promoTitle', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Texto de promoción" wide><textarea value={activeTemplateContent.template?.promoBody ?? ''} onChange={(event) => updateTemplateField('promoBody', event.target.value)} className={`${inputCls} h-20 py-3`} /></DashField>
+                          <DashField label="Precio o llamada"><input value={activeTemplateContent.template?.promoPrice ?? ''} onChange={(event) => updateTemplateField('promoPrice', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Nota de promoción"><input value={activeTemplateContent.template?.promoNote ?? ''} onChange={(event) => updateTemplateField('promoNote', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Pie izquierdo"><input value={activeTemplateContent.template?.footerLeft ?? ''} onChange={(event) => updateTemplateField('footerLeft', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Pie derecho"><input value={activeTemplateContent.template?.footerRight ?? ''} onChange={(event) => updateTemplateField('footerRight', event.target.value)} className={inputCls} /></DashField>
+                        </div>
+                      )}
+                      <div className="flex justify-end"><button type="button" onClick={() => void saveTemplateContent()} disabled={savingTemplateContent || !versionId.current} className={`flex h-10 items-center rounded-xl px-4 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 ${gradient}`}>{savingTemplateContent ? 'Guardando…' : 'Guardar contenido'}</button></div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -1690,10 +1862,11 @@ function ListModal({
                 {t('pl.cancel')}
               </button>
               <button
-                type="submit"
+                type={initialCustomize ? 'button' : 'submit'}
+                onClick={initialCustomize ? onClose : undefined}
                 className={`flex h-11 items-center gap-1.5 rounded-xl px-5 text-sm font-bold text-white ${gradient}`}
               >
-                {t('pl.next')} <Icon name="chevron-right" size={16} />
+                {initialCustomize ? 'Listo' : <>{t('pl.next')} <Icon name="chevron-right" size={16} /></>}
               </button>
             </div>
           </form>

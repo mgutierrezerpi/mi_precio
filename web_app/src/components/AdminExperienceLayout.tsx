@@ -6,7 +6,6 @@ import {
   selectIsAuthenticated,
   selectNeedsPlan,
 } from '../store/slices/authSlice'
-import { OnboardingTour } from '../screens/admin/crm/OnboardingTour'
 
 export function AdminExperienceLayout() {
   const dispatch = useAppDispatch()
@@ -19,17 +18,9 @@ export function AdminExperienceLayout() {
 
   // No plan, no CRM. The API enforces the same rule (require_active_plan), this
   // just keeps the user on the plan screen instead of an empty panel.
-  if (needsPlan) return <Navigate to="/planes" replace />
+  if (needsPlan) return <Navigate to="/plans" replace />
 
-  // The tour is mounted here, past the plan gate: it teaches the CRM, so it
-  // must not run over the plan screen — and never over the public list, which
-  // is not part of this layout at all.
-  return (
-    <>
-      <Outlet />
-      <OnboardingTour />
-    </>
-  )
+  return <Outlet />
 }
 
 export default AdminExperienceLayout

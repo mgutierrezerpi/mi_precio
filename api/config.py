@@ -18,11 +18,6 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
     public_app_url: str = "http://localhost:3000"
 
-    # Sentry is enabled in deployments by setting SENTRY_DSN as a Fly secret.
-    sentry_dsn: str = ""
-    sentry_environment: str = "production"
-    sentry_enable_logs: bool = True
-
     # JWT settings
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24  # 24 hours
@@ -37,6 +32,12 @@ class Settings(BaseSettings):
     sendgrid_api_key: str = ""
     mailer_enabled: bool = False
     log_auth_codes: bool = True
+
+    # Error monitoring is opt-in. The DSN is supplied as a runtime secret in
+    # deployed environments and remains disabled for local development.
+    sentry_dsn: str = ""
+    sentry_environment: str = "development"
+    sentry_enable_logs: bool = False
 
     # Billing settings
     billing_enabled: bool = False

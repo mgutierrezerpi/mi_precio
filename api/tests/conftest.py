@@ -11,21 +11,25 @@ from models import (
     AuthCode,
     PriceList,
     ListVersion,
+    Magazine,
+    MagazinePage,
     Item,
     Invitation,
     Product,
     Activity,
     Customer,
     Lead,
+    PublicViewer,
+    PublicViewerDismissal,
     TenantMembership,
+    LinkTree,
+    FeatureFlag,
+    FeatureFlagAssignment,
 )
 
 
-# Shared-cache rather than a plain ":memory:": TestClient serves requests on
-# another thread, and a plain in-memory database is per *connection*, so the
-# app would open a second, empty one and every query would fail on a missing
-# table. With a shared cache every connection in the process sees the same
-# database, which is what lets tests exercise real endpoints.
+# TestClient serves requests on another thread. A shared in-memory database
+# keeps those request connections on the same test schema.
 test_db = SqliteDatabase(
     "file:mi_precio_test?mode=memory&cache=shared",
     uri=True,
@@ -41,13 +45,20 @@ def db():
         AuthCode,
         PriceList,
         ListVersion,
+        Magazine,
+        MagazinePage,
         Item,
         Invitation,
         Product,
         Activity,
         Customer,
         Lead,
+        PublicViewer,
+        PublicViewerDismissal,
         TenantMembership,
+        LinkTree,
+        FeatureFlag,
+        FeatureFlagAssignment,
     ]
     test_db.bind(models)
     test_db.connect()

@@ -1,4 +1,6 @@
 from datetime import datetime
+
+from lib.list_content import deserialize_content
 from views.base_view import BaseView
 from views.item_view import ItemView
 
@@ -12,11 +14,16 @@ class ListVersionView(BaseView):
     published_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    content: dict | None = None
+    content_revision: int = 0
     items: list[ItemView] | None = None
 
     @classmethod
     def render(cls, version, include_items=False, items=None):
-        view = cls.model_validate(version)
+        data = dict(version.__data__)
+        data["list_id"] = version.list_id
+        data["content"] = deserialize_content(version.content)
+        view = cls.model_validate(data)
         if include_items:
             from models import Item
 

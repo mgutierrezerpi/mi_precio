@@ -57,6 +57,21 @@ fly secrets set --app mi-precio SENTRY_DSN="https://<public-key>@<sentry-host>/<
 
 Do not commit the DSN to `fly.toml` or an `.env` file.
 
+## Feature flags
+
+Feature flags use OpenFeature with tenant-specific assignments stored in the
+API database. Super admins can manage them from `/admin/developer`, under
+`Feature flags`. To enable magazines for a business from the API container:
+
+```bash
+docker compose exec api python bin/set_feature_flag.py magazines \
+  --subdomain my-business --enabled
+```
+
+The `magazines` flag is disabled by default. The API enforces the flag for
+admin magazine endpoints and public magazine pages; hiding the sidebar item is
+only a frontend convenience.
+
 ## Current Production Deploy
 
 The production landing page is deployed from `landing/` on `main`.

@@ -206,3 +206,6 @@ export const selectIsAdmin = (state: { auth: AuthState }) =>
 // Owner-only actions (change plan, delete account).
 export const selectIsOwner = (state: { auth: AuthState }) =>
   roleOf(state) === 'owner'
+/** Platform-level access; intentionally independent from the tenant role. */
+export const selectIsSuperAdmin = (state: { auth: AuthState }) =>
+  state.auth.user?.isSuperAdmin === true

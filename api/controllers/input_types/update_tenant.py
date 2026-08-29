@@ -17,12 +17,12 @@ class UpdateTenant(BaseModel):
     list_bg_url: str | None = None
     list_bg_overlay: bool | None = None
     list_hero_color: str | None = None
-    # Social links for the public list footer
     social_instagram: str | None = None
     social_facebook: str | None = None
     social_tiktok: str | None = None
     social_website: str | None = None
     social_whatsapp: str | None = None
+    leads_enabled: bool | None = None
     # Language & region
     language: str | None = None
     timezone: str | None = None
@@ -32,6 +32,9 @@ class UpdateTenant(BaseModel):
     marketplace_latitude: float | None = None
     marketplace_longitude: float | None = None
     business_category: str | None = None
+    whatsapp_url: str | None = None
+    website_url: str | None = None
+    instagram_url: str | None = None
     # Tax / legal
     legal_name: str | None = None
     tax_id: str | None = None
@@ -92,3 +95,13 @@ class UpdateTenant(BaseModel):
     @classmethod
     def validate_social_whatsapp(cls, v: str | None) -> str | None:
         return normalize_whatsapp(v)
+
+    @field_validator("whatsapp_url", "website_url", "instagram_url")
+    @classmethod
+    def validate_public_url(cls, v: str | None) -> str | None:
+        if v is None or not v.strip():
+            return None
+        value = v.strip()
+        if not re.match(r"^https?://", value, re.IGNORECASE):
+            raise ValueError("Public links must start with http:// or https://")
+        return value

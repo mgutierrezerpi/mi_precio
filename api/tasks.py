@@ -14,12 +14,10 @@ from huey import SqliteHuey, crontab
 
 from config import settings
 from infra.mailer import mailer
-from infra.sentry import init_sentry
 from lib.ctx import auth, billing_context as billing
 from models import db
 
 logger = logging.getLogger(__name__)
-init_sentry()
 
 HUEY_DB_PATH = os.environ.get("HUEY_DB_PATH", "huey.db")
 _huey_db_parent = Path(HUEY_DB_PATH).parent
@@ -45,12 +43,11 @@ def _with_db(task):
 def run_billing_maintenance() -> dict[str, int]:
     """Resume due billing lookups, expire subscriptions, and prune auth codes."""
 
-    expired_ids = _with_db(billing.expire_ended_subscriptions)
+    expired_ids = _with_db(billing.expired_subscription_ids)
     pruned_codes = _with_db(auth.prune_expired_codes)
     pending_ids = _with_db(billing.due_pending_subscription_ids)
     for tenant_id in pending_ids:
         check_pending_billing.schedule((tenant_id,), delay=0)
-
     for tenant_id in expired_ids:
         notify_subscription_expired(tenant_id)
 
@@ -81,17 +78,11 @@ def check_pending_billing(tenant_id: str) -> dict[str, object]:
 
 @huey.task(retries=2, retry_delay=30)
 def notify_subscription_expired(tenant_id: str) -> bool:
-    """Tell the owner their subscription lapsed and the public page is offline.
-
-    Expiring is the one downgrade the owner did not ask for, and it takes the
-    whole storefront down. Finding out from a customer would be the worst way.
-    """
-
+    """Tell the owner when an expiry takes their public page offline."""
     target = _with_db(lambda: billing.expiry_notice_target(tenant_id))
     if not target:
         return False
     email, tenant_name = target
-
     plans_url = f"{settings.public_app_url.rstrip('/')}/planes"
     body = (
         f"Tu suscripción de {tenant_name} en Mi Precio venció.\n\n"
@@ -111,14 +102,15 @@ def notify_subscription_expired(tenant_id: str) -> bool:
 
 @huey.task(retries=2, retry_delay=30)
 def send_invitation_email(email: str, role: str, tenant_name: str) -> bool:
-    """Send the passwordless team invitation email."""
+    """Send the invitation with a one-time login link."""
 
-    invite_url = f"{settings.public_app_url.rstrip('/')}/login?{urlencode({'email': email})}"
+    code = _with_db(lambda: auth.create_code(email))
+    invite_url = f"{settings.public_app_url.rstrip('/')}/login?{urlencode({'email': email, 'code': code})}"
     body = (
         f"Te invitaron a unirte a {tenant_name} en Mi Precio con rol {role}.\n\n"
-        "Para aceptar la invitación, entrá con este mismo email y pedí tu código de acceso:\n"
+        "Para aceptar la invitación, abrí este enlace para iniciar sesión automáticamente:\n"
         f"{invite_url}\n\n"
-        "La invitación se activa automáticamente cuando iniciás sesión por primera vez."
+        "El enlace es de un solo uso y vence en 10 minutos."
     )
     mailer.send(
         to=email,

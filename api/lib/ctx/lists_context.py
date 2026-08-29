@@ -10,7 +10,13 @@ from lib.value_objects import CreatedList
 
 def list_lists(tenant_id: str) -> list[PriceList]:
     """Get all price lists for a tenant."""
-    return list(PriceList.select().where(PriceList.tenant == tenant_id))
+    return list(
+        PriceList.select()
+        .where(
+            (PriceList.tenant == tenant_id)
+            & (PriceList.design.is_null(True) | (PriceList.design != "pencil-journal"))
+        )
+    )
 
 
 def get_list(list_id: str) -> PriceList | None:
@@ -81,6 +87,9 @@ def create_list(
             .first()
         )
         if source:
+            version.content = source.content
+            version.content_revision = 0
+            version.save()
             for item in source.items.order_by(Item.position):
                 item.duplicate(list_version=version)
 

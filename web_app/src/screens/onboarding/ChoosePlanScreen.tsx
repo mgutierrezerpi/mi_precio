@@ -148,7 +148,7 @@ export function ChoosePlanScreen() {
       return
     }
 
-    const redirectUrl = `${window.location.origin}/planes?checkout_plan=${plan}&order_id=[order_id]`
+    const redirectUrl = `${window.location.origin}/plans?checkout_plan=${plan}&order_id=[order_id]`
     const res = await api.createCheckout(tenantId, plan, redirectUrl)
     setChoosing(null)
     if (res.data?.url) window.location.assign(res.data.url)

@@ -1,51 +1,38 @@
 import { getT } from '../../lib/i18n'
-import { SocialLinks } from '../../components/SocialLinks'
-import { LeadForm } from '../../components/LeadForm'
-import type { Item, Tenant, ListDesign } from '../../types'
+import type { Item, Tenant, ListDesign, ListContent } from '../../types'
 
 /* ── Shared helpers (used by MenuScreen's Storefront/CartView and the designs) ── */
 
-// Lighten a hex color toward white (0..1). Builds a brand gradient from a single color.
-/** Expand `#abc` / `#aabbcc` to the six hex digits, so every helper below can
- *  assume the same shape. */
+/** Expand a shorthand or regular hex color to six digits. */
 function hexDigits(hex: string): string {
-  const m = hex.replace('#', '')
-  return m.length === 3
-    ? m
-        .split('')
-        .map((c) => c + c)
-        .join('')
-    : m.padEnd(6, '0').slice(0, 6)
+  const value = hex.replace('#', '')
+  return value.length === 3
+    ? value.split('').map((channel) => channel + channel).join('')
+    : value.padEnd(6, '0').slice(0, 6)
 }
 
 const toHex = (channels: number[]) =>
   `#${channels
-    // Clamping is not paranoia: without it an out-of-range channel serialises
-    // as "-d1" and the whole colour becomes an unparseable string, which the
-    // browser then drops — taking the element's background with it.
-    .map((v) => Math.min(255, Math.max(0, Math.round(v))))
-    .map((v) => v.toString(16).padStart(2, '0'))
+    .map((channel) => Math.min(255, Math.max(0, Math.round(channel))))
+    .map((channel) => channel.toString(16).padStart(2, '0'))
     .join('')}`
 
-/** Mix a colour toward white. `amt` is how far, 0..1. */
+// Lighten a hex color toward white (0..1). Builds a brand gradient from a single color.
 export function lighten(hex: string, amt = 0.4): string {
-  const n = hexDigits(hex)
-  const ch = (i: number) => {
-    const v = parseInt(n.slice(i, i + 2), 16)
-    return v + (255 - v) * amt
+  const value = hexDigits(hex)
+  const channel = (index: number) => {
+    const current = Number.parseInt(value.slice(index, index + 2), 16)
+    return current + (255 - current) * amt
   }
-  return toHex([ch(0), ch(2), ch(4)])
+  return toHex([channel(0), channel(2), channel(4)])
 }
 
-/** Mix a colour toward black. `amt` is how far, 0..1.
- *
- *  Not `lighten(hex, -amt)`: that subtracts a share of the distance to *white*,
- *  so a bright channel barely moves while a dark one runs past zero. On
- *  #F59E0B at 0.9 it produced `#ec47-d1` — lighter, and invalid. */
+/** Mix a hex color toward black while preserving valid color channels. */
 export function darken(hex: string, amt = 0.4): string {
-  const n = hexDigits(hex)
-  const ch = (i: number) => parseInt(n.slice(i, i + 2), 16) * (1 - amt)
-  return toHex([ch(0), ch(2), ch(4)])
+  const value = hexDigits(hex)
+  const channel = (index: number) =>
+    Number.parseInt(value.slice(index, index + 2), 16) * (1 - amt)
+  return toHex([channel(0), channel(2), channel(4)])
 }
 
 // Append an alpha channel to a hex color (a in 0..1). Used to scrim a design over a background image.
@@ -263,9 +250,33 @@ export interface CartTheme {
   muted: string // muted text
   footerBg: string
   footerText: string
+  /** Optional template-specific visual tokens used by the cart surface. */
+  accent?: string
+  actionAccent?: string
+  cardRadius?: string
+  controlRadius?: string
+  buttonRadius?: string
+  barRadius?: string
+  bodyFamily?: string
+  headingFamily?: string
+  labelFamily?: string
+  headingTracking?: string
+  cardShadow?: string
 }
 
-const CART_THEMES: Record<ListDesign, CartTheme> = {
+const CART_DEFAULTS: Required<Pick<CartTheme, 'cardRadius' | 'controlRadius' | 'buttonRadius' | 'barRadius' | 'bodyFamily' | 'headingFamily' | 'labelFamily' | 'headingTracking' | 'cardShadow'>> = {
+  cardRadius: '24px',
+  controlRadius: '12px',
+  buttonRadius: '16px',
+  barRadius: '16px',
+  bodyFamily: "Inter, system-ui, sans-serif",
+  headingFamily: "Inter, system-ui, sans-serif",
+  labelFamily: "Inter, system-ui, sans-serif",
+  headingTracking: 'normal',
+  cardShadow: '0 18px 50px -20px rgba(15,13,26,0.30)',
+}
+
+const CART_THEMES: Partial<Record<ListDesign, CartTheme>> = {
   store: {
     isDark: false,
     bg: '#FFFFFF',
@@ -383,9 +394,100 @@ const CART_THEMES: Record<ListDesign, CartTheme> = {
     footerBg: '#070A11',
     footerText: '#7C879B',
   },
+  'pencil-bakery': {
+    isDark: false,
+    bg: '#F4F2EF',
+    surface: '#F4F2EF',
+    field: '#FFFFFF',
+    divider: '#E3DED5',
+    line: '#C8B496',
+    ink: '#1A1A1A',
+    body: '#4A4A4A',
+    muted: '#777168',
+    footerBg: '#1B1B1B',
+    footerText: '#D9D3C8',
+  },
+  'pencil-garden': {
+    isDark: false,
+    bg: '#FBF7EF',
+    surface: '#FBF7EF',
+    field: '#FFFFFF',
+    divider: '#E7E3D7',
+    line: '#A6AD91',
+    ink: '#2A3029',
+    body: '#5D665B',
+    muted: '#7A8373',
+    footerBg: '#1B1B1B',
+    footerText: '#D9D3C8',
+  },
+  'pencil-market': {
+    isDark: false,
+    bg: '#F8F1E7',
+    surface: '#F8F1E7',
+    field: '#FFFFFF',
+    divider: '#E9DCD0',
+    line: '#C86E4E',
+    ink: '#2B211D',
+    body: '#665650',
+    muted: '#85736B',
+    footerBg: '#1B1B1B',
+    footerText: '#D9D3C8',
+  },
+  'pencil-evening': {
+    isDark: false,
+    bg: '#F2EFE9',
+    surface: '#F2EFE9',
+    field: '#FFFFFF',
+    divider: '#E4DED4',
+    line: '#A99476',
+    ink: '#28231F',
+    body: '#655E55',
+    muted: '#82786B',
+    footerBg: '#1B1B1B',
+    footerText: '#D9D3C8',
+  },
+  'pencil-workshop': {
+    isDark: true,
+    bg: '#E7ECE7',
+    surface: '#F4F6F2',
+    field: '#FFFFFF',
+    divider: '#D4DDD4',
+    line: '#809589',
+    ink: '#20322C',
+    body: '#53625B',
+    muted: '#6B7A71',
+    footerBg: '#20322C',
+    footerText: '#C5D0C8',
+  },
+  'pencil-journal': {
+    isDark: false,
+    bg: '#EEE5D7',
+    surface: '#F7F2EA',
+    field: '#FAF5EC',
+    divider: '#DED1C0',
+    line: '#A76D3E',
+    ink: '#3A2A1D',
+    body: '#70583F',
+    muted: '#8A7561',
+    footerBg: '#3A2A1D',
+    footerText: '#F3EDE2',
+    accent: '#A76D3E',
+    actionAccent: '#A76D3E',
+    cardRadius: '0px',
+    controlRadius: '0px',
+    buttonRadius: '0px',
+    barRadius: '0px',
+    bodyFamily: 'Inter, system-ui, sans-serif',
+    headingFamily: '"Playfair Display", Georgia, serif',
+    labelFamily: '"IBM Plex Mono", "Courier New", monospace',
+    headingTracking: '-0.03em',
+    cardShadow: '0 16px 40px -22px rgba(58,42,29,0.32)',
+  },
 }
-export const cartThemeFor = (design: ListDesign): CartTheme =>
-  CART_THEMES[design] ?? CART_THEMES.store
+export const cartThemeFor = (design: ListDesign): CartTheme => ({
+  ...CART_DEFAULTS,
+  ...(CART_THEMES[design] ?? CART_THEMES.store!),
+})
 
 export interface DesignProps {
   tenant: Tenant
@@ -406,19 +508,24 @@ export interface DesignProps {
   q: string
   setQ: (s: string) => void
   cart: Record<string, number>
+  cartCount: number
   addToCart: (id: string) => void
   decFromCart: (id: string) => void
+  openCart: () => void
+  waHref: string
+  checkoutChannel?: 'whatsapp' | 'instagram'
+  onCheckout?: () => void
   isService: boolean
   listName: string | null
-  /** Which list is on screen, so a lead records what it was about. */
-  listId: string | null
   edition: string
   taxId: string | null
   hasBg: boolean
+  content?: ListContent | null
+  cartTheme?: CartTheme
 }
 
 /* ── Shared add-to-cart control ── */
-function CartControl({
+export function CartControl({
   qty,
   id,
   addToCart,
@@ -768,18 +875,18 @@ export function ClassicList(p: DesignProps) {
                     {s.items.map((it, i) => (
                       <div
                         key={it.id}
-                        className="flex items-center gap-3 border-b py-4 md:gap-5"
+                        className="flex flex-wrap items-start gap-x-3 gap-y-2 border-b py-4 lg:flex-nowrap lg:items-center lg:gap-5"
                         style={{ borderColor: C.line }}
                       >
                         <span
-                          className="hidden w-[96px] shrink-0 text-[13px] font-medium md:block"
+                          className="hidden w-[96px] shrink-0 text-[13px] font-medium lg:block"
                           style={{ color: C.muted }}
                         >
                           {code(it, i)}
                         </span>
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 basis-full lg:basis-0">
                           <p
-                            className="text-[16px] font-medium"
+                            className="break-words text-[16px] font-medium"
                             style={{ color: C.ink }}
                           >
                             {it.name}
@@ -794,27 +901,29 @@ export function ClassicList(p: DesignProps) {
                           )}
                         </div>
                         <span
-                          className="mx-2 hidden flex-1 translate-y-[-3px] border-b border-dotted md:block"
+                          className="mx-2 hidden flex-1 translate-y-[-3px] border-b border-dotted lg:block"
                           style={{ borderColor: '#CBC8C0' }}
                         />
-                        <div className="flex shrink-0 flex-col items-end">
-                          <span
-                            className="text-[18px] font-bold md:text-[20px]"
-                            style={{ color: C.ink }}
-                          >
-                            {money(it.price)}
-                          </span>
+                        <div className="ml-auto flex shrink-0 items-center gap-3">
+                          <div className="flex flex-col items-end">
+                            <span
+                              className="text-[18px] font-bold md:text-[20px]"
+                              style={{ color: C.ink }}
+                            >
+                              {money(it.price)}
+                            </span>
+                          </div>
+                          {!isService && (
+                            <CartControl
+                              qty={cart[it.id] ?? 0}
+                              id={it.id}
+                              addToCart={addToCart}
+                              decFromCart={decFromCart}
+                              accent={accent}
+                              ink={C.ink}
+                            />
+                          )}
                         </div>
-                        {!isService && (
-                          <CartControl
-                            qty={cart[it.id] ?? 0}
-                            id={it.id}
-                            addToCart={addToCart}
-                            decFromCart={decFromCart}
-                            accent={accent}
-                            ink={C.ink}
-                          />
-                        )}
                       </div>
                     ))}
                   </div>
@@ -823,9 +932,8 @@ export function ClassicList(p: DesignProps) {
             )}
           </main>
 
-          <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={C.ink} accent={C.accent} accentInk={readableOn(C.accent)} />
           <footer
-            className="flex flex-col items-center gap-5 border-t py-12 text-center"
+            className="flex flex-col items-center gap-3 border-t py-10 text-center"
             style={{ borderColor: C.line }}
           >
             <div
@@ -843,7 +951,6 @@ export function ClassicList(p: DesignProps) {
             >
               {tenant.name}
             </span>
-            <SocialLinks tenant={tenant} color={C.muted} align="center" />
             <p className="text-xs font-medium" style={{ color: C.muted }}>
               {t('pub.footer', { currency })}
             </p>
@@ -939,14 +1046,10 @@ export function NordicMenu(p: DesignProps) {
     addToCart,
     decFromCart,
   } = p
-  // The paper is a wash of the shop's colour rather than a fixed cream: this
-  // template is a page of text on a warm ground, and a saturated ground would
-  // cost the legibility that is its whole point. `lighten` at 0.9 keeps it a
-  // near-white that is unmistakably theirs.
-  const paper = lighten(p.accent, 0.9),
+  const paper = '#F3EBE2',
     ink = '#2B2620',
     soft = '#6B6156',
-    line = lighten(p.accent, 0.62),
+    line = '#C5BEB6',
     accent = p.accent
 
   return (
@@ -1016,10 +1119,10 @@ export function NordicMenu(p: DesignProps) {
                   <span className="h-px w-16" style={{ background: accent }} />
                 </div>
                 {s.items.map((it) => (
-                  <div key={it.id} className="flex items-baseline gap-3 py-2.5">
-                    <div className="min-w-0">
+                  <div key={it.id} className="flex flex-wrap items-start gap-x-3 gap-y-2 py-2.5 lg:flex-nowrap lg:items-baseline">
+                    <div className="min-w-0 flex-1 basis-full lg:basis-0">
                       <p
-                        className="text-[16px] font-semibold"
+                        className="break-words text-[16px] font-semibold"
                         style={{ color: ink }}
                       >
                         {it.name}
@@ -1034,25 +1137,27 @@ export function NordicMenu(p: DesignProps) {
                       )}
                     </div>
                     <span
-                      className="mx-1 min-w-[16px] flex-1 translate-y-[-3px] border-b border-dotted"
+                      className="mx-1 hidden min-w-[16px] flex-1 translate-y-[-3px] border-b border-dotted lg:block"
                       style={{ borderColor: '#B9B0A4' }}
                     />
-                    <span
-                      className="shrink-0 text-[16px] font-semibold tabular-nums"
-                      style={{ color: ink }}
-                    >
-                      {money(it.price)}
-                    </span>
-                    {!isService && (
-                      <CartControl
-                        qty={cart[it.id] ?? 0}
-                        id={it.id}
-                        addToCart={addToCart}
-                        decFromCart={decFromCart}
-                        accent={accent}
-                        ink={ink}
-                      />
-                    )}
+                    <div className="ml-auto flex shrink-0 items-center gap-3">
+                      <span
+                        className="text-[16px] font-semibold tabular-nums"
+                        style={{ color: ink }}
+                      >
+                        {money(it.price)}
+                      </span>
+                      {!isService && (
+                        <CartControl
+                          qty={cart[it.id] ?? 0}
+                          id={it.id}
+                          addToCart={addToCart}
+                          decFromCart={decFromCart}
+                          accent={accent}
+                          ink={ink}
+                        />
+                      )}
+                    </div>
                   </div>
                 ))}
               </section>
@@ -1060,9 +1165,8 @@ export function NordicMenu(p: DesignProps) {
           )}
         </main>
 
-        <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={accent} accentInk={readableOn(accent)} />
         <footer
-          className="flex flex-col items-center gap-5 border-t py-12 text-center"
+          className="flex flex-col items-center gap-2 border-t py-10 text-center"
           style={{ borderColor: line }}
         >
           <span
@@ -1071,7 +1175,6 @@ export function NordicMenu(p: DesignProps) {
           >
             {tenant.name}
           </span>
-          <SocialLinks tenant={tenant} color={soft} hoverColor={ink} align="center" />
           <p className="text-[11px]" style={{ color: soft }}>
             {t('pub.footer', { currency })}
           </p>
@@ -1097,10 +1200,7 @@ export function FineDining(p: DesignProps) {
     addToCart,
     decFromCart,
   } = p
-  // The stage is the frame around the menu card, and it is what the shop's
-  // hero colour paints — the cream paper, ink and gold rules are what makes
-  // this template a menu, so they stay fixed.
-  const stage = p.heroColor,
+  const stage = '#10100F',
     paper = '#F7F2E8',
     ink = '#211D16',
     soft = '#6E6656',
@@ -1188,11 +1288,11 @@ export function FineDining(p: DesignProps) {
                   {s.items.map((it) => (
                     <div
                       key={it.id}
-                      className="flex items-baseline gap-3 py-1.5"
+                      className="flex flex-wrap items-start gap-x-3 gap-y-2 py-1.5 lg:flex-nowrap lg:items-baseline"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1 basis-full lg:basis-0">
                         <p
-                          className="text-[15px] font-semibold"
+                          className="break-words text-[15px] font-semibold"
                           style={{ color: ink }}
                         >
                           {it.name}
@@ -1207,25 +1307,27 @@ export function FineDining(p: DesignProps) {
                         )}
                       </div>
                       <span
-                        className="mx-1 min-w-[16px] flex-1 translate-y-[-3px] border-b border-dotted"
+                        className="mx-1 hidden min-w-[16px] flex-1 translate-y-[-3px] border-b border-dotted lg:block"
                         style={{ borderColor: '#CDBF9F' }}
                       />
-                      <span
-                        className="shrink-0 text-[15px] font-semibold tabular-nums"
-                        style={{ color: ink }}
-                      >
-                        {money(it.price)}
-                      </span>
-                      {!isService && (
-                        <CartControl
-                          qty={cart[it.id] ?? 0}
-                          id={it.id}
-                          addToCart={addToCart}
-                          decFromCart={decFromCart}
-                          accent={gold}
-                          ink={ink}
-                        />
-                      )}
+                      <div className="ml-auto flex shrink-0 items-center gap-3">
+                        <span
+                          className="text-[15px] font-semibold tabular-nums"
+                          style={{ color: ink }}
+                        >
+                          {money(it.price)}
+                        </span>
+                        {!isService && (
+                          <CartControl
+                            qty={cart[it.id] ?? 0}
+                            id={it.id}
+                            addToCart={addToCart}
+                            decFromCart={decFromCart}
+                            accent={gold}
+                            ink={ink}
+                          />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </section>
@@ -1233,9 +1335,8 @@ export function FineDining(p: DesignProps) {
             )}
           </main>
 
-          <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={gold} accentInk={paper} />
           <footer
-            className="mt-14 flex flex-col items-center gap-5 border-t pt-10 pb-2 text-center"
+            className="mt-14 flex flex-col items-center gap-2 border-t pt-8 text-center"
             style={{ borderColor: `${gold}55` }}
           >
             <span
@@ -1244,7 +1345,6 @@ export function FineDining(p: DesignProps) {
             >
               {tenant.name}
             </span>
-            <SocialLinks tenant={tenant} color={soft} hoverColor={ink} align="center" />
             <p className="text-[11px]" style={{ color: soft }}>
               {t('pub.footer', { currency })}
             </p>
@@ -1321,12 +1421,9 @@ export function ModernBrand(p: DesignProps) {
                 {(tenant.name || '·').charAt(0).toUpperCase()}
               </span>
             )}
-            {/* The logo already says the name; beside it, it read twice. */}
-            {!tenant.logoUrl && (
-              <span className="text-[15px] font-bold" style={{ color: ink }}>
-                {tenant.name}
-              </span>
-            )}
+            <span className="text-[15px] font-bold" style={{ color: ink }}>
+              {tenant.name}
+            </span>
           </div>
           <h1
             className="max-w-[820px] text-4xl font-black leading-[1.05] tracking-tight md:text-6xl"
@@ -1376,11 +1473,11 @@ export function ModernBrand(p: DesignProps) {
               {s.items.map((it) => (
                 <div
                   key={it.id}
-                  className="flex items-center gap-4 border-b py-3.5"
+                  className="flex flex-wrap items-start gap-x-4 gap-y-2 border-b py-3.5 lg:flex-nowrap lg:items-center"
                   style={{ borderColor: line }}
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-bold" style={{ color: ink }}>
+                  <div className="min-w-0 flex-1 basis-full lg:basis-0">
+                    <p className="break-words text-[15px] font-bold" style={{ color: ink }}>
                       {it.name}
                     </p>
                     {it.description && (
@@ -1392,22 +1489,24 @@ export function ModernBrand(p: DesignProps) {
                       </p>
                     )}
                   </div>
-                  <span
-                    className="shrink-0 text-[18px] font-black tabular-nums"
-                    style={{ color: ink }}
-                  >
-                    {money(it.price)}
-                  </span>
-                  {!isService && (
-                    <CartControl
-                      qty={cart[it.id] ?? 0}
-                      id={it.id}
-                      addToCart={addToCart}
-                      decFromCart={decFromCart}
-                      accent={accent}
-                      ink={ink}
-                    />
-                  )}
+                  <div className="ml-auto flex shrink-0 items-center gap-3">
+                    <span
+                      className="text-[18px] font-black tabular-nums"
+                      style={{ color: ink }}
+                    >
+                      {money(it.price)}
+                    </span>
+                    {!isService && (
+                      <CartControl
+                        qty={cart[it.id] ?? 0}
+                        id={it.id}
+                        addToCart={addToCart}
+                        decFromCart={decFromCart}
+                        accent={accent}
+                        ink={ink}
+                      />
+                    )}
+                  </div>
                 </div>
               ))}
             </section>
@@ -1422,25 +1521,17 @@ export function ModernBrand(p: DesignProps) {
       </main>
 
       {/* Footer */}
-      {/* The footer below runs full-bleed, so the form needs the content
-       *  column's own width and gutters. */}
-      <div className="mx-auto w-full max-w-[1120px] px-6 pb-12 md:px-12">
-        <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={accent} accentInk={readableOn(accent)} dark />
-      </div>
       <footer className="py-10" style={{ background: '#111111' }}>
-        <div className="mx-auto flex w-full max-w-[1120px] flex-wrap items-center justify-between gap-4 px-6 md:px-12">
-          <div className="flex flex-col gap-2">
-            <span className="text-[16px] font-bold text-white">
-              {tenant.name}
-            </span>
-            <span
-              className="text-[12px] font-medium"
-              style={{ color: '#9CA3AF' }}
-            >
-              {t('pub.footer', { currency })}
-            </span>
-          </div>
-          <SocialLinks tenant={tenant} color="#9CA3AF" hoverColor="#FFFFFF" />
+        <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-6 md:px-12">
+          <span className="text-[16px] font-bold text-white">
+            {tenant.name}
+          </span>
+          <span
+            className="text-[12px] font-medium"
+            style={{ color: '#9CA3AF' }}
+          >
+            {t('pub.footer', { currency })}
+          </span>
         </div>
       </footer>
     </div>
@@ -1464,11 +1555,8 @@ export function PhotoLookbook(p: DesignProps) {
     addToCart,
     decFromCart,
   } = p
-  // The page stays dark — photographs are the subject here and a bright ground
-  // competes with them — but it is now a dark shade *of the shop's colour*
-  // instead of a fixed near-black, so the template is theirs too.
-  const bg = darken(p.accent, 0.94),
-    panel = darken(p.accent, 0.88),
+  const bg = '#0A0A0A',
+    panel = '#161616',
     ink = '#F5F5F5',
     soft = '#9A9A9A',
     accent = p.accent
@@ -1523,12 +1611,9 @@ export function PhotoLookbook(p: DesignProps) {
                 {(tenant.name || '·').charAt(0).toUpperCase()}
               </span>
             )}
-            {/* The logo already says the name; beside it, it read twice. */}
-            {!tenant.logoUrl && (
-              <span className="text-[14px] font-bold" style={{ color: ink }}>
-                {tenant.name}
-              </span>
-            )}
+            <span className="text-[14px] font-bold" style={{ color: ink }}>
+              {tenant.name}
+            </span>
             <span
               className="ml-auto text-[11px] font-medium"
               style={{ color: soft }}
@@ -1660,20 +1745,16 @@ export function PhotoLookbook(p: DesignProps) {
           )}
         </main>
 
-        <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={accent} accentInk={readableOn(accent)} dark />
         <footer
-          className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t pt-8"
+          className="mt-12 flex flex-col gap-2 border-t pt-8"
           style={{ borderColor: '#262626' }}
         >
-          <div className="flex flex-col gap-2">
-            <span className="text-[15px] font-bold" style={{ color: ink }}>
-              {tenant.name}
-            </span>
-            <span className="text-[12px] font-medium" style={{ color: soft }}>
-              {t('pub.footer', { currency })}
-            </span>
-          </div>
-          <SocialLinks tenant={tenant} color={soft} hoverColor={ink} />
+          <span className="text-[15px] font-bold" style={{ color: ink }}>
+            {tenant.name}
+          </span>
+          <span className="text-[12px] font-medium" style={{ color: soft }}>
+            {t('pub.footer', { currency })}
+          </span>
         </footer>
       </div>
     </div>
@@ -1863,43 +1944,27 @@ export function ServiceCards(p: DesignProps) {
           )}
         </main>
 
-        <LeadForm
-          tenant={tenant}
-          listId={p.listId}
-          listName={p.listName}
-          ink={ink}
-          accent={accent}
-          accentInk={readableOn(accent)}
-        />
-
         {/* Contact CTA */}
         <div
-          className="mt-10 flex flex-wrap items-center justify-between gap-4 rounded-3xl p-6 md:p-8"
+          className="mt-10 flex flex-col gap-2 rounded-3xl p-6 md:p-8"
           style={{ background: ink }}
         >
-          <div className="flex flex-col gap-2">
-            <span className="text-[18px] font-extrabold text-white">
-              {tenant.name}
+          <span className="text-[18px] font-extrabold text-white">
+            {tenant.name}
+          </span>
+          {tenant.address && (
+            <span className="text-[13px] font-medium text-white/80">
+              {tenant.address}
             </span>
-            {tenant.address && (
-              <span className="text-[13px] font-medium text-white/80">
-                {tenant.address}
-              </span>
-            )}
-            {tenant.taxId && (
-              <span className="text-[13px] font-medium text-white/60">
-                {t('pub.taxId')} {tenant.taxId}
-              </span>
-            )}
-            <span className="mt-1 text-[12px] font-medium text-white/60">
-              {t('pub.footer', { currency })}
+          )}
+          {tenant.taxId && (
+            <span className="text-[13px] font-medium text-white/60">
+              {t('pub.taxId')} {tenant.taxId}
             </span>
-          </div>
-          <SocialLinks
-            tenant={tenant}
-            color="rgba(255,255,255,0.75)"
-            hoverColor="#FFFFFF"
-          />
+          )}
+          <span className="mt-1 text-[12px] font-medium text-white/60">
+            {t('pub.footer', { currency })}
+          </span>
         </div>
       </div>
     </div>
@@ -1926,7 +1991,7 @@ export function ImageCatalog(p: DesignProps) {
   } = p
   const accent = p.accent,
     hero = p.heroColor,
-    heroDark = darken(p.heroColor, 0.16),
+    heroDark = lighten(p.heroColor, -0.16),
     heroInk = readableOn(p.heroColor),
     ink = '#0F172A',
     soft = '#64748B',
@@ -1973,12 +2038,9 @@ export function ImageCatalog(p: DesignProps) {
                 {(tenant.name || '·').charAt(0).toUpperCase()}
               </span>
             )}
-            {/* The logo already says the name; beside it, it read twice. */}
-            {!tenant.logoUrl && (
-              <span className="text-[14px] font-bold" style={{ color: heroInk }}>
-                {tenant.name}
-              </span>
-            )}
+            <span className="text-[14px] font-bold" style={{ color: heroInk }}>
+              {tenant.name}
+            </span>
             <span
               className="ml-auto text-[11px] font-medium"
               style={{ color: heroInk, opacity: 0.55 }}
@@ -2126,32 +2188,25 @@ export function ImageCatalog(p: DesignProps) {
       </main>
 
       {/* Hero-colored footer */}
-      {/* Full-bleed footer below: the form takes the content column instead. */}
-      <div className="mx-auto w-full max-w-[1180px] px-5 pb-12 md:px-12">
-        <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={hero} accentInk={heroInk} />
-      </div>
       <footer style={{ background: hero }}>
-        <div className="mx-auto flex w-full max-w-[1180px] flex-wrap items-center justify-between gap-4 px-5 py-8 md:px-12">
-          <div className="flex flex-col gap-1">
-            <span className="text-[15px] font-bold" style={{ color: heroInk }}>
-              {tenant.name}
-            </span>
-            {tenant.address && (
-              <span
-                className="text-[12px] font-medium"
-                style={{ color: heroInk, opacity: 0.72 }}
-              >
-                {tenant.address}
-              </span>
-            )}
+        <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-1 px-5 py-8 md:px-12">
+          <span className="text-[15px] font-bold" style={{ color: heroInk }}>
+            {tenant.name}
+          </span>
+          {tenant.address && (
             <span
               className="text-[12px] font-medium"
-              style={{ color: heroInk, opacity: 0.55 }}
+              style={{ color: heroInk, opacity: 0.72 }}
             >
-              {t('pub.footer', { currency })}
+              {tenant.address}
             </span>
-          </div>
-          <SocialLinks tenant={tenant} color={heroInk} />
+          )}
+          <span
+            className="text-[12px] font-medium"
+            style={{ color: heroInk, opacity: 0.55 }}
+          >
+            {t('pub.footer', { currency })}
+          </span>
         </div>
       </footer>
     </div>
@@ -2225,19 +2280,16 @@ export function TechGrid(p: DesignProps) {
                   {(tenant.name || '·').charAt(0).toUpperCase()}
                 </span>
               )}
-              {/* The logo already says the name; beside it, it read twice. */}
-              {!tenant.logoUrl && (
+              <span
+                className="flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold"
+                style={{ borderColor: border, color: soft, fontFamily: MONO }}
+              >
                 <span
-                  className="flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold"
-                  style={{ borderColor: border, color: soft, fontFamily: MONO }}
-                >
-                  <span
-                    className="h-1.5 w-1.5 rounded-full"
-                    style={{ background: accent, boxShadow: `0 0 8px ${accent}` }}
-                  />{' '}
-                  {tenant.name}
-                </span>
-              )}
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ background: accent, boxShadow: `0 0 8px ${accent}` }}
+                />{' '}
+                {tenant.name}
+              </span>
               <span
                 className="ml-auto text-[11px]"
                 style={{ color: soft, fontFamily: MONO }}
@@ -2376,23 +2428,19 @@ export function TechGrid(p: DesignProps) {
           )}
         </main>
 
-        <LeadForm tenant={tenant} listId={p.listId} listName={p.listName} ink={ink} accent={accent} accentInk={readableOn(accent)} dark />
         <footer
           className="mt-8 flex items-center justify-between gap-3 border-t pt-6"
           style={{ borderColor: border }}
         >
-          <div className="flex flex-col gap-1">
-            <span className="text-[13px] font-bold" style={{ color: ink }}>
-              {tenant.name}
-            </span>
-            <span
-              className="text-[11px]"
-              style={{ color: soft, fontFamily: MONO }}
-            >
-              {t('pub.footer', { currency })}
-            </span>
-          </div>
-          <SocialLinks tenant={tenant} color={soft} hoverColor={ink} size={17} />
+          <span className="text-[13px] font-bold" style={{ color: ink }}>
+            {tenant.name}
+          </span>
+          <span
+            className="text-[11px]"
+            style={{ color: soft, fontFamily: MONO }}
+          >
+            {t('pub.footer', { currency })}
+          </span>
         </footer>
       </div>
     </div>

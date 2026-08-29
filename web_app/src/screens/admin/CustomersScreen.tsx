@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
-import type { Customer, Order, Product } from '../../types'
+import type { Customer, Order, Product, PublicViewer } from '../../types'
 import api from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { tone, gradient, type Tone } from './crm/theme'
-import { trackEvent } from '../../lib/analytics'
 import { localeOf, normalizeLang, useT } from '../../lib/i18n'
 import { DICT_OPERATIONS } from '../../lib/i18nDictionaryOperations'
 
@@ -53,6 +52,24 @@ const initials = (n: string) =>
     .map((w) => w[0])
     .join('')
     .toUpperCase() || '?'
+
+function uniqueEmails(values: Array<string | null | undefined>): string[] {
+  const unique = new Set<string>()
+  for (const email of values) {
+    const normalized = email?.trim().toLowerCase()
+    if (normalized) unique.add(normalized)
+  }
+  return Array.from(unique)
+}
+
+async function copyText(value: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(value)
+    return true
+  } catch {
+    return false
+  }
+}
 
 // Backend stores naive UTC; tag as UTC so the browser converts to the right local time.
 function parseUtc(iso?: string | null): Date | null {
@@ -107,8 +124,12 @@ export function CustomersScreen() {
   )
 
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [viewers, setViewers] = useState<PublicViewer[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [viewersLoading, setViewersLoading] = useState(true)
+  const [anonymousDismissals, setAnonymousDismissals] = useState(0)
+  const [anonymousLoading, setAnonymousLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [searchParams] = useSearchParams()
   const [showNew, setShowNew] = useState(
@@ -116,6 +137,10 @@ export function CustomersScreen() {
   )
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [promotingViewerId, setPromotingViewerId] = useState<string | null>(null)
+  const [viewerError, setViewerError] = useState<string | null>(null)
+  const [customerEmailsCopied, setCustomerEmailsCopied] = useState(false)
+  const [viewerEmailsCopied, setViewerEmailsCopied] = useState(false)
 
   const tenantId = tenant?.id
   const refresh = useCallback(async () => {
@@ -128,14 +153,21 @@ export function CustomersScreen() {
   useEffect(() => {
     if (!tenantId) return
     let cancelled = false
-    Promise.all([api.getCustomers(tenantId), api.getProducts(tenantId)]).then(
-      ([cs, ps]) => {
-        if (cancelled) return
-        if (cs.data) setCustomers(cs.data)
-        if (ps.data) setProducts(ps.data)
-        setLoading(false)
-      }
-    )
+    Promise.all([
+      api.getCustomers(tenantId),
+      api.getPublicViewers(tenantId),
+      api.getProducts(tenantId),
+      api.getPublicViewerStats(tenantId),
+    ]).then(([cs, vs, ps, stats]) => {
+      if (cancelled) return
+      if (cs.data) setCustomers(cs.data)
+      if (vs.data) setViewers(vs.data)
+      if (ps.data) setProducts(ps.data)
+      if (stats.data) setAnonymousDismissals(stats.data.anonymousDismissals)
+      setLoading(false)
+      setViewersLoading(false)
+      setAnonymousLoading(false)
+    })
     return () => {
       cancelled = true
     }
@@ -150,11 +182,50 @@ export function CustomersScreen() {
       : customers
   }, [customers, search])
 
+  const customerEmailList = useMemo(
+    () => uniqueEmails(customers.map((customer) => customer.email)),
+    [customers]
+  )
+  const viewerEmailList = useMemo(
+    () => uniqueEmails(viewers.map((viewer) => viewer.email)),
+    [viewers]
+  )
+
+  const copyEmailList = async (
+    emails: string[],
+    setCopied: (copied: boolean) => void
+  ) => {
+    if (!emails.length) return
+    if (await copyText(emails.join(', '))) {
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    }
+  }
+
   const removeCustomer = async (c: Customer) => {
     if (!confirm(t('customers.deleteConfirm', { name: c.name }))) return
     await api.deleteCustomer(c.id)
     if (openId === c.id) setOpenId(null)
     await refresh()
+  }
+
+  const promoteViewer = async (viewer: PublicViewer) => {
+    if (!tenantId || !canEdit || promotingViewerId) return
+    setPromotingViewerId(viewer.id)
+    setViewerError(null)
+    const res = await api.promotePublicViewer(tenantId, viewer.id)
+    if (res.data) {
+      setViewers((current) =>
+        current.map((item) =>
+          item.id === viewer.id ? { ...item, customerId: res.data!.id } : item
+        )
+      )
+      await refresh()
+      setOpenId(res.data.id)
+    } else {
+      setViewerError(t('viewers.promoteError'))
+    }
+    setPromotingViewerId(null)
   }
 
   return (
@@ -178,13 +249,27 @@ export function CustomersScreen() {
             </p>
           </div>
           {canEdit && (
-            <button
-              type="button"
-              onClick={() => setShowNew(true)}
-              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}
-            >
-              <Icon name="plus" size={16} /> {t('customers.new')}
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {customerEmailList.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => void copyEmailList(customerEmailList, setCustomerEmailsCopied)}
+                  className="flex h-9 items-center gap-1.5 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-[12px] font-bold text-[var(--dash-text2)] shadow-sm transition hover:border-[var(--dash-link)]/40 hover:bg-[var(--dash-soft)] hover:text-[var(--dash-link)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--dash-link)]/30"
+                  title={t('customers.copyEmails', { count: customerEmailList.length })}
+                  aria-label={t('customers.copyEmails', { count: customerEmailList.length })}
+                >
+                  <Icon name={customerEmailsCopied ? 'circle-check' : 'copy'} size={15} />
+                  <span>{customerEmailsCopied ? t('customers.emailsCopied') : t('customers.copyEmails', { count: customerEmailList.length })}</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowNew(true)}
+                className={`flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[13px] font-bold text-white ${gradient}`}
+              >
+                <Icon name="plus" size={16} /> {t('customers.new')}
+              </button>
+            </div>
           )}
         </section>
         <div className="flex flex-col gap-4">
@@ -235,13 +320,17 @@ export function CustomersScreen() {
                         <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">
                           {c.name}
                         </span>
-                        <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">
-                          {c.email || t('customers.noEmail')}
-                        </span>
+                        {c.email ? (
+                          <CopyableContact value={c.email} kind="email" />
+                        ) : (
+                          <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">
+                            {t('customers.noEmail')}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <span className="w-[150px] text-xs font-medium text-[var(--dash-text2)]">
-                      {c.phone || '—'}
+                      {c.phone ? <CopyableContact value={c.phone} kind="phone" /> : '—'}
                     </span>
                     <span className="w-[120px] text-xs font-medium text-[var(--dash-muted)]">
                       {relativeTime(c.lastOrderAt, t)}
@@ -302,6 +391,125 @@ export function CustomersScreen() {
             )}
           </div>
         </div>
+
+        <section className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
+          <div className="flex items-start justify-between gap-4 border-b border-[var(--dash-divider)] px-5 py-4">
+            <div className="min-w-0">
+              <h2 className="text-base font-extrabold text-[var(--dash-text)]">{t('viewers.title')}</h2>
+              <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">{t('viewers.subtitle')}</p>
+              {viewerError && (
+                <p className="mt-2 text-xs font-semibold text-[#EF4444]">{viewerError}</p>
+              )}
+            </div>
+            {canEdit && viewerEmailList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => void copyEmailList(viewerEmailList, setViewerEmailsCopied)}
+                className="flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-[12px] font-bold text-[var(--dash-text2)] shadow-sm transition hover:border-[var(--dash-link)]/40 hover:bg-[var(--dash-soft)] hover:text-[var(--dash-link)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--dash-link)]/30"
+                title={t('viewers.copyEmails', { count: viewerEmailList.length })}
+                aria-label={t('viewers.copyEmails', { count: viewerEmailList.length })}
+              >
+                <Icon name={viewerEmailsCopied ? 'circle-check' : 'copy'} size={15} />
+                <span>{viewerEmailsCopied ? t('customers.emailsCopied') : t('viewers.copyEmails', { count: viewerEmailList.length })}</span>
+              </button>
+            )}
+          </div>
+          {viewersLoading ? (
+            <div className="flex h-28 items-center justify-center text-sm font-medium text-[var(--dash-muted)]">
+              {t('viewers.loading')}
+            </div>
+          ) : viewers.length === 0 ? (
+            <div className="flex h-28 items-center justify-center px-5 text-center text-sm font-medium text-[var(--dash-muted)]">
+              {t('viewers.empty')}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <div className="min-w-[820px]">
+                <div className="grid grid-cols-[1.2fr_1fr_1.2fr_140px_80px_80px] gap-3 bg-[var(--dash-table-head)] px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+                  <span>{t('customers.customer')}</span>
+                  <span>{t('customers.phone')} / {t('customers.email')}</span>
+                  <span>{t('viewers.list')}</span>
+                  <span>{t('viewers.lastSeen')}</span>
+                  <span>{t('viewers.views')}</span>
+                  <span className="text-right">{t('customers.actions')}</span>
+                </div>
+                {viewers.map((viewer, index) => (
+                  <div
+                    key={viewer.id}
+                    className={`grid grid-cols-[1.2fr_1fr_1.2fr_140px_80px_80px] items-center gap-3 px-5 py-3.5 text-xs ${index > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-bold text-[var(--dash-text)]">{viewer.name}</p>
+                      <p className="truncate text-[11px] font-medium text-[var(--dash-muted)]">
+                        {fullDate(viewer.createdAt, localeOf(tenant?.language))}
+                      </p>
+                    </div>
+                    <div className="flex min-w-0 flex-col items-start gap-0.5 font-medium text-[var(--dash-text2)]">
+                      {viewer.email && <CopyableContact value={viewer.email} kind="email" />}
+                      {viewer.phone && <CopyableContact value={viewer.phone} kind="phone" />}
+                      {!viewer.email && !viewer.phone && (
+                        <span className="truncate">{t('viewers.noContact')}</span>
+                      )}
+                      {viewer.ipAddress && (
+                        <p className="truncate text-[10px] font-medium text-[var(--dash-muted)]">
+                          {t('viewers.ip')}: {viewer.ipAddress}
+                        </p>
+                      )}
+                    </div>
+                    <div className="min-w-0 truncate font-semibold text-[var(--dash-text2)]">{viewer.listName}</div>
+                    <div className="text-[var(--dash-muted)]">{fullDate(viewer.lastSeenAt, localeOf(tenant?.language))}</div>
+                    <div className="font-bold text-[var(--dash-text2)]">{viewer.viewCount}</div>
+                    <div className="flex justify-end">
+                      {viewer.customerId ? (
+                        <button
+                          type="button"
+                          onClick={() => setOpenId(viewer.customerId!)}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--tone-green-fg)]/15 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tone-green-fg)]/30"
+                          style={tone('green')}
+                          title={t('viewers.viewCustomer')}
+                          aria-label={t('viewers.viewCustomer')}
+                        >
+                          <Icon name="circle-check" size={16} />
+                        </button>
+                      ) : canEdit ? (
+                        <button
+                          type="button"
+                          onClick={() => void promoteViewer(viewer)}
+                          disabled={promotingViewerId !== null}
+                          className={`flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A78BFA]/60 disabled:cursor-wait disabled:opacity-60 ${promotingViewerId === viewer.id ? 'animate-pulse' : ''} ${gradient}`}
+                          aria-busy={promotingViewerId === viewer.id}
+                          title={promotingViewerId === viewer.id ? t('viewers.promoting') : t('viewers.promote')}
+                          aria-label={promotingViewerId === viewer.id ? t('viewers.promoting') : t('viewers.promote')}
+                        >
+                          <Icon name="user-plus" size={16} />
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-[var(--dash-muted)]">—</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
+          <div className="flex items-center justify-between gap-4 border-b border-[var(--dash-divider)] px-5 py-4">
+            <div>
+              <h2 className="text-base font-extrabold text-[var(--dash-text)]">{t('anonymous.title')}</h2>
+              <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">{t('anonymous.subtitle')}</p>
+            </div>
+            <div className="flex h-14 min-w-20 flex-col items-center justify-center rounded-xl bg-[var(--dash-soft)] px-4">
+              {anonymousLoading ? (
+                <span className="text-sm font-bold text-[var(--dash-muted)]">…</span>
+              ) : (
+                <span className="text-2xl font-black leading-none text-[var(--dash-text)]">{anonymousDismissals}</span>
+              )}
+              <span className="mt-1 text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('anonymous.countLabel')}</span>
+            </div>
+          </div>
+        </section>
       </main>
 
       {showNew && tenant?.id && (
@@ -336,6 +544,39 @@ export function CustomersScreen() {
         />
       )}
     </CrmLayout>
+  )
+}
+
+function CopyableContact({
+  value,
+  kind,
+}: {
+  value: string
+  kind: 'email' | 'phone'
+}) {
+  const t = useOperationsT()
+  const [copied, setCopied] = useState(false)
+  const copy = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    if (await copyText(value)) {
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1400)
+    }
+  }
+  const label = kind === 'email' ? t('contacts.copyEmail') : t('contacts.copyPhone')
+  return (
+    <button
+      type="button"
+      onClick={(event) => void copy(event)}
+      title={copied ? t('contacts.copied') : label}
+      aria-label={copied ? t('contacts.copied') : label}
+      className="group flex min-w-0 max-w-full items-center gap-1 text-left text-xs font-medium text-[var(--dash-text2)] transition hover:text-[var(--dash-link)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--dash-link)]/30"
+    >
+      <span className="truncate">{value}</span>
+      <span className="shrink-0 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+        <Icon name={copied ? 'circle-check' : 'copy'} size={12} />
+      </span>
+    </button>
   )
 }
 
@@ -380,16 +621,7 @@ function CustomerModal({
       ? await api.updateCustomer(customer.id, body)
       : await api.createCustomer(tenantId!, body)
     setSaving(false)
-    if (res.data) {
-      if (!isEdit) {
-        trackEvent('Created Customer', {
-          has_email: Boolean(body.email),
-          has_phone: Boolean(body.phone),
-          has_rut: Boolean(body.rut),
-        })
-      }
-      onSaved(res.data.id)
-    }
+    if (res.data) onSaved(res.data.id)
   }
 
   return (
@@ -962,13 +1194,9 @@ function OrderForm({
       note: note.trim() || null,
       reference: reference.trim() || null,
     }
-    const result = order
-      ? await api.updateOrder(order.id, payload)
-      : await api.createOrder(customerId, payload)
+    if (order) await api.updateOrder(order.id, payload)
+    else await api.createOrder(customerId, payload)
     setSaving(false)
-    if (!order && result.data) {
-      trackEvent('Created Order', { item_count: items.length, status })
-    }
     await onSaved()
   }
 

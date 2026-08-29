@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '../../../hooks/useTheme'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
-import { selectTenant } from '../../../store/slices/authSlice'
+import { selectIsSuperAdmin, selectTenant, setTenant } from '../../../store/slices/authSlice'
 import { fetchLists, selectLists } from '../../../store/slices/menuSlice'
+import api from '../../../services/api'
 import type { PlanId } from '../../../types'
 import { planById } from '../../../lib/plans'
 import { useT } from '../../../lib/i18n'
-import { markQrShared } from '../../../lib/onboardingTour'
 import { Icon, type IconName } from './ui'
 import { tone, gradient } from './theme'
 
@@ -20,7 +20,6 @@ const NEXT_PLAN: Partial<Record<PlanId, PlanId>> = {
 }
 
 // `id` is the stable (Spanish) key screens pass as CrmLayout `active`; `tKey` is the display label.
-// `tour` marks the item as an anchor for the onboarding spotlight (lib/onboardingTour).
 const navMain: {
   icon: IconName
   id: string
@@ -28,7 +27,6 @@ const navMain: {
   label: string
   to?: string
   badge?: string
-  tour?: string
 }[] = [
   {
     icon: 'layout-dashboard',
@@ -43,7 +41,20 @@ const navMain: {
     tKey: 'nav.lists',
     label: 'Listas',
     to: '/admin/lists',
-    tour: 'nav-lists',
+  },
+  {
+    icon: 'share-2',
+    id: 'Links',
+    tKey: 'nav.links',
+    label: 'Links',
+    to: '/admin/links',
+  },
+  {
+    icon: 'book-open',
+    id: 'Revistas',
+    tKey: 'nav.magazines',
+    label: 'Revistas',
+    to: '/admin/magazines',
   },
   {
     icon: 'package',
@@ -51,7 +62,6 @@ const navMain: {
     tKey: 'nav.products',
     label: 'Productos',
     to: '/admin/items',
-    tour: 'nav-products',
   },
   {
     icon: 'qr-code',
@@ -59,28 +69,20 @@ const navMain: {
     tKey: 'nav.qr',
     label: 'Códigos QR',
     to: '/admin/qr',
-    tour: 'nav-qr',
   },
   {
     icon: 'users',
     id: 'Clientes',
     tKey: 'nav.customers',
     label: 'Clientes',
-    to: '/admin/clientes',
-  },
-  {
-    icon: 'user-plus',
-    id: 'Leads',
-    tKey: 'leads.title',
-    label: 'Leads',
-    to: '/admin/leads',
+    to: '/admin/customers',
   },
   {
     icon: 'bar-chart',
     id: 'Reportes',
     tKey: 'nav.reports',
     label: 'Reportes',
-    to: '/admin/reportes',
+    to: '/admin/reports',
   },
 ]
 const navSettings: {
@@ -89,14 +91,13 @@ const navSettings: {
   tKey: string
   label: string
   to?: string
-  tour?: string
 }[] = [
   {
     icon: 'user-plus',
     id: 'Equipo',
     tKey: 'nav.team',
     label: 'Equipo',
-    to: '/admin/equipo',
+    to: '/admin/team',
   },
   {
     icon: 'settings',
@@ -104,17 +105,23 @@ const navSettings: {
     tKey: 'nav.settings',
     label: 'Configuración',
     to: '/admin/settings',
-    tour: 'nav-settings',
   },
   {
     icon: 'life-buoy',
     id: 'Soporte',
     tKey: 'nav.support',
     label: 'Soporte',
-    to: '/admin/soporte',
-    tour: 'nav-support',
+    to: '/admin/support',
   },
 ]
+
+const navDeveloper = {
+  icon: 'paintbrush' as IconName,
+  id: 'Developer',
+  tKey: 'nav.developer',
+  label: 'Developer',
+  to: '/admin/developer',
+}
 
 function NavItem({
   icon,
@@ -124,7 +131,6 @@ function NavItem({
   active,
   onNavigate,
   collapsed,
-  tour,
 }: {
   icon: IconName
   label: string
@@ -133,7 +139,6 @@ function NavItem({
   active: boolean
   onNavigate?: () => void
   collapsed?: boolean
-  tour?: string
 }) {
   const inner = (
     <>
@@ -166,11 +171,11 @@ function NavItem({
   )
   const cls = `flex h-9 items-center gap-2 rounded-[8px] ${collapsed ? 'justify-center px-0' : 'px-3'} ${active ? 'bg-[var(--dash-sidebar-active)] text-[var(--dash-sidebar-active-text)]' : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`
   return to ? (
-    <Link to={to} onClick={onNavigate} className={cls} data-tour={tour}>
+    <Link to={to} onClick={onNavigate} className={cls}>
       {inner}
     </Link>
   ) : (
-    <button type="button" className={`${cls} w-full text-left`} data-tour={tour}>
+    <button type="button" className={`${cls} w-full text-left`}>
       {inner}
     </button>
   )
@@ -207,7 +212,7 @@ function SidebarHeader({
                 : '/miprecio-logo-pencil.webp'
             }
             alt="MiPrecio"
-            className="h-8 w-auto max-w-[150px] object-contain object-left"
+            className="h-[34px] w-auto max-w-[155px] object-contain object-left"
           />
           <span
             aria-hidden
@@ -244,7 +249,7 @@ function PublicListAction({
   t: ReturnType<typeof useT>
 }) {
   const label = linkCopied ? t('side.linkCopied') : t('side.copyPublicLink')
-  const className = `btn btn-sm mt-1 flex h-9 items-center rounded-lg bg-[var(--dash-soft)] text-xs font-bold text-[var(--dash-link)] hover:opacity-90 ${collapsed ? 'justify-center px-0' : 'justify-center gap-2'}`
+  const className = `btn btn-sm mt-2 flex h-9 items-center rounded-lg bg-[var(--dash-soft)] text-xs font-bold text-[var(--dash-link)] hover:opacity-90 ${collapsed ? 'justify-center px-0' : 'justify-center gap-2'}`
   if (hasMainList)
     return (
       <button
@@ -253,7 +258,6 @@ function PublicListAction({
         title={label}
         aria-label={label}
         className={className}
-        data-tour="share-link"
       >
         <Icon name={linkCopied ? 'circle-check' : 'link-2'} size={15} />
         {!collapsed && label}
@@ -266,7 +270,6 @@ function PublicListAction({
       title={t('side.createMainList')}
       aria-label={t('side.createMainList')}
       className={className}
-      data-tour="share-link"
     >
       <Icon name="list-plus" size={15} />
       {!collapsed && t('side.createMainList')}
@@ -290,7 +293,6 @@ function SidebarNav({
     tKey: string
     to?: string
     badge?: string
-    tour?: string
   }[]
   onClose?: () => void
   title: string
@@ -313,7 +315,6 @@ function SidebarNav({
           active={item.id === active}
           onNavigate={onClose}
           collapsed={collapsed}
-          tour={item.tour}
         />
       ))}
     </>
@@ -339,20 +340,24 @@ export function CrmSidebar({
   const t = useT()
   const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
+  const isSuperAdmin = useAppSelector(selectIsSuperAdmin)
   const lists = useAppSelector(selectLists)
   const mainList = lists.find((list) => list.showOnIndex)
   const nextPlan = tenant ? NEXT_PLAN[tenant.plan] : undefined
   const [linkCopied, setLinkCopied] = useState(false)
 
   useEffect(() => {
-    if (tenant?.id) dispatch(fetchLists(tenant.id))
+    if (!tenant?.id) return
+    dispatch(fetchLists(tenant.id))
+    api.getTenant(tenant.id).then((response) => {
+      if (response.data) dispatch(setTenant(response.data))
+    })
   }, [dispatch, tenant?.id])
 
   const copyPublicLink = () => {
     if (!tenant || !mainList) return
     const publicUrl = `${window.location.origin}/p/${tenant.subdomain || 'mi-negocio'}/${mainList.slug || mainList.id}`
     navigator.clipboard?.writeText(publicUrl)
-    markQrShared(tenant.id)
     setLinkCopied(true)
     window.setTimeout(() => setLinkCopied(false), 1800)
   }
@@ -366,7 +371,7 @@ export function CrmSidebar({
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[248px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[var(--dash-sidebar)] p-3 transition-[width,transform] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${collapsed ? 'lg:w-[72px]' : ''} ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex min-h-[720px] w-[248px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-[var(--dash-border)] bg-[var(--dash-sidebar)] p-3 transition-[width,transform] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${collapsed ? 'lg:w-[72px]' : ''} ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <SidebarHeader
           collapsed={collapsed}
@@ -391,7 +396,11 @@ export function CrmSidebar({
         <SidebarNav
           active={active}
           collapsed={collapsed}
-          items={navMain}
+          items={
+            tenant?.features?.magazines
+              ? navMain
+              : navMain.filter((item) => item.id !== 'Revistas')
+          }
           onClose={onClose}
           title={t('side.main')}
           t={t}
@@ -399,7 +408,7 @@ export function CrmSidebar({
         <SidebarNav
           active={active}
           collapsed={collapsed}
-          items={navSettings}
+          items={isSuperAdmin ? [...navSettings, navDeveloper] : navSettings}
           onClose={onClose}
           title={t('side.settings')}
           t={t}

@@ -179,7 +179,7 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
   // the plan screen instead of the panel.
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(needsPlan ? '/planes' : '/admin', { replace: true })
+      navigate(needsPlan ? '/plans' : '/admin', { replace: true })
     }
   }, [isAuthenticated, needsPlan, navigate])
 
@@ -197,7 +197,7 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
     if (verifyCode.fulfilled.match(result)) {
       trackEvent('Completed Login')
       // A brand-new signup has no plan yet: send it to pick one.
-      navigate(tenantNeedsPlan(result.payload.tenant) ? '/planes' : '/admin')
+      navigate(tenantNeedsPlan(result.payload.tenant) ? '/plans' : '/admin')
     }
   }
 

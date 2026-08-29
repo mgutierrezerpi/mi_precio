@@ -11,7 +11,17 @@ resource for nested routes (e.g. own_version for /versions/{id}/items)."""
 
 from fastapi import HTTPException
 
-from models import Category, Customer, Item, ListVersion, Order, PriceList, Product
+from models import (
+    Category,
+    Customer,
+    Item,
+    ListVersion,
+    Magazine,
+    MagazinePage,
+    Order,
+    PriceList,
+    Product,
+)
 
 
 def _denied() -> HTTPException:
@@ -63,5 +73,19 @@ def own_category(category_id: str, current_user: dict) -> Category:
 def own_product(product_id: str, current_user: dict) -> Product:
     obj = Product.get_or_none(Product.id == product_id)
     if obj is None or obj.tenant_id != current_user.get("tenant_id"):
+        raise _denied()
+    return obj
+
+
+def own_magazine(magazine_id: str, current_user: dict) -> Magazine:
+    obj = Magazine.get_or_none(Magazine.id == magazine_id)
+    if obj is None or obj.tenant_id != current_user.get("tenant_id"):
+        raise _denied()
+    return obj
+
+
+def own_magazine_page(page_id: str, current_user: dict) -> MagazinePage:
+    obj = MagazinePage.get_or_none(MagazinePage.id == page_id)
+    if obj is None or obj.magazine.tenant_id != current_user.get("tenant_id"):
         raise _denied()
     return obj

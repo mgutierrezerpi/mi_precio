@@ -18,17 +18,14 @@ import type {
   PriceList,
 } from '../../types'
 import api from '../../services/api'
-import { useT, localeOf, type TFn } from '../../lib/i18n'
-import { PLANS, planById, planHasFeature } from '../../lib/plans'
+import { useT, type TFn } from '../../lib/i18n'
+import { PLANS, planById } from '../../lib/plans'
 import {
   getPushStatus,
   enablePush,
   disablePush,
   type PushStatus,
 } from '../../lib/push'
-import { fileToDataUrl } from '../../lib/image'
-import { SOCIALS, socialError, type SocialId } from '../../lib/socials'
-import { SocialIcon } from '../../components/SocialIcon'
 import {
   ListAppearanceFields,
   Toggle,
@@ -328,10 +325,11 @@ function InfoSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) {
   const publicUrl = `${window.location.origin}/p/${subdomain || ''}`
 
   const pickLogo = async (file?: File) => {
-    if (file) {
-      touch()
-      setLogo(await fileToDataUrl(file))
-    }
+    if (!file || !tenant) return
+    const response = await api.uploadTenantLogo(tenant.id, file)
+    if (!response.data) return
+    touch()
+    setLogo(response.data.url)
   }
   const copyUrl = () => {
     navigator.clipboard?.writeText(publicUrl)
@@ -593,7 +591,6 @@ function BrandSection({
   savedKey,
 }: Ctx) {
   const identity = useBrandIdentity(tenant, canManage, save)
-  const socials = useSocialLinks(tenant, canManage, save)
   const editor = useAppearanceEditor(tenant, canManage, save)
 
   return (
@@ -614,19 +611,6 @@ function BrandSection({
         tenant={tenant}
         t={t}
       />
-      <SocialLinksFields
-        {...socials}
-        accent={identity.color}
-        canManage={canManage}
-        t={t}
-      />
-      <LeadsToggle
-        canManage={canManage}
-        enabled={!!tenant?.leadsEnabled}
-        unlocked={tenant ? planHasFeature(tenant.plan, 'leads') : false}
-        onToggle={(value) => void save({ leadsEnabled: value }, 'brand')}
-        t={t}
-      />
       <AppearanceFields
         {...editor}
         accent={identity.color}
@@ -634,157 +618,6 @@ function BrandSection({
         t={t}
       />
     </>
-  )
-}
-
-/** The shop's social links. Same autosave shape as the other brand fields, but
- *  a field with an error is held back rather than sent: a rejected PATCH comes
- *  back as a bare "Error 422", which tells the shop nothing. */
-function useSocialLinks(
-  tenant: Tenant | null,
-  canManage: boolean,
-  save: Ctx['save']
-) {
-  const [values, setValues] = useState<Record<SocialId, string>>(() =>
-    Object.fromEntries(
-      SOCIALS.map((social) => {
-        const stored = tenant?.[social.id] ?? ''
-        // WhatsApp is stored as bare digits; showing "59899123456" back at a
-        // shop that typed "+598 99 123 456" does not read as its phone number.
-        // The API strips the + again on the way in, so this round-trips.
-        return [
-          social.id,
-          social.id === 'socialWhatsapp' && stored ? `+${stored}` : stored,
-        ]
-      })
-    ) as Record<SocialId, string>
-  )
-  const touched = useRef(false)
-  const saveRef = useLatest(save)
-
-  const errors = Object.fromEntries(
-    SOCIALS.map((social) => [social.id, socialError(social.id, values[social.id])])
-  ) as Record<SocialId, string | null>
-
-  useEffect(() => {
-    if (!canManage || !touched.current) return
-    if (SOCIALS.some((social) => errors[social.id])) return
-    const timer = setTimeout(() => {
-      touched.current = false
-      void saveRef.current(
-        Object.fromEntries(
-          SOCIALS.map((social) => [social.id, values[social.id].trim() || null])
-        ),
-        'brand'
-      )
-    }, 600)
-    return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values, canManage])
-
-  const change = (id: SocialId, value: string) => {
-    markTouched(touched)
-    setValues((current) => ({ ...current, [id]: value }))
-  }
-  return { values, errors, change }
-}
-
-/** Turns the public lead form on. Off by default: a shop that is not going to
- *  answer is better off without one, and an unanswered form is worse than no
- *  form at all. Locked rather than hidden on the cheaper tiers — a shop cannot
- *  ask for what it never sees. */
-function LeadsToggle({
-  canManage,
-  enabled,
-  unlocked,
-  onToggle,
-  t,
-}: {
-  canManage: boolean
-  enabled: boolean
-  unlocked: boolean
-  onToggle: (value: boolean) => void
-  t: TFn
-}) {
-  const on = enabled && unlocked
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-[12px] border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3 py-3">
-      <div className="flex flex-col">
-        <span className="text-sm font-bold text-[var(--dash-text)]">
-          {t('set.leads.title')}
-        </span>
-        <span className="max-w-[46ch] text-xs font-medium text-[var(--dash-muted)]">
-          {unlocked ? t('set.leads.help') : t('set.leads.locked')}
-        </span>
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        disabled={!canManage || !unlocked}
-        onClick={() => onToggle(!enabled)}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-40 ${on ? 'bg-[#10B981]' : 'bg-[var(--dash-border)]'}`}
-      >
-        <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${on ? 'left-[22px]' : 'left-0.5'}`}
-        />
-      </button>
-    </div>
-  )
-}
-
-function SocialLinksFields({
-  accent,
-  canManage,
-  change,
-  errors,
-  t,
-  values,
-}: {
-  accent: string
-  canManage: boolean
-  change: (id: SocialId, value: string) => void
-  errors: Record<SocialId, string | null>
-  t: TFn
-  values: Record<SocialId, string>
-}) {
-  return (
-    <div className="flex flex-col gap-3 border-t border-[var(--dash-border)] pt-5">
-      <div className="flex flex-col gap-0.5">
-        <p className="text-sm font-bold text-[var(--dash-text)]">
-          {t('social.title')}
-        </p>
-        <p className="text-xs font-medium text-[var(--dash-muted)]">
-          {t('social.subtitle')}
-        </p>
-      </div>
-      {SOCIALS.map((social) => (
-        <Field key={social.id} label={t(social.tKey)}>
-          <div className="flex items-center gap-2">
-            <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-              style={{ background: `${accent}1A`, color: accent }}
-            >
-              <SocialIcon id={social.id} size={17} />
-            </span>
-            <input
-              type={social.id === 'socialWhatsapp' ? 'tel' : 'text'}
-              value={values[social.id]}
-              onChange={(e) => change(social.id, e.target.value)}
-              disabled={!canManage}
-              placeholder={social.placeholder}
-              aria-invalid={!!errors[social.id]}
-              className={inputCls}
-            />
-          </div>
-          {errors[social.id] && (
-            <span className="mt-1 block text-xs font-semibold text-[var(--tone-red-fg)]">
-              {t(errors[social.id]!)}
-            </span>
-          )}
-        </Field>
-      ))}
-    </div>
   )
 }
 
@@ -1114,7 +947,6 @@ const NOTIF_ROWS: { key: keyof NotifPrefs; tKey: string; descKey: string }[] = [
     tKey: 'set.notif.customers',
     descKey: 'set.notif.customersDesc',
   },
-  { key: 'leads', tKey: 'notif.leads', descKey: 'notif.leadsDesc' },
   { key: 'team', tKey: 'set.notif.team', descKey: 'set.notif.teamDesc' },
 ]
 
@@ -1309,6 +1141,7 @@ function RegionSection({
         t={t}
         value={deliveryEnabled}
       />
+      <MarketplaceProfileFields {...{ canManage, save, savingKey, savedKey, t, tenant }} />
       <MarketplaceControl
         canManage={canManage}
         enabled={tenant?.marketplaceEnabled ?? false}
@@ -1392,6 +1225,100 @@ function RegionFields({
           </select>
         </Field>
       ))}
+    </div>
+  )
+}
+
+function MarketplaceProfileFields({
+  tenant,
+  canManage,
+  save,
+  savingKey,
+  savedKey,
+  t,
+}: Ctx) {
+  const [address, setAddress] = useState(tenant?.address ?? '')
+  const [whatsappUrl, setWhatsappUrl] = useState(tenant?.whatsappUrl ?? '')
+  const [websiteUrl, setWebsiteUrl] = useState(tenant?.websiteUrl ?? '')
+  const [instagramUrl, setInstagramUrl] = useState(tenant?.instagramUrl ?? '')
+  const touched = useRef(false)
+  const saveRef = useLatest(save)
+
+  useEffect(() => {
+    if (!canManage || !touched.current) return
+    const timer = setTimeout(() => {
+      touched.current = false
+      void saveRef.current(
+        {
+          address: address.trim() || null,
+          whatsappUrl: whatsappUrl.trim() || null,
+          websiteUrl: websiteUrl.trim() || null,
+          instagramUrl: instagramUrl.trim() || null,
+        },
+        'marketplace-profile'
+      )
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [address, whatsappUrl, websiteUrl, instagramUrl, canManage])
+
+  const onChange = (setter: (value: string) => void, value: string) => {
+    markTouched(touched)
+    setter(value)
+  }
+
+  return (
+    <div className="flex flex-col gap-4 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-5">
+      <SectionHeader
+        t={t}
+        title={t('set.marketplace.profileTitle')}
+        subtitle={t('set.marketplace.profileSubtitle')}
+        canManage={canManage}
+        autosave
+        saving={savingKey === 'marketplace-profile'}
+        saved={savedKey === 'marketplace-profile'}
+      />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label={t('set.marketplace.address')}>
+          <textarea
+            value={address}
+            onChange={(event) => onChange(setAddress, event.target.value)}
+            disabled={!canManage}
+            rows={2}
+            placeholder={t('set.marketplace.addressPlaceholder')}
+            className={`${inputCls} h-auto py-2.5`}
+          />
+        </Field>
+        <Field label={t('set.marketplace.whatsapp')}>
+          <input
+            value={whatsappUrl}
+            onChange={(event) => onChange(setWhatsappUrl, event.target.value)}
+            disabled={!canManage}
+            type="url"
+            placeholder="https://wa.me/598..."
+            className={inputCls}
+          />
+        </Field>
+        <Field label={t('set.marketplace.website')}>
+          <input
+            value={websiteUrl}
+            onChange={(event) => onChange(setWebsiteUrl, event.target.value)}
+            disabled={!canManage}
+            type="url"
+            placeholder="https://tusitio.com"
+            className={inputCls}
+          />
+        </Field>
+        <Field label={t('set.marketplace.instagram')}>
+          <input
+            value={instagramUrl}
+            onChange={(event) => onChange(setInstagramUrl, event.target.value)}
+            disabled={!canManage}
+            type="url"
+            placeholder="https://instagram.com/tu-negocio"
+            className={inputCls}
+          />
+        </Field>
+      </div>
     </div>
   )
 }
@@ -1551,150 +1478,6 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
-/** Current subscription: state, dates, card, and the cancel / resume actions.
- *  Hidden for accounts that never subscribed — there is nothing to manage. */
-function SubscriptionPanel({ t, info, isOwner, tenantId, onChanged }: {
-  t: TFn; info: PlanInfo | null; isOwner: boolean; tenantId?: string; onChanged: () => Promise<void>
-}) {
-  const dispatch = useAppDispatch()
-  const lang = useAppSelector(selectTenant)?.language
-  const [busy, setBusy] = useState<'cancel' | 'resume' | null>(null)
-  const [confirming, setConfirming] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const billing = info?.billing
-  const status = billing?.status ?? null
-  // Nothing was ever subscribed: the plan cards below are the whole story.
-  if (!status || info?.plan === 'free') return null
-
-  const cancelled = status === 'cancelled'
-  const endsAt = billing?.endsAt
-  const renewsAt = billing?.renewsAt
-  const trialEndsAt = billing?.trialEndsAt
-  const planName = planById(info!.plan).name
-
-  const fmtDate = (iso?: string | null) => {
-    if (!iso) return null
-    const d = new Date(iso)
-    return isNaN(d.getTime()) ? null : d.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long', year: 'numeric' })
-  }
-
-  const act = async (kind: 'cancel' | 'resume') => {
-    if (!tenantId) return
-    setBusy(kind); setError(null)
-    const res = kind === 'cancel' ? await api.cancelSubscription(tenantId) : await api.resumeSubscription(tenantId)
-    setBusy(null)
-    if (res.error) { setError(res.error); return }
-    setConfirming(false)
-    if (res.data) dispatch(setTenant(res.data))
-    await onChanged()
-  }
-
-  const toneOf = (): 'green' | 'amber' | 'red' | 'violet' => {
-    if (status === 'active' || status === 'paid') return 'green'
-    if (status === 'on_trial') return 'violet'
-    if (status === 'cancelled' || status === 'paused') return 'amber'
-    return 'red'
-  }
-
-  return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-[var(--dash-border)] p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <span className="text-[13px] font-extrabold text-[var(--dash-text)]">{t('bill.sub.title')}</span>
-          <span className="text-[12px] font-medium text-[var(--dash-muted)]">{t('bill.sub.plan', { plan: planName })}</span>
-        </div>
-        <span className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide" style={tone(toneOf())}>
-          {t(`billingStatus.${status}`)}
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-1.5 border-t border-[var(--dash-divider)] pt-3 text-[12px]">
-        {status === 'on_trial' && fmtDate(trialEndsAt) && (
-          <SubRow label={t('bill.sub.trialEnds')} value={fmtDate(trialEndsAt)!} />
-        )}
-        {cancelled && fmtDate(endsAt) && (
-          <SubRow label={t('bill.sub.accessUntil')} value={fmtDate(endsAt)!} highlight />
-        )}
-        {!cancelled && fmtDate(renewsAt) && (
-          <SubRow label={t('bill.sub.renews')} value={fmtDate(renewsAt)!} />
-        )}
-        {billing?.cardBrand && billing?.cardLastFour && (
-          <SubRow label={t('bill.sub.card')} value={`${billing.cardBrand.toUpperCase()} ···· ${billing.cardLastFour}`} />
-        )}
-      </div>
-
-      {cancelled && (
-        <p className="rounded-xl bg-[var(--tone-amber-bg)] px-3.5 py-2.5 text-[12px] font-semibold text-[var(--tone-amber-fg)]">
-          {t('bill.sub.cancelledNote')}
-        </p>
-      )}
-
-      {error && (
-        <p className="rounded-xl bg-[var(--tone-red-bg)] px-3.5 py-2.5 text-[12px] font-semibold text-[var(--tone-red-fg)]">{error}</p>
-      )}
-
-      {isOwner ? (
-        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--dash-divider)] pt-3.5">
-          {billing?.portalUrl && (
-            <a href={billing.portalUrl} target="_blank" rel="noreferrer"
-              className="flex h-10 items-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
-              <Icon name="tags" size={15} /> {t('bill.managePortal')}
-            </a>
-          )}
-          {billing?.updatePaymentUrl && !cancelled && (
-            <a href={billing.updatePaymentUrl} target="_blank" rel="noreferrer"
-              className="flex h-10 items-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
-              <Icon name="tags" size={15} /> {t('bill.sub.updateCard')}
-            </a>
-          )}
-          {cancelled ? (
-            <button type="button" disabled={busy !== null} onClick={() => act('resume')}
-              className={`flex h-10 items-center rounded-xl px-4 text-[13px] font-bold text-white disabled:opacity-60 ${gradient}`}>
-              {busy === 'resume' ? t('bill.sub.resuming') : t('bill.sub.resume')}
-            </button>
-          ) : !confirming ? (
-            // Destructive but not primary: outlined in red, same size as the
-            // other actions, and pushed to the right so it never reads as the
-            // default thing to do here.
-            <button type="button" onClick={() => { setConfirming(true); setError(null) }}
-              className="ml-auto flex h-10 items-center gap-2 rounded-xl border border-[#EF4444]/40 px-4 text-[13px] font-bold text-[#EF4444] transition hover:border-[#EF4444] hover:bg-[var(--tone-red-bg)]">
-              <Icon name="circle-x" size={15} /> {t('bill.sub.cancel')}
-            </button>
-          ) : (
-            <div className="flex w-full flex-col gap-2 rounded-xl border border-[#EF4444]/40 bg-[var(--tone-red-bg)] p-3.5">
-              <span className="text-[12px] font-semibold text-[var(--tone-red-fg)]">
-                {t('bill.sub.confirm', { date: fmtDate(renewsAt) ?? fmtDate(endsAt) ?? '' })}
-              </span>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" disabled={busy !== null} onClick={() => act('cancel')}
-                  className="flex h-9 items-center rounded-xl bg-[#EF4444] px-4 text-[13px] font-bold text-white disabled:opacity-60">
-                  {busy === 'cancel' ? t('bill.sub.cancelling') : t('bill.sub.confirmYes')}
-                </button>
-                <button type="button" disabled={busy !== null} onClick={() => setConfirming(false)}
-                  className="flex h-9 items-center rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 text-[13px] font-bold text-[var(--dash-text2)]">
-                  {t('bill.sub.confirmNo')}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <p className="text-[12px] font-semibold text-[var(--dash-muted)]">{t('bill.ownerOnly')}</p>
-      )}
-    </div>
-  )
-}
-
-function SubRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="font-semibold text-[var(--dash-text2)]">{label}</span>
-      <span className={`font-bold ${highlight ? 'text-[var(--tone-amber-fg)]' : 'text-[var(--dash-text)]'}`}>{value}</span>
-    </div>
-  )
-}
-
 /* ── 5. Billing — plans, usage and limit enforcement ── */
 function BillingSection({
   t,
@@ -1798,12 +1581,6 @@ function BillingSection({
     } else setError(res.error || 'No se pudo abrir el checkout.')
   }
 
-  const refresh = async () => {
-    if (!tenantId) return
-    const res = await api.getPlan(tenantId)
-    if (res.data) setInfo(res.data)
-  }
-
   const limitLabel = (n: number | null) =>
     n === null ? t('bill.unlimited') : String(n)
 
@@ -1875,6 +1652,17 @@ function BillingSection({
             )
           })}
       </div>
+
+      {info?.billing?.portalUrl && (
+        <a
+          href={info.billing.portalUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex h-11 w-fit items-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
+        >
+          <Icon name="tags" size={16} /> {t('bill.managePortal')}
+        </a>
+      )}
 
       {/* Plan cards — same copy as the public landing (lib/plans). */}
       <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -1961,10 +1749,6 @@ function BillingSection({
       <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
         <Icon name="tags" size={15} /> {t('bill.paymentNote')}
       </div>
-
-      {/* Last: managing (and cancelling) what you already have comes after
-          seeing the plans, the same way "delete account" closes Settings. */}
-      <SubscriptionPanel t={t} info={info} isOwner={isOwner} tenantId={tenantId} onChanged={refresh} />
     </>
   )
 }

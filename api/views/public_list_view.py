@@ -18,6 +18,7 @@ class PublicListView(BaseView):
     hero_color: str | None = None
     bg_url: str | None = None
     bg_overlay: bool | None = None
+    capture_viewer_info: bool = False
     version: ListVersionView
 
     @classmethod
@@ -33,6 +34,7 @@ class PublicListView(BaseView):
             hero_color=getattr(price_list, "hero_color", None),
             bg_url=getattr(price_list, "bg_url", None),
             bg_overlay=getattr(price_list, "bg_overlay", None),
+            capture_viewer_info=bool(getattr(price_list, "capture_viewer_info", False)),
             version=ListVersionView.render(
                 published.version, include_items=True, items=published.items
             ),
