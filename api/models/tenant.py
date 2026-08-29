@@ -47,6 +47,13 @@ class Tenant(BaseModel):
     # Optional hero/header color for the public list (falls back to brand_color when null).
     list_hero_color = CharField(max_length=9, null=True)
 
+    social_instagram = TextField(null=True)
+    social_facebook = TextField(null=True)
+    social_tiktok = TextField(null=True)
+    social_website = TextField(null=True)
+    social_whatsapp = CharField(max_length=20, null=True)
+    leads_enabled = BooleanField(default=False)
+
     # Language & region
     language = CharField(max_length=5, default="es")
     timezone = CharField(max_length=64, default="America/Montevideo")

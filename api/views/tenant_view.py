@@ -28,6 +28,12 @@ class TenantView(BaseView):
     list_bg_url: str | None = None
     list_bg_overlay: bool = False
     list_hero_color: str | None = None
+    social_instagram: str | None = None
+    social_facebook: str | None = None
+    social_tiktok: str | None = None
+    social_website: str | None = None
+    social_whatsapp: str | None = None
+    leads_enabled: bool = False
     language: str = "es"
     timezone: str = "America/Montevideo"
     delivery_enabled: bool = False
@@ -64,6 +70,12 @@ class TenantView(BaseView):
             list_bg_url=g("list_bg_url"),
             list_bg_overlay=bool(g("list_bg_overlay", False)),
             list_hero_color=g("list_hero_color"),
+            social_instagram=g("social_instagram"),
+            social_facebook=g("social_facebook"),
+            social_tiktok=g("social_tiktok"),
+            social_website=g("social_website"),
+            social_whatsapp=g("social_whatsapp"),
+            leads_enabled=bool(g("leads_enabled", False)),
             language=g("language", "es") or "es",
             timezone=g("timezone", "America/Montevideo") or "America/Montevideo",
             delivery_enabled=bool(g("delivery_enabled", False)),

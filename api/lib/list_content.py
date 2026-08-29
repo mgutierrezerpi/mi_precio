@@ -61,7 +61,7 @@ def _validate_hero(hero: Any) -> None:
         raise ValueError("content.hero has unknown fields")
     for key in ("eyebrow", "title", "body"):
         if key in hero:
-            _string(hero[key], f"content.hero.{key}")
+            _string(hero[key], f"content.hero.{key}", allow_empty=True)
     if "stats" in hero:
         if not isinstance(hero["stats"], list):
             raise ValueError("content.hero.stats must be a list")
@@ -95,7 +95,7 @@ def _validate_template(template: Any) -> None:
         raise ValueError("content.template.price_format is not supported")
     for key, value in template.items():
         if key not in {"font", "checkout_channel", "price_format"}:
-            _string(value, f"content.template.{key}")
+            _string(value, f"content.template.{key}", allow_empty=True)
 
 
 def _validate_catalog(block: dict[str, Any]) -> None:
@@ -159,8 +159,8 @@ def _required_string(data: dict[str, Any], key: str, label: str) -> str:
     return _string(data[key], f"{label}.{key}")
 
 
-def _string(value: Any, label: str) -> str:
-    if not isinstance(value, str) or not value.strip():
+def _string(value: Any, label: str, *, allow_empty: bool = False) -> str:
+    if not isinstance(value, str) or (not allow_empty and not value.strip()):
         raise ValueError(f"{label} must be a non-empty string")
     if len(value) > 2_000:
         raise ValueError(f"{label} is too long")

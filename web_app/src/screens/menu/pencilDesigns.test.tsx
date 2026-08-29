@@ -42,4 +42,34 @@ describe('Pencil price-list templates', () => {
     expect(theme.cardRadius).toBeTruthy()
     expect(theme.buttonRadius).toBeTruthy()
   })
+
+  it('honors intentional blank template fields instead of restoring defaults', () => {
+    const view = render(
+      <PencilList
+        variant="pencil-flower-winter"
+        {...props}
+        content={{
+          schemaVersion: 1,
+          hero: { eyebrow: 'Demo', title: 'Demo price list', body: 'A short description.' },
+          blocks: [],
+          template: {
+            imageLabel: '',
+            imageTitle: '',
+            promoEyebrow: '',
+            promoTitle: '',
+            promoBody: '',
+            promoPrice: '',
+            promoNote: '',
+            footerLeft: '',
+            footerRight: '',
+          },
+        }}
+      />,
+    )
+
+    expect(view.container.textContent).not.toContain('WILD STEM STUDIO · WINTER EDITION')
+    expect(view.container.textContent).not.toContain('Flowers for the darker hours.')
+    expect(view.container.textContent).not.toContain('order by Thursday')
+    view.unmount()
+  })
 })

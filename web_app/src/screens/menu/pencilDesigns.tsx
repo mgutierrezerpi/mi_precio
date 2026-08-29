@@ -578,18 +578,18 @@ const withTemplateOverrides = (config: PencilConfig, template: NonNullable<Desig
   if (!template) return config
   return {
     ...config,
-    ...(template.image ? { image: template.image } : {}),
-    ...(template.imageLabel ? { imageLabel: template.imageLabel } : {}),
-    ...(template.imageTitle ? { imageTitle: template.imageTitle } : {}),
-    ...(template.promoEyebrow ? { promoEyebrow: template.promoEyebrow } : {}),
-    ...(template.promoTitle ? { promoTitle: template.promoTitle } : {}),
-    ...(template.promoBody ? { promoBody: template.promoBody } : {}),
-    ...(template.promoPrice ? { promoPrice: template.promoPrice } : {}),
-    ...(template.promoNote ? { promoNote: template.promoNote } : {}),
-    ...(template.footerLeft ? { footerLeft: template.footerLeft } : {}),
-    ...(template.footerRight ? { footerRight: template.footerRight } : {}),
-    ...(template.font ? { font: template.font } : {}),
-    ...(template.priceFormat ? { priceFormat: template.priceFormat } : {}),
+    ...(template.image !== undefined ? { image: template.image } : {}),
+    ...(template.imageLabel !== undefined ? { imageLabel: template.imageLabel } : {}),
+    ...(template.imageTitle !== undefined ? { imageTitle: template.imageTitle } : {}),
+    ...(template.promoEyebrow !== undefined ? { promoEyebrow: template.promoEyebrow } : {}),
+    ...(template.promoTitle !== undefined ? { promoTitle: template.promoTitle } : {}),
+    ...(template.promoBody !== undefined ? { promoBody: template.promoBody } : {}),
+    ...(template.promoPrice !== undefined ? { promoPrice: template.promoPrice } : {}),
+    ...(template.promoNote !== undefined ? { promoNote: template.promoNote } : {}),
+    ...(template.footerLeft !== undefined ? { footerLeft: template.footerLeft } : {}),
+    ...(template.footerRight !== undefined ? { footerRight: template.footerRight } : {}),
+    ...(template.font !== undefined ? { font: template.font } : {}),
+    ...(template.priceFormat !== undefined ? { priceFormat: template.priceFormat } : {}),
   }
 }
 

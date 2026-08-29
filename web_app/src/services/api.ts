@@ -12,6 +12,8 @@ import type {
   Customer,
   CustomerStats,
   CustomerDetail,
+  Lead,
+  LeadStatus,
   Order,
   Activity,
   TeamMember,
@@ -120,20 +122,20 @@ function listContentBody(content: NonNullable<ListVersion['content']>) {
     ...(content.template
       ? {
           template: {
-            ...(content.template.font ? { font: content.template.font } : {}),
-            ...(content.template.checkoutChannel ? { checkout_channel: content.template.checkoutChannel } : {}),
-            ...(content.template.instagramHandle ? { instagram_handle: content.template.instagramHandle } : {}),
-            ...(content.template.priceFormat ? { price_format: content.template.priceFormat } : {}),
-            ...(content.template.image ? { image: content.template.image } : {}),
-            ...(content.template.imageLabel ? { image_label: content.template.imageLabel } : {}),
-            ...(content.template.imageTitle ? { image_title: content.template.imageTitle } : {}),
-            ...(content.template.promoEyebrow ? { promo_eyebrow: content.template.promoEyebrow } : {}),
-            ...(content.template.promoTitle ? { promo_title: content.template.promoTitle } : {}),
-            ...(content.template.promoBody ? { promo_body: content.template.promoBody } : {}),
-            ...(content.template.promoPrice ? { promo_price: content.template.promoPrice } : {}),
-            ...(content.template.promoNote ? { promo_note: content.template.promoNote } : {}),
-            ...(content.template.footerLeft ? { footer_left: content.template.footerLeft } : {}),
-            ...(content.template.footerRight ? { footer_right: content.template.footerRight } : {}),
+            ...(content.template.font !== undefined ? { font: content.template.font } : {}),
+            ...(content.template.checkoutChannel !== undefined ? { checkout_channel: content.template.checkoutChannel } : {}),
+            ...(content.template.instagramHandle !== undefined ? { instagram_handle: content.template.instagramHandle } : {}),
+            ...(content.template.priceFormat !== undefined ? { price_format: content.template.priceFormat } : {}),
+            ...(content.template.image !== undefined ? { image: content.template.image } : {}),
+            ...(content.template.imageLabel !== undefined ? { image_label: content.template.imageLabel } : {}),
+            ...(content.template.imageTitle !== undefined ? { image_title: content.template.imageTitle } : {}),
+            ...(content.template.promoEyebrow !== undefined ? { promo_eyebrow: content.template.promoEyebrow } : {}),
+            ...(content.template.promoTitle !== undefined ? { promo_title: content.template.promoTitle } : {}),
+            ...(content.template.promoBody !== undefined ? { promo_body: content.template.promoBody } : {}),
+            ...(content.template.promoPrice !== undefined ? { promo_price: content.template.promoPrice } : {}),
+            ...(content.template.promoNote !== undefined ? { promo_note: content.template.promoNote } : {}),
+            ...(content.template.footerLeft !== undefined ? { footer_left: content.template.footerLeft } : {}),
+            ...(content.template.footerRight !== undefined ? { footer_right: content.template.footerRight } : {}),
           },
         }
       : {}),
@@ -1131,6 +1133,22 @@ class ApiService {
   }
 
   // Customer endpoints (CRM)
+  async getLeads(tenantId: string, status?: LeadStatus): Promise<ApiResponse<Lead[]>> {
+    const query = status ? `?status=${status}` : ''
+    return this.request(`/tenants/${tenantId}/leads${query}`)
+  }
+
+  async setLeadStatus(tenantId: string, leadId: string, status: LeadStatus): Promise<ApiResponse<Lead>> {
+    return this.request(`/tenants/${tenantId}/leads/${leadId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    })
+  }
+
+  async convertLead(tenantId: string, leadId: string): Promise<ApiResponse<Customer>> {
+    return this.request(`/tenants/${tenantId}/leads/${leadId}/convert`, { method: 'POST' })
+  }
+
   async getCustomers(tenantId: string): Promise<ApiResponse<Customer[]>> {
     return this.request(`/tenants/${tenantId}/customers`)
   }
@@ -1243,6 +1261,17 @@ class ApiService {
     magazineId: string
   ): Promise<ApiResponse<{ tenant: Tenant; magazine: Magazine }>> {
     return this.request(`/public/${subdomain}/magazines/${encodeURIComponent(magazineId)}`)
+  }
+
+  async createLead(
+    subdomain: string,
+    data: { name: string; phone?: string; email?: string; message?: string; listId?: string | null; listName?: string | null; source?: 'form' | 'cart'; website?: string }
+  ): Promise<ApiResponse<{ ok: boolean }>> {
+    const { listId, listName, ...rest } = data
+    return this.request(`/public/${subdomain}/leads`, {
+      method: 'POST',
+      body: JSON.stringify({ ...rest, list_id: listId, list_name: listName }),
+    })
   }
 
   async recordPublicView(

@@ -43,7 +43,7 @@ def _with_db(task):
 def run_billing_maintenance() -> dict[str, int]:
     """Resume due billing lookups, expire subscriptions, and prune auth codes."""
 
-    expired_ids = _with_db(billing.expire_ended_subscriptions)
+    expired_ids = _with_db(billing.expired_subscription_ids)
     pruned_codes = _with_db(auth.prune_expired_codes)
     pending_ids = _with_db(billing.due_pending_subscription_ids)
     for tenant_id in pending_ids:

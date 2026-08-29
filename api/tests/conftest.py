@@ -16,7 +16,9 @@ from models import (
     Item,
     Invitation,
     Product,
+    Activity,
     Customer,
+    Lead,
     PublicViewer,
     PublicViewerDismissal,
     TenantMembership,
@@ -26,7 +28,13 @@ from models import (
 )
 
 
-test_db = SqliteDatabase(":memory:")
+# TestClient serves requests on another thread. A shared in-memory database
+# keeps those request connections on the same test schema.
+test_db = SqliteDatabase(
+    "file:mi_precio_test?mode=memory&cache=shared",
+    uri=True,
+    check_same_thread=False,
+)
 
 
 @pytest.fixture(scope="function")
@@ -42,7 +50,9 @@ def db():
         Item,
         Invitation,
         Product,
+        Activity,
         Customer,
+        Lead,
         PublicViewer,
         PublicViewerDismissal,
         TenantMembership,

@@ -1653,9 +1653,9 @@ function BillingSection({
           })}
       </div>
 
-      {info?.billing?.portal_url && (
+      {info?.billing?.portalUrl && (
         <a
-          href={info.billing.portal_url}
+          href={info.billing.portalUrl}
           target="_blank"
           rel="noreferrer"
           className="flex h-11 w-fit items-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"

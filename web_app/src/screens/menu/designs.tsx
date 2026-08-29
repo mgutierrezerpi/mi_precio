@@ -3,22 +3,36 @@ import type { Item, Tenant, ListDesign, ListContent } from '../../types'
 
 /* ── Shared helpers (used by MenuScreen's Storefront/CartView and the designs) ── */
 
+/** Expand a shorthand or regular hex color to six digits. */
+function hexDigits(hex: string): string {
+  const value = hex.replace('#', '')
+  return value.length === 3
+    ? value.split('').map((channel) => channel + channel).join('')
+    : value.padEnd(6, '0').slice(0, 6)
+}
+
+const toHex = (channels: number[]) =>
+  `#${channels
+    .map((channel) => Math.min(255, Math.max(0, Math.round(channel))))
+    .map((channel) => channel.toString(16).padStart(2, '0'))
+    .join('')}`
+
 // Lighten a hex color toward white (0..1). Builds a brand gradient from a single color.
 export function lighten(hex: string, amt = 0.4): string {
-  const m = hex.replace('#', '')
-  const n =
-    m.length === 3
-      ? m
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : m.padEnd(6, '0').slice(0, 6)
-  const ch = (i: number) =>
-    Math.round(
-      parseInt(n.slice(i, i + 2), 16) +
-        (255 - parseInt(n.slice(i, i + 2), 16)) * amt
-    )
-  return `#${[ch(0), ch(2), ch(4)].map((v) => v.toString(16).padStart(2, '0')).join('')}`
+  const value = hexDigits(hex)
+  const channel = (index: number) => {
+    const current = Number.parseInt(value.slice(index, index + 2), 16)
+    return current + (255 - current) * amt
+  }
+  return toHex([channel(0), channel(2), channel(4)])
+}
+
+/** Mix a hex color toward black while preserving valid color channels. */
+export function darken(hex: string, amt = 0.4): string {
+  const value = hexDigits(hex)
+  const channel = (index: number) =>
+    Number.parseInt(value.slice(index, index + 2), 16) * (1 - amt)
+  return toHex([channel(0), channel(2), channel(4)])
 }
 
 // Append an alpha channel to a hex color (a in 0..1). Used to scrim a design over a background image.

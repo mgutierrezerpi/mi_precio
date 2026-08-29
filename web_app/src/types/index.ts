@@ -22,6 +22,7 @@ export interface PlanInfo {
     members: number | null
   }
   usage: { products: number; lists: number; members: number }
+  features?: string[]
   /** When false there is no payment gateway, so plan changes apply immediately. */
   billingEnabled?: boolean
   /** True while the tenant still has to pick a plan before the CRM opens up. */
@@ -77,6 +78,12 @@ export interface Tenant {
   listBgUrl: string | null
   listBgOverlay: boolean
   listHeroColor: string | null
+  socialInstagram: string | null
+  socialFacebook: string | null
+  socialTiktok: string | null
+  socialWebsite: string | null
+  socialWhatsapp: string | null
+  leadsEnabled: boolean
   language: string
   timezone: string
   deliveryEnabled: boolean
@@ -161,7 +168,7 @@ export type PriceListVariantType =
 export interface PriceList {
   id: string
   tenantId: string
-  publicSlug: string
+  publicSlug?: string
   name: string
   slug: string | null
   published: boolean
@@ -388,6 +395,24 @@ export interface Order {
   items: OrderItem[]
 }
 
+export type LeadStatus = 'new' | 'contacted' | 'converted' | 'discarded'
+export type LeadSource = 'form' | 'cart'
+
+export interface Lead {
+  id: string
+  tenantId: string
+  name: string
+  phone: string | null
+  email: string | null
+  message: string | null
+  listId: string | null
+  listName: string | null
+  source: LeadSource
+  status: LeadStatus
+  createdAt: string
+  updatedAt: string
+}
+
 export interface CustomerStats {
   total: number
   active: number
@@ -416,6 +441,7 @@ export interface NotifPrefs {
   sales: boolean
   catalog: boolean
   customers: boolean
+  leads: boolean
   team: boolean
 }
 
@@ -490,6 +516,7 @@ export interface LinkTreeLink {
 export interface LinkTree {
   id: string
   tenantId: string
+  publicSlug: string
   displayName: string
   handle: string | null
   bio: string | null
@@ -501,6 +528,8 @@ export interface LinkTree {
   tags: string[]
   links: LinkTreeLink[]
   instagramUrl: string | null
+  tiktokUrl: string | null
+  emailUrl: string | null
   whatsappUrl: string | null
   websiteUrl: string | null
   locationUrl: string | null

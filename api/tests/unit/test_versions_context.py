@@ -127,6 +127,22 @@ def test_update_content_replaces_a_version_snapshot(db):
     assert deserialize_content(updated.content) == CONTENT
 
 
+def test_update_content_allows_clearing_optional_copy(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    created = lists.create_list(tenant.id, "Menu")
+    content = {
+        "schema_version": 1,
+        "hero": {"eyebrow": "", "title": "", "body": ""},
+        "template": {"promo_title": "", "footer_left": ""},
+        "blocks": [],
+    }
+
+    updated = versions.update_content(created.version.id, content, 0)
+
+    assert updated is not None
+    assert deserialize_content(updated.content) == content
+
+
 def test_update_content_rejects_a_stale_revision(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")

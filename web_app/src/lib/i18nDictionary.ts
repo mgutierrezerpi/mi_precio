@@ -1,5 +1,8 @@
 import type { Lang } from './i18n'
 import { DICT_EXTRA } from './i18nDictionaryExtra'
+import { DICT_LEADS } from './i18nDictionaryLeads'
+import { DICT_SOCIALS } from './i18nDictionarySocials'
+import { DICT_TOUR } from './i18nDictionaryTour'
 
 export type TranslationEntry = Record<Lang, string>
 
@@ -1241,4 +1244,10 @@ const DICT_BASE: Record<string, TranslationEntry> = {
   'viewers.ip': { es: 'IP', en: 'IP', pt: 'IP' },
   'viewers.loading': { es: 'Cargando visitantes…', en: 'Loading visitors…', pt: 'Carregando visitantes…' },
 }
-export const DICT = { ...DICT_BASE, ...DICT_EXTRA }
+export const DICT = {
+  ...DICT_BASE,
+  ...DICT_EXTRA,
+  ...DICT_TOUR,
+  ...DICT_SOCIALS,
+  ...DICT_LEADS,
+}
