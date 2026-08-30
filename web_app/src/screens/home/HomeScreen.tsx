@@ -273,7 +273,7 @@ function BackToTop() {
       type="button"
       aria-label="Volver arriba"
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/80 bg-gradient-to-br from-[#5B21B6] to-[#A855F7] text-white shadow-[0_18px_34px_-8px_rgba(46,16,101,0.95)] ring-4 ring-[#7C3AED]/30 transition-all duration-300 hover:-translate-y-1 hover:brightness-110 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white ${show ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
+      className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/80 bg-gradient-to-br from-[#2A1C66] to-[#6C43E8] text-white shadow-[0_18px_34px_-8px_rgba(16,9,34,0.95)] ring-4 ring-[#6C43E8]/30 transition-all duration-300 hover:-translate-y-1 hover:brightness-110 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white ${show ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
     >
       <svg
         width="26"
@@ -884,10 +884,10 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
             return (
               <article
                 key={plan.name}
-                className={`relative flex flex-col gap-[14px] rounded-[24px] px-7 py-8 ${dark ? 'bg-[#0F172A] text-white shadow-[0_30px_60px_rgba(15,23,42,0.2)]' : 'border border-[#E2E8F0] bg-white shadow-[0_12px_32px_-14px_rgba(15,23,42,0.18)]'}`}
+                className={`relative flex flex-col gap-[14px] rounded-[24px] px-7 py-8 ${dark ? 'landing-plan-featured text-white' : 'landing-plan-card border border-[#E2E8F0] bg-white shadow-[0_12px_32px_-14px_rgba(15,23,42,0.18)]'}`}
               >
                 {dark && (
-                  <em className="absolute right-6 top-6 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-3 py-1.5 text-[0.64rem] font-bold not-italic uppercase tracking-[0.05em] text-white">
+                  <em className="landing-plan-popular absolute right-6 top-6 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-3 py-1.5 text-[0.64rem] font-bold not-italic uppercase tracking-[0.05em] text-white">
                     Más popular
                   </em>
                 )}
@@ -999,7 +999,7 @@ function Faq() {
 function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
   return (
     <section className="bg-[#EDE9FE] px-5 py-20 md:px-8">
-      <Reveal className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 rounded-[32px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-8 py-16 text-center shadow-[0_32px_80px_-20px_rgba(124,58,237,0.5)] md:px-20">
+      <Reveal className="landing-final-cta mx-auto flex max-w-[1100px] flex-col items-center gap-5 rounded-[32px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-8 py-16 text-center shadow-[0_32px_80px_-20px_rgba(124,58,237,0.5)] md:px-20">
         <h2 className="text-4xl font-black leading-tight tracking-tight text-white md:text-[46px]">
           Tu lista de precios, lista en 5 minutos.
         </h2>
@@ -1011,13 +1011,13 @@ function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
           <button
             type="button"
             onClick={onAuth}
-            className="flex h-[52px] items-center gap-2 rounded-[14px] bg-white px-7 text-[15px] font-bold text-[#7C3AED] hover:bg-violet-50"
+            className="landing-final-primary flex h-[52px] items-center gap-2 rounded-[14px] bg-white px-7 text-[15px] font-bold text-[#7C3AED] hover:bg-violet-50"
           >
             Probar 14 días gratis <ArrowRight size={18} />
           </button>
           <a
             href="mailto:hola@miprecio.app"
-            className="flex h-[52px] items-center rounded-[14px] border border-white/40 px-7 text-[15px] font-bold text-white hover:bg-white/10"
+            className="landing-final-secondary flex h-[52px] items-center rounded-[14px] border border-white/40 px-7 text-[15px] font-bold text-white hover:bg-white/10"
           >
             Hablar con ventas
           </a>

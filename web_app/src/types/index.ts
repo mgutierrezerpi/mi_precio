@@ -289,6 +289,7 @@ export interface ListContent {
     profileImage?: string
     storyVideos?: string[]
     storyMetrics?: { views: string; likes: string; comments: string }[]
+    filmImages?: string[]
     collaborationHeading?: string
     storiesHeading?: string
     imageLabel?: string

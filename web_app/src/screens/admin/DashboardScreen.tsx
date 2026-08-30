@@ -101,7 +101,7 @@ export function DashboardScreen() {
 
   return (
     <CrmLayout
-      active={t('analytics.overview')}
+      active="Overview"
       title={t('analytics.workspaceOverview')}
       subtitle={formattedDate}
       hideContext
@@ -117,7 +117,6 @@ export function DashboardScreen() {
       }
     >
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
-        <DashboardTitle t={t} />
         <DashboardHero
           copied={copied}
           goCreateList={goCreateList}
@@ -247,19 +246,6 @@ function dashboardMetrics(visits: VisitStats | null) {
     productClicks,
     qrScans,
   }
-}
-
-function DashboardTitle({ t }: { t: TFn }) {
-  return (
-    <section className="flex h-[60px] flex-col justify-center gap-1">
-      <h2 className="text-[28px] font-bold leading-none text-[#F8F7FF]">
-        {t('analytics.overview')}
-      </h2>
-      <p className="text-[13px] text-[#9694A6]">
-        {t('analytics.dashboardSubtitle')}
-      </p>
-    </section>
-  )
 }
 
 function DashboardHero({

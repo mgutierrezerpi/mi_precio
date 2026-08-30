@@ -14,6 +14,14 @@ const DEFAULT_STORY_METRICS = [
   { views: '9K', likes: '172', comments: '12' },
 ]
 const DEFAULT_PROFILE_IMAGE = '/cafecitos-dani-hero.jpg'
+const DEFAULT_FILM_IMAGES = [
+  '/cafecitos-dani-hero.jpg',
+  '/cafecitos-dani-card-1.jpg',
+  '/cafecitos-dani-card-2.jpg',
+  '/cafecitos-dani-card-3.jpg',
+  '/cafecitos-dani-card-4.jpg',
+  '/cafecitos-dani-card-5.jpg',
+]
 
 function StoryMetricIcon({ type }: { type: 'views' | 'likes' | 'comments' }) {
   const common = {
@@ -193,6 +201,7 @@ export function CafecitosTemplate({
   const videos = storyVideos?.length ? storyVideos : DEFAULT_STORY_VIDEOS
   const metrics = template?.storyMetrics?.slice(0, videos.length) || (storyVideos?.length ? [] : DEFAULT_STORY_METRICS)
   const profileImage = template?.profileImage || config.image || DEFAULT_PROFILE_IMAGE
+  const filmImages = template?.filmImages?.filter(Boolean).slice(0, 8) || DEFAULT_FILM_IMAGES
   const profileName = template?.profileName || hero?.eyebrow?.replace(/^hola,?\s*soy\s*/i, '') || props.tenant.name
   const logo = template?.logo || '/cafecitos-logo.svg'
   const collaborationHeading = template?.collaborationHeading || 'Promocioná tu marca conmigo'
@@ -233,11 +242,7 @@ export function CafecitosTemplate({
             </p>
           </div>
           <div className="cafecitos-film mx-auto w-full max-w-[400px]">
-            <img
-              src={profileImage}
-              alt={profileName}
-              className="aspect-[3/4] w-full rounded-[31px] object-cover"
-            />
+            <div className="cafecitos-film-track">{[...filmImages, ...filmImages].map((image, index) => <img key={`${image}-${index}`} src={image} alt="" />)}</div>
           </div>
         </section>
         <section className="border-y border-[#C9E2D5] py-10">

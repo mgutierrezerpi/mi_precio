@@ -81,6 +81,7 @@ def _validate_template(template: Any) -> None:
         "promo_title", "promo_body", "promo_price", "promo_note",
         "footer_left", "footer_right", "checkout_channel", "instagram_handle", "price_format",
         "logo", "profile_name", "profile_image", "story_videos", "story_metrics",
+        "film_images",
         "collaboration_heading", "stories_heading",
     }
     if not isinstance(template, dict) or set(template) - allowed:
@@ -108,8 +109,13 @@ def _validate_template(template: Any) -> None:
                 raise ValueError("each story metric needs views, likes, and comments")
             for value in metric.values():
                 _string(value, "story metric value")
+    if "film_images" in template:
+        if not isinstance(template["film_images"], list) or len(template["film_images"]) > 8:
+            raise ValueError("content.template.film_images must have at most 8 images")
+        for image in template["film_images"]:
+            _string(image, "content.template.film_images entry")
     for key, value in template.items():
-        if key not in {"font", "checkout_channel", "price_format", "story_videos", "story_metrics"}:
+        if key not in {"font", "checkout_channel", "price_format", "story_videos", "story_metrics", "film_images"}:
             _string(value, f"content.template.{key}", allow_empty=True)
 
 

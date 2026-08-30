@@ -132,6 +132,7 @@ function listContentBody(content: NonNullable<ListVersion['content']>) {
             ...(content.template.profileImage !== undefined ? { profile_image: content.template.profileImage } : {}),
             ...(content.template.storyVideos !== undefined ? { story_videos: content.template.storyVideos } : {}),
             ...(content.template.storyMetrics !== undefined ? { story_metrics: content.template.storyMetrics } : {}),
+            ...(content.template.filmImages !== undefined ? { film_images: content.template.filmImages } : {}),
             ...(content.template.collaborationHeading !== undefined ? { collaboration_heading: content.template.collaborationHeading } : {}),
             ...(content.template.storiesHeading !== undefined ? { stories_heading: content.template.storiesHeading } : {}),
             ...(content.template.imageLabel !== undefined ? { image_label: content.template.imageLabel } : {}),
