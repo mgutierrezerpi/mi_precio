@@ -355,6 +355,18 @@ class ApiService {
     })
   }
 
+  async uploadListTemplateVideo(
+    tenantId: string,
+    file: Blob
+  ): Promise<ApiResponse<{ url: string }>> {
+    const body = new FormData()
+    body.append('video', file, 'list-story.mp4')
+    return this.request(`/tenants/${tenantId}/list-template/video`, {
+      method: 'POST',
+      body,
+    })
+  }
+
   async getMarketplaceNearby(
     latitude?: number,
     longitude?: number,

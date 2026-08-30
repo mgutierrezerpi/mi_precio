@@ -29,6 +29,26 @@ async def upload_list_template_image_endpoint(
     return {"url": url}
 
 
+@router.post("/tenants/{tenant_id}/list-template/video", status_code=201)
+async def upload_list_template_video_endpoint(
+    tenant_id: str,
+    video: UploadFile = File(...),
+    current_user: dict = Depends(require_editor),
+):
+    if current_user.get("tenant_id") != tenant_id:
+        raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+    try:
+        url = brand_assets.upload_list_template_video(
+            tenant_id, await video.read(), video.content_type or ""
+        )
+    except brand_assets.BrandImageUploadError as e:
+        status = 413 if str(e) == "Video is too large" else 415 if str(e) == "Unsupported video type" else 503
+        raise HTTPException(status_code=status, detail=str(e)) from e
+    if not url:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    return {"url": url}
+
+
 @router.post("/tenants/{tenant_id}/linktree/avatar", status_code=201)
 async def upload_linktree_avatar_endpoint(
     tenant_id: str,
