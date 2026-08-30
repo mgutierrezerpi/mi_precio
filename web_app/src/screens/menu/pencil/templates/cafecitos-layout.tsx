@@ -194,7 +194,7 @@ export function CafecitosTemplate({
   const metrics = template?.storyMetrics?.slice(0, videos.length) || (storyVideos?.length ? [] : DEFAULT_STORY_METRICS)
   const profileImage = template?.image || config.image || DEFAULT_PROFILE_IMAGE
   const profileName = hero?.eyebrow || props.tenant.name
-  const logo = template?.logo || props.tenant.logoUrl || '/cafecitos-logo.svg'
+  const logo = template?.logo || '/cafecitos-logo.svg'
   const selectedService = services.find((item) => item.id === selectedServiceId)
   const checkoutChannel = props.checkoutChannel === 'instagram' ? 'instagram' : 'whatsapp'
   const contactMessage = selectedService
