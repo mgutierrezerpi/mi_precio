@@ -283,6 +283,10 @@ export interface ListContent {
     instagramHandle?: string
     priceFormat?: '$' | 'U$D' | 'USD'
     image?: string
+    /** Optional identity and story media for the stories-style collaboration template. */
+    logo?: string
+    storyVideos?: string[]
+    storyMetrics?: { views: string; likes: string; comments: string }[]
     imageLabel?: string
     imageTitle?: string
     promoEyebrow?: string

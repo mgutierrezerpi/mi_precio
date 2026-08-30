@@ -1222,15 +1222,14 @@ a {
   visibility: hidden;
 }
 /* Cafecitos: a single full-screen Reel feed inside one phone shell. */
-.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] > div {
+.miprecio-public-list .cafecitos-stories > div {
   width: min(88vw, 390px);
   height: min(78vh, 740px);
   margin-inline: auto;
   display: flex;
   flex-direction: row;
   gap: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: visible;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   scrollbar-width: none;
@@ -1241,11 +1240,11 @@ a {
   box-shadow: 0 24px 54px -28px rgba(0, 49, 34, 0.78), inset 0 0 0 1px rgb(255 255 255 / 12%);
 }
 
-.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] > div::-webkit-scrollbar {
+.miprecio-public-list .cafecitos-stories > div::-webkit-scrollbar {
   display: none;
 }
 
-.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] > div > article {
+.miprecio-public-list .cafecitos-stories > div > article {
   width: 100% !important;
   height: 100%;
   min-width: 100%;
@@ -1262,7 +1261,7 @@ a {
   touch-action: manipulation;
 }
 
-.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] video {
+.miprecio-public-list .cafecitos-stories video {
   width: 100%;
   height: 100%;
   aspect-ratio: auto !important;
@@ -1270,8 +1269,27 @@ a {
   object-fit: cover;
 }
 
-.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] > div > article > div {
+.miprecio-public-list .cafecitos-stories > div > article > div {
   inset: 0 !important;
+}
+
+@media (min-width: 768px) {
+  .miprecio-public-list .cafecitos-stories > div {
+    overflow: visible !important;
+  }
+}
+
+/* Story tap targets should behave like Instagram: no keyboard or tap chrome. */
+.miprecio-public-list button[aria-label='Historia anterior'],
+.miprecio-public-list button[aria-label='Historia siguiente'],
+.miprecio-public-list button[aria-label='Historia anterior']:focus,
+.miprecio-public-list button[aria-label='Historia siguiente']:focus,
+.miprecio-public-list button[aria-label='Historia anterior']:focus-visible,
+.miprecio-public-list button[aria-label='Historia siguiente']:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .miprecio-public-list img[alt='Dani, Cafecitos con Dani'] {
@@ -1279,12 +1297,13 @@ a {
   transform-origin: center;
 }
 
-.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] {
+.miprecio-public-list .cafecitos-stories {
   padding-bottom: 0.75rem !important;
 }
 
-.miprecio-public-list:has(section[aria-label='Videos recientes de Cafecitos con Dani']) a[aria-label='Powered by MiPrecio'] {
+.miprecio-public-list:has(.cafecitos-stories) a[aria-label='Powered by MiPrecio'] {
   padding-block: 0.9rem !important;
+  background: transparent !important;
 }
 
 /* Cafecitos hero: Dani's photos behave as a small, rotating card hand. */

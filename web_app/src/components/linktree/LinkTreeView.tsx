@@ -83,6 +83,36 @@ export function LinkTreeView({ data, preview = false, publicUrl, fallbackAvatarU
     }
   }, [data.accentColor, data.backgroundColor, preview])
 
+  // Keep the browser tab attached to the public profile being visited instead
+  // of inheriting the app's generic title and favicon.
+  useEffect(() => {
+    if (preview) return
+
+    const previousTitle = document.title
+    const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    const previousHref = favicon?.getAttribute('href') ?? null
+    const previousType = favicon?.getAttribute('type') ?? null
+    const icon = favicon ?? document.createElement('link')
+
+    if (!favicon) {
+      icon.rel = 'icon'
+      document.head.appendChild(icon)
+    }
+
+    document.title = data.displayName || 'MiPrecio'
+    icon.href = avatarUrl || '/miprecio-favicon.png'
+    icon.removeAttribute('type')
+
+    return () => {
+      document.title = previousTitle
+      if (previousHref) icon.href = previousHref
+      else icon.removeAttribute('href')
+      if (previousType) icon.type = previousType
+      else icon.removeAttribute('type')
+      if (!favicon) icon.remove()
+    }
+  }, [avatarUrl, data.displayName, preview])
+
   const notify = (message: string) => {
     setToast(message)
     window.setTimeout(() => setToast(''), 2200)
@@ -109,7 +139,7 @@ export function LinkTreeView({ data, preview = false, publicUrl, fallbackAvatarU
       <header className="link-tree-header">
         <div className="link-tree-header-actions">
           <button type="button" className="link-tree-icon-button" aria-label="Copiar link" onClick={() => void copyLink()}>
-            <LinkTreeIcon name="copy" size={17} />
+            <LinkTreeIcon name="copy" size={19} />
           </button>
           {toast && <div className="link-tree-toast" role="status">{toast}</div>}
         </div>
@@ -123,7 +153,7 @@ export function LinkTreeView({ data, preview = false, publicUrl, fallbackAvatarU
           </div>
           <div className="profile-name-row">
             <h1 id="linktree-profile-name">{data.displayName}</h1>
-            <span className="verified-badge" aria-hidden="true"><LinkTreeIcon name="check" size={12} /></span>
+            <span className="verified-badge" aria-hidden="true"><LinkTreeIcon name="check" size={14} /></span>
           </div>
           {data.handle && <p className="profile-handle">{data.handle}</p>}
           {data.bio && <p className="profile-bio">{data.bio}</p>}
@@ -141,9 +171,9 @@ export function LinkTreeView({ data, preview = false, publicUrl, fallbackAvatarU
               style={{ '--link-delay': `${index * 70}ms` } as CSSProperties}
               onClick={(event) => { if (!link.url) event.preventDefault() }}
             >
-              <span className="link-card-icon"><LinkTreeIcon name={link.icon} size={20} /></span>
+              <span className="link-card-icon"><LinkTreeIcon name={link.icon} size={24} /></span>
               <span className="link-card-copy"><strong>{link.title}</strong>{link.description && <small>{link.description}</small>}</span>
-              <span className="link-card-arrow"><LinkTreeIcon name="arrow" size={18} /></span>
+              <span className="link-card-arrow"><LinkTreeIcon name="arrow" size={20} /></span>
             </a>
           )) : <div className="link-tree-empty">Agregá tu primer link para verlo acá.</div>}
         </div>
@@ -164,10 +194,10 @@ export function LinkTreeView({ data, preview = false, publicUrl, fallbackAvatarU
         </div>}
 
           <div className="link-tree-socials">
-            {data.instagramUrl && <a href={data.instagramUrl} target="_blank" rel="noreferrer" aria-label="Instagram"><LinkTreeIcon name="instagram" size={14} />Instagram</a>}
-            {data.tiktokUrl && <a href={data.tiktokUrl} target="_blank" rel="noreferrer" aria-label="TikTok"><LinkTreeIcon name="tiktok" size={14} />TikTok</a>}
-            {data.emailUrl && <a href={emailHref(data.emailUrl)} aria-label="Enviar email"><LinkTreeIcon name="mail" size={14} />Email</a>}
-            {data.whatsappUrl && <a href={data.whatsappUrl} target="_blank" rel="noreferrer" aria-label="WhatsApp"><LinkTreeIcon name="whatsapp" size={14} />WhatsApp</a>}
+            {data.instagramUrl && <a href={data.instagramUrl} target="_blank" rel="noreferrer" aria-label="Instagram"><LinkTreeIcon name="instagram" size={16} />Instagram</a>}
+            {data.tiktokUrl && <a href={data.tiktokUrl} target="_blank" rel="noreferrer" aria-label="TikTok"><LinkTreeIcon name="tiktok" size={16} />TikTok</a>}
+            {data.emailUrl && <a href={emailHref(data.emailUrl)} aria-label="Enviar email"><LinkTreeIcon name="mail" size={16} />Email</a>}
+            {data.whatsappUrl && <a href={data.whatsappUrl} target="_blank" rel="noreferrer" aria-label="WhatsApp"><LinkTreeIcon name="whatsapp" size={16} />WhatsApp</a>}
             {data.websiteUrl && <a href={data.websiteUrl} target="_blank" rel="noreferrer" aria-label="Sitio web">Sitio web</a>}
           </div>
         </div>

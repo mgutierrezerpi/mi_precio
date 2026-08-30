@@ -3,26 +3,64 @@ import type { DesignProps } from '../../designs'
 import type { PencilConfig } from '..'
 
 const CODE = "'Code Pro', 'DM Sans', Arial, sans-serif"
-const VIDEOS = [
-  '/cafecitos-DcYv0vBgdfZ.mp4',
-  '/cafecitos-Db6v779A9YV.mp4',
-  '/cafecitos-DbtnZtbAh25.mp4',
+const DEFAULT_STORY_VIDEOS = [
+  '/cafecitos-DZTNiLXgjc9.mp4',
+  '/cafecitos-DaoEHZCAkrO.mp4',
+  '/cafecitos-Da-lOC3ANUt.mp4',
 ]
-const DANI_IMAGE = '/cafecitos-dani-hero.jpg'
+const DEFAULT_STORY_METRICS = [
+  { views: '195K', likes: '5.5K', comments: '158' },
+  { views: '68.8K', likes: '1.7K', comments: '35' },
+  { views: '9K', likes: '172', comments: '12' },
+]
+const DEFAULT_PROFILE_IMAGE = '/cafecitos-dani-hero.jpg'
 
-function StoriesPhone() {
+function StoryMetricIcon({ type }: { type: 'views' | 'likes' | 'comments' }) {
+  const common = {
+    width: 17,
+    height: 17,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  }
+
+  if (type === 'views') {
+    return <svg {...common}><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.5" /></svg>
+  }
+  if (type === 'likes') {
+    return <svg {...common}><path d="M20.8 4.8a5.3 5.3 0 0 0-7.5 0L12 6.1l-1.3-1.3a5.3 5.3 0 1 0-7.5 7.5L12 21l8.8-8.7a5.3 5.3 0 0 0 0-7.5Z" /></svg>
+  }
+  return <svg {...common}><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3.1-.6L4 20l1.6-4A7.3 7.3 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z" /></svg>
+}
+
+function StoriesPhone({
+  videos,
+  metrics,
+  profileImage,
+  profileName,
+}: {
+  videos: string[]
+  metrics: { views: string; likes: string; comments: string }[]
+  profileImage: string
+  profileName: string
+}) {
   const [active, setActive] = useState(0)
   const [muted, setMuted] = useState(true)
   const [progress, setProgress] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
   const go = (direction: -1 | 1) =>
     setActive(
-      (current) => (current + direction + VIDEOS.length) % VIDEOS.length
+      (current) => (current + direction + videos.length) % videos.length
     )
+  const stats = metrics[active]
   return (
     <article className="relative">
       <video
-        key={VIDEOS[active]}
+        key={videos[active]}
         ref={videoRef}
         autoPlay
         muted={muted}
@@ -35,13 +73,33 @@ function StoriesPhone() {
           )
         }
         onEnded={() => go(1)}
-        aria-label={`Historia ${active + 1} de Cafecitos con Dani`}
+        aria-label={`Historia ${active + 1} de ${profileName}`}
       >
-        <source src={VIDEOS[active]} type="video/mp4" />
+        <source src={videos[active]} type="video/mp4" />
       </video>
+      {stats && <aside
+        key={active}
+        className="pointer-events-none absolute inset-0 z-30 block text-[#16352A]"
+        aria-label={`Estadísticas de la historia ${active + 1}`}
+      >
+        <div className="absolute bottom-4 left-4 flex items-center gap-1.5">
+          <div className="flex h-9 items-center gap-1.5 rounded-full bg-[#DDF0E6] px-2.5 text-[#007239] shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
+            <StoryMetricIcon type="views" />
+            <strong className="text-[14px] leading-none tracking-[-.04em]">{stats.views}</strong>
+          </div>
+          <div className="flex h-9 items-center gap-1.5 rounded-full bg-white px-2.5 text-[#16352A] shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
+            <StoryMetricIcon type="likes" />
+            <strong className="text-[14px] leading-none tracking-[-.04em]">{stats.likes}</strong>
+          </div>
+          <div className="flex h-9 items-center gap-1.5 rounded-full bg-[#00613E] px-2.5 text-white shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
+            <StoryMetricIcon type="comments" />
+            <strong className="text-[14px] leading-none tracking-[-.04em]">{stats.comments}</strong>
+          </div>
+        </div>
+      </aside>}
       <div className="absolute inset-0 z-10 p-4 text-white">
         <div className="flex gap-1">
-          {VIDEOS.map((_, index) => (
+          {videos.map((_, index) => (
             <span
               key={index}
               className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/35"
@@ -57,12 +115,11 @@ function StoriesPhone() {
         </div>
         <div className="mt-3 flex items-center gap-2">
           <img
-            src={DANI_IMAGE}
+            src={profileImage}
             alt=""
             className="h-7 w-7 rounded-full border border-white/80 object-cover"
           />
-          <span className="text-[11px] font-bold">cafecitos.uy</span>
-          <span className="text-[11px] text-white/75">hoy</span>
+          <span className="text-[11px] font-bold">{profileName}</span>
         </div>
         <button
           type="button"
@@ -124,28 +181,49 @@ export function CafecitosTemplate({
   config: PencilConfig
 }) {
   const hero = props.content?.hero
+  const template = props.content?.template
   const price = props.money
   const services = props.sections.flatMap((section) => section.items)
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
   const title = hero?.title || 'Contenido que conecta con tu comunidad.'
   const story =
     hero?.body ||
-    'Disfrutando mis 30s entre cafés y plancitos que me hacen feliz.'
+    'Compartí tu propuesta y creemos contenido que conecte con tu comunidad.'
+  const storyVideos = template?.storyVideos?.filter(Boolean).slice(0, 6)
+  const videos = storyVideos?.length ? storyVideos : DEFAULT_STORY_VIDEOS
+  const metrics = template?.storyMetrics?.slice(0, videos.length) || (storyVideos?.length ? [] : DEFAULT_STORY_METRICS)
+  const profileImage = template?.image || config.image || DEFAULT_PROFILE_IMAGE
+  const profileName = hero?.eyebrow || props.tenant.name
+  const logo = template?.logo || props.tenant.logoUrl || '/cafecitos-logo.svg'
+  const selectedService = services.find((item) => item.id === selectedServiceId)
+  const checkoutChannel = props.checkoutChannel === 'instagram' ? 'instagram' : 'whatsapp'
+  const contactMessage = selectedService
+    ? `Hola Dani, me interesa ${selectedService.name} (${price(selectedService.price)}). ¿Coordinamos una colaboración?`
+    : ''
+  const instagramHandle = (props.content?.template?.instagramHandle || props.tenant.instagramUrl || '')
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')
+    .replace(/^@/, '')
+    .split(/[/?#]/)[0]
+  const contactHref = checkoutChannel === 'instagram'
+    ? instagramHandle ? `https://ig.me/m/${instagramHandle}` : 'https://instagram.com'
+    : `https://wa.me/?text=${encodeURIComponent(contactMessage)}`
   return (
     <div
-      className="min-h-[100svh] overflow-x-clip bg-[#F8FAF7] px-5 py-6 text-[#16352A] sm:px-10 sm:py-10"
+      className="min-h-[100svh] overflow-x-clip bg-[#F8FAF7] px-5 py-3 text-[#16352A] sm:px-10 sm:py-10"
       style={{ fontFamily: CODE }}
     >
       <main className="mx-auto max-w-[1040px]">
-        <header className="flex items-center justify-between border-b border-[#C9E2D5] pb-5 text-[12px] font-bold uppercase tracking-[1.5px]">
-          <span className="text-[#007239]">Cafecitos con Dani</span>
-          <span className="text-[#5E7067]">Colaboraciones</span>
-        </header>
-        <section className="grid gap-8 py-11 md:grid-cols-[minmax(0,1fr)_400px] md:items-center">
+        <section className="grid gap-8 py-5 sm:py-11 md:grid-cols-[minmax(0,1fr)_400px] md:items-center">
           <div>
-            <p className="text-[12px] font-bold uppercase tracking-[1.6px] text-[#007239]">
+            <img
+            src={logo}
+            alt={profileName}
+              className="mx-auto mb-7 w-36 sm:mx-0 sm:w-64"
+            />
+            <p className="text-[16px] font-bold uppercase tracking-[1.2px] text-[#007239]">
               Hola, soy Dani
             </p>
-            <h1 className="mt-4 max-w-[14ch] text-[48px] font-bold leading-[.92] tracking-[-.055em] sm:text-[72px]">
+            <h1 className="mt-4 max-w-[16ch] text-[40px] font-bold leading-[.98] tracking-[-.045em] sm:text-[52px]">
               {title}
             </h1>
             <p className="mt-6 max-w-[48ch] text-[17px] leading-relaxed text-[#5E7067]">
@@ -154,55 +232,72 @@ export function CafecitosTemplate({
           </div>
           <div className="cafecitos-film mx-auto w-full max-w-[400px]">
             <img
-              src={DANI_IMAGE}
-              alt="Dani, Cafecitos con Dani"
+              src={profileImage}
+              alt={profileName}
               className="aspect-[3/4] w-full rounded-[31px] object-cover"
             />
           </div>
         </section>
         <section className="border-y border-[#C9E2D5] py-10">
-          <p className="mb-5 text-[12px] font-bold uppercase tracking-[1.6px] text-[#007239]">
-            Formas de colaborar
+          <p className="mb-5 text-[16px] font-bold uppercase tracking-[1.2px] text-[#007239]">
+            Promocioná tu marca conmigo
           </p>
           <div className="grid gap-4 md:grid-cols-2">
-            {services.map((item, index) => (
-              <article
+            {services.map((item) => (
+              <button
+                type="button"
                 key={item.id}
-                className="rounded-[26px] bg-[#EAF4EE] p-6"
+                onClick={() =>
+                  setSelectedServiceId((current) => current === item.id ? null : item.id)
+                }
+                aria-pressed={selectedServiceId === item.id}
+                className={`rounded-[26px] bg-[#EAF4EE] p-6 text-left transition ${selectedServiceId === item.id ? 'ring-2 ring-[#007239] ring-offset-2 ring-offset-[#F8FAF7]' : 'hover:-translate-y-0.5 hover:bg-[#DDF0E6]'}`}
               >
                 <div className="flex gap-4">
-                  <span className="text-[13px] font-bold text-[#007239]">
-                    0{index + 1}
-                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
-                      <h2 className="text-[25px] font-bold leading-[1.02] tracking-[-.04em]">
+                      <h2 className="text-[28px] font-bold leading-[1.08] tracking-[-.035em] sm:text-[30px]">
                         {item.name}
                       </h2>
-                      <span className="shrink-0 rounded-full bg-[#00613E] px-3.5 py-1.5 text-[14px] text-white">
+                      <span className="shrink-0 rounded-full bg-[#00613E] px-3.5 py-1.5 text-[15px] text-white">
                         {price(item.price)}
                       </span>
                     </div>
                     {item.description && (
-                      <p className="mt-4 text-[14px] leading-relaxed text-[#5E7067]">
+                      <p className="mt-4 text-[16px] leading-relaxed text-[#5E7067]">
                         {item.description}
                       </p>
                     )}
                   </div>
                 </div>
-              </article>
+              </button>
             ))}
           </div>
+          {selectedService && (
+            <a
+              href={contactHref}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => {
+                if (checkoutChannel === 'instagram') {
+                  void navigator.clipboard?.writeText(contactMessage)
+                }
+              }}
+              className="mt-5 flex w-full items-center justify-center rounded-full bg-[#00613E] px-5 py-4 text-center text-[16px] font-bold text-white no-underline transition hover:bg-[#007239]"
+            >
+              {checkoutChannel === 'instagram' ? 'Enviar consulta por Instagram' : 'Enviar consulta por WhatsApp'}
+            </a>
+          )}
         </section>
         <section
-          aria-label="Videos recientes de Cafecitos con Dani"
-          className="py-11"
+          aria-label="Historias destacadas"
+          className="cafecitos-stories py-11"
         >
           <p className="mb-5 text-[12px] font-bold uppercase tracking-[1.6px] text-[#007239]">
-            Historias recientes
+            Historias destacadas
           </p>
           <div>
-            <StoriesPhone />
+            <StoriesPhone videos={videos} metrics={metrics} profileImage={profileImage} profileName={profileName} />
           </div>
         </section>
       </main>
