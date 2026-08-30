@@ -80,6 +80,8 @@ def _validate_template(template: Any) -> None:
         "font", "image", "image_label", "image_title", "promo_eyebrow",
         "promo_title", "promo_body", "promo_price", "promo_note",
         "footer_left", "footer_right", "checkout_channel", "instagram_handle", "price_format",
+        "logo", "profile_name", "profile_image", "story_videos", "story_metrics",
+        "collaboration_heading", "stories_heading",
     }
     if not isinstance(template, dict) or set(template) - allowed:
         raise ValueError("content.template has unknown fields")
@@ -93,8 +95,21 @@ def _validate_template(template: Any) -> None:
         raise ValueError("content.template.checkout_channel is not supported")
     if "price_format" in template and template["price_format"] not in {"$", "U$D", "USD"}:
         raise ValueError("content.template.price_format is not supported")
+    if "story_videos" in template:
+        if not isinstance(template["story_videos"], list) or len(template["story_videos"]) > 6:
+            raise ValueError("content.template.story_videos must have at most 6 videos")
+        for video in template["story_videos"]:
+            _string(video, "content.template.story_videos entry")
+    if "story_metrics" in template:
+        if not isinstance(template["story_metrics"], list) or len(template["story_metrics"]) > 6:
+            raise ValueError("content.template.story_metrics must have at most 6 entries")
+        for metric in template["story_metrics"]:
+            if not isinstance(metric, dict) or set(metric) != {"views", "likes", "comments"}:
+                raise ValueError("each story metric needs views, likes, and comments")
+            for value in metric.values():
+                _string(value, "story metric value")
     for key, value in template.items():
-        if key not in {"font", "checkout_channel", "price_format"}:
+        if key not in {"font", "checkout_channel", "price_format", "story_videos", "story_metrics"}:
             _string(value, f"content.template.{key}", allow_empty=True)
 
 
