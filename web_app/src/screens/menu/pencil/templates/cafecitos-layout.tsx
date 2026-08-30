@@ -193,12 +193,14 @@ export function CafecitosTemplate({
   const videos = storyVideos?.length ? storyVideos : DEFAULT_STORY_VIDEOS
   const metrics = template?.storyMetrics?.slice(0, videos.length) || (storyVideos?.length ? [] : DEFAULT_STORY_METRICS)
   const profileImage = template?.image || config.image || DEFAULT_PROFILE_IMAGE
-  const profileName = hero?.eyebrow || props.tenant.name
+  const profileName = template?.profileName || hero?.eyebrow?.replace(/^hola,?\s*soy\s*/i, '') || props.tenant.name
   const logo = template?.logo || '/cafecitos-logo.svg'
+  const collaborationHeading = template?.collaborationHeading || 'Promocioná tu marca conmigo'
+  const storiesHeading = template?.storiesHeading || 'Historias destacadas'
   const selectedService = services.find((item) => item.id === selectedServiceId)
   const checkoutChannel = props.checkoutChannel === 'instagram' ? 'instagram' : 'whatsapp'
   const contactMessage = selectedService
-    ? `Hola Dani, me interesa ${selectedService.name} (${price(selectedService.price)}). ¿Coordinamos una colaboración?`
+    ? `Hola ${profileName}, me interesa ${selectedService.name} (${price(selectedService.price)}). ¿Coordinamos una colaboración?`
     : ''
   const instagramHandle = (props.content?.template?.instagramHandle || props.tenant.instagramUrl || '')
     .replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')
@@ -216,12 +218,12 @@ export function CafecitosTemplate({
         <section className="grid gap-8 py-5 sm:py-11 md:grid-cols-[minmax(0,1fr)_400px] md:items-center">
           <div>
             <img
-            src={logo}
-            alt={profileName}
+              src={logo}
+              alt={profileName}
               className="mx-auto mb-7 w-36 sm:mx-0 sm:w-64"
             />
             <p className="text-[16px] font-bold uppercase tracking-[1.2px] text-[#007239]">
-              Hola, soy Dani
+              Hola, soy {profileName}
             </p>
             <h1 className="mt-4 max-w-[16ch] text-[40px] font-bold leading-[.98] tracking-[-.045em] sm:text-[52px]">
               {title}
@@ -240,7 +242,7 @@ export function CafecitosTemplate({
         </section>
         <section className="border-y border-[#C9E2D5] py-10">
           <p className="mb-5 text-[16px] font-bold uppercase tracking-[1.2px] text-[#007239]">
-            Promocioná tu marca conmigo
+            {collaborationHeading}
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             {services.map((item) => (
@@ -290,11 +292,11 @@ export function CafecitosTemplate({
           )}
         </section>
         <section
-          aria-label="Historias destacadas"
+          aria-label={storiesHeading}
           className="cafecitos-stories py-11"
         >
           <p className="mb-5 text-[12px] font-bold uppercase tracking-[1.6px] text-[#007239]">
-            Historias destacadas
+            {storiesHeading}
           </p>
           <div>
             <StoriesPhone videos={videos} metrics={metrics} profileImage={profileImage} profileName={profileName} />
