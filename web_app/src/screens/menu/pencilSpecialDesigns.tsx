@@ -1,9 +1,18 @@
+import { useEffect } from 'react'
 import { CartControl, type DesignProps, type Section } from './designs'
-import type { PencilConfig } from './pencilDesigns'
+import type { PencilConfig } from './pencil'
+import { CafecitosTemplate } from './pencil/templates/cafecitos-layout'
 
 const SERIF = '"Playfair Display", Georgia, serif'
 const MONO = '"IBM Plex Mono", "Courier New", monospace'
 const SANS = 'Inter, system-ui, sans-serif'
+const CODE = "'Code Pro', 'DM Sans', Arial, sans-serif"
+
+const CAFECITOS_VIDEOS = [
+  '/cafecitos-DcYv0vBgdfZ.mp4',
+  '/cafecitos-Db6v779A9YV.mp4',
+  '/cafecitos-DbtnZtbAh25.mp4',
+]
 
 const price = (value: string | number) => {
   const amount = typeof value === 'number' ? value : Number.parseFloat(value)
@@ -123,7 +132,45 @@ function BeautyIssue({ props, config }: { props: DesignProps; config: PencilConf
 
 function ObsidianQuarterly({ props, config }: { props: DesignProps; config: PencilConfig }) {
   const hero = props.content?.hero
-  return <div className="min-h-[100svh] w-full min-w-0 overflow-x-clip px-4 py-6 sm:px-8 sm:py-8" style={{ background: config.background, color: config.ink }}><div className="mx-auto grid w-full min-w-0 max-w-[900px] grid-cols-1 md:grid-cols-2"><div className="min-w-0 p-6 sm:p-10"><Heading config={config} eyebrow={hero?.eyebrow || 'OBSIDIAN QUARTERLY · DETAILING'} title={hero?.title || 'Care for the drive.'} body={hero?.body} /><div className="mt-8"><Rows sections={props.sections} config={config} props={props} dark compact singleColumn /></div></div><Image config={config} className="min-h-[360px] md:min-h-[430px]" /></div><div className="mx-auto mt-8 w-full min-w-0 max-w-[900px]"><Footer config={config} /></div></div>
+  return <div className="min-h-[100svh] w-full min-w-0 overflow-x-clip px-4 py-6 sm:px-8 sm:py-8" style={{ background: config.background, color: config.ink }}><div className="mx-auto grid w-full min-w-0 max-w-[900px] grid-cols-1 md:grid-cols-2"><Image config={config} className="order-first min-h-[240px] md:order-last md:min-h-[430px]" /><div className="min-w-0 p-6 sm:p-10"><Heading config={config} eyebrow={hero?.eyebrow || 'OBSIDIAN QUARTERLY · DETAILING'} title={hero?.title || 'Care for the drive.'} body={hero?.body} /><div className="mt-8"><Rows sections={props.sections} config={config} props={props} dark compact singleColumn /></div></div></div><div className="mx-auto mt-8 w-full min-w-0 max-w-[900px]"><Footer config={config} /></div></div>
+}
+
+function Cafecitos({ props, config }: { props: DesignProps; config: PencilConfig }) {
+  return <CafecitosV2 props={props} config={config} />
+  const hero = props.content?.hero
+  const services = props.sections.flatMap((section) => section.items)
+  const title = hero?.title || 'Contenido que conecta con tu comunidad.'
+  const story = hero?.body || 'Disfrutando mis 30s entre cafés y plancitos que me hacen feliz.'
+  return <div className="min-h-[100svh] w-full overflow-x-clip px-4 py-5 sm:px-8 sm:py-8" style={{ background: '#F8FAF7', color: '#16352A', fontFamily: CODE }}><main className="mx-auto w-full max-w-[920px]"><header className="flex items-center justify-between border-b pb-4" style={{ borderColor: '#C9E2D5' }}><span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-[#007239]">Cafecitos con Dani</span><span className="text-[10px] uppercase tracking-[1.2px] text-[#5E7067]">Colaboraciones</span></header><section className="grid grid-cols-1 gap-7 py-9 md:grid-cols-[minmax(0,1fr)_220px] md:items-center"><div><p className="text-[10px] font-semibold uppercase tracking-[1.8px] text-[#007239]">Hola, soy Dani</p><h1 className="mt-3 max-w-[15ch] text-[42px] leading-[.95] tracking-[-.04em] sm:text-[62px]">{title}</h1><p className="mt-5 max-w-[47ch] text-[14px] leading-relaxed text-[#5E7067]">{story}</p></div><div className="mx-auto w-[160px] rotate-3 rounded-[32px] bg-[#00613E] p-2 shadow-[0_20px_40px_-26px_rgba(0,49,34,.7)] md:w-[220px]"><img src={config.image} alt="Dani, Cafecitos con Dani" className="aspect-square w-full rounded-[25px] object-cover" /></div></section><section className="border-y py-8" style={{ borderColor: '#C9E2D5' }}><p className="mb-4 text-[10px] font-semibold uppercase tracking-[1.8px] text-[#007239]">Formas de colaborar</p><div className="grid gap-3 md:grid-cols-2">{services.map((item, index) => <article key={item.id} className="rounded-[22px] bg-[#EAF4EE] p-5 transition hover:-translate-y-0.5 hover:bg-[#DDF0E6]"><div className="flex items-start justify-between gap-3"><div><span className="text-[10px] uppercase tracking-[1.4px] text-[#007239]">0{index + 1}</span><h2 className="mt-2 text-[21px] leading-[1.05] tracking-[-.025em]">{item.name}</h2></div><span className="shrink-0 rounded-full bg-[#00613E] px-3 py-1 text-[12px] text-white">{price(item.price)}</span></div>{item.description && <p className="mt-3 text-[12px] leading-relaxed text-[#5E7067]">{item.description}</p>}</article>)}</div></section><section className="py-9"><p className="mb-4 text-[10px] font-semibold uppercase tracking-[1.8px] text-[#007239]">Un poco de lo que hago</p><div className="-mx-4 overflow-hidden sm:mx-0 sm:rounded-[30px] sm:bg-[#EAF4EE] sm:p-4"><div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0">{CAFECITOS_VIDEOS.map((src, index) => <div key={src} className="w-[min(76vw,272px)] shrink-0 snap-center rounded-[22px] bg-[#00613E] p-1.5 shadow-[0_14px_30px_-22px_rgba(0,49,34,.8)] transition hover:-translate-y-1 sm:w-auto"><video className="block aspect-[9/16] w-full rounded-[17px] bg-[#16352A] object-cover" controls controlsList="nodownload" playsInline preload="metadata" aria-label={`Video ${index + 1} de Cafecitos con Dani`}><source src={src} type="video/mp4" /></video></div>)}</div></div></section><section className="rounded-[28px] bg-[#00613E] px-6 py-7 text-white sm:px-8"><p className="text-[10px] uppercase tracking-[1.8px] text-[#B6DCC8]">¿Te imaginás tu marca acá?</p><h2 className="mt-3 max-w-[22ch] text-[28px] leading-[1.02] tracking-[-.03em] sm:text-[36px]">Conozcámonos y pensemos una colaboración.</h2><div className="mt-6 flex flex-wrap gap-2">{[['Instagram', 'https://www.instagram.com/cafecitos.uy/'], ['TikTok', 'https://www.tiktok.com/@cafecitos.uy'], ['YouTube', 'https://youtube.com/@cafecitoscondani']].map(([label, href]) => <a key={label} href={href} target="_blank" rel="noreferrer" className="rounded-full border border-[#B6DCC8] px-4 py-2 text-[11px] font-semibold uppercase tracking-[1px] transition hover:bg-white hover:text-[#00613E]">{label}</a>)}</div></section><footer className="py-6 text-center text-[10px] uppercase tracking-[1.5px] text-[#5E7067]">Cafecitos con Dani · Colaboraciones</footer></main></div>
+}
+
+function CafecitosV2({ props, config }: { props: DesignProps; config: PencilConfig }) {
+  useEffect(() => {
+    const videos = document.querySelectorAll<HTMLVideoElement>(
+      '[aria-label="Videos recientes de Cafecitos con Dani"] video'
+    )
+    videos.forEach((video) => {
+      video.muted = true
+      video.controls = false
+      video.autoplay = true
+      video.loop = true
+    })
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => {
+        const video = entry.target as HTMLVideoElement
+        if (entry.isIntersecting) void video.play().catch(() => undefined)
+        else video.pause()
+      }),
+      { threshold: 0.75 }
+    )
+    videos.forEach((video) => observer.observe(video))
+    return () => observer.disconnect()
+  }, [])
+  const hero = props.content?.hero
+  const services = props.sections.flatMap((section) => section.items)
+  const title = hero?.title || 'Contenido que conecta con tu comunidad.'
+  const story = hero?.body || 'Disfrutando mis 30s entre cafés y plancitos que me hacen feliz.'
+  return <div className="min-h-[100svh] overflow-x-clip bg-[#F8FAF7] px-5 py-6 text-[#16352A] sm:px-10 sm:py-10" style={{ fontFamily: CODE }}><main className="mx-auto max-w-[1040px]"><header className="flex items-center justify-between border-b border-[#C9E2D5] pb-5 text-[12px] font-bold uppercase tracking-[1.5px]"><span className="text-[#007239]">Cafecitos con Dani</span><span className="text-[#5E7067]">Colaboraciones</span></header><section className="grid gap-8 py-11 md:grid-cols-[1fr_260px] md:items-center"><div><p className="text-[12px] font-bold uppercase tracking-[1.6px] text-[#007239]">Hola, soy Dani</p><h1 className="mt-4 max-w-[14ch] text-[48px] font-bold leading-[.92] tracking-[-.055em] sm:text-[72px]">{title}</h1><p className="mt-6 max-w-[48ch] text-[17px] leading-relaxed text-[#5E7067]">{story}</p></div><div className="mx-auto w-[188px] rotate-3 rounded-[36px] bg-[#00613E] p-2.5 shadow-[0_24px_46px_-28px_rgba(0,49,34,.78)] md:w-[250px]"><img src={config.image} alt="Dani, Cafecitos con Dani" className="aspect-square w-full rounded-[28px] object-cover" /></div></section><section className="border-y border-[#C9E2D5] py-10"><p className="mb-5 text-[12px] font-bold uppercase tracking-[1.6px] text-[#007239]">Formas de colaborar</p><div className="grid gap-4 md:grid-cols-2">{services.map((item, index) => <article key={item.id} className="rounded-[26px] bg-[#EAF4EE] p-6 transition hover:-translate-y-1 hover:bg-[#DDF0E6]"><div className="flex gap-4"><span className="text-[13px] font-bold text-[#007239]">0{index + 1}</span><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-3"><h2 className="text-[25px] font-bold leading-[1.02] tracking-[-.04em]">{item.name}</h2><span className="shrink-0 rounded-full bg-[#00613E] px-3.5 py-1.5 text-[14px] text-white">{price(item.price)}</span></div>{item.description && <p className="mt-4 text-[14px] leading-relaxed text-[#5E7067]">{item.description}</p>}</div></div></article>)}</div></section><section aria-label="Videos recientes de Cafecitos con Dani" className="py-11"><p className="mb-5 text-[12px] font-bold uppercase tracking-[1.6px] text-[#007239]">Reels recientes</p><div className="-mx-5 flex snap-x snap-mandatory gap-5 overflow-x-auto px-[calc((100vw-min(86vw,380px))/2)] pb-5 sm:mx-0 sm:px-[calc((100%-380px)/2)]">{CAFECITOS_VIDEOS.map((src, index) => <article key={src} className="w-[min(86vw,380px)] shrink-0 snap-center rounded-[38px] border border-white/20 bg-[#10261E] p-2 shadow-[0_24px_50px_-28px_rgba(0,49,34,.9)]"><div className="mx-auto mb-1.5 h-1.5 w-16 rounded-full bg-white/40" /><video className="block aspect-[9/16] w-full rounded-[29px] bg-black object-cover" controls controlsList="nodownload" playsInline preload={index === 0 ? 'metadata' : 'none'} aria-label={`Reel ${index + 1} de Cafecitos con Dani`}><source src={src} type="video/mp4" /></video><div className="flex items-center justify-center gap-1.5 py-2" aria-hidden="true"><span className="h-1.5 w-1.5 rounded-full bg-white" /><span className="h-1.5 w-1.5 rounded-full bg-white/35" /><span className="h-1.5 w-1.5 rounded-full bg-white/35" /></div></article>)}</div></section><section className="rounded-[32px] bg-[#00613E] px-7 py-9 text-white sm:px-10"><p className="text-[12px] font-bold uppercase tracking-[1.6px] text-[#B6DCC8]">¿Te imaginás tu marca acá?</p><h2 className="mt-4 max-w-[21ch] text-[34px] font-bold leading-[.98] tracking-[-.045em] sm:text-[46px]">Conozcámonos y pensemos una colaboración.</h2><div className="mt-7 flex flex-wrap gap-3">{[['Instagram', 'https://www.instagram.com/cafecitos.uy/'], ['TikTok', 'https://www.tiktok.com/@cafecitos.uy'], ['YouTube', 'https://youtube.com/@cafecitoscondani']].map(([label, href]) => <a key={label} href={href} target="_blank" rel="noreferrer" className="rounded-full border border-[#B6DCC8] px-5 py-2.5 text-[12px] font-bold uppercase tracking-[1px] transition hover:bg-white hover:text-[#00613E]">{label}</a>)}</div></section><footer className="py-8 text-center text-[11px] font-bold uppercase tracking-[1.5px] text-[#5E7067]">Cafecitos con Dani · Colaboraciones</footer></main></div>
 }
 
 export function SpecialPencilList({ props, config }: { props: DesignProps; config: PencilConfig }) {
@@ -144,6 +191,7 @@ export function SpecialPencilList({ props, config }: { props: DesignProps; confi
       case 'studio-mono': return <StudioMono props={props} config={config} />
       case 'beauty-issue': return <BeautyIssue props={props} config={config} />
       case 'obsidian-quarterly': return <ObsidianQuarterly props={props} config={config} />
+      case 'cafecitos': return <CafecitosTemplate props={props} config={config} />
       default: return null
     }
   })()

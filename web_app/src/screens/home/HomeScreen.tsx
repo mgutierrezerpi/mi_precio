@@ -7,6 +7,7 @@ import {
 } from '../../store/slices/authSlice'
 import { AuthModal } from '../../components/AuthModal'
 import { PLANS } from '../../lib/plans'
+import { useTheme } from '../../hooks/useTheme'
 
 type OpenAuth = () => void
 
@@ -174,7 +175,7 @@ const steps = [
 ]
 
 // Plan content is shared with the in-app billing cards (see lib/plans).
-const PLAN_CTA = 'Probar gratis'
+const PLAN_CTA = 'Probar 14 días gratis'
 
 const faqs = [
   [
@@ -201,6 +202,8 @@ const faqs = [
 
 /* ── Page ─────────────────────────────────────────────────────── */
 export function HomeScreen() {
+  // Keep the public route on the same active theme token set as /admin.
+  useTheme()
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const needsPlan = useAppSelector(selectNeedsPlan)
   const navigate = useNavigate()
@@ -234,7 +237,7 @@ export function HomeScreen() {
   }
 
   return (
-    <main className="landing-page min-h-screen overflow-x-clip bg-white font-sans text-slate-900">
+    <main className="dash landing-page min-h-screen overflow-x-clip bg-white font-sans text-slate-900">
       <Navbar onAuth={openAuth} isAuthenticated={isAuthenticated} />
       <Hero onAuth={openAuth} />
       <Features />
@@ -270,11 +273,11 @@ function BackToTop() {
       type="button"
       aria-label="Volver arriba"
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      className={`fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#A855F7] text-white shadow-[0_10px_24px_-6px_rgba(124,58,237,0.6)] transition-all duration-300 hover:brightness-110 ${show ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
+      className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/80 bg-gradient-to-br from-[#5B21B6] to-[#A855F7] text-white shadow-[0_18px_34px_-8px_rgba(46,16,101,0.95)] ring-4 ring-[#7C3AED]/30 transition-all duration-300 hover:-translate-y-1 hover:brightness-110 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white ${show ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
     >
       <svg
-        width="22"
-        height="22"
+        width="26"
+        height="26"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -367,7 +370,7 @@ const navLinks = [
   ['#funciones', 'Funciones'],
   ['#precios', 'Precios'],
   ['#faq', 'Recursos'],
-  ['/linktree', 'Ver demo Link tree'],
+  ['/l/cafecitos', 'Demo'],
 ]
 
 function Navbar({
@@ -409,7 +412,7 @@ function Navbar({
           onClick={() => setOpen(false)}
         >
           <img
-            src="/miprecio-logo-pencil.webp"
+            src="/miprecio-logo-white-pencil.webp"
             alt="MiPrecio"
             className="h-11 w-auto"
           />
@@ -428,17 +431,19 @@ function Navbar({
             <button
               type="button"
               onClick={onAuth}
-              className="cursor-pointer whitespace-nowrap rounded-[10px] border-[1.5px] border-[#7C3AED] px-[18px] py-2.5 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]"
+              className="landing-secondary-action cursor-pointer whitespace-nowrap rounded-[10px] border-[1.5px] border-[#7C3AED] px-[18px] py-2.5 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]"
             >
               {isAuthenticated ? 'Mi panel' : 'Iniciar sesión'}
             </button>
-            <button
-              type="button"
-              onClick={onAuth}
-              className="cursor-pointer whitespace-nowrap rounded-[10px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-[18px] py-2.5 text-sm font-semibold text-white hover:brightness-105"
-            >
-              Probar gratis
-            </button>
+            {!isAuthenticated && (
+              <button
+                type="button"
+                onClick={onAuth}
+                className="landing-primary-action cursor-pointer whitespace-nowrap rounded-[10px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-[18px] py-2.5 text-sm font-semibold text-white hover:brightness-105"
+              >
+                Probar 14 días gratis
+              </button>
+            )}
           </div>
         </div>
 
@@ -535,20 +540,22 @@ function Navbar({
                     setOpen(false)
                     onAuth()
                   }}
-                  className="flex-1 whitespace-nowrap rounded-xl border-[1.5px] border-[#7C3AED] px-3 py-3 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]"
+                  className={`${isAuthenticated ? 'w-full' : 'flex-1'} whitespace-nowrap rounded-xl border-[1.5px] border-[#7C3AED] px-3 py-3 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]`}
                 >
                   {isAuthenticated ? 'Mi panel' : 'Iniciar sesión'}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false)
-                    onAuth()
-                  }}
-                  className="flex-1 whitespace-nowrap rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-3 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(124,58,237,0.6)] hover:brightness-105"
-                >
-                  Probar gratis
-                </button>
+                {!isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false)
+                      onAuth()
+                    }}
+                    className="flex-1 whitespace-nowrap rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-3 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(124,58,237,0.6)] hover:brightness-105"
+                  >
+                    Probar 14 días gratis
+                  </button>
+                )}
               </div>
             </div>
           </nav>
@@ -566,11 +573,8 @@ function Hero({ onAuth }: { onAuth: OpenAuth }) {
     >
       <div className="mx-auto grid max-w-[1200px] items-center gap-16 lg:grid-cols-[560px_1fr]">
         <div className="flex flex-col gap-6">
-          <span className="w-fit rounded-full border border-white/40 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-white">
-            NUEVO · Compartí tu lista con un QR
-          </span>
           <h1 className="text-5xl font-extrabold leading-[1.05] tracking-tight text-white md:text-[58px]">
-            Tu catálogo online. Tus precios al día.
+            Tu catálogo online, listo para compartir.
           </h1>
           <p className="max-w-xl text-lg leading-relaxed text-[#DDD6FE]">
             Cargá tus productos, controlá tu stock y compartí tu lista de
@@ -581,9 +585,9 @@ function Hero({ onAuth }: { onAuth: OpenAuth }) {
             <button
               type="button"
               onClick={onAuth}
-              className="rounded-xl bg-white px-[22px] py-3.5 text-[15px] font-semibold text-slate-950 shadow-[0_10px_24px_-6px_rgba(124,58,237,0.4)] hover:bg-violet-50"
+              className="landing-primary-action rounded-xl bg-white px-[22px] py-3.5 text-[15px] font-semibold text-slate-950 shadow-[0_10px_24px_-6px_rgba(124,58,237,0.4)] hover:bg-violet-50"
             >
-              Crear cuenta gratis
+              Probá 14 días gratis
             </button>
           </div>
         </div>
@@ -596,11 +600,7 @@ function Hero({ onAuth }: { onAuth: OpenAuth }) {
 function HeroMockup() {
   return (
     <div className="relative mx-auto w-full max-w-[580px]">
-      <img
-        src="/hero-img.webp"
-        alt="Ejemplo de lista de precios de MiPrecio"
-        className="w-full"
-      />
+      <MiniListPreview variant="wild-stem-verano" className="shadow-[0_28px_65px_-30px_rgba(0,0,0,0.8)]" />
       <div className="absolute -left-4 -top-4 flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] shadow-[0_8px_24px_-4px_rgba(15,23,42,0.15)]">
         <QrCode size={16} className="text-[#0F172A]" /> miprecio.app/p/acme
       </div>
@@ -827,14 +827,41 @@ function ProductPreview() {
 
 function PhoneMockup() {
   return (
-    <div className="mx-auto h-[560px] w-[280px] rounded-[32px] bg-[#2E1065] p-2 shadow-[0_30px_60px_-10px_rgba(30,41,59,0.4)]">
-      <div className="h-full overflow-hidden rounded-[26px] bg-white">
-        <img
-          src="/mockup-img.webp"
-          alt="Vista del catálogo de MiPrecio en el celular"
-          className="block w-full"
-        />
+    <div className="relative mx-auto w-[min(100%,340px)]">
+      <div className="absolute -inset-5 -z-10 rounded-full bg-[#6C43E8]/20 blur-3xl" />
+      <div className="overflow-hidden rounded-[38px] border-[7px] border-[#100922] bg-[#100922] p-1.5 shadow-[0_32px_70px_-24px_rgba(0,0,0,0.8)] ring-1 ring-[#6C43E8]/60">
+        <div className="relative h-[560px] overflow-hidden rounded-[28px] bg-[#f8f7ff]">
+          <iframe
+            title="Vista móvil de una lista de precios"
+            src="/template-preview/obsidian"
+            className="pointer-events-none h-full w-full border-0"
+          />
+          <div className="pointer-events-none absolute left-1/2 top-2 h-5 w-24 -translate-x-1/2 rounded-full bg-[#100922]" />
+        </div>
       </div>
+    </div>
+  )
+}
+
+/** A live list renderer, deliberately shared with the design-picker thumbnails.
+ * This keeps landing examples representative as templates evolve—no stale
+ * screenshots or separately maintained mockups. */
+function MiniListPreview({
+  className = '',
+  variant,
+}: {
+  className?: string
+  variant: 'wild-stem-verano' | 'obsidian'
+}) {
+  return (
+    <div
+      className={`landing-list-preview relative h-[430px] overflow-hidden rounded-[28px] border border-[var(--dash-soft-border)] bg-[var(--dash-surface)] sm:h-[500px] ${className}`}
+    >
+      <iframe
+        title={`Vista previa de plantilla ${variant}`}
+        src={`/template-preview/${variant}`}
+        className="pointer-events-none h-full w-full border-0"
+      />
     </div>
   )
 }
@@ -849,7 +876,7 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
         <SectionHead
           eyebrow="Precios"
           title="Planes simples para vender mejor."
-          subtitle="Probá MiPrecio gratis antes de pagar. Sin tarjeta de crédito."
+          subtitle="Probá MiPrecio 14 días gratis antes de pagar. Sin tarjeta de crédito."
         />
         <Reveal className="grid items-stretch gap-6 lg:grid-cols-3">
           {PLANS.map((plan) => {
@@ -977,8 +1004,8 @@ function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
           Tu lista de precios, lista en 5 minutos.
         </h2>
         <p className="max-w-2xl text-[17px] font-medium text-[#E0E7FF]">
-          Creá tu cuenta gratis hoy y empezá a compartir tu catálogo con un link
-          o un QR.
+          Probá MiPrecio 14 días gratis y empezá a compartir tu catálogo con
+          un link o un QR.
         </p>
         <div className="mt-3 flex flex-wrap justify-center gap-3.5">
           <button
@@ -986,7 +1013,7 @@ function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
             onClick={onAuth}
             className="flex h-[52px] items-center gap-2 rounded-[14px] bg-white px-7 text-[15px] font-bold text-[#7C3AED] hover:bg-violet-50"
           >
-            Crear cuenta gratis <ArrowRight size={18} />
+            Probar 14 días gratis <ArrowRight size={18} />
           </button>
           <a
             href="mailto:hola@miprecio.app"

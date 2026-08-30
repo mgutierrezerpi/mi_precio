@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { DesignProps } from './designs'
-import { PencilList, pencilCartThemeFor, type PencilVariant } from './pencilDesigns'
+import { PencilList, pencilCartThemeFor, type PencilVariant } from './index'
 
 const variants: PencilVariant[] = [
   'pencil-bakery', 'pencil-garden', 'pencil-market', 'pencil-evening', 'pencil-workshop',

@@ -156,6 +156,7 @@ export type ListDesign =
   | 'pencil-studio-mono'
   | 'pencil-beauty-issue'
   | 'pencil-obsidian-quarterly'
+  | 'pencil-cafecitos'
   | 'pencil-journal'
 
 export type ListKind = 'product' | 'service'

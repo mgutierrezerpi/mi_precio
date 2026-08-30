@@ -30,7 +30,7 @@ import {
   type DesignProps,
   type CartTheme,
 } from './designs'
-import { isPencilVariant, pencilCartThemeFor, PencilList } from './pencilDesigns'
+import { isPencilVariant, pencilCartThemeFor, PencilList } from './pencil'
 import { PencilActionBar } from './pencilActions'
 import { PencilJournal } from './pencilJournal'
 
@@ -241,6 +241,39 @@ export function MenuScreen() {
 
   const list = displayLists.length === 1 ? displayLists[0] : null
   const content = list?.version.content ?? null
+
+  // A public list should carry the shop's identity into the browser chrome as
+  // well as into the page itself. Restore the app defaults when this route
+  // unmounts so the admin and marketing pages never inherit a shop's branding.
+  useEffect(() => {
+    if (!tenant) return
+
+    const previousTitle = document.title
+    const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    const previousHref = favicon?.getAttribute('href') ?? null
+    const previousType = favicon?.getAttribute('type') ?? null
+    const icon = favicon ?? document.createElement('link')
+
+    if (!favicon) {
+      icon.rel = 'icon'
+      document.head.appendChild(icon)
+    }
+
+    document.title = [tenant.name, list?.name].filter(Boolean).join(' · ') || 'MiPrecio'
+    icon.href = tenant.logoUrl || '/miprecio-favicon.png'
+    // Tenant logos may be PNG, JPEG, WebP, or an uploaded image URL; let the
+    // browser infer the type rather than retaining the app favicon's PNG hint.
+    icon.removeAttribute('type')
+
+    return () => {
+      document.title = previousTitle
+      if (previousHref) icon.href = previousHref
+      else icon.removeAttribute('href')
+      if (previousType) icon.type = previousType
+      else icon.removeAttribute('type')
+      if (!favicon) icon.remove()
+    }
+  }, [tenant?.name, tenant?.logoUrl, list?.name])
 
   const sections = useMemo(() => {
     const map = new Map<string, { key: string; name: string; items: Item[] }>()

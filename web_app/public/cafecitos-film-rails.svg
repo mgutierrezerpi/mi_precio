@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+  <defs>
+    <pattern id="perforations" width="7" height="5" patternUnits="userSpaceOnUse">
+      <rect width="7" height="5" fill="white"/>
+      <rect x="1" y="1" width="5" height="3" rx=".4" fill="black"/>
+    </pattern>
+    <mask id="rail-mask">
+      <rect width="100" height="100" fill="black"/>
+      <rect x="0" width="7" height="100" fill="url(#perforations)"/>
+      <rect x="93" width="7" height="100" fill="url(#perforations)"/>
+    </mask>
+  </defs>
+  <rect width="100" height="100" fill="#005C39" mask="url(#rail-mask)"/>
+</svg>

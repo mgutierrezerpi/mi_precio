@@ -1029,6 +1029,144 @@ a {
 }
 
 /* ── Landing: smooth interactions ─────────────────────────────────── */
+.landing-page {
+  --landing-page: var(--dash-bg);
+  --landing-surface: var(--dash-soft);
+  --landing-card: var(--dash-surface);
+  --landing-line: var(--dash-border);
+  --landing-cream: var(--dash-text);
+  --landing-copy: var(--dash-text2);
+  --landing-muted: var(--dash-muted);
+  --landing-accent: var(--dash-link);
+  --landing-accent-soft: var(--dash-soft);
+  color: var(--landing-cream);
+  background:
+    radial-gradient(circle at 10% 8%, rgb(212 165 116 / 11%), transparent 26rem),
+    var(--landing-page);
+}
+
+/* HomeScreen uses Tailwind utilities. Scope these token overrides so that the
+   landing inherits the admin's dark default without changing the app itself. */
+.landing-page [class~='bg-white'] { background-color: var(--landing-card); }
+.landing-page [class~='bg-[#F5F3FF]'] { background-color: var(--dash-bg); }
+.landing-page [class~='bg-[#F8FAFC]'],
+.landing-page [class~='bg-[#0F172A]'] { background-color: var(--landing-surface); }
+.landing-page [class~='bg-[linear-gradient(135deg,#FAF5FF_0%,#EDE9FE_100%)]'] {
+  background: linear-gradient(135deg, var(--dash-bg), var(--dash-soft));
+}
+.landing-page [class~='bg-[#EDE9FE]'] { background-color: var(--landing-accent-soft); }
+.landing-page [class~='bg-[#F1F5F9]'] { background-color: var(--landing-line); }
+.landing-page [class~='border-[#E2E8F0]'],
+.landing-page [class~='border-[#0F172A]'] { border-color: var(--landing-line); }
+.landing-page [class~='border-[#7C3AED]'] { border-color: var(--landing-accent); }
+.landing-page [class~='text-slate-900'],
+.landing-page [class~='text-slate-950'],
+.landing-page [class~='text-[#0F172A]'] { color: var(--landing-cream); }
+.landing-page [class~='text-[#334155]'],
+.landing-page [class~='text-[#475569]'] { color: var(--landing-copy); }
+.landing-page [class~='text-[#94A3B8]'],
+.landing-page [class~='text-[#CBD5E1]'] { color: var(--landing-muted); }
+.landing-page [class~='text-[#7C3AED]'],
+.landing-page [class~='text-[#C4B5FD]'] { color: var(--landing-accent); }
+
+.landing-page [class~='from-[#7C3AED]'],
+.landing-page [class~='from-[#6366F1]'] {
+  --tw-gradient-from: #7c3aed var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(124 58 237 / 0) var(--tw-gradient-to-position);
+}
+.landing-page [class~='to-[#A855F7]'],
+.landing-page [class~='to-[#8B5CF6]'] {
+  --tw-gradient-to: #c026d3 var(--tw-gradient-to-position);
+}
+
+.landing-page > header {
+  border-color: var(--dash-border) !important;
+  background: color-mix(in srgb, var(--dash-bg) 88%, transparent) !important;
+}
+
+.landing-page #producto {
+  background:
+    radial-gradient(circle at 82% 22%, rgb(108 67 232 / 32%), transparent 24rem),
+    radial-gradient(circle at 8% 100%, rgb(42 28 102 / 60%), transparent 30rem),
+    linear-gradient(135deg, var(--dash-bg) 0%, var(--dash-surface) 54%, #2a1c66 100%) !important;
+}
+
+.landing-page article,
+.landing-page [data-faq] {
+  box-shadow: 0 16px 40px -28px rgb(0 0 0 / 90%) !important;
+}
+
+.landing-page article:hover {
+  border-color: var(--dash-link) !important;
+  transform: translateY(-3px);
+}
+
+.landing-page .landing-primary-action {
+  border: 1px solid rgb(216 180 254 / 40%);
+  background: linear-gradient(135deg, #7c3aed 0%, #c026d3 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 14px 30px -10px rgb(124 58 237 / 75%);
+}
+
+.landing-page .landing-primary-action:hover {
+  box-shadow: 0 18px 38px -10px rgb(192 38 211 / 80%);
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.landing-page .landing-secondary-action {
+  border-color: var(--dash-soft-border) !important;
+  background: var(--dash-soft);
+  color: var(--dash-link) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
+}
+
+.landing-page .landing-secondary-action:hover {
+  background: var(--dash-sidebar-active) !important;
+  border-color: var(--dash-link) !important;
+  color: #fff !important;
+}
+
+.landing-list-preview {
+  container-type: inline-size;
+  box-shadow: 0 24px 54px -32px rgb(0 0 0 / 85%);
+}
+
+/* Preview iframes are a static showcase: show the composed top of the real
+   list without exposing a second page scrollbar inside the landing. */
+.template-preview-document,
+.template-preview-document body {
+  overflow: hidden;
+  scrollbar-width: none;
+}
+
+.template-preview-document::-webkit-scrollbar,
+.template-preview-document body::-webkit-scrollbar {
+  display: none;
+}
+
+.template-preview {
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .landing-list-preview {
+    height: 440px !important;
+  }
+}
+
+.landing-page [class~='hover:bg-[#F5F3FF]']:hover,
+.landing-page [class~='hover:bg-violet-50']:hover { background-color: var(--dash-soft) !important; }
+.landing-page [class~='hover:text-[#7C3AED]']:hover { color: var(--dash-link) !important; }
+.landing-page footer { background: var(--dash-sidebar) !important; }
+.landing-page [class~='bg-[#2E1065]'] { background-color: var(--dash-sidebar); }
+
+@media (max-width: 767px) {
+  .landing-page section { padding-top: 5rem !important; padding-bottom: 5rem !important; }
+  .landing-page #producto { padding-top: 5.5rem !important; }
+}
+
 .landing-page a,
 .landing-page button,
 .landing-page summary {
@@ -1082,4 +1220,352 @@ a {
 
 .magazine-editor-canvas [data-magazine-field][data-magazine-editing="true"] {
   visibility: hidden;
+}
+/* Cafecitos: a single full-screen Reel feed inside one phone shell. */
+.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] > div {
+  width: min(88vw, 390px);
+  height: min(78vh, 740px);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  position: relative;
+  border: 9px solid #0c1612;
+  border-radius: 42px;
+  background: #0c1612;
+  box-shadow: 0 24px 54px -28px rgba(0, 49, 34, 0.78), inset 0 0 0 1px rgb(255 255 255 / 12%);
+}
+
+.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] > div::-webkit-scrollbar {
+  display: none;
+}
+
+.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] > div > article {
+  width: 100% !important;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  flex: 0 0 100%;
+  padding: 0 !important;
+  scroll-snap-align: start;
+  border: 0 !important;
+  border-radius: 31px !important;
+  background: #000 !important;
+  box-shadow: none !important;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] video {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto !important;
+  border-radius: 31px !important;
+  object-fit: cover;
+}
+
+.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] > div > article > div {
+  inset: 0 !important;
+}
+
+.miprecio-public-list img[alt='Dani, Cafecitos con Dani'] {
+  transform: scale(1.1);
+  transform-origin: center;
+}
+
+.miprecio-public-list section[aria-label='Videos recientes de Cafecitos con Dani'] {
+  padding-bottom: 0.75rem !important;
+}
+
+.miprecio-public-list:has(section[aria-label='Videos recientes de Cafecitos con Dani']) a[aria-label='Powered by MiPrecio'] {
+  padding-block: 0.9rem !important;
+}
+
+/* Cafecitos hero: Dani's photos behave as a small, rotating card hand. */
+.miprecio-public-list div:has(> img[alt='Dani, Cafecitos con Dani']) {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.miprecio-public-list div:has(> img[alt='Dani, Cafecitos con Dani'])::before,
+.miprecio-public-list div:has(> img[alt='Dani, Cafecitos con Dani'])::after {
+  content: '';
+  position: absolute;
+  inset: 5% 11%;
+  border: 0;
+  border-radius: 28px;
+  background: center / cover no-repeat;
+  box-shadow: 0 18px 30px -20px rgb(0 49 34 / 80%);
+  pointer-events: none;
+}
+
+.miprecio-public-list div:has(> img[alt='Dani, Cafecitos con Dani'])::before {
+  z-index: 1;
+  background-image: url('/cafecitos-dani-card-1.jpg');
+  animation: cafecitos-card-left 18s ease-in-out infinite;
+}
+
+.miprecio-public-list div:has(> img[alt='Dani, Cafecitos con Dani'])::after {
+  z-index: 2;
+  background-image: url('/cafecitos-dani-card-2.jpg');
+  animation: cafecitos-card-right 18s ease-in-out infinite;
+}
+
+.miprecio-public-list img[alt='Dani, Cafecitos con Dani'] {
+  position: relative;
+  z-index: 3;
+  animation: cafecitos-card-main 18s ease-in-out infinite;
+}
+
+@keyframes cafecitos-card-left {
+  0%, 15%, 33%, 47%, 67%, 81%, 100% { z-index: 1; transform: translate(-24%, 3%) rotate(-8deg) scale(.88); }
+  17%, 31% { z-index: 6; background-image: url('/cafecitos-dani-card-1.jpg'); transform: translate(0, 0) rotate(0) scale(1); }
+  33%, 47% { background-image: url('/cafecitos-dani-card-3.jpg'); }
+  50%, 64% { z-index: 6; background-image: url('/cafecitos-dani-card-3.jpg'); transform: translate(0, 0) rotate(0) scale(1); }
+  67%, 81% { background-image: url('/cafecitos-dani-card-5.jpg'); }
+  84%, 98% { z-index: 6; background-image: url('/cafecitos-dani-card-5.jpg'); transform: translate(0, 0) rotate(0) scale(1); }
+}
+
+@keyframes cafecitos-card-right {
+  0%, 31%, 50%, 64%, 84%, 100% { z-index: 2; transform: translate(24%, 3%) rotate(8deg) scale(.88); }
+  0%, 31% { background-image: url('/cafecitos-dani-card-2.jpg'); }
+  33%, 47% { z-index: 6; background-image: url('/cafecitos-dani-card-2.jpg'); transform: translate(0, 0) rotate(0) scale(1); }
+  50%, 64% { background-image: url('/cafecitos-dani-card-4.jpg'); }
+  67%, 81% { z-index: 6; background-image: url('/cafecitos-dani-card-4.jpg'); transform: translate(0, 0) rotate(0) scale(1); }
+  84%, 100% { background-image: url('/cafecitos-dani-card-2.jpg'); }
+}
+
+@keyframes cafecitos-card-main {
+  0%, 15%, 100% { z-index: 5; transform: translate(0, 0) rotate(0) scale(1); }
+  17%, 98% { z-index: 3; transform: translate(-24%, 3%) rotate(-8deg) scale(.88); }
+}
+
+/* A single continuous reel is calmer than a shuffling deck: the first frame
+   is repeated at the end of the strip, making the loop seamless. */
+.miprecio-public-list div:has(> img[alt='Dani, Cafecitos con Dani']) {
+  transform: none !important;
+  overflow: hidden !important;
+  padding: 15px !important;
+  border-radius: 3px !important;
+  background: #005C39 !important;
+  box-shadow: 0 18px 30px -22px rgb(0 49 34 / 68%) !important;
+}
+
+@media (min-width: 768px) {
+  .cafecitos-film:is(#cafecitos-film-override, .cafecitos-film) {
+    transform: none !important;
+  }
+}
+
+.miprecio-public-list div:has(> img[alt='Dani, Cafecitos con Dani'])::before {
+  z-index: 6;
+  inset: 15px;
+  border-radius: 0;
+  background-image: url('/cafecitos-dani-film.jpg');
+  background-size: 100% auto;
+  background-position: center top;
+  animation: cafecitos-film-reel 24s linear infinite;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 20%);
+}
+
+.miprecio-public-list div:has(> img[alt='Dani, Cafecitos con Dani'])::after {
+  display: block;
+  z-index: 7;
+  inset: 0;
+  border: 0;
+  border-radius: 3px;
+  background:
+    radial-gradient(ellipse, #B6DCC8 0 2px, transparent 2.6px) left 4px top 11px / 7px 20px repeat-y,
+    radial-gradient(ellipse, #B6DCC8 0 2px, transparent 2.6px) right 4px top 11px / 7px 20px repeat-y;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 25%), inset 0 0 0 12px #005C39, inset 0 0 22px rgb(0 49 34 / 32%);
+  pointer-events: none;
+}
+
+.miprecio-public-list img[alt='Dani, Cafecitos con Dani'] {
+  opacity: 0;
+  animation: none;
+}
+
+@keyframes cafecitos-film-reel {
+  from { background-position: center top; }
+  to { background-position: center bottom; }
+}
+
+/* Cafecitos: horizontal 35mm film, matching the reference strip. */
+.miprecio-public-list section:first-of-type > div:has(> img[alt='Dani, Cafecitos con Dani']) {
+  width: min(100%, 560px) !important;
+  height: 250px;
+  padding: 18px 0 !important;
+  border-radius: 0 !important;
+}
+
+.miprecio-public-list section:first-of-type > div:has(> img[alt='Dani, Cafecitos con Dani'])::before {
+  inset: 18px auto 18px 0;
+  width: 2568px;
+  border-radius: 0;
+  background-image: url('/cafecitos-dani-film-horizontal.jpg');
+  background-size: 2568px 214px;
+  background-position: left center;
+  animation: cafecitos-horizontal-film 24s linear infinite;
+  box-shadow: none;
+}
+
+.miprecio-public-list section:first-of-type > div:has(> img[alt='Dani, Cafecitos con Dani'])::after {
+  inset: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(ellipse, #B6DCC8 0 2.5px, transparent 3px) left 9px top 5px / 20px 7px repeat-x,
+    radial-gradient(ellipse, #B6DCC8 0 2.5px, transparent 3px) left 9px bottom 5px / 20px 7px repeat-x;
+  box-shadow: inset 0 18px #005C39, inset 0 -18px #005C39, inset 0 0 0 1px rgb(255 255 255 / 24%);
+}
+
+.miprecio-public-list section:first-of-type > div:has(> img[alt='Dani, Cafecitos con Dani']) > img {
+  width: 100% !important;
+  height: 214px !important;
+  aspect-ratio: auto !important;
+}
+
+@keyframes cafecitos-horizontal-film {
+  from { transform: translateX(0); }
+  to { transform: translateX(-1712px); }
+}
+
+@media (min-width: 768px) {
+  .miprecio-public-list section:first-of-type {
+    grid-template-columns: minmax(0, 1fr) minmax(420px, 560px) !important;
+  }
+}
+
+/* Vertical camera-film roll: framed exposures glide slowly through the gate. */
+.miprecio-public-list section:first-of-type > div:has(> img[alt='Dani, Cafecitos con Dani']) {
+  width: min(92vw, 400px) !important;
+  height: min(74svh, 560px);
+  padding: 0 !important;
+  border-radius: 2px !important;
+  background: transparent !important;
+}
+
+.miprecio-public-list section:first-of-type > div:has(> img[alt='Dani, Cafecitos con Dani'])::before {
+  inset: 0;
+  width: auto;
+  border-radius: 0;
+  background-image: url('/cafecitos-dani-film-vertical.jpg');
+  background-size: 100% auto;
+  background-position: center top;
+  animation: cafecitos-vertical-real-film 42s linear infinite;
+}
+
+.miprecio-public-list section:first-of-type > div:has(> img[alt='Dani, Cafecitos con Dani'])::after {
+  display: none;
+}
+
+.miprecio-public-list:has(section[aria-label='Videos recientes de Cafecitos con Dani']) main > header > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0 !important;
+}
+
+.miprecio-public-list:has(section[aria-label='Videos recientes de Cafecitos con Dani']) main > header > span:first-child::before {
+  content: '';
+  width: 148px;
+  height: 48px;
+  background: url('/cafecitos-logo.webp') center / contain no-repeat;
+}
+
+.miprecio-public-list:has(section[aria-label='Videos recientes de Cafecitos con Dani']) main > header > span:first-child::after {
+  content: none;
+}
+
+.miprecio-public-list:has(section[aria-label='Videos recientes de Cafecitos con Dani']) main > header {
+  justify-content: flex-start;
+  border: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.miprecio-public-list:has(section[aria-label='Videos recientes de Cafecitos con Dani']) main > header > span:nth-child(2) {
+  display: none;
+}
+
+/* The perforations are baked into the moving film asset; never overlay a
+   second rail over the images. */
+div:has(> img[alt='Dani, Cafecitos con Dani'])::after {
+  display: none !important;
+}
+
+/* Dedicated Cafecitos film component. Keep this independent from the old
+   experimental selectors above so its geometry remains deterministic. */
+.cafecitos-film:is(#cafecitos-film-override, .cafecitos-film) {
+  position: relative !important;
+  width: min(92vw, 400px) !important;
+  height: min(74svh, 560px) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  transform: none !important;
+  justify-self: center !important;
+  align-self: center !important;
+  isolation: isolate !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: 0 18px 30px -22px rgb(0 49 34 / 68%) !important;
+}
+
+.cafecitos-film:is(#cafecitos-film-override, .cafecitos-film)::before {
+  content: '' !important;
+  position: absolute !important;
+  z-index: 1 !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background-image: url('/cafecitos-dani-film-vertical.jpg') !important;
+  background-size: 100% auto !important;
+  background-position: center top;
+  background-repeat: no-repeat !important;
+  box-shadow: none !important;
+  transform: none;
+  animation: cafecitos-vertical-real-film 42s linear infinite !important;
+}
+
+.cafecitos-film:is(#cafecitos-film-override, .cafecitos-film)::after {
+  display: none !important;
+}
+
+.cafecitos-film:is(#cafecitos-film-override, .cafecitos-film) > img {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+.miprecio-public-list section:first-of-type > div:has(> img[alt='Dani, Cafecitos con Dani']) > img {
+  height: 100% !important;
+}
+
+@keyframes cafecitos-vertical-real-film {
+  from { background-position: center top; }
+  to { background-position: center bottom; }
+}
+
+@media (min-width: 768px) {
+  .miprecio-public-list section:first-of-type {
+    grid-template-columns: minmax(0, 1fr) 400px !important;
+  }
+
+  .cafecitos-film:is(#cafecitos-film-override, .cafecitos-film) {
+    transform: none !important;
+  }
 }

@@ -1,7 +1,8 @@
 import type { CSSProperties } from 'react'
-import { CartControl, cartThemeFor, type CartTheme, type DesignProps, type Section } from './designs'
-import type { ListContent, ListDesign } from '../../types'
-import { SpecialPencilList } from './pencilSpecialDesigns'
+import { CartControl, cartThemeFor, type CartTheme, type DesignProps, type Section } from '../designs'
+import type { ListContent, ListDesign } from '../../../types'
+import { SpecialPencilList } from '../pencilSpecialDesigns'
+import { PENCIL_TEMPLATE_CONFIG } from './templates'
 
 export type PencilVariant =
   | 'pencil-bakery'
@@ -32,6 +33,7 @@ export type PencilVariant =
   | 'pencil-studio-mono'
   | 'pencil-beauty-issue'
   | 'pencil-obsidian-quarterly'
+  | 'pencil-cafecitos'
 
 const PENCIL_VARIANTS = new Set<PencilVariant>([
   'pencil-bakery', 'pencil-garden', 'pencil-market', 'pencil-evening', 'pencil-workshop',
@@ -39,7 +41,7 @@ const PENCIL_VARIANTS = new Set<PencilVariant>([
   'pencil-cheese-alternating', 'pencil-hardware-alternating', 'pencil-hardware-weekend', 'pencil-hardware-shelf',
   'pencil-casa-ritual', 'pencil-casa-bath', 'pencil-casa-signature', 'pencil-casa-services', 'pencil-auto-detail',
   'pencil-blush-bloom', 'pencil-nova', 'pencil-beardy', 'pencil-calm-spa', 'pencil-union-barber',
-  'pencil-studio-mono', 'pencil-beauty-issue', 'pencil-obsidian-quarterly',
+  'pencil-studio-mono', 'pencil-beauty-issue', 'pencil-obsidian-quarterly', 'pencil-cafecitos',
 ])
 
 export function isPencilVariant(design: ListDesign): design is PencilVariant {
@@ -51,7 +53,7 @@ export function isPencilVariant(design: ListDesign): design is PencilVariant {
 // eslint-disable-next-line react-refresh/only-export-components
 export function pencilTemplateDefaults(design: ListDesign): ListContent['template'] | undefined {
   if (!isPencilVariant(design)) return undefined
-  const config = PENCIL_CONFIG[design] ?? SPECIAL_CONFIG[design] ?? SPECIAL_BASE
+  const config = PENCIL_TEMPLATE_CONFIG[design]
   return {
     image: config.image,
     imageLabel: config.imageLabel,
@@ -104,400 +106,7 @@ export type PencilConfig = {
     | 'studio-mono'
     | 'beauty-issue'
     | 'obsidian-quarterly'
-}
-
-const PENCIL_IMAGES = {
-  bakery:
-    'https://images.unsplash.com/photo-1753826366896-170e04691b1c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080',
-  garden:
-    'https://images.unsplash.com/photo-1726950189914-8fe1016eb9c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080',
-  market:
-    'https://images.unsplash.com/photo-1693140539040-aa567b436278?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080',
-  evening:
-    'https://images.unsplash.com/photo-1779282620211-810663eac20e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080',
-  workshop:
-    'https://images.unsplash.com/photo-1695728130932-7b5967d59f52?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080',
-}
-
-const PENCIL_CONFIG: Partial<Record<PencilVariant, PencilConfig>> = {
-  'pencil-bakery': {
-    background: '#F4F2EF',
-    ink: '#1A1A1A',
-    muted: '#4A4A4A',
-    accent: '#C8B496',
-    darkPanel: '#1B1B1B',
-    image: PENCIL_IMAGES.bakery,
-    imageLabel: 'SATURDAY ONLY',
-    imageTitle: 'the morning table',
-    promoEyebrow: 'WEEKEND RITUAL',
-    promoTitle: 'The pastry box',
-    promoBody: 'Six bakery favourites, wrapped for a slow morning.',
-    promoPrice: '$28',
-    promoNote: 'pre-order by 5pm',
-    footerLeft: '17 RUE DES FLEURS · OPEN DAILY 7–4',
-    footerRight: 'PLEASE ASK ABOUT TODAY’S CAKES',
-    layout: 'left-image',
-  },
-  'pencil-garden': {
-    background: '#FBF7EF',
-    ink: '#2A3029',
-    muted: '#5D665B',
-    accent: '#A6AD91',
-    darkPanel: '#1B1B1B',
-    image: PENCIL_IMAGES.garden,
-    imageLabel: 'SATURDAY ONLY',
-    imageTitle: 'the morning table',
-    promoEyebrow: 'SPRING PICNIC',
-    promoTitle: 'The garden box',
-    promoBody: 'Six bright bakes for a sunlit table and a slow afternoon.',
-    promoPrice: '$30',
-    promoNote: 'available Fri–Sun',
-    footerLeft: '17 RUE DES FLEURS · OPEN DAILY 7–4',
-    footerRight: 'PLEASE ASK ABOUT TODAY’S CAKES',
-    layout: 'top-image',
-  },
-  'pencil-market': {
-    background: '#F8F1E7',
-    ink: '#2B211D',
-    muted: '#665650',
-    accent: '#C86E4E',
-    darkPanel: '#1B1B1B',
-    image: PENCIL_IMAGES.market,
-    imageLabel: 'SATURDAY ONLY',
-    imageTitle: 'the morning table',
-    promoEyebrow: 'MARKET SATURDAY',
-    promoTitle: 'The apricot crate',
-    promoBody: 'A generous collection of fruit-led favourites, made for sharing.',
-    promoPrice: '$34',
-    promoNote: 'limited bake',
-    footerLeft: '17 RUE DES FLEURS · OPEN DAILY 7–4',
-    footerRight: 'PLEASE ASK ABOUT TODAY’S CAKES',
-    layout: 'top-promo',
-  },
-  'pencil-evening': {
-    background: '#F2EFE9',
-    ink: '#28231F',
-    muted: '#655E55',
-    accent: '#A99476',
-    darkPanel: '#1B1B1B',
-    image: PENCIL_IMAGES.evening,
-    imageLabel: 'SATURDAY ONLY',
-    imageTitle: 'the morning table',
-    promoEyebrow: 'WINTER SUPPER',
-    promoTitle: 'The candlelight box',
-    promoBody: 'A warm collection of dark chocolate, spice and late-season citrus.',
-    promoPrice: '$36',
-    promoNote: 'pre-order 24 hours',
-    footerLeft: '17 RUE DES FLEURS · OPEN DAILY 7–4',
-    footerRight: 'PLEASE ASK ABOUT TODAY’S CAKES',
-    layout: 'full-image',
-  },
-  'pencil-workshop': {
-    background: '#E7ECE7',
-    ink: '#20322C',
-    muted: '#53625B',
-    accent: '#809589',
-    darkPanel: '#20322C',
-    image: PENCIL_IMAGES.workshop,
-    imageLabel: 'IN THE FIELD',
-    imageTitle: 'made for the bench',
-    promoEyebrow: 'WEEKEND PROJECT',
-    promoTitle: 'The starter kit',
-    promoBody: 'The everyday essentials for a good Saturday’s work.',
-    promoPrice: '$48',
-    promoNote: 'save 15%',
-    footerLeft: '18 CEDAR STREET · OPEN 8–6',
-    footerRight: 'ASK US ABOUT RENTALS',
-    layout: 'top-promo',
-  },
-}
-
-const SPECIAL_BASE: PencilConfig = {
-  background: '#F5F1E8',
-  ink: '#24231F',
-  muted: '#6E6A61',
-  accent: '#A98D68',
-  darkPanel: '#1B1D1B',
-  image: PENCIL_IMAGES.workshop,
-  imageLabel: 'FEATURED',
-  imageTitle: 'the good things',
-  promoEyebrow: 'THIS WEEK',
-  promoTitle: 'A considered collection',
-  promoBody: 'Thoughtful details, made for a slower and better day.',
-  promoPrice: '$48',
-  promoNote: 'available now',
-  footerLeft: 'OPEN DAILY · BY APPOINTMENT',
-  footerRight: 'ASK US ABOUT THE DETAILS',
-  layout: 'alternating',
-}
-
-const specialConfig = (overrides: Partial<PencilConfig>): PencilConfig => ({
-  ...SPECIAL_BASE,
-  ...overrides,
-})
-
-const SPECIAL_CONFIG: Partial<Record<PencilVariant, PencilConfig>> = {
-  'pencil-cheese': specialConfig({
-    background: '#F5EFE3',
-    ink: '#3B2B21',
-    muted: '#756154',
-    accent: '#B67C55',
-    image: '/pencil/templates/UED6s.png',
-    imageLabel: 'FROMAGE & CO.',
-    imageTitle: 'the cheese room',
-    promoEyebrow: 'BOARD + PANTRY',
-    promoTitle: 'The supper board',
-    promoBody: 'A generous gathering of cheese, fruit, bread and something sparkling.',
-    promoPrice: '$55',
-    promoNote: 'serves 2–4',
-    layout: 'top-image',
-  }),
-  'pencil-flower': specialConfig({
-    background: '#F3EEE4',
-    ink: '#344238',
-    muted: '#6E776D',
-    accent: '#879D82',
-    image: '/pencil/templates/BVICw.png',
-    imageLabel: 'WILD STEM STUDIO · DAILY FLOWERS',
-    imageTitle: 'flowers for an ordinary day',
-    promoEyebrow: 'FLOWER NOTE',
-    promoTitle: 'Flowers, every Friday.',
-    promoBody: 'A changing bouquet for the table, gathered close to home.',
-    promoPrice: '$48',
-    promoNote: 'subscription',
-    layout: 'left-image',
-  }),
-  'pencil-flower-summer': specialConfig({
-    background: '#FAF0DD',
-    ink: '#4E342A',
-    muted: '#866958',
-    accent: '#A67C62',
-    image: '/pencil/templates/BVICw.png',
-    imageLabel: 'WILD STEM STUDIO · SUMMER EDITION',
-    imageTitle: 'the late-summer table',
-    promoEyebrow: 'SEASONAL NOTE',
-    promoTitle: 'A bouquet for the long table.',
-    promoBody: 'Field-grown flowers and bright stems for a generous room.',
-    promoPrice: '$72',
-    promoNote: 'pre-order 48h',
-    layout: 'left-image',
-  }),
-  'pencil-flower-winter': specialConfig({
-    background: '#F1EEE8',
-    ink: '#36413A',
-    muted: '#6D766C',
-    accent: '#9AA78E',
-    image: '/pencil/templates/TQhws.png',
-    imageLabel: 'WILD STEM STUDIO · WINTER EDITION',
-    imageTitle: 'the winter room',
-    promoEyebrow: 'DARKER DAYS',
-    promoTitle: 'Flowers for the darker hours.',
-    promoBody: 'Evergreen branches, paper whites and stems that bring the outside in.',
-    promoPrice: '$68',
-    promoNote: 'order by Thursday',
-    layout: 'left-image',
-  }),
-  'pencil-flower-spring': specialConfig({
-    background: '#F1F5E8',
-    ink: '#3C4D3B',
-    muted: '#6B7865',
-    accent: '#91A27A',
-    image: '/pencil/templates/TdSTl.png',
-    imageLabel: 'WILD STEM STUDIO · SPRING EDITION',
-    imageTitle: 'the green beginning',
-    promoEyebrow: 'FIRST OF THE SEASON',
-    promoTitle: 'The first flowers of spring.',
-    promoBody: 'Fresh green stems and soft colour for the changing season.',
-    promoPrice: '$64',
-    promoNote: 'freshly gathered',
-    layout: 'left-image',
-  }),
-  'pencil-wine': specialConfig({
-    background: '#EEE7D9',
-    ink: '#34251D',
-    muted: '#786656',
-    accent: '#C87852',
-    image: PENCIL_IMAGES.evening,
-    imageLabel: 'PARCHMENT CELLAR · NATURAL WINE',
-    imageTitle: 'something beautiful to open',
-    promoEyebrow: 'THE CELLAR LETTER',
-    promoTitle: 'Three bottles, one small story.',
-    promoBody: 'A small, changing shelf for dinners, gifts and long conversations.',
-    promoPrice: '$75',
-    promoNote: '3 bottles',
-    layout: 'full-image',
-  }),
-  'pencil-cheese-alternating': specialConfig({
-    background: '#F6F0E2',
-    ink: '#3B2B21',
-    muted: '#7A695C',
-    accent: '#B67C55',
-    image: '/pencil/templates/UED6s.png',
-    imageLabel: 'FROMAGE & CO. · THE DAILY EDIT',
-    imageTitle: 'a few good pieces',
-    layout: 'alternating',
-  }),
-  'pencil-hardware-alternating': specialConfig({
-    background: '#E7ECE7',
-    ink: '#20322C',
-    muted: '#53625B',
-    accent: '#809589',
-    darkPanel: '#20322C',
-    image: PENCIL_IMAGES.workshop,
-    imageLabel: 'NORTHLINE HARDWARE · OBJECTS FOR WORK',
-    imageTitle: 'the tools you keep',
-    layout: 'alternating',
-  }),
-  'pencil-hardware-weekend': specialConfig({
-    background: '#ECEEE8',
-    ink: '#20322C',
-    muted: '#53625B',
-    accent: '#809589',
-    darkPanel: '#20322C',
-    image: PENCIL_IMAGES.workshop,
-    imageLabel: 'SATURDAY SHELF',
-    imageTitle: 'weekend project',
-    promoEyebrow: 'SATURDAY SPECIAL',
-    promoTitle: 'The deck kit',
-    promoBody: 'The practical essentials for a weekend afternoon outside.',
-    promoPrice: '$84',
-    promoNote: 'save 10%',
-    layout: 'top-promo',
-  }),
-  'pencil-hardware-shelf': specialConfig({
-    background: '#E6ECE7',
-    ink: '#20322C',
-    muted: '#53625B',
-    accent: '#809589',
-    darkPanel: '#20322C',
-    image: PENCIL_IMAGES.workshop,
-    imageLabel: 'NORTHLINE HARDWARE · OBJECTS FOR WORK',
-    imageTitle: 'the workshop shelf',
-    layout: 'hardware-shelf',
-  }),
-  'pencil-casa-ritual': specialConfig({
-    background: '#E8EAEC',
-    ink: '#202124',
-    muted: '#6A6D70',
-    accent: '#B5A384',
-    darkPanel: '#171717',
-    image: '/pencil/templates/b1fvV.png',
-    imageLabel: 'CASA FÉRREA',
-    imageTitle: 'El baño, como un ritual.',
-    layout: 'casa-ritual',
-  }),
-  'pencil-casa-bath': specialConfig({
-    background: '#FFFFFF',
-    ink: '#090909',
-    muted: '#686868',
-    accent: '#B9A487',
-    darkPanel: '#090909',
-    image: '/pencil/templates/j1DN7.png',
-    imageLabel: 'CASA FÉRREA',
-    imageTitle: 'BAÑO EQUIPAR',
-    layout: 'casa-bath',
-  }),
-  'pencil-casa-signature': specialConfig({
-    background: '#F8F8F6',
-    ink: '#171717',
-    muted: '#707070',
-    accent: '#D5D8D9',
-    darkPanel: '#ECEEEF',
-    image: '/pencil/templates/w6m36A.png',
-    imageLabel: 'CASA FÉRREA',
-    imageTitle: 'Signature reference',
-    layout: 'casa-signature',
-  }),
-  'pencil-casa-services': specialConfig({
-    background: '#050505',
-    ink: '#FFFFFF',
-    muted: '#A5A5A5',
-    accent: '#FFFFFF',
-    darkPanel: '#050505',
-    image: '',
-    layout: 'casa-services',
-  }),
-  'pencil-auto-detail': specialConfig({
-    background: '#050505',
-    ink: '#FFFFFF',
-    muted: '#A9A9A9',
-    accent: '#FF2A23',
-    darkPanel: '#0B0B0B',
-    image: '/pencil/templates/JJyIi.png',
-    layout: 'auto-detail',
-  }),
-  'pencil-blush-bloom': specialConfig({
-    background: '#F8E8EF',
-    ink: '#F24AA6',
-    muted: '#FF86C6',
-    accent: '#F24AA6',
-    darkPanel: '#08080A',
-    image: '',
-    layout: 'blush-bloom',
-  }),
-  'pencil-nova': specialConfig({
-    background: '#5B4BCA',
-    ink: '#FFFFFF',
-    muted: '#F2D9FF',
-    accent: '#FFFFFF',
-    darkPanel: '#FFFFFF1A',
-    image: '',
-    layout: 'nova',
-  }),
-  'pencil-beardy': specialConfig({
-    background: '#D9D5CB',
-    ink: '#171313',
-    muted: '#6C655D',
-    accent: '#FFFFFF',
-    darkPanel: '#050505',
-    image: '/pencil/templates/mquE7.png',
-    layout: 'beardy',
-  }),
-  'pencil-calm-spa': specialConfig({
-    background: '#FFF7B5',
-    ink: '#F9F4D0',
-    muted: '#D6E0B6',
-    accent: '#F9F4D0',
-    darkPanel: '#173D2C',
-    image: '',
-    layout: 'calm-spa',
-  }),
-  'pencil-union-barber': specialConfig({
-    background: '#FFFFFF',
-    ink: '#17226C',
-    muted: '#26305F',
-    accent: '#D9232E',
-    darkPanel: '#283B97',
-    image: '',
-    layout: 'union-barber',
-  }),
-  'pencil-studio-mono': specialConfig({
-    background: '#FFFFFF',
-    ink: '#292929',
-    muted: '#6A6A6A',
-    accent: '#292929',
-    darkPanel: '#303030',
-    image: '',
-    layout: 'studio-mono',
-  }),
-  'pencil-beauty-issue': specialConfig({
-    background: '#EDE9E2',
-    ink: '#242022',
-    muted: '#756C67',
-    accent: '#242022',
-    darkPanel: '#171416',
-    image: '/pencil/templates/mquE7.png',
-    layout: 'beauty-issue',
-  }),
-  'pencil-obsidian-quarterly': specialConfig({
-    background: '#080A0D',
-    ink: '#FFFFFF',
-    muted: '#9AA4B1',
-    accent: '#95A8D9',
-    darkPanel: '#080A0D',
-    image: '/pencil/templates/a2qkO.png',
-    layout: 'obsidian-quarterly',
-  }),
+    | 'cafecitos'
 }
 
 const CART_SHARP_VARIANTS = new Set<PencilVariant>([
@@ -529,7 +138,7 @@ const actionAccentFor = (config: PencilConfig) => {
 /** Build cart tokens from the same visual config used by each Pencil list. */
 export function pencilCartThemeFor(variant: PencilVariant | 'pencil-journal'): CartTheme {
   if (variant === 'pencil-journal') return cartThemeFor('pencil-journal')
-  const config = PENCIL_CONFIG[variant] ?? SPECIAL_CONFIG[variant] ?? SPECIAL_BASE
+  const config = PENCIL_TEMPLATE_CONFIG[variant]
   const isDark = config.ink === '#FFFFFF' || config.background === '#050505' || variant === 'pencil-calm-spa' || variant === 'pencil-auto-detail'
   const sharp = CART_SHARP_VARIANTS.has(variant)
   const rounded = CART_ROUNDED_VARIANTS.has(variant)
@@ -600,16 +209,36 @@ const price = (value: string | number, prefix = '$') => {
   return prefix === '$' ? `$${display}` : `${prefix} ${display}`
 }
 
-function Rule({ color, background }: { color: string; background: string }) {
+function Rule({
+  color,
+  background,
+  flower = false,
+}: {
+  color: string
+  background: string
+  flower?: boolean
+}) {
   return (
     <div className="relative my-7 h-px" style={{ background: color }}>
       <span
         className="absolute left-1/2 top-1/2 flex h-10 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
         style={{ background }}
       >
-        <svg width="22" height="22" viewBox="0 0 32 32" fill={color} aria-hidden="true">
-          <path d="M7 12h16v9a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7v-9Zm17 3h1a4 4 0 0 1 0 8h-1v-3h1a1 1 0 0 0 0-2h-1v-3ZM11 5.5c0-1.4.7-2.4 1.7-3.5.5 1 .8 1.9.8 2.9 0 1.2-.6 2.2-1.7 3.1-.5-.4-.8-.9-.8-1.5Zm6 0c0-1.4.7-2.4 1.7-3.5.5 1 .8 1.9.8 2.9 0 1.2-.6 2.2-1.7 3.1-.5-.4-.8-.9-.8-1.5Z" />
-        </svg>
+        {flower ? (
+          <img
+            src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/flower.svg"
+            alt=""
+            aria-hidden="true"
+            className="h-[25px] w-[25px] object-contain"
+          />
+        ) : (
+          <img
+            src="/coffee-divider-icon.jpg"
+            alt=""
+            aria-hidden="true"
+            className="h-[26px] w-[26px] object-contain"
+          />
+        )}
       </span>
     </div>
   )
@@ -620,18 +249,30 @@ function Masthead({
   title,
   body,
   color,
+  logoUrl,
+  brandName,
   align = 'center',
 }: {
   eyebrow?: string
   title: string
   body?: string
   color: PencilConfig
+  logoUrl?: string | null
+  brandName: string
   align?: 'left' | 'center'
 }) {
   return (
     <header
       className={`flex flex-col gap-1 ${align === 'center' ? 'items-center text-center' : 'items-start text-left'}`}
     >
+      {logoUrl && (
+        <img
+          src={logoUrl}
+          alt={`Logo de ${brandName}`}
+          className="mb-2 h-24 w-24 rounded-2xl border bg-white object-contain p-1 shadow-sm"
+          style={{ borderColor: `${color.accent}66` }}
+        />
+      )}
       {eyebrow && (
         <p
           className="text-[10px] uppercase tracking-[2px] sm:text-[11px]"
@@ -805,7 +446,7 @@ function PencilShell({
 
 export function PencilList({ variant, ...props }: DesignProps & { variant: PencilVariant }) {
   const config = {
-    ...withTemplateOverrides(PENCIL_CONFIG[variant] ?? SPECIAL_CONFIG[variant] ?? SPECIAL_BASE, props.content?.template),
+    ...withTemplateOverrides(PENCIL_TEMPLATE_CONFIG[variant], props.content?.template),
     accent: props.accent,
   }
   if (!['left-image', 'top-image', 'full-image', 'top-promo'].includes(config.layout)) {
@@ -816,11 +457,10 @@ export function PencilList({ variant, ...props }: DesignProps & { variant: Penci
   const eyebrow = hero?.eyebrow
   const body = hero?.body
   const layout = config.layout
-
   const masthead = (
     <>
-      <Masthead eyebrow={eyebrow} title={title} body={body} color={config} />
-      <Rule color={config.accent} background={config.background} />
+      <Masthead eyebrow={eyebrow} title={title} body={body} color={config} logoUrl={props.tenant.logoUrl} brandName={props.tenant.name} />
+      <Rule color={config.accent} background={config.background} flower={variant === 'pencil-flower-summer'} />
     </>
   )
   const catalog = <PencilCatalog sections={props.sections} config={config} props={props} fullWidth={variant === 'pencil-flower-winter'} />
@@ -846,10 +486,10 @@ export function PencilList({ variant, ...props }: DesignProps & { variant: Penci
     return (
       <PencilShell config={config}>
         <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_268px] md:items-start">
-          <Masthead eyebrow={eyebrow} title={title} body={body} color={config} align="left" />
+          <Masthead eyebrow={eyebrow} title={title} body={body} color={config} logoUrl={props.tenant.logoUrl} brandName={props.tenant.name} align="left" />
           <PencilImage config={config} className="h-[156px]" />
         </div>
-        <Rule color={config.accent} background={config.background} />
+        <Rule color={config.accent} background={config.background} flower={variant === 'pencil-flower-summer'} />
         <div className="grid min-w-0 grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_268px] md:items-start">
           <div>{catalog}</div>
           {promo}

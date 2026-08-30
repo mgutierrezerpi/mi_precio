@@ -7,6 +7,7 @@ import { MenuScreen } from './screens/menu/MenuScreen'
 import { MagazineScreen } from './screens/menu/MagazineScreen'
 import { MarketplaceScreen } from './screens/marketplace/MarketplaceScreen'
 import { LinkTreeScreen } from './screens/home/LinkTreeScreen'
+import { TemplatePreviewScreen } from './screens/home/TemplatePreviewScreen'
 import { LinkTreePublicScreen } from './screens/menu/LinkTreePublicScreen'
 
 import { ListEditScreen } from './screens/admin/ListEditScreen'
@@ -67,6 +68,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <HomeScreen />,
+  },
+  {
+    path: '/template-preview/:variant',
+    element: <TemplatePreviewScreen />,
   },
   // Blocking plan selection: where a new signup lands until it has a plan.
   {

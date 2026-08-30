@@ -15,7 +15,7 @@ import {
   TechGrid,
   type DesignProps,
 } from '../../screens/menu/designs'
-import { isPencilVariant, PencilList } from '../../screens/menu/pencilDesigns'
+import { isPencilVariant, PencilList } from '../../screens/menu/pencil'
 import { PencilJournal } from '../../screens/menu/pencilJournal'
 
 /** Visual templates for the public list. Mirrors LIST_DESIGNS in
@@ -58,6 +58,7 @@ export const LIST_DESIGNS: ListDesign[] = [
   'pencil-studio-mono',
   'pencil-beauty-issue',
   'pencil-obsidian-quarterly',
+  'pencil-cafecitos',
 ]
 
 export const BRAND_SWATCHES = [
@@ -113,7 +114,7 @@ export function DesignThumb({
   design: ListDesign
   accent: string
 }) {
-  const props = designPreviewProps(accent)
+  const props = createDesignPreviewProps(accent)
   let preview: React.ReactNode
 
   if (isPencilVariant(design)) preview = <PencilList variant={design} {...props} />
@@ -147,7 +148,8 @@ const previewItem = {
   imageUrl: '/mockup-img.webp',
 } as Item
 
-function designPreviewProps(accent: string): DesignProps {
+// eslint-disable-next-line react-refresh/only-export-components
+export function createDesignPreviewProps(accent: string): DesignProps {
   const tenant = {
     id: 'preview', name: 'Casa MiPrecio', subdomain: 'preview', currency: 'UYU',
     description: 'Una selección para todos los días.', brandColor: accent,

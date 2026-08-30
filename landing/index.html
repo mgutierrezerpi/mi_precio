@@ -101,6 +101,98 @@
       .animate-fade-in-down {
         animation: fadeInDown 0.4s ease-out forwards;
       }
+
+      /* Public site palette — shared with the default admin theme. */
+      :root {
+        color-scheme: dark;
+        --page: #0e071d;
+        --surface: #21133f;
+        --card: #160d2d;
+        --elevated: #2a1c66;
+        --line: #33205b;
+        --cream: #ffffff;
+        --copy: #cbd5e1;
+        --muted: #9281b7;
+        --gold: #d5b8ff;
+        --gold-light: #d5b8ff;
+        --gold-soft: #21133f;
+      }
+
+      body {
+        background: var(--page);
+        color: var(--cream);
+      }
+
+      .landing-page {
+        background:
+          radial-gradient(circle at 10% 8%, rgba(108, 67, 232, 0.18), transparent 26rem),
+          var(--page);
+      }
+
+      /* The static page uses Tailwind's generated colour utilities. These
+         overrides deliberately keep its responsive layout intact while
+         applying the same visual language as /admin. */
+      .landing-page [class~="bg-white"] { background-color: var(--card); }
+      .landing-page [class~="bg-[#F5F3FF]"],
+      .landing-page [class~="bg-[#F8FAFC]"],
+      .landing-page [class~="bg-[#0F172A]"] { background-color: var(--surface); }
+      .landing-page [class~="bg-[#F1F5F9]"] { background-color: var(--line); }
+      .landing-page [class~="border-[#E2E8F0]"] { border-color: var(--line); }
+      .landing-page [class~="bg-[#EDE9FE]"] { background-color: var(--gold-soft); }
+      .landing-page [class~="text-slate-900"],
+      .landing-page [class~="text-slate-950"],
+      .landing-page [class~="text-[#0F172A]"] { color: var(--cream); }
+      .landing-page [class~="text-[#334155]"],
+      .landing-page [class~="text-[#475569]"] { color: var(--copy); }
+      .landing-page [class~="text-[#94A3B8]"],
+      .landing-page [class~="text-[#CBD5E1]"] { color: var(--muted); }
+      .landing-page [class~="text-[#7C3AED]"] { color: var(--gold); }
+      .landing-page [class~="text-[#C4B5FD]"] { color: var(--gold-light); }
+      .landing-page [class~="border-[#7C3AED]"] { border-color: var(--gold); }
+      .landing-page [class~="border-[#0F172A]"] { border-color: var(--line); }
+      .landing-page [style*="#ede9fe"] {
+        background-color: var(--gold-soft) !important;
+        color: var(--gold) !important;
+      }
+
+      .landing-page [class~="from-[#7C3AED]"],
+      .landing-page [class~="from-[#6366F1]"] { --tw-gradient-from: #7c3aed var(--tw-gradient-from-position); --tw-gradient-to: rgb(124 58 237 / 0) var(--tw-gradient-to-position); }
+      .landing-page [class~="to-[#A855F7]"],
+      .landing-page [class~="to-[#8B5CF6]"] { --tw-gradient-to: #c026d3 var(--tw-gradient-to-position); }
+
+      .landing-page header {
+        border-color: rgba(248, 245, 240, 0.1) !important;
+        background: rgba(18, 18, 20, 0.86) !important;
+      }
+
+      .landing-page #producto {
+        background:
+          radial-gradient(circle at 82% 22%, rgba(108, 67, 232, 0.32), transparent 24rem),
+          radial-gradient(circle at 8% 100%, rgba(42, 28, 102, 0.6), transparent 30rem),
+          linear-gradient(135deg, #0e071d 0%, #160d2d 54%, #2a1c66 100%) !important;
+      }
+
+      .landing-page article,
+      .landing-page [data-faq] {
+        box-shadow: 0 16px 40px -28px rgba(0, 0, 0, 0.9) !important;
+      }
+
+      .landing-page article:hover {
+        border-color: #d5b8ff !important;
+        transform: translateY(-3px);
+      }
+
+      .landing-page [class~="hover:bg-[#F5F3FF]"]:hover,
+      .landing-page [class~="hover:bg-violet-50"]:hover { background-color: var(--gold-soft) !important; }
+      .landing-page [class~="hover:text-[#7C3AED]"]:hover { color: var(--gold-light) !important; }
+
+      .landing-page footer { background: #100922 !important; }
+      .landing-page [class~="bg-[#2E1065]"] { background-color: #100922; }
+
+      @media (max-width: 767px) {
+        .landing-page section { padding-top: 5rem !important; padding-bottom: 5rem !important; }
+        .landing-page #producto { padding-top: 5.5rem !important; }
+      }
     </style>
   </head>
   <body>

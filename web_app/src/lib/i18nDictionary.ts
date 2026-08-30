@@ -998,6 +998,8 @@ const DICT_BASE: Record<string, TranslationEntry> = {
   'set.design.pencil-beauty-issue.desc': { es: 'Lista editorial de servicios en tres columnas.', en: 'Editorial three-column service list.', pt: 'Lista editorial de serviços em três colunas.' },
   'set.design.pencil-obsidian-quarterly.name': { es: 'Obsidian Quarterly', en: 'Obsidian Quarterly', pt: 'Obsidian Quarterly' },
   'set.design.pencil-obsidian-quarterly.desc': { es: 'Lista de detailing editorial con imagen dividida.', en: 'Editorial detailing list with a split image treatment.', pt: 'Lista editorial de detailing com imagem dividida.' },
+  'set.design.pencil-cafecitos.name': { es: 'Cafecitos · Colaboraciones', en: 'Cafecitos · Collaborations', pt: 'Cafecitos · Colaborações' },
+  'set.design.pencil-cafecitos.desc': { es: 'Presentación personal con videos y propuestas de colaboración.', en: 'Personal presentation with videos and collaboration offers.', pt: 'Apresentação pessoal com vídeos e propostas de colaboração.' },
   'set.design.pencil-journal.name': {
     es: 'Cheese Factory · Revista',
     en: 'Cheese Factory · Journal',

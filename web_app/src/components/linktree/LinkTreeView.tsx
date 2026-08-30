@@ -24,6 +24,7 @@ function LinkTreeIcon({ name, size = 20 }: { name: string; size?: number }) {
   }
   const paths: Record<string, React.ReactNode> = {
     bag: <><path d="M6 8.5h12l1 12H5l1-12Z" /><path d="M9 9V6a3 3 0 0 1 6 0v3" /></>,
+    camera: <><path d="M4 7h4l1.5-2h5L16 7h4a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" /><circle cx="12" cy="13" r="3.5" /></>,
     calendar: <><rect x="3.5" y="5" width="17" height="16" rx="2" /><path d="M7.5 3v4M16.5 3v4M3.5 10h17" /></>,
     chat: <><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3.1-.6L4 20l1.6-4A7.3 7.3 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z" /><path d="M8 12h.01M12 12h.01M16 12h.01" /></>,
     arrow: <><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></>,
@@ -33,6 +34,9 @@ function LinkTreeIcon({ name, size = 20 }: { name: string; size?: number }) {
     share: <><path d="M12 15V4" /><path d="m8 8 4-4 4 4" /><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" /></>,
     copy: <><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></>,
     instagram: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.3" cy="6.8" r=".8" fill="currentColor" stroke="none" /></>,
+    mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3.5 7 8.5 6 8.5-6" /></>,
+    tiktok: <path d="M14 3v10.3a4.3 4.3 0 1 1-3.6-4.25v3.05a1.5 1.5 0 1 0 .8 1.33V3h2.8c.25 2.25 1.55 3.65 3.7 3.9v2.7A7.4 7.4 0 0 1 14 8.55" fill="currentColor" stroke="none" />,
+    whatsapp: <><path d="M20.5 11.6a8.45 8.45 0 0 1-12.55 7.4L3.5 20.4l1.45-4.15A8.45 8.45 0 1 1 20.5 11.6Z" /><path d="M8.6 7.7c.17-.4.35-.4.52-.4h.45c.14 0 .33.05.42.33l.66 1.58c.07.18.05.34-.02.48l-.32.48c-.1.12-.2.25-.08.47.12.22.55.9 1.2 1.45.83.72 1.53.95 1.75 1.07.22.12.35.1.48-.06l.6-.7c.13-.16.28-.13.47-.07l1.55.73c.2.1.33.15.38.24.05.1.05.56-.13 1.1-.18.54-1.06 1.03-1.47 1.08-.38.05-.86.18-2.92-.63-2.5-.98-4.1-3.47-4.23-3.63-.12-.16-1-1.33-1-2.54 0-1.2.63-1.8.85-2.04Z" fill="currentColor" stroke="none" /> </>,
   }
   return <svg {...common}>{paths[name] ?? paths.link}</svg>
 }
@@ -161,9 +165,9 @@ export function LinkTreeView({ data, preview = false, publicUrl, fallbackAvatarU
 
           <div className="link-tree-socials">
             {data.instagramUrl && <a href={data.instagramUrl} target="_blank" rel="noreferrer" aria-label="Instagram"><LinkTreeIcon name="instagram" size={14} />Instagram</a>}
-            {data.tiktokUrl && <a href={data.tiktokUrl} target="_blank" rel="noreferrer" aria-label="TikTok">TikTok</a>}
-            {data.emailUrl && <a href={emailHref(data.emailUrl)} aria-label="Enviar email">Email</a>}
-            {data.whatsappUrl && <a href={data.whatsappUrl} target="_blank" rel="noreferrer" aria-label="WhatsApp">WhatsApp</a>}
+            {data.tiktokUrl && <a href={data.tiktokUrl} target="_blank" rel="noreferrer" aria-label="TikTok"><LinkTreeIcon name="tiktok" size={14} />TikTok</a>}
+            {data.emailUrl && <a href={emailHref(data.emailUrl)} aria-label="Enviar email"><LinkTreeIcon name="mail" size={14} />Email</a>}
+            {data.whatsappUrl && <a href={data.whatsappUrl} target="_blank" rel="noreferrer" aria-label="WhatsApp"><LinkTreeIcon name="whatsapp" size={14} />WhatsApp</a>}
             {data.websiteUrl && <a href={data.websiteUrl} target="_blank" rel="noreferrer" aria-label="Sitio web">Sitio web</a>}
           </div>
         </div>

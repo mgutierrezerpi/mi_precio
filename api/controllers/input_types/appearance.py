@@ -47,6 +47,7 @@ LIST_DESIGNS = {
         "pencil-studio-mono",
         "pencil-beauty-issue",
         "pencil-obsidian-quarterly",
+        "pencil-cafecitos",
 }
 
 

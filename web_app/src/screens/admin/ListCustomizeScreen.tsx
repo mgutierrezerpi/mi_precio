@@ -6,7 +6,7 @@ import api from '../../services/api'
 import type { ListContent, PriceList } from '../../types'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon } from './crm/ui'
-import { pencilTemplateDefaults } from '../menu/pencilDesigns'
+import { pencilTemplateDefaults } from '../menu/pencil'
 
 const inputClass = 'mt-1 h-10 w-full rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-sm text-[var(--dash-text)] outline-none transition focus:border-[var(--dash-link)] focus:ring-2 focus:ring-[var(--dash-link)]/20 disabled:opacity-50'
 const textareaClass = `${inputClass} h-auto min-h-20 py-2.5`
