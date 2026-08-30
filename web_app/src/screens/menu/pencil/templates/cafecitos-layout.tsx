@@ -192,7 +192,7 @@ export function CafecitosTemplate({
   const storyVideos = template?.storyVideos?.filter(Boolean).slice(0, 6)
   const videos = storyVideos?.length ? storyVideos : DEFAULT_STORY_VIDEOS
   const metrics = template?.storyMetrics?.slice(0, videos.length) || (storyVideos?.length ? [] : DEFAULT_STORY_METRICS)
-  const profileImage = template?.image || config.image || DEFAULT_PROFILE_IMAGE
+  const profileImage = template?.profileImage || config.image || DEFAULT_PROFILE_IMAGE
   const profileName = template?.profileName || hero?.eyebrow?.replace(/^hola,?\s*soy\s*/i, '') || props.tenant.name
   const logo = template?.logo || '/cafecitos-logo.svg'
   const collaborationHeading = template?.collaborationHeading || 'Promocioná tu marca conmigo'

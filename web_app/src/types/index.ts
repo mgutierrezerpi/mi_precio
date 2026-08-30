@@ -286,6 +286,7 @@ export interface ListContent {
     /** Optional identity and story media for the stories-style collaboration template. */
     logo?: string
     profileName?: string
+    profileImage?: string
     storyVideos?: string[]
     storyMetrics?: { views: string; likes: string; comments: string }[]
     collaborationHeading?: string
