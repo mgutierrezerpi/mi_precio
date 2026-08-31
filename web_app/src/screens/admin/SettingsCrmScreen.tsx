@@ -24,6 +24,7 @@ import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { gradient, tone } from './crm/theme'
 import { InfoSection, BrandSection } from './SettingsCrmInfoBrand'
+import { BillingContent } from './SettingsCrmBillingContent'
 
 const sections: {
   key: string
@@ -988,9 +989,6 @@ function BillingSection({
     } else setError(res.error || 'No se pudo abrir el checkout.')
   }
 
-  const limitLabel = (n: number | null) =>
-    n === null ? t('bill.unlimited') : String(n)
-
   return (
     <>
       <SectionHeader
@@ -1013,149 +1011,17 @@ function BillingSection({
         </div>
       )}
 
-      {/* Usage of the current plan */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-[var(--dash-border)] p-4">
-        <span className="text-[13px] font-extrabold text-[var(--dash-text)]">
-          {t('bill.usageTitle')}
-        </span>
-        {info &&
-          (
-            [
-              ['products', 'bill.products'],
-              ['lists', 'bill.lists'],
-              ['members', 'bill.members'],
-            ] as const
-          ).map(([key, lbl]) => {
-            const used = info.usage[key]
-            // Limit comes from the advertised plan content so the bars match the cards.
-            const limit = planById(visiblePlan).limits[key]
-            const pct = limit
-              ? Math.min(100, Math.round((used / limit) * 100))
-              : 0
-            const full = limit !== null && used >= limit
-            return (
-              <div key={key} className="flex flex-col gap-1">
-                <div className="flex items-center justify-between text-[12px]">
-                  <span className="font-semibold text-[var(--dash-text2)]">
-                    {t(lbl)}
-                  </span>
-                  <span
-                    className={`font-bold ${full ? 'text-[#EF4444]' : 'text-[var(--dash-muted)]'}`}
-                  >
-                    {used} / {limitLabel(limit)}
-                  </span>
-                </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--dash-soft)]">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: limit ? `${pct}%` : '100%',
-                      background: full ? '#EF4444' : 'var(--tone-violet-fg)',
-                      opacity: limit ? 1 : 0.35,
-                    }}
-                  />
-                </div>
-              </div>
-            )
-          })}
-      </div>
-
-      {info?.billing?.portalUrl && (
-        <a
-          href={info.billing.portalUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="flex h-11 w-fit items-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-4 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
-        >
-          <Icon name="tags" size={16} /> {t('bill.managePortal')}
-        </a>
-      )}
-
-      {/* Plan cards — same copy as the public landing (lib/plans). */}
-      <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {PLANS.map((plan) => {
-          const isCurrent = plan.id === current
-          const isPending = plan.id === pendingPlan && plan.id !== current
-          return (
-            <div
-              key={plan.id}
-              className={`flex flex-col gap-2.5 rounded-2xl border p-4 ${isCurrent || isPending ? 'border-[var(--dash-link)] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)]'}`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[15px] font-extrabold text-[var(--dash-text)]">
-                  {plan.name}
-                </span>
-                {plan.popular && (
-                  <span
-                    className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                    style={tone('violet')}
-                  >
-                    {t('bill.recommended')}
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] font-medium text-[var(--dash-muted)]">
-                {plan.description}
-              </p>
-              <div className="flex items-end gap-1">
-                <span className="text-2xl font-black text-[var(--dash-text)]">
-                  {plan.price}
-                </span>
-                <span className="pb-1 text-[11px] font-semibold text-[var(--dash-muted)]">
-                  {plan.cadence}
-                </span>
-              </div>
-              <ul className="flex flex-col gap-1.5 border-t border-[var(--dash-divider)] pt-3">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-center gap-1.5 text-[12px]">
-                    <Icon
-                      name="circle-check"
-                      size={13}
-                      className="shrink-0 text-[var(--tone-green-fg)]"
-                    />
-                    <span className="font-medium text-[var(--dash-text2)]">
-                      {f}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              {isCurrent ? (
-                <span
-                  className="mt-auto flex h-9 items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold"
-                  style={tone('violet')}
-                >
-                  <Icon name="circle-check" size={15} /> {t('bill.current')}
-                </span>
-              ) : isPending ? (
-                <span
-                  className="mt-auto flex h-9 items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold"
-                  style={tone('violet')}
-                >
-                  <Icon name="tags" size={15} /> {t('bill.pendingShort')}
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  disabled={!isOwner || changing !== null}
-                  onClick={() => choosePlan(plan.id)}
-                  className={`mt-auto flex h-9 items-center justify-center rounded-xl text-[13px] font-bold text-white disabled:opacity-50 ${gradient}`}
-                >
-                  {changing === plan.id ? t('bill.changing') : t('bill.choose')}
-                </button>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      {!isOwner && (
-        <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
-          <Icon name="alert-triangle" size={15} /> {t('bill.ownerOnly')}
-        </div>
-      )}
-      <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
-        <Icon name="tags" size={15} /> {t('bill.paymentNote')}
-      </div>
+      <BillingContent
+        t={t}
+        info={info}
+        tenant={tenant}
+        current={current}
+        visiblePlan={visiblePlan}
+        pendingPlan={pendingPlan}
+        changing={changing}
+        isOwner={isOwner}
+        onChoose={choosePlan}
+      />
     </>
   )
 }
