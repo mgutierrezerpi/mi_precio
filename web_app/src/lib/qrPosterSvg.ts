@@ -30,6 +30,10 @@ export interface QrPosterOptions {
   logoDataUrl?: string | null
   /** Width ÷ height of that mark, so it is not squashed into a fixed box. */
   logoAspect?: number
+  /** Ink for the code's modules. The shop picks this in Códigos QR; the sheet
+   *  around it stays ours either way, so the choice only ever reaches the code
+   *  itself. Defaults to the print-safe violet. */
+  qrColor?: string
 }
 
 /** The mark's slot. Driven by width — it is a wordmark, so its width is what
@@ -63,6 +67,7 @@ export function buildQrPosterSvg({
   footer,
   logoDataUrl,
   logoAspect,
+  qrColor,
 }: QrPosterOptions): string {
   const font = "Inter, 'Segoe UI', system-ui, Arial, sans-serif"
   const soft = 'rgba(255,255,255,0.78)'
@@ -85,7 +90,10 @@ export function buildQrPosterSvg({
   const footerY = headlineY + headlineSize * 0.22 + 46 + footerSize * 0.78
 
   // The QR nests as its own <svg>, so its modules stay crisp vector paths.
-  const qr = qrToSvg(value, { fg: POSTER_QR_COLOR, bg: '#FFFFFF' }).replace(
+  const qr = qrToSvg(value, {
+    fg: qrColor || POSTER_QR_COLOR,
+    bg: '#FFFFFF',
+  }).replace(
     '<svg ',
     `<svg x="${cardX + qrPad}" y="${cardY + qrPad}" width="${qrSize}" height="${qrSize}" `
   )

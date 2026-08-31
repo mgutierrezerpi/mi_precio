@@ -1,5 +1,5 @@
 import type { TFn } from '../../lib/i18n'
-import { downloadQrPng, downloadQrSvg } from '../../lib/qrRender'
+import type { PriceList } from '../../types'
 import { QrCode } from './crm/QrCode'
 import { Icon } from './crm/ui'
 import { gradient } from './crm/theme'
@@ -9,18 +9,17 @@ interface QrColor { key: string; value: string }
 interface CodesCustomizerProps {
   color: string
   colors: QrColor[]
+  busy: 'png' | 'svg' | null
   hasLists: boolean
-  logoUrl: string | null
+  previewList: PriceList | null
   previewUrl: string
-  subdomain: string
   t: TFn
-  withLogo: boolean
   onChooseColor: (color: string) => void
-  onToggleLogo: () => void
+  onDownload: (list: PriceList | null, as: 'png' | 'svg') => void
 }
 
 export function CodesCustomizer({
-  color, colors, hasLists, logoUrl, previewUrl, subdomain, t, withLogo, onChooseColor, onToggleLogo,
+  color, colors, busy, hasLists, previewList, previewUrl, t, onChooseColor, onDownload,
 }: CodesCustomizerProps) {
   const panelClassName = [
     'flex w-full shrink-0 flex-col gap-4 self-start rounded-xl border border-[var(--dash-border)]',
@@ -29,17 +28,13 @@ export function CodesCustomizer({
   const disabledMessage = hasLists ? '' : t('codes.downloadDisabled')
   const selectedColorClassName =
     'ring-2 ring-offset-2 ring-offset-[var(--dash-surface)] ring-[var(--dash-link)]'
-  const logoControlClassName = [
-    'flex items-center justify-between overflow-hidden rounded-[12px] border',
-    'border-[var(--dash-border)] bg-[var(--dash-soft)] px-3 py-3',
-  ].join(' ')
   return <div className={panelClassName}>
     <div className="flex flex-col gap-1">
-      <h3 className="text-lg font-extrabold text-[var(--dash-text)]">{t('codes.customize')}</h3>
-      <p className="text-xs font-medium text-[var(--dash-muted)]">{t('codes.customizeHelp')}</p>
+      <h3 className="text-lg font-extrabold text-[var(--dash-text)]">{t('codes.posterTitle')}</h3>
+      <p className="text-xs font-medium text-[var(--dash-muted)]">{t('codes.posterHelp')}</p>
     </div>
     <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-lg bg-white p-1">
-      <QrCode value={previewUrl} size={128} margin={2} fg={color} logoUrl={logoUrl} className="!h-full !w-full rounded-lg object-contain" />
+      <QrCode value={previewUrl} size={128} margin={2} fg={color} className="!h-full !w-full rounded-lg object-contain" />
     </div>
     <div className="flex flex-col gap-1.5">
       <span className="text-xs font-bold text-[var(--dash-text2)]">{t('codes.color')}</span>
@@ -49,6 +44,7 @@ export function CodesCustomizer({
           type="button"
           onClick={() => onChooseColor(option.value)}
           aria-label={t(`codes.color.${option.key}`)}
+          aria-pressed={color === option.value}
           title={t(`codes.color.${option.key}`)}
           className={`h-7 w-7 rounded-lg ${
             color === option.value ? selectedColorClassName : ''
@@ -56,37 +52,21 @@ export function CodesCustomizer({
           style={{ backgroundColor: option.value }}
         />)}
       </div>
-    </div>
-    <div className={logoControlClassName}>
-      <div className="flex flex-col">
-        <span className="text-[13px] font-bold text-[var(--dash-text)]">{t('codes.logoCenter')}</span>
-        <span className="text-[11px] font-medium text-[var(--dash-muted)]">{t('codes.logoHelp')}</span>
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={withLogo}
-        onClick={onToggleLogo}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-          withLogo ? 'bg-[#10B981]' : 'bg-[var(--dash-border)]'
-        }`}
-      >
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${withLogo ? 'left-[22px]' : 'left-0.5'}`} />
-      </button>
+      <span className="text-[11px] font-medium text-[var(--dash-muted)]">{t('codes.colorHelp')}</span>
     </div>
     <DownloadButton
-      disabled={!hasLists}
+      disabled={!hasLists || busy !== null}
       tooltip={disabledMessage}
       className={`text-white ${gradient}`}
-      onClick={() => void downloadQrPng(previewUrl, `qr-${subdomain}.png`, { fg: color, logoUrl })}
-      label={t('codes.downloadPng')}
+      onClick={() => onDownload(previewList, 'png')}
+      label={busy === 'png' ? t('codes.posterWorking') : t('codes.downloadPng')}
     />
     <DownloadButton
-      disabled={!hasLists}
+      disabled={!hasLists || busy !== null}
       tooltip={disabledMessage}
       className="border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
-      onClick={() => void downloadQrSvg(previewUrl, `qr-${subdomain}.svg`, { fg: color })}
-      label={t('codes.downloadSvg')}
+      onClick={() => onDownload(previewList, 'svg')}
+      label={busy === 'svg' ? t('codes.posterWorking') : t('codes.downloadSvg')}
     />
   </div>
 }

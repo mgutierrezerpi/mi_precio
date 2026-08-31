@@ -1,5 +1,6 @@
 import type { Lead } from '../../types'
 import type { TFn } from '../../lib/i18n'
+import { formatDateTime } from '../../lib/datetime'
 import { Icon, type IconName } from './crm/ui'
 import { tone, type Tone } from './crm/theme'
 
@@ -41,7 +42,7 @@ export function LeadRow({
       </span>
       {lead.message && <p className="max-w-[60ch] text-[13px] text-[var(--dash-muted)]">{lead.message}</p>}
       <span className="text-[11px] text-[var(--dash-muted)]">
-        {new Date(lead.createdAt).toLocaleString(locale)}
+        {formatDateTime(lead.createdAt, locale)}
       </span>
     </div>
     {canEdit && <div className="flex shrink-0 flex-wrap items-center gap-2">

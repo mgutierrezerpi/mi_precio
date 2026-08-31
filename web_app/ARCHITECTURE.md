@@ -72,6 +72,22 @@ web_app/
 
 Based on the legacy Ruby app, adapted for the future Python API:
 
+### Timestamps are instants, not wall clocks
+
+Every timestamp on the wire carries a UTC offset. The API stamps it —
+`BaseView` marks naive datetimes as UTC on the way out, because the models
+store `datetime.utcnow()` — and the frontend reads it with `parseUtc`
+(`lib/datetime.ts`), which treats an offset-less string as UTC rather than
+letting `new Date()` read it as local time.
+
+Both halves exist on purpose. Without the server stamp a lead created at 09:52
+in Montevideo came back as `2026-08-28T12:52:23` and rendered as 12:52; without
+the client guard an older or cached response would do it again.
+
+Formatting stays in the **viewer's** timezone: `toLocaleString` with no
+`timeZone` is what shows a shop owner their own clock. Never format into a
+hard-coded zone.
+
 ```typescript
 // Multi-tenant support
 interface Tenant {
@@ -328,9 +344,23 @@ Load-bearing details:
   carries both `href` and `xlink:href` because old renderers only know the
   latter.
 
-There is no QR colour picker or centre-logo toggle any more. Both only changed
-a preview the poster ignored, and a control that promises something it does not
-deliver is worse than no control.
+**The shop picks the code's ink.** Códigos QR carries a swatch row, and the
+choice reaches the poster: `buildQrPosterSvg` takes an optional `qrColor` and
+falls back to `POSTER_QR_COLOR`. It had been removed once for good reason — it
+only tinted a preview the poster ignored, and a control that promises something
+it does not deliver is worse than no control — so the wiring through to the
+export is the whole point of having it back.
+
+Only the code changes colour. The sheet around it stays MiPrecio's violet with
+our mark, for the advertising reason above.
+
+The choice is stored, not local: `PriceListsScreen` and the dashboard both read
+it from `QR_COLOR_STORAGE_PREFIX` + tenant id, and Códigos QR is the only place
+that writes it. While the picker was gone those two screens were reading a value
+nothing could set.
+
+The centre-logo toggle did not come back, and the dashboard hero shows a plain
+code: at 176px a mark punched into the middle costs modules a scanner needs.
 
 ### Exporting a list to PDF
 

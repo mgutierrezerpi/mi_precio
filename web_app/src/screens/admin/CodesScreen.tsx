@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStoredQrColor } from '../../hooks/useStoredQrColor'
 import { useCatalogT } from '../../lib/i18nDictionaryCatalog'
-import { downloadQrPng, QR_COLOR_STORAGE_PREFIX } from '../../lib/qrRender'
+import { markQrShared } from '../../lib/onboardingTour'
+import { downloadQrPosterPng, downloadQrPosterSvg, type PosterRequest } from '../../lib/exportQrPoster'
+import { QR_COLOR_STORAGE_PREFIX } from '../../lib/qrRender'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
@@ -10,7 +12,6 @@ import { CodesCustomizer } from './CodesCustomizer'
 import { CodesGrid } from './CodesGrid'
 import { CrmLayout } from './crm/CrmLayout'
 
-const FAVICON = '/miprecio-favicon.png'
 const QR_COLORS = [
   ['violet', '#7C3AED'], ['black', '#0F172A'], ['blue', '#2563EB'], ['green', '#059669'],
   ['pink', '#DB2777'], ['amber', '#D97706'], ['sky', '#0EA5E9'], ['slate', '#475569'],
@@ -22,10 +23,10 @@ export function CodesScreen() {
   const tenant = useAppSelector(selectTenant)
   const lists = useAppSelector(selectLists)
   const [search, setSearch] = useState('')
-  const [withLogo, setWithLogo] = useState(true)
   const [color, chooseColor] = useStoredQrColor(
     tenant?.id ? `${QR_COLOR_STORAGE_PREFIX}${tenant.id}` : null
   )
+  const [busy, setBusy] = useState<'png' | 'svg' | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   useEffect(() => {
     if (tenant?.id) dispatch(fetchLists(tenant.id))
@@ -38,7 +39,6 @@ export function CodesScreen() {
     const query = search.trim().toLowerCase()
     return query ? lists.filter((list) => list.name.toLowerCase().includes(query)) : lists
   }, [lists, search])
-  const logoUrl = withLogo ? tenant?.logoUrl || FAVICON : null
   const previewUrl = filtered[0]
     ? qrUrlOf(filtered[0])
     : lists[0]
@@ -46,13 +46,24 @@ export function CodesScreen() {
       : `${window.location.origin}/p/${subdomain}?src=qr`
   const copy = (list: PriceList) => {
     navigator.clipboard?.writeText(urlOf(list))
+    markQrShared(tenant?.id)
     setCopied(list.id)
     setTimeout(() => setCopied(null), 1500)
   }
-  const downloadCard = (list: PriceList) => {
+  const posterFor = (list: PriceList): PosterRequest | null => {
+    if (!tenant) return null
     const slug = (list.slug || list.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || list.id
-    void downloadQrPng(qrUrlOf(list), `qr-${slug}.png`, { fg: color, logoUrl })
+    return { value: qrUrlOf(list), headline: t('codes.posterHeadline'), footer: t('codes.posterFooter'), fileName: `qr-${slug}`, qrColor: color }
   }
+  const download = (list: PriceList | null, as: 'png' | 'svg') => {
+    const request = list && posterFor(list)
+    if (!request) return
+    markQrShared(tenant?.id)
+    setBusy(as)
+    const run = as === 'png' ? downloadQrPosterPng : downloadQrPosterSvg
+    void run(request).catch((error) => console.error('[qr-poster] export failed', error)).finally(() => setBusy(null))
+  }
+  const previewList = filtered[0] ?? lists[0] ?? null
 
   return <CrmLayout
     active={t('codes.title')}
@@ -77,25 +88,23 @@ export function CodesScreen() {
             color={color}
             copied={copied}
             filtered={filtered}
-            logoUrl={logoUrl}
             t={t}
             urlOf={urlOf}
             qrUrlOf={qrUrlOf}
             onCopy={copy}
-            onDownload={downloadCard}
+            onDownload={(list) => download(list, 'png')}
           />
         </div>
         <CodesCustomizer
           color={color}
           colors={QR_COLORS}
+          busy={busy}
           hasLists={lists.length > 0}
-          logoUrl={logoUrl}
+          previewList={previewList}
           previewUrl={previewUrl}
-          subdomain={subdomain}
           t={t}
-          withLogo={withLogo}
           onChooseColor={chooseColor}
-          onToggleLogo={() => setWithLogo((current) => !current)}
+          onDownload={download}
         />
       </div>
     </main>

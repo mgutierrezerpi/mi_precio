@@ -8,7 +8,6 @@ interface CodesGridProps {
   color: string
   copied: string | null
   filtered: PriceList[]
-  logoUrl: string | null
   t: TFn
   urlOf: (list: PriceList) => string
   qrUrlOf: (list: PriceList) => string
@@ -17,7 +16,7 @@ interface CodesGridProps {
 }
 
 export function CodesGrid({
-  allCount, color, copied, filtered, logoUrl, t, urlOf, qrUrlOf, onCopy, onDownload,
+  allCount, color, copied, filtered, t, urlOf, qrUrlOf, onCopy, onDownload,
 }: CodesGridProps) {
   if (!filtered.length) return <EmptyCodes hasLists={allCount > 0} t={t} />
   return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -26,7 +25,6 @@ export function CodesGrid({
       list={list}
       color={color}
       copied={copied === list.id}
-      logoUrl={logoUrl}
       t={t}
       urlOf={urlOf}
       qrUrlOf={qrUrlOf}
@@ -60,14 +58,14 @@ interface QrCardProps extends Omit<CodesGridProps, 'allCount' | 'copied' | 'filt
 }
 
 function QrCard({
-  list, color, copied, logoUrl, t, urlOf, qrUrlOf, onCopy, onDownload,
+  list, color, copied, t, urlOf, qrUrlOf, onCopy, onDownload,
 }: QrCardProps) {
   return <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3">
     <div className="flex min-w-0 items-center justify-center text-center">
       <span className="block w-full whitespace-normal break-words text-[14px] font-bold leading-snug text-[var(--dash-text)]">{list.name}</span>
     </div>
     <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-lg bg-white p-1">
-      <QrCode value={qrUrlOf(list)} size={128} margin={2} fg={color} logoUrl={logoUrl} className="!h-full !w-full rounded-lg object-contain" />
+      <QrCode value={qrUrlOf(list)} size={128} margin={2} fg={color} className="!h-full !w-full rounded-lg object-contain" />
     </div>
     <div className="flex min-w-0 flex-col items-center gap-0.5 text-center">
       <span
