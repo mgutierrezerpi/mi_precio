@@ -6,40 +6,17 @@ previously lost whenever the WhatsApp message was never actually sent, which is
 the most common way a shop loses its warmest lead.
 """
 
-import re
-
-from models import Lead, Tenant, Customer
 from lib.ctx import activity_context as activity
 from lib.ctx import plans_context as plans
-
-STATUSES = ("new", "contacted", "converted", "discarded")
-SOURCES = ("form", "cart")
-
-# A lead needs a way to reach the person back. Everything else is optional:
-# every extra required field costs conversions on a page a stranger just
-# scanned off a table.
-MAX_MESSAGE = 2000
-
-
-class LeadRejected(Exception):
-    """The public form said something we will not store (HTTP 400)."""
-
-
-def _clean_phone(value: str | None) -> str | None:
-    """Digits only, like the shop's own WhatsApp field, so the CRM can build a
-    wa.me link without guessing at whatever punctuation was typed."""
-    if not value:
-        return None
-    digits = re.sub(r"\D", "", value)
-    digits = re.sub(r"^00", "", digits)
-    return digits if 6 <= len(digits) <= 15 else None
-
-
-def _clean_email(value: str | None) -> str | None:
-    if not value:
-        return None
-    value = value.strip()
-    return value if re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", value) else None
+from lib.ctx.lead_validation import (
+    MAX_MESSAGE,
+    SOURCES,
+    STATUSES,
+    LeadRejected,
+    clean_email,
+    clean_phone,
+)
+from models import Customer, Lead, Tenant
 
 
 def leads_open(tenant: Tenant | None) -> bool:
@@ -79,8 +56,8 @@ def create_lead(
     if not name:
         raise LeadRejected("Necesitamos tu nombre.")
 
-    phone = _clean_phone(phone)
-    email = _clean_email(email)
+    phone = clean_phone(phone)
+    email = clean_email(email)
     if not phone and not email:
         raise LeadRejected("Dejanos un teléfono o un email para contestarte.")
 

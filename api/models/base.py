@@ -1,7 +1,9 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
-from peewee import Model, CharField, DateTimeField, SqliteDatabase
+
+from peewee import CharField, DateTimeField, Model, SqliteDatabase
+
 from config import settings
 
 # Ensure database path is absolute (relative to api directory)
@@ -19,12 +21,17 @@ def generate_uuid():
     return uuid4().hex
 
 
+def utc_now() -> datetime:
+    """UTC clock compatible with the existing naive SQLite columns."""
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class BaseModel(Model):
     """Base model with common fields and behaviors."""
 
     id = CharField(primary_key=True, max_length=32, default=generate_uuid)
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=utc_now)
+    updated_at = DateTimeField(default=utc_now)
 
     class Meta:
         database = db
@@ -32,7 +39,7 @@ class BaseModel(Model):
     def save(self, *args, **kwargs):
         if not self.id:
             self.id = generate_uuid()
-        self.updated_at = datetime.utcnow()
+        self.updated_at = utc_now()
         return super().save(*args, **kwargs)
 
     def duplicate(self, **overrides):

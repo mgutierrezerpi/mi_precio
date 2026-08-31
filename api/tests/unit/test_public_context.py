@@ -1,6 +1,6 @@
 """Tests for public context."""
 
-from lib.ctx import lists, versions, items, products, public, identity
+from lib.ctx import identity, items, lists, products, public, versions
 from views.price_list_view import PriceListView
 from views.public_tenant_view import PublicTenantView
 
@@ -46,7 +46,9 @@ def test_nearby_marketplace_tenants_only_returns_opted_in_businesses(db):
 
     result_without_visitor_location = public.nearby_marketplace_tenants()
 
-    assert [(tenant.name, distance) for tenant, distance in result_without_visitor_location] == [
+    assert [
+        (tenant.name, distance) for tenant, distance in result_without_visitor_location
+    ] == [
         ("Nearby", None),
         ("No Location", None),
     ]
@@ -63,8 +65,6 @@ def test_public_tenant_view_does_not_expose_marketplace_coordinates(db):
 
     assert "marketplace_latitude" not in public_tenant.model_dump()
     assert "marketplace_longitude" not in public_tenant.model_dump()
-
-
 
 
 def test_get_published_lists(db):

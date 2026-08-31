@@ -95,7 +95,10 @@ export function qrToSvg(value: string, opts: QrRenderOptions = {}): string {
       if (modules[y][x]) path += `M${x + margin},${y + margin}h1v1h-1z`
     }
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges"><rect width="${total}" height="${total}" fill="${bg}"/><path d="${path}" fill="${fg}"/></svg>`
+  return ['<svg xmlns="http://www.w3.org/2000/svg"',
+    `viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges">`,
+    `<rect width="${total}" height="${total}" fill="${bg}"/> <path d="${path}" fill="${fg}"/></svg>`,
+  ].join(' ')
 }
 
 function triggerDownload(href: string, filename: string): void {

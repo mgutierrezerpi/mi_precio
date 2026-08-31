@@ -18,7 +18,8 @@ if (!amplitudeApiKey) {
     sessionReplay: { sampleRate: 1 },
   })
   if (window.location.pathname === '/login') {
-    amplitude.track('Viewed Login Page', { prompt_version: 'BA400.4' }) // helps improve this setup flow — safe to remove once you've verified the event lands
+    amplitude.track('Viewed Login Page', { prompt_version: 'BA400.4' })
+    // Keeps the login experiment attributable while that setup is evaluated.
   }
 }
 

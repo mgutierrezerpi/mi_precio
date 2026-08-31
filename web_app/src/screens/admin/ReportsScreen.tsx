@@ -36,7 +36,9 @@ function dayLabel(iso: string, locale: string): string {
     .replace('.', '')
 }
 
-const channelMeta = (t: TFn): { key: 'link' | 'qr'; name: string; color: string }[] => [
+const channelMeta = (
+  t: TFn
+): { key: 'link' | 'qr'; name: string; color: string }[] => [
   { key: 'link', name: t('analytics.directLink'), color: '#7C3AED' },
   { key: 'qr', name: t('analytics.qrCode'), color: '#0EA5E9' },
 ]
@@ -51,7 +53,9 @@ export function ReportsScreen() {
   const [days, setDays] = useState(30)
   const [tab, setTab] = useState<'rendimiento' | 'auditoria'>('rendimiento')
   const [data, setData] = useState<ReportData | null>(null)
-  const selectedList = lists.find((list) => list.id === searchParams.get('list'))
+  const selectedList = lists.find(
+    (list) => list.id === searchParams.get('list')
+  )
   const selectedListId = selectedList?.id
 
   useEffect(() => {
@@ -71,7 +75,8 @@ export function ReportsScreen() {
 
   // Derived: we're loading until the data we hold matches the requested range
   // (avoids a synchronous setState in the effect, and shows the spinner on range switch).
-  const loading = data?.days !== days || data?.listId !== (selectedListId ?? null)
+  const loading =
+    data?.days !== days || data?.listId !== (selectedListId ?? null)
 
   const selectList = (listId: string) => {
     setSearchParams((current) => {
@@ -208,7 +213,9 @@ function PerformanceReport({
         />
         <VisitChart data={data} loading={loading} t={t} locale={locale} />
       </section>
-      <div className={`grid grid-cols-1 gap-4 ${selectedListId ? '' : 'xl:grid-cols-2'}`}>
+      <div
+        className={`grid grid-cols-1 gap-4 ${selectedListId ? '' : 'xl:grid-cols-2'}`}
+      >
         {!selectedListId && <TopProducts data={data} loading={loading} />}
         <Channels data={data} loading={loading} />
       </div>
@@ -242,7 +249,10 @@ function PerformanceHeader({
           {t('analytics.totalVisitsByDay')}
         </h2>
         <p className="text-[13px] text-[var(--dash-muted)]">
-          {t('analytics.visitsInPeriod', { count: fmtInt(periodVisits, locale), days })}
+          {t('analytics.visitsInPeriod', {
+            count: fmtInt(periodVisits, locale),
+            days,
+          })}
         </p>
       </div>
       <div className="flex flex-col gap-2 sm:items-end">
@@ -255,7 +265,9 @@ function PerformanceHeader({
           >
             <option value="">{t('analytics.allLists')}</option>
             {lists.map((list) => (
-              <option key={list.id} value={list.id}>{list.name}</option>
+              <option key={list.id} value={list.id}>
+                {list.name}
+              </option>
             ))}
           </select>
         </label>
@@ -266,14 +278,14 @@ function PerformanceHeader({
             [180, 'analytics.periodSixMonths'],
             [365, 'analytics.periodYear'],
           ].map(([rangeDays, label]) => (
-          <button
-            key={rangeDays as number}
-            type="button"
-            onClick={() => setDays(rangeDays as number)}
-            className={`flex h-8 flex-1 items-center justify-center rounded-md px-3 text-xs font-bold sm:flex-none ${days === rangeDays ? `text-white ${gradient}` : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`}
-          >
-            {t(label as string)}
-          </button>
+            <button
+              key={rangeDays as number}
+              type="button"
+              onClick={() => setDays(rangeDays as number)}
+              className={`flex h-8 flex-1 items-center justify-center rounded-md px-3 text-xs font-bold sm:flex-none ${days === rangeDays ? `text-white ${gradient}` : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`}
+            >
+              {t(label as string)}
+            </button>
           ))}
         </div>
       </div>
@@ -384,7 +396,8 @@ function ActivityLogHeader({ audit, t }: { audit: boolean; t: TFn }) {
         )}
       </div>
       <span className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--dash-muted)]">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-[#10B981]" /> {t('analytics.live')}
+        <span className="h-2 w-2 animate-pulse rounded-full bg-[#10B981]" />{' '}
+        {t('analytics.live')}
       </span>
     </div>
   )
@@ -483,7 +496,15 @@ function VisitChart({
   if (!hasData) {
     return <EmptyVisitChart t={t} />
   }
-  return <VisitChartContent labelEvery={labelEvery} max={max} series={series} t={t} locale={locale} />
+  return (
+    <VisitChartContent
+      labelEvery={labelEvery}
+      max={max}
+      series={series}
+      t={t}
+      locale={locale}
+    />
+  )
 }
 
 function EmptyVisitChart({ t }: { t: TFn }) {
@@ -541,7 +562,17 @@ function VisitChartContent({
   )
 }
 
-function VisitBar({ day, max, t, locale }: { day: ReportSeries[number]; max: number; t: TFn; locale: string }) {
+function VisitBar({
+  day,
+  max,
+  t,
+  locale,
+}: {
+  day: ReportSeries[number]
+  max: number
+  t: TFn
+  locale: string
+}) {
   const total = day.link + day.qr
   return (
     <div
@@ -549,7 +580,10 @@ function VisitBar({ day, max, t, locale }: { day: ReportSeries[number]; max: num
       style={{ height: '100%' }}
       title={`${dayLabel(day.date, locale)}: ${total} ${t('analytics.visits')}`}
     >
-      <div className="w-full rounded-t-md bg-[#7C3AED]" style={{ height: `${(total / max) * 100}%` }} />
+      <div
+        className="w-full rounded-t-md bg-[#7C3AED]"
+        style={{ height: `${(total / max) * 100}%` }}
+      />
       {total === 0 && (
         <div
           className="w-full rounded-t-md bg-[var(--dash-soft)]"
@@ -597,7 +631,8 @@ function TopProducts({
                   {p.name}
                 </span>
                 <span className="shrink-0 font-bold text-[var(--dash-muted)]">
-                  {fmtInt(p.units, locale)} {t('analytics.units')} · {formatPrice(p.revenue)}
+                  {fmtInt(p.units, locale)} {t('analytics.units')} ·{' '}
+                  {formatPrice(p.revenue)}
                 </span>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--dash-soft)]">
@@ -688,7 +723,13 @@ function ChannelsContent({
           {t('analytics.noTrafficPeriod')}
         </p>
       ) : (
-        <ChannelBreakdown gradientCss={gradientCss} rows={rows} total={total} t={t} locale={locale} />
+        <ChannelBreakdown
+          gradientCss={gradientCss}
+          rows={rows}
+          total={total}
+          t={t}
+          locale={locale}
+        />
       )}
     </div>
   )

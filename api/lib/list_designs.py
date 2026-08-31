@@ -47,6 +47,7 @@ DESIGN_SPECS: dict[str, dict[str, Any]] = {
         "pencil-studio-mono",
         "pencil-beauty-issue",
         "pencil-obsidian-quarterly",
+        "pencil-cafecitos",
     )
 }
 

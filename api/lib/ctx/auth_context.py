@@ -1,16 +1,21 @@
 """Auth context - authentication business logic."""
 
 import logging
+from datetime import UTC, datetime, timedelta
 
-from datetime import datetime, timedelta
 from config import settings
 from infra.mailer import MailerError, mailer
-from models import AuthCode
+from lib import encode_token, generate_verification_code
 from lib.ctx.identity_context import get_or_create_user
-from lib import generate_verification_code, encode_token
 from lib.value_objects import AuthResult
+from models import AuthCode
 
 logger = logging.getLogger(__name__)
+
+
+def _utc_now() -> datetime:
+    """UTC clock compatible with the API's legacy naive database columns."""
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 def create_code(email: str) -> str:
@@ -21,12 +26,12 @@ def create_code(email: str) -> str:
     AuthCode.create(
         email=email,
         code=code,
-        expires_at=datetime.utcnow() + timedelta(minutes=10),
+        expires_at=_utc_now() + timedelta(minutes=10),
     )
     return code
 
 
-def send_code(email: str) -> str:
+def send_code(email: str, language: str = "es") -> str:
     """Generate, store, and email a verification code."""
     email = email.lower()
     code = create_code(email)
@@ -38,8 +43,12 @@ def send_code(email: str) -> str:
     try:
         mailer.send(
             to=email,
-            subject="Tu código de verificación de Mi Precio",
-            body=f"Tu código de verificación es: {code}\n\nEste código vence en 10 minutos.",
+            subject=("Your PricePanel verification code" if language == "en" else "Tu código de verificación de Mi Precio"),
+            body=(
+                f"Your verification code is: {code}\n\nThis code expires in 10 minutes."
+                if language == "en"
+                else f"Tu código de verificación es: {code}\n\nEste código vence en 10 minutos."
+            ),
         )
     except MailerError as e:
         raise RuntimeError(f"Failed to send code to {email}") from e
@@ -52,7 +61,7 @@ def send_code(email: str) -> str:
 
 def prune_expired_codes(now: datetime | None = None) -> int:
     """Delete expired auth codes. Used by the in-machine maintenance worker."""
-    cutoff = now or datetime.utcnow()
+    cutoff = now or _utc_now()
     return AuthCode.delete().where(AuthCode.expires_at <= cutoff).execute()
 
 
@@ -62,7 +71,7 @@ def verify_code(email: str, code: str) -> bool:
         (AuthCode.email == email.lower())
         & (AuthCode.code == code)
         & ~AuthCode.used
-        & (AuthCode.expires_at > datetime.utcnow())
+        & (AuthCode.expires_at > _utc_now())
     )
     if auth_code:
         auth_code.used = True
@@ -70,17 +79,17 @@ def verify_code(email: str, code: str) -> bool:
     return bool(auth_code)
 
 
-def authenticate(email: str, code: str) -> AuthResult | None:
+def authenticate(email: str, code: str, language: str = "es") -> AuthResult | None:
     """Verify code and return auth token with user info."""
     if not verify_code(email, code):
         return None
 
-    result = get_or_create_user(email)
+    result = get_or_create_user(email, language)
     user = result.user
     tenant = user.tenant
 
     # Track sign-in so the team screen can show who's active.
-    user.last_seen_at = datetime.utcnow()
+    user.last_seen_at = _utc_now()
     user.save()
 
     token = encode_token(

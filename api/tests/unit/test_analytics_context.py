@@ -1,12 +1,12 @@
 """Unit tests for the analytics context: QR vs link source tracking and visit stats."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from peewee import SqliteDatabase
 
-from models import Customer, Order, OrderItem, PageView, PriceList, Tenant
 from lib.ctx import analytics
+from models import Customer, Order, OrderItem, PageView, PriceList, Tenant
 
 analytics_db = SqliteDatabase(":memory:")
 
@@ -64,7 +64,7 @@ def test_visit_stats_splits_qr_from_overall(tenant):
 
 
 def test_visit_stats_change_pct_uses_yesterday(tenant):
-    yesterday = datetime.utcnow() - timedelta(days=1)
+    yesterday = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=1)
     # 2 QR scans yesterday, 3 today -> +50%.
     PageView.create(tenant=tenant, source="qr", created_at=yesterday)
     PageView.create(tenant=tenant, source="qr", created_at=yesterday)
@@ -101,3 +101,12 @@ def test_reports_ignores_a_list_from_another_tenant(tenant):
 
     assert report["list_id"] is None
     assert report["kpis"]["visits"] == 1
+
+
+def test_reports_clamps_the_requested_window_and_preserves_empty_days(tenant):
+    report = analytics.reports(tenant.id, days=0)
+
+    assert report["days"] == 1
+    assert len(report["series"]) == 1
+    assert report["series"][0]["link"] == 0
+    assert report["series"][0]["qr"] == 0

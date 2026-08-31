@@ -25,7 +25,7 @@ def test_variant_clones_parent_items_and_keeps_its_own_version(db):
     assert copied_items[0].price == 120
 
     items.update_item(copied_items[0].id, price=99)
-    assert list(parent.version.items)[0].price == 120
+    assert next(iter(parent.version.items)).price == 120
 
 
 def test_customer_variant_is_bound_to_a_customer_in_the_same_tenant(db):

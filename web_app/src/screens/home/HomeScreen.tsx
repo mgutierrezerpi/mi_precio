@@ -7,8 +7,13 @@ import {
 } from '../../store/slices/authSlice'
 import { AuthModal } from '../../components/AuthModal'
 import { PLANS } from '../../lib/plans'
+import { useTheme } from '../../hooks/useTheme'
+import { localeForHostname } from '../../lib/domainLocale'
 
 type OpenAuth = () => void
+
+const landingText = (spanish: string, english: string) =>
+  localeForHostname() === 'en' ? english : spanish
 
 /* ── Inline icons (lucide-style) ──────────────────────────────── */
 type IcoProps = { className?: string; size?: number }
@@ -129,78 +134,80 @@ const features = [
     Icon: Package,
     color: '#7C3AED',
     bg: '#EDE9FE',
-    title: 'Catálogo de productos',
-    desc: 'Cargá productos, variantes, fotos y precios. Organizalos por categorías en minutos.',
+    title: landingText('Catálogo de productos', 'Product catalog'),
+    desc: landingText('Cargá productos, variantes, fotos y precios. Organizalos por categorías en minutos.', 'Add products, variants, photos, and prices. Organize everything by category in minutes.'),
   },
   {
     Icon: Link2,
     color: '#7C3AED',
     bg: '#EDE9FE',
-    title: 'Lista de precios compartible',
-    desc: 'Generá un link público o un QR para que tus clientes vean siempre la última versión.',
+    title: landingText('Lista de precios compartible', 'Shareable price list'),
+    desc: landingText('Generá un link público o un QR para que tus clientes vean siempre la última versión.', 'Create a public link or QR code so customers always see the latest version.'),
   },
   {
     Icon: QrCode,
     color: '#0EA5E9',
     bg: '#BAE6FD',
-    title: 'Códigos QR personalizados',
-    desc: 'Imprimí el QR para tu mostrador, catálogo impreso o redes sociales. Sin apps adicionales.',
+    title: landingText('Códigos QR personalizados', 'Custom QR codes'),
+    desc: landingText('Imprimí el QR para tu mostrador, catálogo impreso o redes sociales. Sin apps adicionales.', 'Print your QR code for your counter, printed catalog, or social media. No extra apps needed.'),
   },
   {
     Icon: DollarSign,
     color: '#F59E0B',
     bg: '#FEF3C7',
-    title: 'Multimoneda y listas por cliente',
-    desc: 'Mostrá precios en pesos, dólares o por canal de venta. Una lista distinta por cliente.',
+    title: landingText('Multimoneda y listas por cliente', 'Multiple currencies and customer lists'),
+    desc: landingText('Mostrá precios en pesos, dólares o por canal de venta. Una lista distinta por cliente.', 'Show prices in different currencies or sales channels. Use a separate list for each customer.'),
   },
 ]
 
 const steps = [
   [
     '1',
-    'Cargá tus productos',
-    'Importá tu lista o creala desde cero en pocos clics.',
+    landingText('Cargá tus productos', 'Add your products'),
+    landingText('Importá tu lista o creala desde cero en pocos clics.', 'Import your list or create one from scratch in a few clicks.'),
   ],
   [
     '2',
-    'Generá tu link o QR',
-    'Activá el link público y descargá el QR para compartirlo.',
+    landingText('Generá tu link o QR', 'Create your link or QR code'),
+    landingText('Activá el link público y descargá el QR para compartirlo.', 'Publish your link and download the QR code to share it.'),
   ],
   [
     '3',
-    'Compartí con tus clientes',
-    'Tus precios y stock siempre actualizados, sin reimprimir nada.',
+    landingText('Compartí con tus clientes', 'Share with your customers'),
+    landingText('Tus precios y stock siempre actualizados, sin reimprimir nada.', 'Keep prices and stock current without reprinting anything.'),
   ],
 ]
 
 // Plan content is shared with the in-app billing cards (see lib/plans).
-const PLAN_CTA = 'Probar gratis'
+const PLAN_CTA = landingText('Probar 14 días gratis', 'Start 14-day free trial')
 
 const faqs = [
   [
-    '¿Necesito instalar algo en mi computadora?',
-    'No. MiPrecio funciona 100% en el navegador y en el celular. Solo creás tu cuenta y empezás a cargar productos.',
+    landingText('¿Necesito instalar algo en mi computadora?', 'Do I need to install anything?'),
+    landingText('No. MiPrecio funciona 100% en el navegador y en el celular. Solo creás tu cuenta y empezás a cargar productos.', 'No. PricePanel runs entirely in your browser and on your phone. Create an account and start adding products.'),
   ],
   [
-    '¿Mis clientes necesitan registrarse para ver la lista?',
-    'No. Tus clientes abren el link o escanean el QR y ven la lista pública sin crear cuenta.',
+    landingText('¿Mis clientes necesitan registrarse para ver la lista?', 'Do my customers need to register?'),
+    landingText('No. Tus clientes abren el link o escanean el QR y ven la lista pública sin crear cuenta.', 'No. They open the link or scan the QR code and see the public list without an account.'),
   ],
   [
-    '¿Puedo tener listas distintas por cliente o canal?',
-    'Sí. Podés manejar listas por cliente, mayorista, minorista o canal de venta, cada una con sus precios.',
+    landingText('¿Puedo tener listas distintas por cliente o canal?', 'Can I create different lists for customers or channels?'),
+    landingText('Sí. Podés manejar listas por cliente, mayorista, minorista o canal de venta, cada una con sus precios.', 'Yes. Create lists by customer, wholesale, retail, or sales channel, each with its own prices.'),
   ],
   [
-    '¿Cómo se actualizan los precios y el stock?',
-    'Actualizás desde tu panel y el cambio se refleja inmediatamente en el link y el QR que ya compartiste.',
+    landingText('¿Cómo se actualizan los precios y el stock?', 'How do I update prices and stock?'),
+    landingText('Actualizás desde tu panel y el cambio se refleja inmediatamente en el link y el QR que ya compartiste.', 'Update them in your dashboard and the shared link and QR code reflect the changes immediately.'),
   ],
   [
-    '¿Hay límite de productos o usuarios?',
-    'Depende de tu plan. Micro incluye lo básico para empezar; Plus y Pro agregan más capacidad para operar con más listas, productos y equipo.',
+    landingText('¿Hay límite de productos o usuarios?', 'Are there limits on products or users?'),
+    landingText('Depende de tu plan. Micro incluye lo básico para empezar; Plus y Pro agregan más capacidad para operar con más listas, productos y equipo.', 'It depends on your plan. Micro has the essentials, while Plus and Pro add capacity for more lists, products, and teammates.'),
   ],
 ]
 
 /* ── Page ─────────────────────────────────────────────────────── */
 export function HomeScreen() {
+  // Keep the public route on the same active theme token set as /admin.
+  useTheme()
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const needsPlan = useAppSelector(selectNeedsPlan)
   const navigate = useNavigate()
@@ -221,9 +228,12 @@ export function HomeScreen() {
   useEffect(() => {
     const root = document.documentElement
     const prev = root.style.scrollBehavior
+    const prevLanguage = root.lang
     root.style.scrollBehavior = 'smooth'
+    root.lang = localeForHostname()
     return () => {
       root.style.scrollBehavior = prev
+      root.lang = prevLanguage
     }
   }, [])
 
@@ -234,7 +244,7 @@ export function HomeScreen() {
   }
 
   return (
-    <main className="landing-page min-h-screen overflow-x-clip bg-white font-sans text-slate-900">
+    <main className="dash landing-page min-h-screen overflow-x-clip bg-white font-sans text-slate-900">
       <Navbar onAuth={openAuth} isAuthenticated={isAuthenticated} />
       <Hero onAuth={openAuth} />
       <Features />
@@ -268,13 +278,13 @@ function BackToTop() {
   return (
     <button
       type="button"
-      aria-label="Volver arriba"
+      aria-label={landingText('Volver arriba', 'Back to top')}
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      className={`fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#A855F7] text-white shadow-[0_10px_24px_-6px_rgba(124,58,237,0.6)] transition-all duration-300 hover:brightness-110 ${show ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
+      className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/80 bg-gradient-to-br from-[#2A1C66] to-[#6C43E8] text-white shadow-[0_18px_34px_-8px_rgba(16,9,34,0.95)] ring-4 ring-[#6C43E8]/30 transition-all duration-300 hover:-translate-y-1 hover:brightness-110 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white ${show ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
     >
       <svg
-        width="22"
-        height="22"
+        width="26"
+        height="26"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -364,10 +374,10 @@ function SectionHead({
 }
 
 const navLinks = [
-  ['#funciones', 'Funciones'],
-  ['#precios', 'Precios'],
-  ['#faq', 'Recursos'],
-  ['/linktree', 'Ver demo Link tree'],
+  ['#funciones', landingText('Funciones', 'Features')],
+  ['#precios', landingText('Precios', 'Pricing')],
+  ['#faq', landingText('Recursos', 'Resources')],
+  ['/l/cafecitos', 'Demo'],
 ]
 
 function Navbar({
@@ -378,6 +388,7 @@ function Navbar({
   isAuthenticated: boolean
 }) {
   const [open, setOpen] = useState(false)
+  const isEnglishLanding = localeForHostname() === 'en'
 
   // Close the mobile menu once the viewport grows to the desktop layout.
   useEffect(() => {
@@ -408,11 +419,20 @@ function Navbar({
           className="flex items-center"
           onClick={() => setOpen(false)}
         >
-          <img
-            src="/miprecio-logo-pencil.webp"
-            alt="MiPrecio"
-            className="h-11 w-auto"
-          />
+          {isEnglishLanding ? (
+            <span className="flex items-center gap-2.5 text-[25px] font-extrabold tracking-[-0.05em] text-white" aria-label="PricePanel">
+              <span className="h-11 w-11 overflow-hidden" aria-hidden="true">
+                <img src="/miprecio-logo-white-pencil.webp" alt="" className="h-11 max-w-none w-auto" />
+              </span>
+              PricePanel
+            </span>
+          ) : (
+            <img
+              src="/miprecio-logo-white-pencil.webp"
+              alt="MiPrecio"
+              className="h-11 w-auto"
+            />
+          )}
         </a>
 
         {/* Desktop nav */}
@@ -428,17 +448,19 @@ function Navbar({
             <button
               type="button"
               onClick={onAuth}
-              className="cursor-pointer whitespace-nowrap rounded-[10px] border-[1.5px] border-[#7C3AED] px-[18px] py-2.5 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]"
+              className="landing-secondary-action cursor-pointer whitespace-nowrap rounded-[10px] border-[1.5px] border-[#7C3AED] px-[18px] py-2.5 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]"
             >
-              {isAuthenticated ? 'Mi panel' : 'Iniciar sesión'}
+              {isAuthenticated ? landingText('Mi panel', 'My dashboard') : landingText('Iniciar sesión', 'Sign in')}
             </button>
-            <button
-              type="button"
-              onClick={onAuth}
-              className="cursor-pointer whitespace-nowrap rounded-[10px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-[18px] py-2.5 text-sm font-semibold text-white hover:brightness-105"
-            >
-              Probar gratis
-            </button>
+            {!isAuthenticated && (
+              <button
+                type="button"
+                onClick={onAuth}
+                className="landing-primary-action cursor-pointer whitespace-nowrap rounded-[10px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-[18px] py-2.5 text-sm font-semibold text-white hover:brightness-105"
+              >
+                {landingText('Probar 14 días gratis', 'Start 14-day free trial')}
+              </button>
+            )}
           </div>
         </div>
 
@@ -446,7 +468,7 @@ function Navbar({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+          aria-label={open ? landingText('Cerrar menú', 'Close menu') : landingText('Abrir menú', 'Open menu')}
           aria-expanded={open}
           className="flex h-10 w-10 items-center justify-center rounded-[10px] text-[#0F172A] hover:bg-[#F5F3FF] lg:hidden"
         >
@@ -491,7 +513,7 @@ function Navbar({
           {/* Transparent click-catcher (no dim, no blur — keeps the logo crisp) */}
           <button
             type="button"
-            aria-label="Cerrar menú"
+            aria-label={landingText('Cerrar menú', 'Close menu')}
             onClick={() => setOpen(false)}
             className="fixed inset-0 top-0 z-0 cursor-default"
           />
@@ -499,7 +521,7 @@ function Navbar({
           <nav className="animate-fade-in-down absolute inset-x-0 top-full z-10 origin-top border-b border-[#E2E8F0] bg-white shadow-[0_18px_36px_-18px_rgba(15,23,42,0.25)]">
             <div className="mx-auto max-w-[1200px] px-5 py-4 md:px-8">
               <p className="px-1 pb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#94A3B8]">
-                Navegación
+                {landingText('Navegación', 'Navigation')}
               </p>
               <div className="flex flex-col gap-0.5">
                 {navLinks.map(([href, label]) => (
@@ -535,20 +557,22 @@ function Navbar({
                     setOpen(false)
                     onAuth()
                   }}
-                  className="flex-1 whitespace-nowrap rounded-xl border-[1.5px] border-[#7C3AED] px-3 py-3 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]"
+                  className={`${isAuthenticated ? 'w-full' : 'flex-1'} whitespace-nowrap rounded-xl border-[1.5px] border-[#7C3AED] px-3 py-3 text-sm font-bold text-[#7C3AED] hover:bg-[#F5F3FF]`}
                 >
-                  {isAuthenticated ? 'Mi panel' : 'Iniciar sesión'}
+                  {isAuthenticated ? landingText('Mi panel', 'My dashboard') : landingText('Iniciar sesión', 'Sign in')}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false)
-                    onAuth()
-                  }}
-                  className="flex-1 whitespace-nowrap rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-3 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(124,58,237,0.6)] hover:brightness-105"
-                >
-                  Probar gratis
-                </button>
+                {!isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false)
+                      onAuth()
+                    }}
+                    className="flex-1 whitespace-nowrap rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-3 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(124,58,237,0.6)] hover:brightness-105"
+                  >
+                    {landingText('Probar 14 días gratis', 'Start 14-day free trial')}
+                  </button>
+                )}
               </div>
             </div>
           </nav>
@@ -566,24 +590,19 @@ function Hero({ onAuth }: { onAuth: OpenAuth }) {
     >
       <div className="mx-auto grid max-w-[1200px] items-center gap-16 lg:grid-cols-[560px_1fr]">
         <div className="flex flex-col gap-6">
-          <span className="w-fit rounded-full border border-white/40 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-white">
-            NUEVO · Compartí tu lista con un QR
-          </span>
           <h1 className="text-5xl font-extrabold leading-[1.05] tracking-tight text-white md:text-[58px]">
-            Tu catálogo online. Tus precios al día.
+            {landingText('Tu catálogo online, listo para compartir.', 'Your online catalog, ready to share.')}
           </h1>
           <p className="max-w-xl text-lg leading-relaxed text-[#DDD6FE]">
-            Cargá tus productos, controlá tu stock y compartí tu lista de
-            precios con un link o un código QR. Sin planillas, sin PDFs
-            desactualizados, sin complicarte.
+            {landingText('Cargá tus productos, controlá tu stock y compartí tu lista de precios con un link o un código QR. Sin planillas, sin PDFs desactualizados, sin complicarte.', 'Add products, manage stock, and share your price list with a link or QR code. No spreadsheets, outdated PDFs, or extra work.')}
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={onAuth}
-              className="rounded-xl bg-white px-[22px] py-3.5 text-[15px] font-semibold text-slate-950 shadow-[0_10px_24px_-6px_rgba(124,58,237,0.4)] hover:bg-violet-50"
+              className="landing-primary-action rounded-xl bg-white px-[22px] py-3.5 text-[15px] font-semibold text-slate-950 shadow-[0_10px_24px_-6px_rgba(124,58,237,0.4)] hover:bg-violet-50"
             >
-              Crear cuenta gratis
+              {landingText('Probá 14 días gratis', 'Start 14-day free trial')}
             </button>
           </div>
         </div>
@@ -596,10 +615,9 @@ function Hero({ onAuth }: { onAuth: OpenAuth }) {
 function HeroMockup() {
   return (
     <div className="relative mx-auto w-full max-w-[580px]">
-      <img
-        src="/hero-img.webp"
-        alt="Ejemplo de lista de precios de MiPrecio"
-        className="w-full"
+      <MiniListPreview
+        variant="wild-stem-verano"
+        className="shadow-[0_28px_65px_-30px_rgba(0,0,0,0.8)]"
       />
       <div className="absolute -left-4 -top-4 flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] shadow-[0_8px_24px_-4px_rgba(15,23,42,0.15)]">
         <QrCode size={16} className="text-[#0F172A]" /> miprecio.app/p/acme
@@ -633,8 +651,8 @@ function Features() {
     >
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead
-          eyebrow="Funciones"
-          title="Todo lo que tu negocio necesita para vender mejor."
+          eyebrow={landingText('Funciones', 'Features')}
+          title={landingText('Todo lo que tu negocio necesita para vender mejor.', 'Everything your business needs to sell better.')}
         />
 
         {/* Desktop: 2-column grid */}
@@ -729,7 +747,7 @@ function MobileCarousel({ children }: { children: React.ReactNode[] }) {
           <button
             key={i}
             type="button"
-            aria-label={`Ir a la tarjeta ${i + 1}`}
+            aria-label={landingText(`Ir a la tarjeta ${i + 1}`, `Go to card ${i + 1}`)}
             onClick={() => goTo(i)}
             className={`h-2 rounded-full transition-all ${active === i ? 'w-6 bg-[#7C3AED]' : 'w-2 bg-[#C4B5FD]'}`}
           />
@@ -764,8 +782,8 @@ function HowItWorks() {
     <section className="bg-[#EDE9FE] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead
-          eyebrow="Cómo funciona"
-          title="Empezá en 3 pasos."
+          eyebrow={landingText('Cómo funciona', 'How it works')}
+          title={landingText('Empezá en 3 pasos.', 'Get started in 3 steps.')}
           eyebrowColor="text-[#6D28D9]"
         />
 
@@ -789,9 +807,9 @@ function HowItWorks() {
 
 function ProductPreview() {
   const checks = [
-    'Sin necesidad de descargar apps.',
-    'Compatible con móvil y escritorio.',
-    'Personalizá colores y logo de tu marca.',
+    landingText('Sin necesidad de descargar apps.', 'No app downloads required.'),
+    landingText('Compatible con móvil y escritorio.', 'Works on mobile and desktop.'),
+    landingText('Personalizá colores y logo de tu marca.', 'Customize your brand colors and logo.'),
   ]
   return (
     <section className="bg-[linear-gradient(135deg,#FAF5FF_0%,#EDE9FE_100%)] px-5 py-24 md:px-8">
@@ -799,15 +817,13 @@ function ProductPreview() {
         <PhoneMockup />
         <div className="flex flex-col gap-5">
           <span className="w-fit rounded-full bg-[#EDE9FE] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-[#7C3AED]">
-            Para tus clientes
+            {landingText('Para tus clientes', 'For your customers')}
           </span>
           <h2 className="text-3xl font-extrabold leading-tight text-[#0F172A] md:text-4xl">
-            Tus clientes ven una lista profesional, siempre actualizada.
+            {landingText('Tus clientes ven una lista profesional, siempre actualizada.', 'Your customers see a professional list that is always current.')}
           </h2>
           <p className="text-base leading-relaxed text-[#475569]">
-            Compartí tu catálogo con un link o un QR y olvidate de mandar PDFs
-            desactualizados por WhatsApp. Tus precios y tu stock siempre al día,
-            vean de donde te vean.
+            {landingText('Compartí tu catálogo con un link o un QR y olvidate de mandar PDFs desactualizados por WhatsApp. Tus precios y tu stock siempre al día, vean de donde te vean.', 'Share your catalog with a link or QR code and stop sending outdated PDFs over WhatsApp. Your prices and stock stay current everywhere.')}
           </p>
           <div className="mt-2 flex flex-col gap-3">
             {checks.map((item) => (
@@ -827,14 +843,41 @@ function ProductPreview() {
 
 function PhoneMockup() {
   return (
-    <div className="mx-auto h-[560px] w-[280px] rounded-[32px] bg-[#2E1065] p-2 shadow-[0_30px_60px_-10px_rgba(30,41,59,0.4)]">
-      <div className="h-full overflow-hidden rounded-[26px] bg-white">
-        <img
-          src="/mockup-img.webp"
-          alt="Vista del catálogo de MiPrecio en el celular"
-          className="block w-full"
-        />
+    <div className="relative mx-auto w-[min(100%,340px)]">
+      <div className="absolute -inset-5 -z-10 rounded-full bg-[#6C43E8]/20 blur-3xl" />
+      <div className="overflow-hidden rounded-[38px] border-[7px] border-[#100922] bg-[#100922] p-1.5 shadow-[0_32px_70px_-24px_rgba(0,0,0,0.8)] ring-1 ring-[#6C43E8]/60">
+        <div className="relative h-[560px] overflow-hidden rounded-[28px] bg-[#f8f7ff]">
+          <iframe
+            title={landingText('Vista móvil de una lista de precios', 'Mobile price-list preview')}
+            src="/template-preview/obsidian"
+            className="pointer-events-none h-full w-full border-0"
+          />
+          <div className="pointer-events-none absolute left-1/2 top-2 h-5 w-24 -translate-x-1/2 rounded-full bg-[#100922]" />
+        </div>
       </div>
+    </div>
+  )
+}
+
+/** A live list renderer, deliberately shared with the design-picker thumbnails.
+ * This keeps landing examples representative as templates evolve—no stale
+ * screenshots or separately maintained mockups. */
+function MiniListPreview({
+  className = '',
+  variant,
+}: {
+  className?: string
+  variant: 'wild-stem-verano' | 'obsidian'
+}) {
+  return (
+    <div
+      className={`landing-list-preview relative h-[430px] overflow-hidden rounded-[28px] border border-[var(--dash-soft-border)] bg-[var(--dash-surface)] sm:h-[500px] ${className}`}
+    >
+      <iframe
+        title={`Vista previa de plantilla ${variant}`}
+        src={`/template-preview/${variant}`}
+        className="pointer-events-none h-full w-full border-0"
+      />
     </div>
   )
 }
@@ -847,21 +890,29 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
     >
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12">
         <SectionHead
-          eyebrow="Precios"
-          title="Planes simples para vender mejor."
-          subtitle="Probá MiPrecio gratis antes de pagar. Sin tarjeta de crédito."
+          eyebrow={landingText('Precios', 'Pricing')}
+          title={landingText('Planes simples para vender mejor.', 'Simple plans to help you sell better.')}
+          subtitle={landingText('Probá MiPrecio 14 días gratis antes de pagar. Sin tarjeta de crédito.', 'Try PricePanel free for 14 days before you pay. No credit card required.')}
         />
         <Reveal className="grid items-stretch gap-6 lg:grid-cols-3">
           {PLANS.map((plan) => {
             const dark = plan.popular
+            const englishPlan = localeForHostname() === 'en'
+              ? ({
+                  micro: { description: 'Start with a simple list and share it with a link or QR code.', cadence: 'per month', trialLabel: '14-day free trial', features: ['14 days free', 'Up to 25 products', '3 public lists', 'Custom QR code'] },
+                  plus: { description: 'More products, more lists, and tools to run your business better.', cadence: 'per month', trialLabel: '14-day free trial', features: ['14 days free', 'Up to 300 products', '15 public lists', 'Team of up to 5 users'] },
+                  pro: { description: 'High limits, a complete team, and advanced features.', cadence: 'per month', trialLabel: '14-day free trial', features: ['14 days free', 'Unlimited products', 'Unlimited public lists', 'Unlimited users'] },
+                } as Partial<Record<typeof plan.id, { description: string; cadence: string; trialLabel: string; features: string[] }>>)[plan.id]
+              : undefined
+            const planCopy = englishPlan ?? plan
             return (
               <article
                 key={plan.name}
-                className={`relative flex flex-col gap-[14px] rounded-[24px] px-7 py-8 ${dark ? 'bg-[#0F172A] text-white shadow-[0_30px_60px_rgba(15,23,42,0.2)]' : 'border border-[#E2E8F0] bg-white shadow-[0_12px_32px_-14px_rgba(15,23,42,0.18)]'}`}
+                className={`relative flex flex-col gap-[14px] rounded-[24px] px-7 py-8 ${dark ? 'landing-plan-featured text-white' : 'landing-plan-card border border-[#E2E8F0] bg-white shadow-[0_12px_32px_-14px_rgba(15,23,42,0.18)]'}`}
               >
                 {dark && (
-                  <em className="absolute right-6 top-6 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-3 py-1.5 text-[0.64rem] font-bold not-italic uppercase tracking-[0.05em] text-white">
-                    Más popular
+                  <em className="landing-plan-popular absolute right-6 top-6 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-3 py-1.5 text-[0.64rem] font-bold not-italic uppercase tracking-[0.05em] text-white">
+                    {landingText('Más popular', 'Most popular')}
                   </em>
                 )}
                 <h3
@@ -872,7 +923,7 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
                 <p
                   className={`text-[0.84rem] ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}
                 >
-                  {plan.description}
+                  {planCopy.description}
                 </p>
                 <div className="mt-2 flex items-baseline gap-2">
                   <strong
@@ -883,19 +934,19 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
                   <small
                     className={`text-[0.82rem] font-medium ${dark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}
                   >
-                    {plan.cadence}
+                    {planCopy.cadence}
                   </small>
                 </div>
                 <span
                   className={`flex w-fit items-center gap-1.5 rounded-full px-[11px] py-[5px] text-[0.74rem] font-semibold ${dark ? 'bg-white/[0.12] text-[#C4B5FD]' : 'bg-[#EDE9FE] text-[#7C3AED]'}`}
                 >
-                  <Sparkles size={14} /> {plan.trialLabel}
+                  <Sparkles size={14} /> {planCopy.trialLabel}
                 </span>
                 <div
                   className={`h-px ${dark ? 'bg-white/10' : 'bg-[#F1F5F9]'}`}
                 />
                 <ul className="flex flex-col gap-3">
-                  {plan.features.map((f) => (
+                  {planCopy.features.map((f) => (
                     <li
                       key={f}
                       className={`flex items-center gap-2.5 text-[0.88rem] font-medium ${dark ? 'text-[#E2E8F0]' : 'text-[#334155]'}`}
@@ -930,8 +981,8 @@ function Faq() {
     <section id="faq" className="scroll-mt-24 bg-[#F5F3FF] px-5 py-24 md:px-8">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-10">
         <SectionHead
-          eyebrow="Preguntas frecuentes"
-          title="Todo lo que necesitás saber."
+          eyebrow={landingText('Preguntas frecuentes', 'Frequently asked questions')}
+          title={landingText('Todo lo que necesitás saber.', 'Everything you need to know.')}
         />
         <Reveal className="mx-auto flex w-full max-w-[800px] flex-col gap-3.5">
           {faqs.map(([q, a], i) => {
@@ -972,27 +1023,26 @@ function Faq() {
 function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
   return (
     <section className="bg-[#EDE9FE] px-5 py-20 md:px-8">
-      <Reveal className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 rounded-[32px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-8 py-16 text-center shadow-[0_32px_80px_-20px_rgba(124,58,237,0.5)] md:px-20">
+      <Reveal className="landing-final-cta mx-auto flex max-w-[1100px] flex-col items-center gap-5 rounded-[32px] bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-8 py-16 text-center shadow-[0_32px_80px_-20px_rgba(124,58,237,0.5)] md:px-20">
         <h2 className="text-4xl font-black leading-tight tracking-tight text-white md:text-[46px]">
-          Tu lista de precios, lista en 5 minutos.
+          {landingText('Tu lista de precios, lista en 5 minutos.', 'Your price list, ready in 5 minutes.')}
         </h2>
         <p className="max-w-2xl text-[17px] font-medium text-[#E0E7FF]">
-          Creá tu cuenta gratis hoy y empezá a compartir tu catálogo con un link
-          o un QR.
+          {landingText('Probá MiPrecio 14 días gratis y empezá a compartir tu catálogo con un link o un QR.', 'Try PricePanel free for 14 days and start sharing your catalog with a link or QR code.')}
         </p>
         <div className="mt-3 flex flex-wrap justify-center gap-3.5">
           <button
             type="button"
             onClick={onAuth}
-            className="flex h-[52px] items-center gap-2 rounded-[14px] bg-white px-7 text-[15px] font-bold text-[#7C3AED] hover:bg-violet-50"
+            className="landing-final-primary flex h-[52px] items-center gap-2 rounded-[14px] bg-white px-7 text-[15px] font-bold text-[#7C3AED] hover:bg-violet-50"
           >
-            Crear cuenta gratis <ArrowRight size={18} />
+            {landingText('Probar 14 días gratis', 'Start 14-day free trial')} <ArrowRight size={18} />
           </button>
           <a
             href="mailto:hola@miprecio.app"
-            className="flex h-[52px] items-center rounded-[14px] border border-white/40 px-7 text-[15px] font-bold text-white hover:bg-white/10"
+            className="landing-final-secondary flex h-[52px] items-center rounded-[14px] border border-white/40 px-7 text-[15px] font-bold text-white hover:bg-white/10"
           >
-            Hablar con ventas
+            {landingText('Hablar con ventas', 'Talk to sales')}
           </a>
         </div>
       </Reveal>
@@ -1008,7 +1058,7 @@ function Footer() {
     <footer className="bg-[#2E1065] px-5 py-8 text-white md:px-[120px]">
       <div className="mx-auto max-w-[1200px]">
         <p className="text-center text-xs font-medium text-[#64748B]">
-          © 2026 MiPrecio. Todos los derechos reservados.
+          {landingText('© 2026 MiPrecio. Todos los derechos reservados.', '© 2026 PricePanel. All rights reserved.')}
         </p>
       </div>
     </footer>

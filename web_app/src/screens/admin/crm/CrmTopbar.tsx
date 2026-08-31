@@ -34,6 +34,14 @@ export function CrmTopbar({
   const { isDark, toggleTheme } = useTheme()
   const t = useT()
   const resolvedSearchPlaceholder = searchPlaceholder ?? t('common.search')
+  const menuButtonClassName = [
+    'flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-transparent',
+    'bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80 lg:hidden',
+  ].join(' ')
+  const searchInputClassName = [
+    'min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] font-medium text-[var(--dash-text)]',
+    'outline-none placeholder:text-[var(--dash-muted)] focus:border-0 focus:outline-none focus:ring-0',
+  ].join(' ')
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[var(--dash-border)] bg-[var(--dash-bg)] px-4 md:gap-4 md:px-10">
@@ -42,7 +50,7 @@ export function CrmTopbar({
         onClick={onMenu}
         aria-label={t('top.openMenu')}
         title={t('top.openMenu')}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-transparent bg-[var(--dash-soft)] text-[var(--dash-text2)] hover:opacity-80 lg:hidden"
+        className={menuButtonClassName}
       >
         <Icon name="menu" />
       </button>
@@ -70,7 +78,7 @@ export function CrmTopbar({
             }
           }}
           readOnly={!onSearchChange}
-          className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] font-medium text-[var(--dash-text)] outline-none placeholder:text-[var(--dash-muted)] focus:border-0 focus:outline-none focus:ring-0"
+          className={searchInputClassName}
         />
       </label>
       <button

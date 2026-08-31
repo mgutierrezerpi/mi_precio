@@ -5,41 +5,29 @@ What is real: per-plan limits on products, lists and team members, the current
 usage, and enforcement when creating those resources."""
 
 from config import settings
-from models import Tenant, Product, PriceList, User, Invitation
+from lib.ctx.plan_catalog import (
+    LIMIT_MESSAGE,
+    PLAN_FEATURES,
+    PLAN_ORDER,
+    PLANS,
+    PlanLimitError,
+)
+from lib.ctx.plan_usage import usage
+from models import Tenant
 
-# Per-plan limits. `None` means unlimited.
-# Must mirror the advertised limits in web_app/src/lib/plans.ts (and the landing).
-# Those marketing cards are the source of truth; enforcement here follows them.
-PLANS: dict[str, dict[str, int | None]] = {
-    "free": {"products": 10, "lists": 1, "members": 1},
-    "micro": {"products": 25, "lists": 3, "members": 1},
-    "plus": {"products": 300, "lists": 15, "members": 5},
-    "pro": {"products": None, "lists": None, "members": None},
-}
-PLAN_ORDER = ["free", "micro", "plus", "pro"]
-
-# Whole features a tier unlocks, as opposed to the numeric allowances above:
-# these are on or off, so they cannot live in PLANS without muddying its type.
-# Same rule as the limits — the marketing cards in web_app/src/lib/plans.ts are
-# the source of truth and this follows them.
-PLAN_FEATURES: dict[str, set[str]] = {
-    "free": set(),
-    "micro": set(),
-    "plus": {"leads"},
-    "pro": {"leads"},
-}
-
-# Limited resource → message shown when the limit is reached.
-LIMIT_MESSAGE = {
-    "products": "Alcanzaste el límite de productos de tu plan. Subí de plan para agregar más.",
-    "lists": "Alcanzaste el límite de listas de tu plan. Subí de plan para crear más.",
-    "members": "Alcanzaste el límite de miembros de tu plan. Subí de plan para invitar a más personas.",
-}
-
-
-class PlanLimitError(Exception):
-    """Raised when an action would exceed the tenant's plan limit (HTTP 402)."""
-
+__all__ = [
+    "PLANS",
+    "PLAN_FEATURES",
+    "PLAN_ORDER",
+    "PlanLimitError",
+    "assert_can_add",
+    "has_feature",
+    "live_list_allowance",
+    "normalize_plan",
+    "plan_info",
+    "plan_required",
+    "set_plan",
+]
 
 # Shown on the blocking plan screen when a gated tenant has no paid plan yet.
 PLAN_REQUIRED_MESSAGE = "Elegí un plan para empezar a usar Mi Precio."
@@ -47,7 +35,10 @@ PLAN_REQUIRED_MESSAGE = "Elegí un plan para empezar a usar Mi Precio."
 
 def _ever_subscribed(tenant: Tenant) -> bool:
     """True once a tenant has had a subscription of any kind, ended or not."""
-    return bool(getattr(tenant, "billing_status", None) or getattr(tenant, "billing_provider", None))
+    return bool(
+        getattr(tenant, "billing_status", None)
+        or getattr(tenant, "billing_provider", None)
+    )
 
 
 def plan_required(tenant_id: str) -> bool:
@@ -99,27 +90,6 @@ def normalize_plan(plan: str | None) -> str:
     return plan if plan in PLANS else "free"
 
 
-def _usage(tenant_id: str) -> dict[str, int]:
-    members = (
-        User.select().where(User.tenant == tenant_id).count()
-        + Invitation.select()
-        .where(Invitation.tenant == tenant_id, Invitation.status == "pending")
-        .count()
-    )
-    return {
-        "products": Product.select().where(Product.tenant == tenant_id).count(),
-        "lists": (
-            PriceList.select()
-            .where(
-                (PriceList.tenant == tenant_id)
-                & (PriceList.design.is_null(True) | (PriceList.design != "pencil-journal"))
-            )
-            .count()
-        ),
-        "members": members,
-    }
-
-
 def plan_info(tenant_id: str) -> dict:
     """Current plan + its limits + current usage for the billing screen."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
@@ -131,7 +101,7 @@ def plan_info(tenant_id: str) -> dict:
         "limits": PLANS[plan],
         # Sorted so the payload does not churn between requests.
         "features": sorted(PLAN_FEATURES[plan]),
-        "usage": _usage(tenant_id),
+        "usage": usage(tenant_id),
         "billing_enabled": settings.billing_enabled,
         # Lets the plan screen poll for the checkout/webhook to land.
         "plan_required": plan_required(tenant_id),
@@ -161,7 +131,7 @@ def assert_can_add(tenant_id: str, resource: str) -> None:
     limit = PLANS[plan].get(resource)
     if limit is None:
         return
-    if _usage(tenant_id).get(resource, 0) >= limit:
+    if usage(tenant_id).get(resource, 0) >= limit:
         raise PlanLimitError(
             LIMIT_MESSAGE.get(resource, "Alcanzaste el límite de tu plan.")
         )

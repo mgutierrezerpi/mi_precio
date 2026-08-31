@@ -20,7 +20,9 @@ def test_feature_flags_can_be_enabled_for_one_tenant_only(db):
 
 def test_magazine_data_remains_separate_while_public_access_is_flagged(db):
     tenant = identity.create_tenant("Journal Store", "journal-store")
-    magazine = magazines.create_magazine(tenant.id, name="Autumn Journal", published=True)
+    magazine = magazines.create_magazine(
+        tenant.id, name="Autumn Journal", published=True
+    )
 
     assert magazine is not None
     assert feature_flags.magazines_enabled(tenant.id) is False

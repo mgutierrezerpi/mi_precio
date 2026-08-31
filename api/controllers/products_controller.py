@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
-from lib.ctx import products, activity, plans
-from lib.ctx.plans_context import PlanLimitError
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+
 from controllers import ownership
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateProduct, UpdateProduct
+from lib.ctx import activity, plans, products
+from lib.ctx.plans_context import PlanLimitError
 from views import DeletedView, ProductImageView, ProductView
 
 router = APIRouter(tags=["products"])

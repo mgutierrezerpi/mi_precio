@@ -19,7 +19,15 @@ export function LinkTreePublicScreen() {
   }, [subdomain])
 
   if (tree) return <LinkTreeView data={tree} />
-  if (error) return <div className="flex min-h-screen items-center justify-center bg-[#F5F4ED] px-6 text-center text-sm text-[#59614B]">Este Linktree no está disponible.</div>
-  return <div className="flex min-h-screen items-center justify-center bg-[#F5F4ED]"><LoadingSpinner /></div>
+  if (error)
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F5F4ED] px-6 text-center text-sm text-[#59614B]">
+        Este Linktree no está disponible.
+      </div>
+    )
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#F5F4ED]">
+      <LoadingSpinner />
+    </div>
+  )
 }
-

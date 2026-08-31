@@ -24,13 +24,8 @@ import type {
 } from '../../types'
 import api from '../../services/api'
 import { localeOf, useT, type TFn } from '../../lib/i18n'
-import { DICT } from '../../lib/i18nDictionary'
-import { DICT_LISTS } from '../../lib/i18nDictionaryLists'
-import {
-  ListAppearanceFields,
-  hasOwnAppearance,
-  type ListAppearance,
-} from '../../components/appearance/ListAppearanceFields'
+import { ListAppearanceFields } from '../../components/appearance/ListAppearanceFields'
+import { hasOwnAppearance, type ListAppearance } from '../../lib/listAppearance'
 import { CrmLayout } from './crm/CrmLayout'
 import { ProductModal } from './ProductsScreen'
 import { Icon, type IconName } from './crm/ui'
@@ -39,15 +34,13 @@ import { tone, gradient } from './crm/theme'
 import { catTone, catIcon } from './crm/productFormat'
 import {
   QR_COLOR_STORAGE_PREFIX,
-  DEFAULT_QR_COLOR,
   downloadQrPng,
   downloadQrSvg,
 } from '../../lib/qrRender'
 import { trackEvent } from '../../lib/analytics'
+import { useStoredQrColor } from '../../hooks/useStoredQrColor'
 
 type Tab = 'all' | 'active' | 'inactive' | 'offline'
-
-Object.assign(DICT, DICT_LISTS)
 
 const FAVICON = '/miprecio-favicon.png'
 const slugOf = (l: PriceList) => l.slug || l.id
@@ -92,7 +85,9 @@ export function PriceListsScreen() {
     })
   )
   const [qr, setQr] = useState<PriceList | null>(null)
-  const [qrColor, setQrColor] = useState(DEFAULT_QR_COLOR)
+  const [qrColor] = useStoredQrColor(
+    tenant?.id ? `${QR_COLOR_STORAGE_PREFIX}${tenant.id}` : null
+  )
   const [variantParent, setVariantParent] = useState<PriceList | null>(null)
   const [customers, setCustomers] = useState<Customer[]>([])
   const editId = searchParams.get('edit')
@@ -103,27 +98,32 @@ export function PriceListsScreen() {
     if (tenant?.id) {
       dispatch(fetchLists(tenant.id))
       dispatch(fetchProducts(tenant.id))
-      const savedColor = localStorage.getItem(
-        `${QR_COLOR_STORAGE_PREFIX}${tenant.id}`
-      )
-      if (savedColor) setQrColor(savedColor)
     }
   }, [dispatch, tenant?.id])
 
   useEffect(() => {
     if (!tenant?.id) return
-    void api.getCustomers(tenant.id).then((response) =>
-      setCustomers(response.data ?? [])
-    )
+    void api
+      .getCustomers(tenant.id)
+      .then((response) => setCustomers(response.data ?? []))
   }, [tenant?.id])
 
   useEffect(() => {
     if (!canEdit) return
-    if (editId) {
-      const list = lists.find((item) => item.id === editId)
-      if (list) setModal({ open: true, list })
-    } else if (newList) {
-      setModal({ open: true, list: null })
+    let cancelled = false
+    const nextModal = () => {
+      if (editId) {
+        const list = lists.find((item) => item.id === editId)
+        return list ? { open: true, list } : null
+      }
+      return newList ? { open: true, list: null } : null
+    }
+    void Promise.resolve().then(() => {
+      const next = nextModal()
+      if (next && !cancelled) setModal(next)
+    })
+    return () => {
+      cancelled = true
     }
   }, [canEdit, editId, lists, newList])
 
@@ -176,11 +176,7 @@ export function PriceListsScreen() {
       updateList({ listId: l.id, data: { showOnIndex: !l.showOnIndex } })
     )
   const handleDelete = (l: PriceList) => {
-    if (
-      window.confirm(
-        t('pl.deleteConfirm', { name: l.name })
-      )
-    )
+    if (window.confirm(t('pl.deleteConfirm', { name: l.name })))
       dispatch(deleteList(l.id))
   }
   const copyLink = (l: PriceList) =>
@@ -192,7 +188,13 @@ export function PriceListsScreen() {
     { key: 'inactive', label: t('pl.tab.inactive'), count: counts.inactive },
     // Only worth a tab when the plan is actually holding lists back.
     ...(counts.offline
-      ? [{ key: 'offline' as Tab, label: t('pl.tab.offline'), count: counts.offline }]
+      ? [
+          {
+            key: 'offline' as Tab,
+            label: t('pl.tab.offline'),
+            count: counts.offline,
+          },
+        ]
       : []),
   ]
 
@@ -217,9 +219,16 @@ export function PriceListsScreen() {
         {/* Lists published beyond what the plan serves. Nothing was unpublished,
             so without this the owner has no way to know they are unreachable. */}
         {counts.offline > 0 && (
-          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--tone-red-fg)]/25 p-4 sm:flex-row sm:items-center sm:justify-between" style={tone('red')}>
+          <div
+            className="flex flex-col gap-3 rounded-2xl border border-[var(--tone-red-fg)]/25 p-4 sm:flex-row sm:items-center sm:justify-between"
+            style={tone('red')}
+          >
             <div className="flex items-start gap-3">
-              <Icon name="alert-triangle" size={18} className="mt-0.5 shrink-0" />
+              <Icon
+                name="alert-triangle"
+                size={18}
+                className="mt-0.5 shrink-0"
+              />
               <div className="flex flex-col gap-0.5">
                 <p className="text-sm font-bold">
                   {counts.offline === 1
@@ -229,7 +238,9 @@ export function PriceListsScreen() {
                 <p className="text-xs font-medium opacity-80">
                   {counts.offline === 1
                     ? t('pl.offline.oneDescription', { active: counts.active })
-                    : t('pl.offline.manyDescription', { active: counts.active })}
+                    : t('pl.offline.manyDescription', {
+                        active: counts.active,
+                      })}
                 </p>
               </div>
             </div>
@@ -317,72 +328,79 @@ export function PriceListsScreen() {
                 key={l.id}
                 className="mx-2 my-2 overflow-hidden rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[0_8px_24px_-18px_rgba(15,23,42,0.45)] lg:contents"
               >
-              <ListRow
-                list={l}
-                canEdit={canEdit}
-                first={i === 0}
-                onEdit={() => {
-                  setModal({ open: true, list: l })
-                  setSearchParams({ edit: l.id })
-                }}
-                onCustomize={() => {
-                  navigate(`/admin/lists/${l.id}/customize`)
-                }}
-                onTogglePublished={() => togglePublished(l)}
-                onTogglePrincipal={() => togglePrincipal(l)}
-                onDelete={() => handleDelete(l)}
-                onCopy={() => copyLink(l)}
-                onQr={() => setQr(l)}
-                onOpen={() =>
-                  window.open(publicUrl(tenant?.subdomain, l), '_blank')
-                }
-                onReports={() => navigate(`/admin/reports?list=${l.id}`)}
-                onCreateVariant={() => setVariantParent(l)}
-              />
-              {lists
-                .filter((variant) => variant.parentListId === l.id)
-                .filter((variant) => {
-                  const q = search.trim().toLowerCase()
-                  return (
-                    (!q ||
-                      [variant.name, variant.slug].some((v) =>
-                        v?.toLowerCase().includes(q)
-                      )) &&
-                    (tab === 'all' ||
-                      (tab === 'active'
-                        ? variant.published
-                        : !variant.published))
-                  )
-                })
-                .map((variant) => (
-                  <ListRow
-                    key={variant.id}
-                    list={variant}
-                    canEdit={canEdit}
-                    variant
-                    variantDetail={variantDetail(
-                      variant,
-                      customers.find((customer) => customer.id === variant.customerId),
-                      t
-                    )}
-                    onEdit={() => {
-                      setModal({ open: true, list: variant })
-                      setSearchParams({ edit: variant.id })
-                    }}
-                    onCustomize={() => {
-                      navigate(`/admin/lists/${variant.id}/customize`)
-                    }}
-                    onTogglePublished={() => togglePublished(variant)}
-                    onTogglePrincipal={() => undefined}
-                    onDelete={() => handleDelete(variant)}
-                    onCopy={() => copyLink(variant)}
-                    onQr={() => setQr(variant)}
-                    onOpen={() =>
-                      window.open(publicUrl(tenant?.subdomain, variant), '_blank')
-                    }
-                    onReports={() => navigate(`/admin/reports?list=${variant.id}`)}
-                  />
-                ))}
+                <ListRow
+                  list={l}
+                  canEdit={canEdit}
+                  first={i === 0}
+                  onEdit={() => {
+                    setModal({ open: true, list: l })
+                    setSearchParams({ edit: l.id })
+                  }}
+                  onCustomize={() => {
+                    navigate(`/admin/lists/${l.id}/customize`)
+                  }}
+                  onTogglePublished={() => togglePublished(l)}
+                  onTogglePrincipal={() => togglePrincipal(l)}
+                  onDelete={() => handleDelete(l)}
+                  onCopy={() => copyLink(l)}
+                  onQr={() => setQr(l)}
+                  onOpen={() =>
+                    window.open(publicUrl(tenant?.subdomain, l), '_blank')
+                  }
+                  onReports={() => navigate(`/admin/reports?list=${l.id}`)}
+                  onCreateVariant={() => setVariantParent(l)}
+                />
+                {lists
+                  .filter((variant) => variant.parentListId === l.id)
+                  .filter((variant) => {
+                    const q = search.trim().toLowerCase()
+                    return (
+                      (!q ||
+                        [variant.name, variant.slug].some((v) =>
+                          v?.toLowerCase().includes(q)
+                        )) &&
+                      (tab === 'all' ||
+                        (tab === 'active'
+                          ? variant.published
+                          : !variant.published))
+                    )
+                  })
+                  .map((variant) => (
+                    <ListRow
+                      key={variant.id}
+                      list={variant}
+                      canEdit={canEdit}
+                      variant
+                      variantDetail={variantDetail(
+                        variant,
+                        customers.find(
+                          (customer) => customer.id === variant.customerId
+                        ),
+                        t
+                      )}
+                      onEdit={() => {
+                        setModal({ open: true, list: variant })
+                        setSearchParams({ edit: variant.id })
+                      }}
+                      onCustomize={() => {
+                        navigate(`/admin/lists/${variant.id}/customize`)
+                      }}
+                      onTogglePublished={() => togglePublished(variant)}
+                      onTogglePrincipal={() => undefined}
+                      onDelete={() => handleDelete(variant)}
+                      onCopy={() => copyLink(variant)}
+                      onQr={() => setQr(variant)}
+                      onOpen={() =>
+                        window.open(
+                          publicUrl(tenant?.subdomain, variant),
+                          '_blank'
+                        )
+                      }
+                      onReports={() =>
+                        navigate(`/admin/reports?list=${variant.id}`)
+                      }
+                    />
+                  ))}
               </div>
             ))}
           </div>
@@ -470,7 +488,9 @@ function ListRow({
     <div
       className={`flex min-w-0 flex-col gap-3 px-4 py-4 lg:min-w-[680px] lg:flex-row lg:items-center lg:gap-3 lg:px-5 ${variant ? 'border-t border-[var(--dash-divider)] bg-[var(--dash-soft)] lg:py-3' : 'bg-[var(--dash-surface)] lg:py-4'} ${!first ? 'lg:border-t lg:border-[var(--dash-divider)]' : ''}`}
     >
-      <div className={`relative flex min-w-0 flex-1 items-start gap-3 lg:items-center ${variant ? 'pl-10 lg:pl-12' : ''}`}>
+      <div
+        className={`relative flex min-w-0 flex-1 items-start gap-3 lg:items-center ${variant ? 'pl-10 lg:pl-12' : ''}`}
+      >
         {variant && (
           <span
             aria-hidden="true"
@@ -491,40 +511,58 @@ function ListRow({
             </span>
           )}
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h4 className={`min-w-0 whitespace-normal break-words font-bold leading-snug text-[var(--dash-text)] ${variant ? 'text-[14px]' : 'text-base'}`}>
+            <h4
+              className={`min-w-0 whitespace-normal break-words font-bold leading-snug text-[var(--dash-text)] ${variant ? 'text-[14px]' : 'text-base'}`}
+            >
               {list.name}
             </h4>
             {variant ? (
               <span className="rounded-full border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 py-0.5 text-[10px] font-bold text-[var(--dash-text2)]">
                 {variantLabel(list, t)}
               </span>
-            ) : list.showOnIndex && (
-              <span
-                className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                style={tone('violet')}
-              >
-                {t('pl.main')}
-              </span>
+            ) : (
+              list.showOnIndex && (
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                  style={tone('violet')}
+                >
+                  {t('pl.main')}
+                </span>
+              )
             )}
           </div>
-          {variant && variantDetail && variantDetail !== variantLabel(list, t) && (
-            <span className="text-[11px] font-medium text-[var(--dash-muted)]">
-              {variantDetail}
-            </span>
-          )}
+          {variant &&
+            variantDetail &&
+            variantDetail !== variantLabel(list, t) && (
+              <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+                {variantDetail}
+              </span>
+            )}
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-x-3 border-t border-[var(--dash-divider)] pt-3 text-xs lg:hidden">
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('pl.column.products')}</span>
-          <span className="font-semibold text-[var(--dash-text2)]">{list.itemCount}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+            {t('pl.column.products')}
+          </span>
+          <span className="font-semibold text-[var(--dash-text2)]">
+            {list.itemCount}
+          </span>
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('pl.column.status')}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+            {t('pl.column.status')}
+          </span>
           <span
             className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
-            style={tone(list.published && list.live ? 'green' : list.published ? 'red' : 'amber')}
+            style={tone(
+              list.published && list.live
+                ? 'green'
+                : list.published
+                  ? 'red'
+                  : 'amber'
+            )}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {list.published && !list.live
@@ -535,20 +573,30 @@ function ListRow({
           </span>
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('pl.column.updated')}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+            {t('pl.column.updated')}
+          </span>
           <span className="truncate font-medium text-[var(--dash-muted)]">
             {formatListTimeAgo(list.updatedAt, localeOf(tenant?.language))}
           </span>
         </span>
       </div>
 
-      <span className={`hidden w-[100px] font-semibold text-[var(--dash-text2)] lg:block ${variant ? 'text-xs' : 'text-sm'}`}>
+      <span
+        className={`hidden w-[100px] font-semibold text-[var(--dash-text2)] lg:block ${variant ? 'text-xs' : 'text-sm'}`}
+      >
         {list.itemCount}
       </span>
       <span className="hidden w-[110px] lg:block">
         <span
           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
-          style={tone(list.published && list.live ? 'green' : list.published ? 'red' : 'amber')}
+          style={tone(
+            list.published && list.live
+              ? 'green'
+              : list.published
+                ? 'red'
+                : 'amber'
+          )}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current" />{' '}
           {list.published && !list.live
@@ -781,7 +829,11 @@ function variantLabel(list: PriceList, t: TFn): string {
   return t('pl.variant.custom')
 }
 
-function variantDetail(list: PriceList, customer: Customer | undefined, t: TFn): string {
+function variantDetail(
+  list: PriceList,
+  customer: Customer | undefined,
+  t: TFn
+): string {
   const audience = customer
     ? t('pl.variant.customerWithName', { name: customer.name })
     : variantLabel(list, t)
@@ -824,7 +876,9 @@ function VariantModal({
   const [sourceItems, setSourceItems] = useState<Item[]>([])
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set())
   const [showPriceAdjustment, setShowPriceAdjustment] = useState(false)
-  const [adjustmentKind, setAdjustmentKind] = useState<'discount' | 'surcharge'>('discount')
+  const [adjustmentKind, setAdjustmentKind] = useState<
+    'discount' | 'surcharge'
+  >('discount')
   const [adjustmentPercent, setAdjustmentPercent] = useState('')
   const [customerId, setCustomerId] = useState('')
   const [startsAt, setStartsAt] = useState('')
@@ -843,14 +897,14 @@ function VariantModal({
   }
   const setNextMonday = () => {
     const today = new Date()
-    const days = ((8 - today.getDay()) % 7) || 7
+    const days = (8 - today.getDay()) % 7 || 7
     setStart(scheduledDate(days))
   }
 
   useEffect(() => {
-    void api.getCustomers(tenantId).then((response) =>
-      setCustomers(response.data ?? [])
-    )
+    void api
+      .getCustomers(tenantId)
+      .then((response) => setCustomers(response.data ?? []))
   }, [tenantId])
 
   useEffect(() => {
@@ -899,12 +953,16 @@ function VariantModal({
         .filter((item) => selectedItemIds.has(item.id))
         .map((item) => [item.productId || `name:${item.name}`, item])
     )
-    const factor = adjustmentKind === 'discount' ? 1 - percent / 100 : 1 + percent / 100
+    const factor =
+      adjustmentKind === 'discount' ? 1 - percent / 100 : 1 + percent / 100
     await Promise.all(
       (variantItems.data ?? []).flatMap((item) => {
         const source = sourceByKey.get(item.productId || `name:${item.name}`)
         if (!source) return []
-        const price = Math.max(0, Math.round(Number(source.price) * factor * 100) / 100)
+        const price = Math.max(
+          0,
+          Math.round(Number(source.price) * factor * 100) / 100
+        )
         return [api.updateItem(item.id, { price })]
       })
     )
@@ -923,7 +981,8 @@ function VariantModal({
           variant: {
             parentListId: parent.id,
             variantType,
-            customerId: variantType === 'customer' ? customerId || undefined : undefined,
+            customerId:
+              variantType === 'customer' ? customerId || undefined : undefined,
             startsAt: startsAt || undefined,
             endsAt: endsAt || undefined,
           },
@@ -969,7 +1028,9 @@ function VariantModal({
         </div>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.name')}</span>
+          <span className="text-xs font-bold text-[var(--dash-text2)]">
+            {t('pl.name')}
+          </span>
           <input
             autoFocus
             value={name}
@@ -980,7 +1041,9 @@ function VariantModal({
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.purpose')}</span>
+          <span className="text-xs font-bold text-[var(--dash-text2)]">
+            {t('pl.variant.purpose')}
+          </span>
           <select
             value={variantType}
             onChange={(event) =>
@@ -997,7 +1060,9 @@ function VariantModal({
 
         {variantType === 'customer' && (
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.customer')}</span>
+            <span className="text-xs font-bold text-[var(--dash-text2)]">
+              {t('pl.variant.customer')}
+            </span>
             <select
               value={customerId}
               onChange={(event) => setCustomerId(event.target.value)}
@@ -1017,8 +1082,12 @@ function VariantModal({
           <div className="flex flex-col gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.adjustPrices')}</p>
-                <p className="text-[11px] font-medium text-[var(--dash-muted)]">{t('pl.variant.adjustDescription')}</p>
+                <p className="text-xs font-bold text-[var(--dash-text2)]">
+                  {t('pl.variant.adjustPrices')}
+                </p>
+                <p className="text-[11px] font-medium text-[var(--dash-muted)]">
+                  {t('pl.variant.adjustDescription')}
+                </p>
               </div>
               <button
                 type="button"
@@ -1036,7 +1105,9 @@ function VariantModal({
               <select
                 value={adjustmentKind}
                 onChange={(event) =>
-                  setAdjustmentKind(event.target.value as 'discount' | 'surcharge')
+                  setAdjustmentKind(
+                    event.target.value as 'discount' | 'surcharge'
+                  )
                 }
                 className={`${inputCls} flex-1`}
               >
@@ -1054,7 +1125,9 @@ function VariantModal({
                   placeholder="10"
                   className={`${inputCls} pr-7`}
                 />
-                <span className="absolute right-3 top-3 text-sm font-bold text-[var(--dash-muted)]">%</span>
+                <span className="absolute right-3 top-3 text-sm font-bold text-[var(--dash-muted)]">
+                  %
+                </span>
               </label>
             </div>
             {sourceItems.length > 0 ? (
@@ -1080,14 +1153,20 @@ function VariantModal({
                         onChange={() => toggleItem(item.id)}
                         className="rounded border-[var(--dash-border)] text-[#7C3AED]"
                       />
-                      <span className="min-w-0 flex-1 truncate text-xs font-semibold text-[var(--dash-text)]">{item.name}</span>
-                      <span className="text-xs font-medium text-[var(--dash-muted)]">{item.currency} {item.price}</span>
+                      <span className="min-w-0 flex-1 truncate text-xs font-semibold text-[var(--dash-text)]">
+                        {item.name}
+                      </span>
+                      <span className="text-xs font-medium text-[var(--dash-muted)]">
+                        {item.currency} {item.price}
+                      </span>
                     </label>
                   ))}
                 </div>
               </>
             ) : (
-              <p className="text-xs font-medium text-[var(--dash-muted)]">{t('pl.variant.loadingProducts')}</p>
+              <p className="text-xs font-medium text-[var(--dash-muted)]">
+                {t('pl.variant.loadingProducts')}
+              </p>
             )}
           </div>
         ) : (
@@ -1096,8 +1175,12 @@ function VariantModal({
             onClick={() => setShowPriceAdjustment(true)}
             className="flex w-full items-center justify-between rounded-xl border border-dashed border-[var(--dash-border)] px-3.5 py-3 text-left hover:bg-[var(--dash-soft)]"
           >
-            <span className="text-sm font-bold text-[var(--dash-text2)]">{t('pl.variant.adjustPrices')}</span>
-            <span className="text-xs font-medium text-[var(--dash-muted)]">{t('pl.variant.discount')} / {t('pl.variant.surcharge')}</span>
+            <span className="text-sm font-bold text-[var(--dash-text2)]">
+              {t('pl.variant.adjustPrices')}
+            </span>
+            <span className="text-xs font-medium text-[var(--dash-muted)]">
+              {t('pl.variant.discount')} / {t('pl.variant.surcharge')}
+            </span>
           </button>
         )}
 
@@ -1105,7 +1188,9 @@ function VariantModal({
           <>
             <div className="flex flex-col gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.schedule')}</span>
+                <span className="text-xs font-bold text-[var(--dash-text2)]">
+                  {t('pl.variant.schedule')}
+                </span>
                 <button
                   type="button"
                   onClick={() => {
@@ -1120,17 +1205,63 @@ function VariantModal({
                 </button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">{t('pl.variant.starts')}</span>
-                <button type="button" onClick={() => setStart(new Date())} className={shortcutClass}>{t('pl.variant.now')}</button>
-                <button type="button" onClick={() => setStart(scheduledDate(1))} className={shortcutClass}>{t('pl.variant.tomorrow')}</button>
-                <button type="button" onClick={setNextMonday} className={shortcutClass}>{t('pl.variant.nextMonday')}</button>
+                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">
+                  {t('pl.variant.starts')}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setStart(new Date())}
+                  className={shortcutClass}
+                >
+                  {t('pl.variant.now')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStart(scheduledDate(1))}
+                  className={shortcutClass}
+                >
+                  {t('pl.variant.tomorrow')}
+                </button>
+                <button
+                  type="button"
+                  onClick={setNextMonday}
+                  className={shortcutClass}
+                >
+                  {t('pl.variant.nextMonday')}
+                </button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">{t('pl.variant.ends')}</span>
-                <button type="button" onClick={() => setEndAfter(1)} className={shortcutClass}>{t('pl.variant.inDay')}</button>
-                <button type="button" onClick={() => setEndAfter(7)} className={shortcutClass}>{t('pl.variant.inWeek')}</button>
-                <button type="button" onClick={() => setEndAfter(30)} className={shortcutClass}>{t('pl.variant.inMonth')}</button>
-                <button type="button" onClick={() => setEndsAt('')} className={shortcutClass}>{t('pl.variant.noExpiry')}</button>
+                <span className="self-center text-[11px] font-medium text-[var(--dash-muted)]">
+                  {t('pl.variant.ends')}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setEndAfter(1)}
+                  className={shortcutClass}
+                >
+                  {t('pl.variant.inDay')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEndAfter(7)}
+                  className={shortcutClass}
+                >
+                  {t('pl.variant.inWeek')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEndAfter(30)}
+                  className={shortcutClass}
+                >
+                  {t('pl.variant.inMonth')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEndsAt('')}
+                  className={shortcutClass}
+                >
+                  {t('pl.variant.noExpiry')}
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowCustomSchedule(true)}
@@ -1144,7 +1275,9 @@ function VariantModal({
             {showCustomSchedule && (
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.fromDate')}</span>
+                  <span className="text-xs font-bold text-[var(--dash-text2)]">
+                    {t('pl.variant.fromDate')}
+                  </span>
                   <input
                     type="datetime-local"
                     value={startsAt}
@@ -1153,7 +1286,9 @@ function VariantModal({
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-[var(--dash-text2)]">{t('pl.variant.toDate')}</span>
+                  <span className="text-xs font-bold text-[var(--dash-text2)]">
+                    {t('pl.variant.toDate')}
+                  </span>
                   <input
                     type="datetime-local"
                     value={endsAt}
@@ -1171,13 +1306,21 @@ function VariantModal({
             onClick={() => setShowSchedule(true)}
             className="flex w-full items-center justify-between rounded-xl border border-dashed border-[var(--dash-border)] px-3.5 py-3 text-left hover:bg-[var(--dash-soft)]"
           >
-            <span className="text-sm font-bold text-[var(--dash-text2)]">{t('pl.variant.addPeriod')}</span>
-            <span className="text-xs font-medium text-[var(--dash-muted)]">{t('pl.variant.optional')}</span>
+            <span className="text-sm font-bold text-[var(--dash-text2)]">
+              {t('pl.variant.addPeriod')}
+            </span>
+            <span className="text-xs font-medium text-[var(--dash-muted)]">
+              {t('pl.variant.optional')}
+            </span>
           </button>
         )}
 
         <div className="mt-1 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="h-10 rounded-xl px-4 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 rounded-xl px-4 text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
+          >
             {t('pl.cancel')}
           </button>
           <button
@@ -1185,7 +1328,8 @@ function VariantModal({
             disabled={saving}
             className={`flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold text-white disabled:opacity-60 ${gradient}`}
           >
-            <Icon name="list-plus" size={16} /> {saving ? t('pl.saving') : t('pl.variant.create')}
+            <Icon name="list-plus" size={16} />{' '}
+            {saving ? t('pl.saving') : t('pl.variant.create')}
           </button>
         </div>
       </form>
@@ -1287,8 +1431,12 @@ function DashField({
   children: React.ReactNode
 }) {
   return (
-    <label className={`flex min-w-0 flex-col gap-1.5 ${wide ? 'sm:col-span-2' : ''}`}>
-      <span className="text-xs font-bold text-[var(--dash-text2)]">{label}</span>
+    <label
+      className={`flex min-w-0 flex-col gap-1.5 ${wide ? 'sm:col-span-2' : ''}`}
+    >
+      <span className="text-xs font-bold text-[var(--dash-text2)]">
+        {label}
+      </span>
       {children}
     </label>
   )
@@ -1325,7 +1473,9 @@ function ListModal({
   )
   const [published, setPublished] = useState(list?.published ?? false)
   const [principal, setPrincipal] = useState(list?.showOnIndex ?? false)
-  const [captureViewerInfo, setCaptureViewerInfo] = useState(list?.captureViewerInfo ?? false)
+  const [captureViewerInfo, setCaptureViewerInfo] = useState(
+    list?.captureViewerInfo ?? false
+  )
   const [parentListId, setParentListId] = useState(list?.parentListId ?? '')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [prodSearch, setProdSearch] = useState('')
@@ -1340,8 +1490,11 @@ function ListModal({
     bgOverlay: list?.bgOverlay ?? null,
   })
   const [showAppearance, setShowAppearance] = useState(false)
-  const [showTemplateContent, setShowTemplateContent] = useState(initialCustomize)
-  const [templateContent, setTemplateContent] = useState<ListContent | null>(null)
+  const [showTemplateContent, setShowTemplateContent] =
+    useState(initialCustomize)
+  const [templateContent, setTemplateContent] = useState<ListContent | null>(
+    null
+  )
   const [contentRevision, setContentRevision] = useState(0)
   const [savingTemplateContent, setSavingTemplateContent] = useState(false)
   const versionId = useRef<string | undefined>(undefined)
@@ -1399,7 +1552,7 @@ function ListModal({
     return () => {
       cancelled = true
     }
-  }, [list?.id])
+  }, [list])
 
   // Pre-select the products already in the list (matched by id, name for legacy items).
   // Depends on `products` too, so the checkboxes recompute once the catalog finishes
@@ -1461,13 +1614,21 @@ function ListModal({
       ...patch,
     }))
 
-  const updateTemplateHero = (key: 'eyebrow' | 'title' | 'body', value: string) => {
-    const current = templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
+  const updateTemplateHero = (
+    key: 'eyebrow' | 'title' | 'body',
+    value: string
+  ) => {
+    const current =
+      templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
     updateTemplateContent({ hero: { ...current.hero, [key]: value } })
   }
 
-  const updateTemplateField = (key: keyof NonNullable<ListContent['template']>, value: string) => {
-    const current = templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
+  const updateTemplateField = (
+    key: keyof NonNullable<ListContent['template']>,
+    value: string
+  ) => {
+    const current =
+      templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
     updateTemplateContent({ template: { ...current.template, [key]: value } })
   }
 
@@ -1601,7 +1762,8 @@ function ListModal({
   const activeTemplateContent =
     templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
   const selectedDesign = appearance.design ?? tenant?.listDesign
-  const supportsEditorialContent = selectedDesign?.startsWith('pencil-') ?? false
+  const supportsEditorialContent =
+    selectedDesign?.startsWith('pencil-') ?? false
 
   return (
     <div
@@ -1621,10 +1783,10 @@ function ListModal({
               {initialCustomize
                 ? 'Personalizar lista'
                 : step === 1
-                ? editing
-                  ? t('pl.wizard.edit')
-                  : t('pl.wizard.new')
-                : t('pl.wizard.chooseProducts')}
+                  ? editing
+                    ? t('pl.wizard.edit')
+                    : t('pl.wizard.new')
+                  : t('pl.wizard.chooseProducts')}
             </h3>
             <span className="text-xs font-medium text-[var(--dash-muted)]">
               {t('pl.wizard.step', { current: step, total: 2 })}
@@ -1806,48 +1968,276 @@ function ListModal({
 
               {editing && (
                 <>
-                  {!initialCustomize && <button
-                    type="button"
-                    onClick={() => setShowTemplateContent((value) => !value)}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] p-3.5 text-left hover:bg-[var(--dash-soft)]"
-                  >
-                    <span className="flex flex-col gap-0.5">
-                      <span className="text-[13px] font-bold text-[var(--dash-text)]">
-                        Contenido y tipografía
+                  {!initialCustomize && (
+                    <button
+                      type="button"
+                      onClick={() => setShowTemplateContent((value) => !value)}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] p-3.5 text-left hover:bg-[var(--dash-soft)]"
+                    >
+                      <span className="flex flex-col gap-0.5">
+                        <span className="text-[13px] font-bold text-[var(--dash-text)]">
+                          Contenido y tipografía
+                        </span>
+                        <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+                          Textos, imagen y detalles de esta plantilla.
+                        </span>
                       </span>
-                      <span className="text-[11px] font-medium text-[var(--dash-muted)]">
-                        Textos, imagen y detalles de esta plantilla.
-                      </span>
-                    </span>
-                    <Icon name="chevron-down" size={16} className={`shrink-0 text-[var(--dash-muted)] transition-transform ${showTemplateContent ? 'rotate-180' : ''}`} />
-                  </button>}
+                      <Icon
+                        name="chevron-down"
+                        size={16}
+                        className={`shrink-0 text-[var(--dash-muted)] transition-transform ${showTemplateContent ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                  )}
 
                   {showTemplateContent && (
-                    <div className={`flex flex-col gap-4 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-4 ${initialCustomize ? 'order-first' : ''}`}>
-                      {initialCustomize && <div className="flex items-start justify-between gap-3 border-b border-[var(--dash-border)] pb-4"><div><p className="text-sm font-bold text-[var(--dash-text)]">Personalizar plantilla</p><p className="mt-0.5 text-xs font-medium text-[var(--dash-muted)]">Cambios solo para esta lista.</p></div><span className="rounded-lg bg-[var(--dash-surface)] px-2 py-1 text-[10px] font-bold text-[var(--dash-link)]">{supportsEditorialContent ? 'EDITORIAL' : 'LISTA'}</span></div>}
+                    <div
+                      className={`flex flex-col gap-4 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-4 ${initialCustomize ? 'order-first' : ''}`}
+                    >
+                      {initialCustomize && (
+                        <div className="flex items-start justify-between gap-3 border-b border-[var(--dash-border)] pb-4">
+                          <div>
+                            <p className="text-sm font-bold text-[var(--dash-text)]">
+                              Personalizar plantilla
+                            </p>
+                            <p className="mt-0.5 text-xs font-medium text-[var(--dash-muted)]">
+                              Cambios solo para esta lista.
+                            </p>
+                          </div>
+                          <span className="rounded-lg bg-[var(--dash-surface)] px-2 py-1 text-[10px] font-bold text-[var(--dash-link)]">
+                            {supportsEditorialContent ? 'EDITORIAL' : 'LISTA'}
+                          </span>
+                        </div>
+                      )}
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <DashField label="Antetítulo"><input value={activeTemplateContent.hero?.eyebrow ?? ''} onChange={(event) => updateTemplateHero('eyebrow', event.target.value)} className={inputCls} placeholder="NOVEDADES" /></DashField>
-                        <DashField label="Título"><input value={activeTemplateContent.hero?.title ?? ''} onChange={(event) => updateTemplateHero('title', event.target.value)} className={inputCls} placeholder={list?.name} /></DashField>
-                        <DashField label="Descripción" wide><textarea value={activeTemplateContent.hero?.body ?? ''} onChange={(event) => updateTemplateHero('body', event.target.value)} className={`${inputCls} h-20 py-3`} placeholder="Una breve introducción a la lista." /></DashField>
-                        <DashField label="Tipografía"><select value={activeTemplateContent.template?.font ?? 'sans'} onChange={(event) => updateTemplateField('font', event.target.value)} className={inputCls}><option value="sans">Sans · moderna</option><option value="editorial">Editorial · serif</option><option value="serif">Serif · clásica</option><option value="mono">Mono · técnica</option><option value="code-pro">Code Pro</option></select></DashField>
+                        <DashField label="Antetítulo">
+                          <input
+                            value={activeTemplateContent.hero?.eyebrow ?? ''}
+                            onChange={(event) =>
+                              updateTemplateHero('eyebrow', event.target.value)
+                            }
+                            className={inputCls}
+                            placeholder="NOVEDADES"
+                          />
+                        </DashField>
+                        <DashField label="Título">
+                          <input
+                            value={activeTemplateContent.hero?.title ?? ''}
+                            onChange={(event) =>
+                              updateTemplateHero('title', event.target.value)
+                            }
+                            className={inputCls}
+                            placeholder={list?.name}
+                          />
+                        </DashField>
+                        <DashField label="Descripción" wide>
+                          <textarea
+                            value={activeTemplateContent.hero?.body ?? ''}
+                            onChange={(event) =>
+                              updateTemplateHero('body', event.target.value)
+                            }
+                            className={`${inputCls} h-20 py-3`}
+                            placeholder="Una breve introducción a la lista."
+                          />
+                        </DashField>
+                        <DashField label="Tipografía">
+                          <select
+                            value={
+                              activeTemplateContent.template?.font ?? 'sans'
+                            }
+                            onChange={(event) =>
+                              updateTemplateField('font', event.target.value)
+                            }
+                            className={inputCls}
+                          >
+                            <option value="sans">Sans · moderna</option>
+                            <option value="editorial">Editorial · serif</option>
+                            <option value="serif">Serif · clásica</option>
+                            <option value="mono">Mono · técnica</option>
+                            <option value="code-pro">Code Pro</option>
+                          </select>
+                        </DashField>
                       </div>
 
                       {supportsEditorialContent && (
                         <div className="grid gap-3 border-t border-[var(--dash-border)] pt-4 sm:grid-cols-2">
-                          <DashField label="Imagen editorial" wide><div className="flex flex-wrap gap-2"><input value={activeTemplateContent.template?.image ?? ''} onChange={(event) => updateTemplateField('image', event.target.value)} className={`${inputCls} min-w-0 flex-1`} placeholder="https://…" /><label className="flex h-11 cursor-pointer items-center rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-link)] hover:bg-white"><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="sr-only" onChange={(event) => void uploadTemplateImage(event)} />Subir</label></div></DashField>
-                          {activeTemplateContent.template?.image && <img src={activeTemplateContent.template.image} alt="Vista previa" className="h-32 w-full rounded-xl object-cover sm:col-span-2" />}
-                          <DashField label="Etiqueta de imagen"><input value={activeTemplateContent.template?.imageLabel ?? ''} onChange={(event) => updateTemplateField('imageLabel', event.target.value)} className={inputCls} /></DashField>
-                          <DashField label="Título de imagen"><input value={activeTemplateContent.template?.imageTitle ?? ''} onChange={(event) => updateTemplateField('imageTitle', event.target.value)} className={inputCls} /></DashField>
-                          <DashField label="Antetítulo de promoción"><input value={activeTemplateContent.template?.promoEyebrow ?? ''} onChange={(event) => updateTemplateField('promoEyebrow', event.target.value)} className={inputCls} /></DashField>
-                          <DashField label="Título de promoción"><input value={activeTemplateContent.template?.promoTitle ?? ''} onChange={(event) => updateTemplateField('promoTitle', event.target.value)} className={inputCls} /></DashField>
-                          <DashField label="Texto de promoción" wide><textarea value={activeTemplateContent.template?.promoBody ?? ''} onChange={(event) => updateTemplateField('promoBody', event.target.value)} className={`${inputCls} h-20 py-3`} /></DashField>
-                          <DashField label="Precio o llamada"><input value={activeTemplateContent.template?.promoPrice ?? ''} onChange={(event) => updateTemplateField('promoPrice', event.target.value)} className={inputCls} /></DashField>
-                          <DashField label="Nota de promoción"><input value={activeTemplateContent.template?.promoNote ?? ''} onChange={(event) => updateTemplateField('promoNote', event.target.value)} className={inputCls} /></DashField>
-                          <DashField label="Pie izquierdo"><input value={activeTemplateContent.template?.footerLeft ?? ''} onChange={(event) => updateTemplateField('footerLeft', event.target.value)} className={inputCls} /></DashField>
-                          <DashField label="Pie derecho"><input value={activeTemplateContent.template?.footerRight ?? ''} onChange={(event) => updateTemplateField('footerRight', event.target.value)} className={inputCls} /></DashField>
+                          <DashField label="Imagen editorial" wide>
+                            <div className="flex flex-wrap gap-2">
+                              <input
+                                value={
+                                  activeTemplateContent.template?.image ?? ''
+                                }
+                                onChange={(event) =>
+                                  updateTemplateField(
+                                    'image',
+                                    event.target.value
+                                  )
+                                }
+                                className={`${inputCls} min-w-0 flex-1`}
+                                placeholder="https://…"
+                              />
+                              <label className="flex h-11 cursor-pointer items-center rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-link)] hover:bg-white">
+                                <input
+                                  type="file"
+                                  accept="image/png,image/jpeg,image/webp,image/gif"
+                                  className="sr-only"
+                                  onChange={(event) =>
+                                    void uploadTemplateImage(event)
+                                  }
+                                />
+                                Subir
+                              </label>
+                            </div>
+                          </DashField>
+                          {activeTemplateContent.template?.image && (
+                            <img
+                              src={activeTemplateContent.template.image}
+                              alt="Vista previa"
+                              className="h-32 w-full rounded-xl object-cover sm:col-span-2"
+                            />
+                          )}
+                          <DashField label="Etiqueta de imagen">
+                            <input
+                              value={
+                                activeTemplateContent.template?.imageLabel ?? ''
+                              }
+                              onChange={(event) =>
+                                updateTemplateField(
+                                  'imageLabel',
+                                  event.target.value
+                                )
+                              }
+                              className={inputCls}
+                            />
+                          </DashField>
+                          <DashField label="Título de imagen">
+                            <input
+                              value={
+                                activeTemplateContent.template?.imageTitle ?? ''
+                              }
+                              onChange={(event) =>
+                                updateTemplateField(
+                                  'imageTitle',
+                                  event.target.value
+                                )
+                              }
+                              className={inputCls}
+                            />
+                          </DashField>
+                          <DashField label="Antetítulo de promoción">
+                            <input
+                              value={
+                                activeTemplateContent.template?.promoEyebrow ??
+                                ''
+                              }
+                              onChange={(event) =>
+                                updateTemplateField(
+                                  'promoEyebrow',
+                                  event.target.value
+                                )
+                              }
+                              className={inputCls}
+                            />
+                          </DashField>
+                          <DashField label="Título de promoción">
+                            <input
+                              value={
+                                activeTemplateContent.template?.promoTitle ?? ''
+                              }
+                              onChange={(event) =>
+                                updateTemplateField(
+                                  'promoTitle',
+                                  event.target.value
+                                )
+                              }
+                              className={inputCls}
+                            />
+                          </DashField>
+                          <DashField label="Texto de promoción" wide>
+                            <textarea
+                              value={
+                                activeTemplateContent.template?.promoBody ?? ''
+                              }
+                              onChange={(event) =>
+                                updateTemplateField(
+                                  'promoBody',
+                                  event.target.value
+                                )
+                              }
+                              className={`${inputCls} h-20 py-3`}
+                            />
+                          </DashField>
+                          <DashField label="Precio o llamada">
+                            <input
+                              value={
+                                activeTemplateContent.template?.promoPrice ?? ''
+                              }
+                              onChange={(event) =>
+                                updateTemplateField(
+                                  'promoPrice',
+                                  event.target.value
+                                )
+                              }
+                              className={inputCls}
+                            />
+                          </DashField>
+                          <DashField label="Nota de promoción">
+                            <input
+                              value={
+                                activeTemplateContent.template?.promoNote ?? ''
+                              }
+                              onChange={(event) =>
+                                updateTemplateField(
+                                  'promoNote',
+                                  event.target.value
+                                )
+                              }
+                              className={inputCls}
+                            />
+                          </DashField>
+                          <DashField label="Pie izquierdo">
+                            <input
+                              value={
+                                activeTemplateContent.template?.footerLeft ?? ''
+                              }
+                              onChange={(event) =>
+                                updateTemplateField(
+                                  'footerLeft',
+                                  event.target.value
+                                )
+                              }
+                              className={inputCls}
+                            />
+                          </DashField>
+                          <DashField label="Pie derecho">
+                            <input
+                              value={
+                                activeTemplateContent.template?.footerRight ??
+                                ''
+                              }
+                              onChange={(event) =>
+                                updateTemplateField(
+                                  'footerRight',
+                                  event.target.value
+                                )
+                              }
+                              className={inputCls}
+                            />
+                          </DashField>
                         </div>
                       )}
-                      <div className="flex justify-end"><button type="button" onClick={() => void saveTemplateContent()} disabled={savingTemplateContent || !versionId.current} className={`flex h-10 items-center rounded-xl px-4 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 ${gradient}`}>{savingTemplateContent ? 'Guardando…' : 'Guardar contenido'}</button></div>
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => void saveTemplateContent()}
+                          disabled={savingTemplateContent || !versionId.current}
+                          className={`flex h-10 items-center rounded-xl px-4 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 ${gradient}`}
+                        >
+                          {savingTemplateContent
+                            ? 'Guardando…'
+                            : 'Guardar contenido'}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </>
@@ -1866,7 +2256,13 @@ function ListModal({
                 onClick={initialCustomize ? onClose : undefined}
                 className={`flex h-11 items-center gap-1.5 rounded-xl px-5 text-sm font-bold text-white ${gradient}`}
               >
-                {initialCustomize ? 'Listo' : <>{t('pl.next')} <Icon name="chevron-right" size={16} /></>}
+                {initialCustomize ? (
+                  'Listo'
+                ) : (
+                  <>
+                    {t('pl.next')} <Icon name="chevron-right" size={16} />
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -2043,7 +2439,11 @@ function ToggleRow({
   )
 }
 
-function formatListPrice(price: string, currency: string, locale: string): string {
+function formatListPrice(
+  price: string,
+  currency: string,
+  locale: string
+): string {
   const value = Number(price)
   if (Number.isNaN(value)) return price
   try {
@@ -2053,7 +2453,9 @@ function formatListPrice(price: string, currency: string, locale: string): strin
       maximumFractionDigits: 0,
     }).format(value)
   } catch {
-    return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value)
+    return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(
+      value
+    )
   }
 }
 
@@ -2061,8 +2463,10 @@ function formatListTimeAgo(iso: string, locale: string): string {
   const seconds = (Date.now() - new Date(iso).getTime()) / 1000
   const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
   if (seconds < 60) return formatter.format(0, 'second')
-  if (seconds < 3600) return formatter.format(-Math.floor(seconds / 60), 'minute')
-  if (seconds < 86400) return formatter.format(-Math.floor(seconds / 3600), 'hour')
+  if (seconds < 3600)
+    return formatter.format(-Math.floor(seconds / 60), 'minute')
+  if (seconds < 86400)
+    return formatter.format(-Math.floor(seconds / 3600), 'hour')
   return formatter.format(-Math.floor(seconds / 86400), 'day')
 }
 

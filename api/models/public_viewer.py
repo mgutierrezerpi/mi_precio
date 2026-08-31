@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from peewee import DateTimeField, ForeignKeyField, IntegerField, CharField
+from peewee import CharField, DateTimeField, ForeignKeyField, IntegerField
 
 from models.base import BaseModel
 from models.price_list import PriceList

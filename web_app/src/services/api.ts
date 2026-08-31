@@ -122,20 +122,72 @@ function listContentBody(content: NonNullable<ListVersion['content']>) {
     ...(content.template
       ? {
           template: {
-            ...(content.template.font !== undefined ? { font: content.template.font } : {}),
-            ...(content.template.checkoutChannel !== undefined ? { checkout_channel: content.template.checkoutChannel } : {}),
-            ...(content.template.instagramHandle !== undefined ? { instagram_handle: content.template.instagramHandle } : {}),
-            ...(content.template.priceFormat !== undefined ? { price_format: content.template.priceFormat } : {}),
-            ...(content.template.image !== undefined ? { image: content.template.image } : {}),
-            ...(content.template.imageLabel !== undefined ? { image_label: content.template.imageLabel } : {}),
-            ...(content.template.imageTitle !== undefined ? { image_title: content.template.imageTitle } : {}),
-            ...(content.template.promoEyebrow !== undefined ? { promo_eyebrow: content.template.promoEyebrow } : {}),
-            ...(content.template.promoTitle !== undefined ? { promo_title: content.template.promoTitle } : {}),
-            ...(content.template.promoBody !== undefined ? { promo_body: content.template.promoBody } : {}),
-            ...(content.template.promoPrice !== undefined ? { promo_price: content.template.promoPrice } : {}),
-            ...(content.template.promoNote !== undefined ? { promo_note: content.template.promoNote } : {}),
-            ...(content.template.footerLeft !== undefined ? { footer_left: content.template.footerLeft } : {}),
-            ...(content.template.footerRight !== undefined ? { footer_right: content.template.footerRight } : {}),
+            ...(content.template.font !== undefined
+              ? { font: content.template.font }
+              : {}),
+            ...(content.template.checkoutChannel !== undefined
+              ? { checkout_channel: content.template.checkoutChannel }
+              : {}),
+            ...(content.template.instagramHandle !== undefined
+              ? { instagram_handle: content.template.instagramHandle }
+              : {}),
+            ...(content.template.priceFormat !== undefined
+              ? { price_format: content.template.priceFormat }
+              : {}),
+            ...(content.template.image !== undefined
+              ? { image: content.template.image }
+              : {}),
+            ...(content.template.logo !== undefined
+              ? { logo: content.template.logo }
+              : {}),
+            ...(content.template.profileName !== undefined
+              ? { profile_name: content.template.profileName }
+              : {}),
+            ...(content.template.profileImage !== undefined
+              ? { profile_image: content.template.profileImage }
+              : {}),
+            ...(content.template.storyVideos !== undefined
+              ? { story_videos: content.template.storyVideos }
+              : {}),
+            ...(content.template.storyMetrics !== undefined
+              ? { story_metrics: content.template.storyMetrics }
+              : {}),
+            ...(content.template.filmImages !== undefined
+              ? { film_images: content.template.filmImages }
+              : {}),
+            ...(content.template.collaborationHeading !== undefined
+              ? { collaboration_heading: content.template.collaborationHeading }
+              : {}),
+            ...(content.template.storiesHeading !== undefined
+              ? { stories_heading: content.template.storiesHeading }
+              : {}),
+            ...(content.template.imageLabel !== undefined
+              ? { image_label: content.template.imageLabel }
+              : {}),
+            ...(content.template.imageTitle !== undefined
+              ? { image_title: content.template.imageTitle }
+              : {}),
+            ...(content.template.promoEyebrow !== undefined
+              ? { promo_eyebrow: content.template.promoEyebrow }
+              : {}),
+            ...(content.template.promoTitle !== undefined
+              ? { promo_title: content.template.promoTitle }
+              : {}),
+            ...(content.template.promoBody !== undefined
+              ? { promo_body: content.template.promoBody }
+              : {}),
+            ...(content.template.promoPrice !== undefined
+              ? { promo_price: content.template.promoPrice }
+              : {}),
+            ...(content.template.promoNote !== undefined
+              ? { promo_note: content.template.promoNote }
+              : {}),
+            ...(content.template.footerLeft !== undefined
+              ? { footer_left: content.template.footerLeft }
+              : {}),
+            ...(content.template.footerRight !== undefined
+              ? { footer_right: content.template.footerRight }
+              : {}),
           },
         }
       : {}),
@@ -177,22 +229,34 @@ function linkTreeBody(data: Partial<LinkTree>) {
   delete body.updatedAt
   return {
     ...(body.publicSlug === undefined ? {} : { public_slug: body.publicSlug }),
-    ...(body.displayName === undefined ? {} : { display_name: body.displayName }),
+    ...(body.displayName === undefined
+      ? {}
+      : { display_name: body.displayName }),
     ...(body.handle === undefined ? {} : { handle: body.handle }),
     ...(body.bio === undefined ? {} : { bio: body.bio }),
     ...(body.avatarUrl === undefined ? {} : { avatar_url: body.avatarUrl }),
-    ...(body.accentColor === undefined ? {} : { accent_color: body.accentColor }),
-    ...(body.backgroundColor === undefined ? {} : { background_color: body.backgroundColor }),
+    ...(body.accentColor === undefined
+      ? {}
+      : { accent_color: body.accentColor }),
+    ...(body.backgroundColor === undefined
+      ? {}
+      : { background_color: body.backgroundColor }),
     ...(body.template === undefined ? {} : { template: body.template }),
     ...(body.font === undefined ? {} : { font: body.font }),
     ...(body.tags === undefined ? {} : { tags: body.tags }),
     ...(body.links === undefined ? {} : { links: body.links }),
-    ...(body.instagramUrl === undefined ? {} : { instagram_url: body.instagramUrl }),
+    ...(body.instagramUrl === undefined
+      ? {}
+      : { instagram_url: body.instagramUrl }),
     ...(body.tiktokUrl === undefined ? {} : { tiktok_url: body.tiktokUrl }),
     ...(body.emailUrl === undefined ? {} : { email_url: body.emailUrl }),
-    ...(body.whatsappUrl === undefined ? {} : { whatsapp_url: body.whatsappUrl }),
+    ...(body.whatsappUrl === undefined
+      ? {}
+      : { whatsapp_url: body.whatsappUrl }),
     ...(body.websiteUrl === undefined ? {} : { website_url: body.websiteUrl }),
-    ...(body.locationUrl === undefined ? {} : { location_url: body.locationUrl }),
+    ...(body.locationUrl === undefined
+      ? {}
+      : { location_url: body.locationUrl }),
     ...(body.published === undefined ? {} : { published: body.published }),
   }
 }
@@ -343,6 +407,18 @@ class ApiService {
     const body = new FormData()
     body.append('image', file, 'list-template-image')
     return this.request(`/tenants/${tenantId}/list-template/image`, {
+      method: 'POST',
+      body,
+    })
+  }
+
+  async uploadListTemplateVideo(
+    tenantId: string,
+    file: Blob
+  ): Promise<ApiResponse<{ url: string }>> {
+    const body = new FormData()
+    body.append('video', file, 'list-story.mp4')
+    return this.request(`/tenants/${tenantId}/list-template/video`, {
       method: 'POST',
       body,
     })
@@ -662,7 +738,9 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({
         ...rest,
-        ...(coverImageUrl === undefined ? {} : { cover_image_url: coverImageUrl }),
+        ...(coverImageUrl === undefined
+          ? {}
+          : { cover_image_url: coverImageUrl }),
         ...(showOnIndex === undefined ? {} : { show_on_index: showOnIndex }),
       }),
     })
@@ -972,7 +1050,12 @@ class ApiService {
 
   async getPublicLinkTree(
     subdomain: string
-  ): Promise<ApiResponse<{ tenant: { name: string; subdomain: string }; linktree: LinkTree }>> {
+  ): Promise<
+    ApiResponse<{
+      tenant: { name: string; subdomain: string }
+      linktree: LinkTree
+    }>
+  > {
     return this.request(`/public/${encodeURIComponent(subdomain)}/linktree`)
   }
 
@@ -1133,20 +1216,32 @@ class ApiService {
   }
 
   // Customer endpoints (CRM)
-  async getLeads(tenantId: string, status?: LeadStatus): Promise<ApiResponse<Lead[]>> {
+  async getLeads(
+    tenantId: string,
+    status?: LeadStatus
+  ): Promise<ApiResponse<Lead[]>> {
     const query = status ? `?status=${status}` : ''
     return this.request(`/tenants/${tenantId}/leads${query}`)
   }
 
-  async setLeadStatus(tenantId: string, leadId: string, status: LeadStatus): Promise<ApiResponse<Lead>> {
+  async setLeadStatus(
+    tenantId: string,
+    leadId: string,
+    status: LeadStatus
+  ): Promise<ApiResponse<Lead>> {
     return this.request(`/tenants/${tenantId}/leads/${leadId}`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     })
   }
 
-  async convertLead(tenantId: string, leadId: string): Promise<ApiResponse<Customer>> {
-    return this.request(`/tenants/${tenantId}/leads/${leadId}/convert`, { method: 'POST' })
+  async convertLead(
+    tenantId: string,
+    leadId: string
+  ): Promise<ApiResponse<Customer>> {
+    return this.request(`/tenants/${tenantId}/leads/${leadId}/convert`, {
+      method: 'POST',
+    })
   }
 
   async getCustomers(tenantId: string): Promise<ApiResponse<Customer[]>> {
@@ -1260,12 +1355,23 @@ class ApiService {
     subdomain: string,
     magazineId: string
   ): Promise<ApiResponse<{ tenant: Tenant; magazine: Magazine }>> {
-    return this.request(`/public/${subdomain}/magazines/${encodeURIComponent(magazineId)}`)
+    return this.request(
+      `/public/${subdomain}/magazines/${encodeURIComponent(magazineId)}`
+    )
   }
 
   async createLead(
     subdomain: string,
-    data: { name: string; phone?: string; email?: string; message?: string; listId?: string | null; listName?: string | null; source?: 'form' | 'cart'; website?: string }
+    data: {
+      name: string
+      phone?: string
+      email?: string
+      message?: string
+      listId?: string | null
+      listName?: string | null
+      source?: 'form' | 'cart'
+      website?: string
+    }
   ): Promise<ApiResponse<{ ok: boolean }>> {
     const { listId, listName, ...rest } = data
     return this.request(`/public/${subdomain}/leads`, {
