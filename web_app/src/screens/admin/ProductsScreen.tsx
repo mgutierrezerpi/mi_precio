@@ -27,11 +27,15 @@ import {
 import api from '../../services/api'
 import { localeOf } from '../../lib/i18n'
 import { useCatalogT } from '../../lib/i18nDictionaryCatalog'
-
-const DEFAULT_PAGE_SIZE = 8
-const PAGE_SIZE_OPTIONS = [8, 16, 32, 64] as const
-type PageSize = (typeof PAGE_SIZE_OPTIONS)[number]
-const PAGE_SIZE_STORAGE_KEY = 'mi_precio:products-page-size'
+import { downloadExcel, printPdf } from './productExports'
+import {
+  PAGE_SIZE_OPTIONS,
+  type PageSize,
+  parseUtcDate,
+  readPageSize,
+  savePageSize,
+  fileToImageBlob,
+} from './productScreenUtils'
 type Status = 'all' | 'available' | 'unavailable' | 'nophoto' | 'recent'
 type SortKey = 'recent' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc'
 
@@ -46,72 +50,6 @@ const SORT_OPTIONS: { key: SortKey; labelKey: string }[] = [
 const outlineBtn =
   'flex h-[38px] items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'
 
-/** Backend timestamps are naive UTC; convert them to the browser's local time. */
-function parseUtcDate(value: string) {
-  const hasTimezone = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(value)
-  return new Date(hasTimezone ? value : `${value}Z`)
-}
-
-function pageSizeStorageKey(tenantId: string) {
-  return `${PAGE_SIZE_STORAGE_KEY}:${tenantId}`
-}
-
-function isPageSize(value: number): value is PageSize {
-  return PAGE_SIZE_OPTIONS.includes(value as PageSize)
-}
-
-function readPageSize(tenantId: string | undefined): PageSize {
-  if (!tenantId || typeof window === 'undefined') return DEFAULT_PAGE_SIZE
-  try {
-    const stored = Number(
-      window.localStorage.getItem(pageSizeStorageKey(tenantId))
-    )
-    return isPageSize(stored) ? stored : DEFAULT_PAGE_SIZE
-  } catch {
-    return DEFAULT_PAGE_SIZE
-  }
-}
-
-function savePageSize(tenantId: string, pageSize: PageSize) {
-  try {
-    window.localStorage.setItem(pageSizeStorageKey(tenantId), String(pageSize))
-  } catch {
-    // Storage can be unavailable in private browsing; pagination still works.
-  }
-}
-
-/** Read an image file, downscale it, and return a compressed WebP blob. */
-async function fileToImageBlob(file: File, max = 1600): Promise<Blob> {
-  const src = await new Promise<string>((res, rej) => {
-    const r = new FileReader()
-    r.onload = () => res(r.result as string)
-    r.onerror = rej
-    r.readAsDataURL(file)
-  })
-  const img = await new Promise<HTMLImageElement>((res, rej) => {
-    const i = new Image()
-    i.onload = () => res(i)
-    i.onerror = rej
-    i.src = src
-  })
-  const scale = Math.min(1, max / Math.max(img.width, img.height))
-  const w = Math.max(1, Math.round(img.width * scale))
-  const h = Math.max(1, Math.round(img.height * scale))
-  const canvas = document.createElement('canvas')
-  canvas.width = w
-  canvas.height = h
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return file
-  ctx.drawImage(img, 0, 0, w, h)
-  return await new Promise<Blob>((res, rej) => {
-    canvas.toBlob(
-      (blob) =>
-        blob ? res(blob) : rej(new Error('No se pudo procesar la imagen.')),
-      'image/webp',
-      0.82
-    )
-  })
-}
 
 /* ── Screen ──────────────────────────────────────────────────────── */
 export function ProductsScreen() {
@@ -1095,108 +1033,7 @@ function FilterMenu({
   )
 }
 
-/* ── Export helpers ──────────────────────────────────────────────── */
-const exportColumns = (t: ReturnType<typeof useCatalogT>) => [
-  t('products.exportName'),
-  'SKU',
-  t('products.exportCategory'),
-  t('products.price'),
-  t('products.exportAvailable'),
-]
-const escapeHtml = (s: string) =>
-  s.replace(
-    /[&<>"]/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] || c
-  )
-const exportCells = (
-  p: Product,
-  currency: string,
-  t: ReturnType<typeof useCatalogT>
-) => [
-  p.name,
-  p.sku || '',
-  p.category || '',
-  `${currency} ${parseFloat(p.price) || 0}`,
-  p.available ? t('products.yes') : t('products.no'),
-]
-
-function downloadExcel(
-  products: Product[],
-  currency: string,
-  t: ReturnType<typeof useCatalogT>
-) {
-  if (!products.length) return
-  const head = `<tr>${exportColumns(t)
-    .map((c) => `<th>${c}</th>`)
-    .join('')}</tr>`
-  const rows = products
-    .map(
-      (p) =>
-        `<tr>${exportCells(p, currency, t)
-          .map((v) => `<td>${escapeHtml(String(v))}</td>`)
-          .join('')}</tr>`
-    )
-    .join('')
-  const html = `<html><head><meta charset="utf-8"></head><body><table border="1">${head}${rows}</table></body></html>`
-  const blob = new Blob(['﻿' + html], {
-    type: 'application/vnd.ms-excel;charset=utf-8',
-  })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `productos-${new Date().toISOString().slice(0, 10)}.xls`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
-
-function printPdf(
-  products: Product[],
-  title: string,
-  currency: string,
-  t: ReturnType<typeof useCatalogT>,
-  locale: string
-) {
-  if (!products.length) return
-  const head = `<tr>${exportColumns(t)
-    .map((c) => `<th>${c}</th>`)
-    .join('')}</tr>`
-  const rows = products
-    .map(
-      (p) =>
-        `<tr>${exportCells(p, currency, t)
-          .map(
-            (v, i) =>
-              `<td class="${i === 3 ? 'num' : ''}">${escapeHtml(String(v))}</td>`
-          )
-          .join('')}</tr>`
-    )
-    .join('')
-  const w = window.open('', '_blank', 'width=900,height=700')
-  if (!w) {
-    alert(t('products.popupBlocked'))
-    return
-  }
-  w.document
-    .write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)} — ${t('products.catalog')}</title>
-    <style>
-      *{font-family:Inter,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      body{margin:32px;color:#0F172A} h1{font-size:22px;margin:0 0 4px}
-      .meta{color:#64748B;font-size:12px;margin-bottom:18px}
-      table{width:100%;border-collapse:collapse;font-size:12px}
-      th{text-align:left;background:#F1F5F9;padding:8px 10px;border-bottom:2px solid #E2E8F0;text-transform:uppercase;font-size:10px;letter-spacing:.04em;color:#475569}
-      td{padding:8px 10px;border-bottom:1px solid #E2E8F0} td.num{text-align:right;font-variant-numeric:tabular-nums}
-      @media print{body{margin:12mm}}
-    </style></head>
-    <body><h1>${escapeHtml(title)}</h1>
-    <div class="meta">${t('products.catalogMeta', { count: products.length, plural: products.length === 1 ? '' : 's', date: new Date().toLocaleDateString(locale) })}</div>
-    <table>${head}${rows}</table>
-    <script>window.onload=function(){setTimeout(function(){window.print()},200)}</script>
-    </body></html>`)
-  w.document.close()
-}
-
+/* ── Export helpers live in productExports.ts ───────────────────── */
 const MENU_W = 160
 const MENU_H = 96
 
