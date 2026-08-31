@@ -1,6 +1,5 @@
 """Identity context - interface for tenant and user operations."""
 
-from lib.ctx.identity_presence import touch_last_seen
 from lib.value_objects import UserResult
 from models import Invitation, Tenant, TenantMembership, User
 
