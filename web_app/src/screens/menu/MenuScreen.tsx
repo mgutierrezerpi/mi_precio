@@ -5,7 +5,6 @@ import api from '../../services/api'
 import { getT, localeOf, type TFn } from '../../lib/i18n'
 import type {
   Tenant,
-  ListVersion,
   Item,
   ListDesign,
   ListContent,
@@ -36,45 +35,16 @@ import { PencilActionBar } from './pencilActions'
 import { PencilJournal } from './pencilJournal'
 import { StoreChip } from './StoreChip'
 import { MagazineShelf } from './MagazineShelf'
-
-export interface PublicList {
-  id: string
-  name: string
-  slug: string | null
-  kind?: 'product' | 'service'
-  /** The shop's main list — whose look stands in when no single list is shown. */
-  showOnIndex?: boolean
-  // Per-list appearance overrides; null falls back to the tenant's defaults.
-  design?: ListDesign | null
-  heroColor?: string | null
-  bgUrl?: string | null
-  bgOverlay?: boolean | null
-  captureViewerInfo?: boolean
-  version: ListVersion & { items: Item[] }
-}
-interface PublicMenuData {
-  tenant: Tenant
-  lists: PublicList[]
-  magazines?: Magazine[]
-  viewerIdentified?: boolean
-}
-
-// Dedupe view records within a short window (survives StrictMode remounts).
-const recentViews = new Map<string, number>()
-
-const BASE = {
-  bg: '#FAFAF7',
-  ink: '#0F0D1A',
-  body: '#44424E',
-  muted: '#84818E',
-  accent: '#7C3AED',
-  accent2: '#6D28D9',
-  line: '#E5E2DC',
-}
-
-// Only for the "no such shop" dead end, where there is no tenant to brand with.
-// The white mark is the one that sits on the purple half.
-const MIPRECIO_LOGO_WHITE = '/miprecio-logo-white-pencil.webp'
+import {
+  BASE,
+  MIPRECIO_LOGO_WHITE,
+  recentViews,
+  displayCategory,
+  normalizeCategory,
+  moneyFor,
+  type PublicList,
+  type PublicMenuData,
+} from './menuHelpers'
 
 export function MenuScreen() {
   const { subdomain, listId } = useParams<{
@@ -194,18 +164,10 @@ export function MenuScreen() {
   const locale = localeOf(tenant?.language)
 
   const currency = tenant?.currency || 'UYU'
-  const fmt = (price: string | number) =>
-    new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0 }).format(
-      typeof price === 'number' ? price : parseFloat(price)
-    )
   // Non-breaking space keeps the currency and the amount together on the same line.
-  const money = (price: string | number) => `${currency}\u00a0${fmt(price)}`
-
-  const norm = (s?: string | null) => (s?.trim() || 'Otros').toLowerCase()
-  const disp = (s?: string | null) => {
-    const c = s?.trim() || 'Otros'
-    return c.charAt(0).toUpperCase() + c.slice(1)
-  }
+  const money = (price: string | number) => moneyFor(currency, price)
+  const norm = normalizeCategory
+  const disp = displayCategory
 
   const allItems = useMemo(
     () => displayLists.flatMap((l) => l.version?.items ?? []),
