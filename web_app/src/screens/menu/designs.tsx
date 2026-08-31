@@ -1,74 +1,13 @@
 import { getT } from '../../lib/i18n'
+import { lighten, readableOn, withAlpha } from '../../lib/designColors'
+import { categoryIcon } from '../../lib/categoryIcon'
 import type { Item, Tenant, ListDesign, ListContent } from '../../types'
 
 /* ── Shared helpers (used by MenuScreen's Storefront/CartView and the designs) ── */
 
-/** Expand a shorthand or regular hex color to six digits. */
-function hexDigits(hex: string): string {
-  const value = hex.replace('#', '')
-  return value.length === 3
-    ? value.split('').map((channel) => channel + channel).join('')
-    : value.padEnd(6, '0').slice(0, 6)
-}
-
-const toHex = (channels: number[]) =>
-  `#${channels
-    .map((channel) => Math.min(255, Math.max(0, Math.round(channel))))
-    .map((channel) => channel.toString(16).padStart(2, '0'))
-    .join('')}`
-
-// Lighten a hex color toward white (0..1). Builds a brand gradient from a single color.
-export function lighten(hex: string, amt = 0.4): string {
-  const value = hexDigits(hex)
-  const channel = (index: number) => {
-    const current = Number.parseInt(value.slice(index, index + 2), 16)
-    return current + (255 - current) * amt
-  }
-  return toHex([channel(0), channel(2), channel(4)])
-}
-
-/** Mix a hex color toward black while preserving valid color channels. */
-export function darken(hex: string, amt = 0.4): string {
-  const value = hexDigits(hex)
-  const channel = (index: number) =>
-    Number.parseInt(value.slice(index, index + 2), 16) * (1 - amt)
-  return toHex([channel(0), channel(2), channel(4)])
-}
-
-// Append an alpha channel to a hex color (a in 0..1). Used to scrim a design over a background image.
-export function withAlpha(hex: string, a: number): string {
-  const h = hex.replace('#', '')
-  const n =
-    h.length === 3
-      ? h
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : h.slice(0, 6)
-  return `#${n}${Math.round(a * 255)
-    .toString(16)
-    .padStart(2, '0')}`
-}
-
 /** Background color for a design root: solid normally, or a translucent scrim when a bg image is set. */
 const rootBg = (base: string, hasBg: boolean, a = 0.62) =>
   hasBg ? withAlpha(base, a) : base
-
-/** Pick black or white text for good contrast over a solid hex background. */
-export function readableOn(hex: string): string {
-  const h = hex.replace('#', '')
-  const n =
-    h.length === 3
-      ? h
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : h.slice(0, 6)
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16))
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.62
-    ? '#141414'
-    : '#FFFFFF'
-}
 
 const STORE_ICONS: Record<string, React.ReactNode> = {
   'shopping-bag': (
@@ -203,22 +142,6 @@ export function SIco({
   )
 }
 
-// Category → icon, mirroring the admin (productFormat). Falls back to a generic box.
-const STORE_CAT_ICON: Record<string, string> = {
-  ferretería: 'wrench',
-  ferreteria: 'wrench',
-  eléctricos: 'zap',
-  electricos: 'zap',
-  pinturas: 'paintbrush',
-  construcción: 'layers',
-  construccion: 'layers',
-  herramientas: 'cog',
-  lavadero: 'droplets',
-  limpieza: 'droplets',
-}
-export const catIco = (cat?: string | null): string =>
-  (cat && STORE_CAT_ICON[cat.trim().toLowerCase()]) || 'box'
-
 /* ── Shared types ── */
 export interface StoreColors {
   bg: string
@@ -264,14 +187,27 @@ export interface CartTheme {
   cardShadow?: string
 }
 
-const CART_DEFAULTS: Required<Pick<CartTheme, 'cardRadius' | 'controlRadius' | 'buttonRadius' | 'barRadius' | 'bodyFamily' | 'headingFamily' | 'labelFamily' | 'headingTracking' | 'cardShadow'>> = {
+const CART_DEFAULTS: Required<
+  Pick<
+    CartTheme,
+    | 'cardRadius'
+    | 'controlRadius'
+    | 'buttonRadius'
+    | 'barRadius'
+    | 'bodyFamily'
+    | 'headingFamily'
+    | 'labelFamily'
+    | 'headingTracking'
+    | 'cardShadow'
+  >
+> = {
   cardRadius: '24px',
   controlRadius: '12px',
   buttonRadius: '16px',
   barRadius: '16px',
-  bodyFamily: "Inter, system-ui, sans-serif",
-  headingFamily: "Inter, system-ui, sans-serif",
-  labelFamily: "Inter, system-ui, sans-serif",
+  bodyFamily: 'Inter, system-ui, sans-serif',
+  headingFamily: 'Inter, system-ui, sans-serif',
+  labelFamily: 'Inter, system-ui, sans-serif',
   headingTracking: 'normal',
   cardShadow: '0 18px 50px -20px rgba(15,13,26,0.30)',
 }
@@ -484,6 +420,8 @@ const CART_THEMES: Partial<Record<ListDesign, CartTheme>> = {
     cardShadow: '0 16px 40px -22px rgba(58,42,29,0.32)',
   },
 }
+// Shared cart tokens are intentionally exported alongside their design catalogue.
+// eslint-disable-next-line react-refresh/only-export-components
 export const cartThemeFor = (design: ListDesign): CartTheme => ({
   ...CART_DEFAULTS,
   ...(CART_THEMES[design] ?? CART_THEMES.store!),
@@ -1119,7 +1057,10 @@ export function NordicMenu(p: DesignProps) {
                   <span className="h-px w-16" style={{ background: accent }} />
                 </div>
                 {s.items.map((it) => (
-                  <div key={it.id} className="flex flex-wrap items-start gap-x-3 gap-y-2 py-2.5 lg:flex-nowrap lg:items-baseline">
+                  <div
+                    key={it.id}
+                    className="flex flex-wrap items-start gap-x-3 gap-y-2 py-2.5 lg:flex-nowrap lg:items-baseline"
+                  >
                     <div className="min-w-0 flex-1 basis-full lg:basis-0">
                       <p
                         className="break-words text-[16px] font-semibold"
@@ -1477,7 +1418,10 @@ export function ModernBrand(p: DesignProps) {
                   style={{ borderColor: line }}
                 >
                   <div className="min-w-0 flex-1 basis-full lg:basis-0">
-                    <p className="break-words text-[15px] font-bold" style={{ color: ink }}>
+                    <p
+                      className="break-words text-[15px] font-bold"
+                      style={{ color: ink }}
+                    >
                       {it.name}
                     </p>
                     {it.description && (
@@ -1577,7 +1521,7 @@ export function PhotoLookbook(p: DesignProps) {
         />
       ) : (
         <SIco
-          name={catIco(it.category)}
+          name={categoryIcon(it.category)}
           size={40}
           color={accent}
           style={{ opacity: 0.5 }}
@@ -1899,7 +1843,7 @@ export function ServiceCards(p: DesignProps) {
                         style={{ background: `${accent}18` }}
                       >
                         <SIco
-                          name={catIco(it.category)}
+                          name={categoryIcon(it.category)}
                           size={18}
                           color={accent}
                         />
@@ -2138,7 +2082,7 @@ export function ImageCatalog(p: DesignProps) {
                         />
                       ) : (
                         <SIco
-                          name={catIco(it.category)}
+                          name={categoryIcon(it.category)}
                           size={44}
                           color={accent}
                           style={{ opacity: 0.4 }}

@@ -12,10 +12,7 @@ import type {
   Magazine,
 } from '../../types'
 import {
-  lighten,
-  readableOn,
   SIco,
-  catIco,
   cartThemeFor,
   ClassicList,
   NordicMenu,
@@ -30,11 +27,17 @@ import {
   type DesignProps,
   type CartTheme,
 } from './designs'
-import { isPencilVariant, pencilCartThemeFor, PencilList } from './pencil'
+import { lighten, readableOn } from '../../lib/designColors'
+import { categoryIcon } from '../../lib/categoryIcon'
+import { PencilList } from './pencil'
+import { pencilCartThemeFor } from './pencil/cartTheme'
+import { isPencilVariant } from './pencil/variants'
 import { PencilActionBar } from './pencilActions'
 import { PencilJournal } from './pencilJournal'
+import { StoreChip } from './StoreChip'
+import { MagazineShelf } from './MagazineShelf'
 
-interface PublicList {
+export interface PublicList {
   id: string
   name: string
   slug: string | null
@@ -178,18 +181,11 @@ export function MenuScreen() {
       listId ? displayLists[0]?.id : undefined,
       viewSource
     )
-  }, [
-    subdomain,
-    listId,
-    viewSource,
-    isLoading,
-    error,
-    tenant,
-    displayLists.length,
-  ])
+  }, [subdomain, listId, viewSource, isLoading, error, tenant, displayLists])
 
   // Customer-facing catalog and Linktree intentionally share one accent.
-  const accent = tenant?.linktreeAccentColor || tenant?.brandColor || BASE.accent
+  const accent =
+    tenant?.linktreeAccentColor || tenant?.brandColor || BASE.accent
   const C = { ...BASE, accent, accent2: accent }
   const brandGradient = `linear-gradient(135deg, ${accent} 0%, ${lighten(accent, 0.42)} 100%)`
 
@@ -259,7 +255,8 @@ export function MenuScreen() {
       document.head.appendChild(icon)
     }
 
-    document.title = [tenant.name, list?.name].filter(Boolean).join(' · ') || 'MiPrecio'
+    document.title =
+      [tenant.name, list?.name].filter(Boolean).join(' · ') || 'MiPrecio'
     icon.href = tenant.logoUrl || '/miprecio-favicon.png'
     // Tenant logos may be PNG, JPEG, WebP, or an uploaded image URL; let the
     // browser infer the type rather than retaining the app favicon's PNG hint.
@@ -273,7 +270,7 @@ export function MenuScreen() {
       else icon.removeAttribute('type')
       if (!favicon) icon.remove()
     }
-  }, [tenant?.name, tenant?.logoUrl, list?.name])
+  }, [tenant, list?.name])
 
   const sections = useMemo(() => {
     const map = new Map<string, { key: string; name: string; items: Item[] }>()
@@ -357,9 +354,11 @@ export function MenuScreen() {
     setTimeout(() => setCopied(false), 1500)
   }
 
-  const checkoutChannel = content?.template?.checkoutChannel === 'instagram' && (content.template.instagramHandle || tenant?.instagramUrl)
-    ? 'instagram' as const
-    : 'whatsapp' as const
+  const checkoutChannel =
+    content?.template?.checkoutChannel === 'instagram' &&
+    (content.template.instagramHandle || tenant?.instagramUrl)
+      ? ('instagram' as const)
+      : ('whatsapp' as const)
   const orderMessage = useMemo(() => {
     const lines = allItems
       .filter((it) => cart[it.id])
@@ -385,13 +384,23 @@ export function MenuScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, allItems, cartTotal, customer])
   const waHref = useMemo(() => {
-    if (checkoutChannel === 'whatsapp') return `https://wa.me/?text=${encodeURIComponent(orderMessage)}`
+    if (checkoutChannel === 'whatsapp')
+      return `https://wa.me/?text=${encodeURIComponent(orderMessage)}`
     const raw = content?.template?.instagramHandle || tenant?.instagramUrl || ''
-    const handle = raw.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').split(/[/?#]/)[0]
+    const handle = raw
+      .replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')
+      .replace(/^@/, '')
+      .split(/[/?#]/)[0]
     return handle ? `https://ig.me/m/${handle}` : 'https://instagram.com'
-  }, [checkoutChannel, content?.template?.instagramHandle, orderMessage, tenant?.instagramUrl])
+  }, [
+    checkoutChannel,
+    content?.template?.instagramHandle,
+    orderMessage,
+    tenant?.instagramUrl,
+  ])
   const onCheckout = () => {
-    if (checkoutChannel === 'instagram') void navigator.clipboard?.writeText(orderMessage)
+    if (checkoutChannel === 'instagram')
+      void navigator.clipboard?.writeText(orderMessage)
   }
 
   if (isLoading)
@@ -510,12 +519,14 @@ export function MenuScreen() {
   // when there happens to be a single list.
   const skin = listId ? list : null
   const design: ListDesign = skin?.design ?? tenant.listDesign ?? 'store'
-  const isPencilCartDesign = isPencilVariant(design) || design === 'pencil-journal'
-  const baseCartT = design === 'pencil-journal'
-    ? pencilCartThemeFor('pencil-journal')
-    : isPencilVariant(design)
-      ? pencilCartThemeFor(design)
-      : cartThemeFor(design)
+  const isPencilCartDesign =
+    isPencilVariant(design) || design === 'pencil-journal'
+  const baseCartT =
+    design === 'pencil-journal'
+      ? pencilCartThemeFor('pencil-journal')
+      : isPencilVariant(design)
+        ? pencilCartThemeFor(design)
+        : cartThemeFor(design)
   const cartT = isPencilCartDesign
     ? { ...baseCartT, accent, actionAccent: accent }
     : baseCartT
@@ -620,7 +631,10 @@ export function MenuScreen() {
               )}
             </div>
           )}
-          <div className={`relative flex-1 ${isPencilCartDesign && !isService ? 'pb-24' : ''}`} style={{ zIndex: 1 }}>
+          <div
+            className={`relative flex-1 ${isPencilCartDesign && !isService ? 'pb-24' : ''}`}
+            style={{ zIndex: 1 }}
+          >
             {!listId && magazines.length > 0 && (
               <MagazineShelf
                 tenant={tenant}
@@ -692,16 +706,23 @@ export function MenuScreen() {
             style={{ color: C.muted, background: listSurface }}
           >
             <span>Powered by</span>
-            <span className="relative block h-6 w-[94px] overflow-hidden" aria-hidden="true">
+            <span
+              className="relative block h-6 w-[94px] overflow-hidden"
+              aria-hidden="true"
+            >
               <span
                 className="absolute inset-0"
                 style={{
                   background: accent,
-                  WebkitMask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
+                  WebkitMask:
+                    "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
                   mask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
                 }}
               />
-              <span className="absolute bottom-0 left-[30%] right-0 h-[25%]" style={{ background: listSurface }} />
+              <span
+                className="absolute bottom-0 left-[30%] right-0 h-[25%]"
+                style={{ background: listSurface }}
+              />
             </span>
           </a>
         </div>
@@ -889,7 +910,10 @@ function ViewerCapturePrompt({
       >
         <div className="h-1.5 w-full" style={{ background: accent }} />
         <div className="p-6 sm:p-7">
-          <div className="-mx-6 -mt-6 flex items-start gap-3 px-6 py-6 sm:-mx-7 sm:-mt-7 sm:px-7" style={{ background: accent }}>
+          <div
+            className="-mx-6 -mt-6 flex items-start gap-3 px-6 py-6 sm:-mx-7 sm:-mt-7 sm:px-7"
+            style={{ background: accent }}
+          >
             <span
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
               style={{ background: 'rgba(255,255,255,.18)' }}
@@ -897,10 +921,16 @@ function ViewerCapturePrompt({
               <SIco name="message-circle" size={21} color="#fff" />
             </span>
             <div className="flex min-w-0 flex-col gap-1">
-              <h2 className="text-xl font-extrabold leading-tight" style={{ color: readableOn(accent) }}>
+              <h2
+                className="text-xl font-extrabold leading-tight"
+                style={{ color: readableOn(accent) }}
+              >
                 {t('viewer.title')}
               </h2>
-              <p className="text-sm font-medium leading-5" style={{ color: `${readableOn(accent)}CC` }}>
+              <p
+                className="text-sm font-medium leading-5"
+                style={{ color: `${readableOn(accent)}CC` }}
+              >
                 {t('viewer.subtitle')}
               </p>
             </div>
@@ -1004,55 +1034,6 @@ function ViewerCapturePrompt({
         </div>
       </form>
     </div>
-  )
-}
-
-function MagazineShelf({
-  tenant,
-  magazines,
-  accent,
-  t,
-}: {
-  tenant: Tenant
-  magazines: Magazine[]
-  accent: string
-  t: ReturnType<typeof getT>
-}) {
-  return (
-    <section className="mx-auto w-full max-w-6xl px-4 pb-3 pt-4 sm:px-6 sm:pt-6">
-      <div className="rounded-[24px] border border-[#DCCDBB] bg-[#F7F2EA] p-4 shadow-[0_18px_40px_-28px_rgba(58,42,29,.55)] sm:p-5">
-        <div className="mb-3 flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[2px] text-[#A76D3E]">{t('magazines.eyebrow')}</p>
-            <h2 className="mt-1 text-[25px] leading-none text-[#3A2A1D]" style={{ fontFamily: 'Georgia, serif' }}>{t('nav.magazines')}</h2>
-          </div>
-          <span className="text-[11px] font-semibold text-[#806C58]">{magazines.length}</span>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {magazines.map((magazine) => (
-            <Link
-              key={magazine.id}
-              to={`/m/${tenant.subdomain}/${magazine.slug || magazine.id}`}
-              className="group relative min-h-[116px] overflow-hidden rounded-[18px] bg-[#3A2A1D] p-4 text-[#F3EDE2] transition-transform hover:-translate-y-0.5"
-            >
-              {magazine.coverImageUrl && <img src={magazine.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45" />}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#241B15] via-[#3A2A1D]/50 to-transparent" />
-              <div className="relative flex h-full flex-col justify-between">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-[10px] font-bold uppercase tracking-[1.5px] text-[#D6B58B]">{magazine.issue || t('magazines.pages')}</span>
-                  <span className="text-lg transition-transform group-hover:translate-x-0.5">→</span>
-                </div>
-                <div>
-                  <h3 className="text-[21px] leading-none" style={{ fontFamily: 'Georgia, serif' }}>{magazine.name}</h3>
-                  <p className="mt-2 text-[11px] font-medium text-[#F3EDE2]/70">{magazine.pages?.length ?? 0} {t('magazines.pages')}</p>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-      <div className="mx-6 h-px bg-gradient-to-r from-transparent via-current to-transparent opacity-10" style={{ color: accent }} />
-    </section>
   )
 }
 
@@ -1210,7 +1191,7 @@ interface StoreProps {
   shareLink: () => void
   copied: boolean
   waHref: string
-  list: PublicList | null
+  list: { name: string } | null
   norm: (s?: string | null) => string
   isService: boolean
   openCart: () => void
@@ -1410,7 +1391,7 @@ function Storefront(p: StoreProps) {
                 </span>
                 {!featured.imageUrl && (
                   <SIco
-                    name={catIco(featured.category)}
+                    name={categoryIcon(featured.category)}
                     size={52}
                     color={accent}
                     style={{ opacity: 0.5 }}
@@ -1465,23 +1446,23 @@ function Storefront(p: StoreProps) {
       {/* Category chips */}
       <div className="border-b bg-white" style={{ borderColor: C.line }}>
         <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-2.5 px-5 py-4 md:px-16">
-          <Chip
+          <StoreChip
             active={cat === 'all'}
             onClick={() => setCat('all')}
             label={t('store.allProducts')}
             count={base.length}
-            C={C}
-            grad={grad}
+            colors={C}
+            gradient={grad}
           />
           {sections.map((s) => (
-            <Chip
+            <StoreChip
               key={s.key}
               active={cat === s.key}
               onClick={() => setCat(s.key)}
               label={s.name}
               count={s.items.length}
-              C={C}
-              grad={grad}
+              colors={C}
+              gradient={grad}
             />
           ))}
         </div>
@@ -1675,7 +1656,7 @@ function Storefront(p: StoreProps) {
                         />
                       ) : (
                         <SIco
-                          name={catIco(it.category)}
+                          name={categoryIcon(it.category)}
                           size={48}
                           color={accent}
                           style={{ opacity: 0.45 }}
@@ -1861,8 +1842,7 @@ function CartView(p: CartProps) {
     fontFamily: T.bodyFamily,
   }
   const labelCls = 'text-[12px] font-bold'
-  const cardCls =
-    'border p-5 md:p-7'
+  const cardCls = 'border p-5 md:p-7'
   const cardStyle = {
     background: T.surface,
     borderColor: T.line,
@@ -1882,7 +1862,11 @@ function CartView(p: CartProps) {
       {/* Navbar */}
       <header
         className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b px-5 py-3.5 backdrop-blur md:px-16"
-        style={{ background: `${T.surface}F2`, borderColor: T.line, fontFamily: T.bodyFamily }}
+        style={{
+          background: `${T.surface}F2`,
+          borderColor: T.line,
+          fontFamily: T.bodyFamily,
+        }}
       >
         <div className="flex items-center gap-3">
           {tenant.logoUrl ? (
@@ -1923,8 +1907,12 @@ function CartView(p: CartProps) {
           type="button"
           onClick={onBack}
           className="flex h-9 items-center gap-2 px-3.5 text-[13px] font-bold"
-            style={{ background: `${cartActionAccent}22`, color: cartActionAccent, borderRadius: T.buttonRadius }}
-          >
+          style={{
+            background: `${cartActionAccent}22`,
+            color: cartActionAccent,
+            borderRadius: T.buttonRadius,
+          }}
+        >
           <SIco name="arrow-left" size={14} color={cartActionAccent} />{' '}
           {t('store.keepShopping')}
         </button>
@@ -1952,7 +1940,10 @@ function CartView(p: CartProps) {
         <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center gap-5 px-5 py-24 text-center md:px-16">
           <span
             className="flex h-20 w-20 items-center justify-center rounded-3xl"
-            style={{ background: `${cartAccent}1F`, borderRadius: T.cardRadius }}
+            style={{
+              background: `${cartAccent}1F`,
+              borderRadius: T.cardRadius,
+            }}
           >
             <SIco name="shopping-cart" size={36} color={cartAccent} />
           </span>
@@ -1983,7 +1974,11 @@ function CartView(p: CartProps) {
               <div className="flex flex-col gap-1">
                 <h1
                   className="text-[28px] font-black md:text-[32px]"
-                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
+                  style={{
+                    color: T.ink,
+                    fontFamily: T.headingFamily,
+                    letterSpacing: T.headingTracking,
+                  }}
                 >
                   {t('store.yourCart')}
                 </h1>
@@ -2011,14 +2006,15 @@ function CartView(p: CartProps) {
             </div>
 
             {/* Products card */}
-            <div
-              className={cardCls}
-              style={cardStyle}
-            >
+            <div className={cardCls} style={cardStyle}>
               <div className="flex items-center gap-2.5 pb-2">
                 <h2
                   className="text-[18px] font-extrabold md:text-[20px]"
-                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
+                  style={{
+                    color: T.ink,
+                    fontFamily: T.headingFamily,
+                    letterSpacing: T.headingTracking,
+                  }}
                 >
                   {t('store.cartProducts')}
                 </h2>
@@ -2053,7 +2049,7 @@ function CartView(p: CartProps) {
                         />
                       ) : (
                         <SIco
-                          name={catIco(it.category)}
+                          name={categoryIcon(it.category)}
                           size={34}
                           color={cartAccent}
                           style={{ opacity: 0.7 }}
@@ -2088,7 +2084,11 @@ function CartView(p: CartProps) {
                     </div>
                     <div
                       className="flex items-center rounded-xl border"
-                      style={{ borderColor: T.line, background: T.field, borderRadius: T.controlRadius }}
+                      style={{
+                        borderColor: T.line,
+                        background: T.field,
+                        borderRadius: T.controlRadius,
+                      }}
                     >
                       <button
                         type="button"
@@ -2134,7 +2134,10 @@ function CartView(p: CartProps) {
                       onClick={() => removeFromCart(it.id)}
                       aria-label={t('store.cartRemove')}
                       className="flex h-9 w-9 items-center justify-center"
-                      style={{ background: '#EF444418', borderRadius: T.controlRadius }}
+                      style={{
+                        background: '#EF444418',
+                        borderRadius: T.controlRadius,
+                      }}
                     >
                       <SIco name="x" size={16} color="#EF4444" />
                     </button>
@@ -2153,7 +2156,11 @@ function CartView(p: CartProps) {
                 </span>
                 <span
                   className="text-[18px] font-extrabold"
-                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
+                  style={{
+                    color: T.ink,
+                    fontFamily: T.headingFamily,
+                    letterSpacing: T.headingTracking,
+                  }}
                 >
                   {money(cartTotal)}
                 </span>
@@ -2161,14 +2168,15 @@ function CartView(p: CartProps) {
             </div>
 
             {/* Contact card */}
-            <div
-              className={`flex flex-col gap-4 ${cardCls}`}
-              style={cardStyle}
-            >
+            <div className={`flex flex-col gap-4 ${cardCls}`} style={cardStyle}>
               <div className="flex flex-col gap-1">
                 <h2
                   className="text-[18px] font-extrabold"
-                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
+                  style={{
+                    color: T.ink,
+                    fontFamily: T.headingFamily,
+                    letterSpacing: T.headingTracking,
+                  }}
                 >
                   {t('store.cartYourData')}
                 </h2>
@@ -2181,7 +2189,10 @@ function CartView(p: CartProps) {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
+                  <span
+                    className={labelCls}
+                    style={{ color: T.body, fontFamily: T.labelFamily }}
+                  >
                     {t('store.cartName')}
                   </span>
                   <input
@@ -2193,7 +2204,10 @@ function CartView(p: CartProps) {
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
+                  <span
+                    className={labelCls}
+                    style={{ color: T.body, fontFamily: T.labelFamily }}
+                  >
                     {t('store.cartPhone')}
                   </span>
                   <input
@@ -2205,7 +2219,10 @@ function CartView(p: CartProps) {
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
+                  <span
+                    className={labelCls}
+                    style={{ color: T.body, fontFamily: T.labelFamily }}
+                  >
                     {t('store.cartEmail')}
                   </span>
                   <input
@@ -2217,7 +2234,10 @@ function CartView(p: CartProps) {
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
+                  <span
+                    className={labelCls}
+                    style={{ color: T.body, fontFamily: T.labelFamily }}
+                  >
                     {t('store.cartDelivery')}
                   </span>
                   {tenant.deliveryEnabled ? (
@@ -2252,7 +2272,10 @@ function CartView(p: CartProps) {
                 </label>
                 {tenant.deliveryEnabled && customer.delivery === 'delivery' && (
                   <label className="flex flex-col gap-1.5 md:col-span-2">
-                    <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
+                    <span
+                      className={labelCls}
+                      style={{ color: T.body, fontFamily: T.labelFamily }}
+                    >
                       {t('store.cartAddress')}
                     </span>
                     <input
@@ -2265,7 +2288,10 @@ function CartView(p: CartProps) {
                   </label>
                 )}
                 <label className="flex flex-col gap-1.5 md:col-span-2">
-                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
+                  <span
+                    className={labelCls}
+                    style={{ color: T.body, fontFamily: T.labelFamily }}
+                  >
                     {t('store.cartNotes')}
                   </span>
                   <textarea
@@ -2290,7 +2316,11 @@ function CartView(p: CartProps) {
               <div className="flex flex-col gap-1">
                 <h2
                   className="text-[18px] font-extrabold"
-                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
+                  style={{
+                    color: T.ink,
+                    fontFamily: T.headingFamily,
+                    letterSpacing: T.headingTracking,
+                  }}
                 >
                   {t('store.cartSummary')}
                 </h2>
@@ -2341,7 +2371,9 @@ function CartView(p: CartProps) {
                 style={{ ...grad, borderRadius: T.buttonRadius }}
               >
                 <SIco name="message-circle" size={22} color="#fff" />{' '}
-                {checkoutChannel === 'instagram' ? 'Copiar pedido y abrir Instagram' : t('store.cartSend')}
+                {checkoutChannel === 'instagram'
+                  ? 'Copiar pedido y abrir Instagram'
+                  : t('store.cartSend')}
               </a>
               <div className="flex items-center justify-center gap-1.5">
                 <SIco name="shield-check" size={12} color="#10B981" />
@@ -2371,47 +2403,6 @@ function CartView(p: CartProps) {
         </span>
       </footer>
     </div>
-  )
-}
-
-function Chip({
-  active,
-  onClick,
-  label,
-  count,
-  C,
-  grad,
-}: {
-  active: boolean
-  onClick: () => void
-  label: string
-  count: number
-  C: StoreColors
-  grad: React.CSSProperties
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-bold"
-      style={
-        active
-          ? { ...grad, color: '#fff', borderColor: 'transparent' }
-          : { background: '#fff', color: C.body, borderColor: C.line }
-      }
-    >
-      {label}
-      <span
-        className="rounded-full px-2 py-0.5 text-[11px] font-bold"
-        style={
-          active
-            ? { background: 'rgba(255,255,255,0.22)', color: '#fff' }
-            : { background: '#F1F5F9', color: C.body }
-        }
-      >
-        {count}
-      </span>
-    </button>
   )
 }
 

@@ -1,0 +1,70 @@
+import type { TranslationEntry } from './i18nDictionary'
+
+export const DICT_CATALOG_CODES: Record<string, TranslationEntry> = {
+  'codes.title': { es: 'Códigos QR', en: 'QR Codes', pt: 'Códigos QR' },
+  'codes.subtitle': {
+    es: 'Compartí tu catálogo con un escaneo.',
+    en: 'Share your catalog with a scan.',
+    pt: 'Compartilhe seu catálogo com uma leitura.',
+  },
+  'codes.search': { es: 'Buscar QR…', en: 'Search QR…', pt: 'Buscar QR…' },
+  'codes.createList': {
+    es: 'Creá una lista para generar su QR',
+    en: 'Create a list to generate its QR',
+    pt: 'Crie uma lista para gerar seu QR',
+  },
+  'codes.noResults': {
+    es: 'Sin resultados',
+    en: 'No results',
+    pt: 'Sem resultados',
+  },
+  'codes.active': { es: 'Activa', en: 'Active', pt: 'Ativa' },
+  'codes.draft': { es: 'Borrador', en: 'Draft', pt: 'Rascunho' },
+  'codes.downloadPng': {
+    es: 'Descargar PNG',
+    en: 'Download PNG',
+    pt: 'Baixar PNG',
+  },
+  'codes.downloadSvg': {
+    es: 'Descargar SVG',
+    en: 'Download SVG',
+    pt: 'Baixar SVG',
+  },
+  'codes.openList': { es: 'Abrir lista', en: 'Open list', pt: 'Abrir lista' },
+  'codes.copyLink': { es: 'Copiar link', en: 'Copy link', pt: 'Copiar link' },
+  'codes.customize': {
+    es: 'Personalizá tu QR',
+    en: 'Customize your QR',
+    pt: 'Personalize seu QR',
+  },
+  'codes.customizeHelp': {
+    es: 'El estilo se aplica a todos tus códigos.',
+    en: 'The style applies to all your codes.',
+    pt: 'O estilo se aplica a todos os seus códigos.',
+  },
+  'codes.color': { es: 'Color', en: 'Color', pt: 'Cor' },
+  'codes.logoCenter': {
+    es: 'Logo en el centro',
+    en: 'Logo in the center',
+    pt: 'Logo no centro',
+  },
+  'codes.logoHelp': {
+    es: 'Mostrá tu marca en el QR.',
+    en: 'Show your brand in the QR.',
+    pt: 'Mostre sua marca no QR.',
+  },
+  'codes.downloadDisabled': {
+    es: 'Creá una lista para habilitar la descarga del QR.',
+    en: 'Create a list to enable QR downloads.',
+    pt: 'Crie uma lista para habilitar o download do QR.',
+  },
+  'codes.color.violet': { es: 'Violeta', en: 'Violet', pt: 'Violeta' },
+  'codes.color.black': { es: 'Negro', en: 'Black', pt: 'Preto' },
+  'codes.color.blue': { es: 'Azul', en: 'Blue', pt: 'Azul' },
+  'codes.color.green': { es: 'Verde', en: 'Green', pt: 'Verde' },
+  'codes.color.pink': { es: 'Rosa', en: 'Pink', pt: 'Rosa' },
+  'codes.color.amber': { es: 'Ámbar', en: 'Amber', pt: 'Âmbar' },
+  'codes.color.sky': { es: 'Cielo', en: 'Sky', pt: 'Céu' },
+  'codes.color.slate': { es: 'Pizarra', en: 'Slate', pt: 'Ardósia' },
+}
+

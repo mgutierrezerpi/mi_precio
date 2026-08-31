@@ -1,15 +1,15 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
-from lib.ctx import team, activity, plans
-from lib.ctx.team_context import TeamError
-from lib.ctx.plans_context import PlanLimitError
 from controllers.deps import get_current_user, require_active_plan, require_admin
 from controllers.input_types import InviteMember, UpdateMember
-from views import DeletedView, UserView, InvitationView
+from lib.ctx import activity, plans, team
+from lib.ctx.plans_context import PlanLimitError
+from lib.ctx.team_context import TeamError
 from models import User
 from tasks import send_invitation_email
+from views import DeletedView, InvitationView, UserView
 
 router = APIRouter(tags=["team"])
 logger = logging.getLogger(__name__)

@@ -5,7 +5,6 @@ from controllers.input_types import UpdateLinkTree
 from lib.ctx import activity, brand_assets, linktrees
 from views import LinkTreeView
 
-
 router = APIRouter(tags=["linktrees"])
 
 
@@ -16,13 +15,21 @@ async def upload_list_template_image_endpoint(
     current_user: dict = Depends(require_editor),
 ):
     if current_user.get("tenant_id") != tenant_id:
-        raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+        raise HTTPException(
+            status_code=403, detail="No tenés permisos para esta acción"
+        )
     try:
         url = brand_assets.upload_list_template_image(
             tenant_id, await image.read(), image.content_type or ""
         )
     except brand_assets.BrandImageUploadError as e:
-        status = 413 if str(e) == "Image is too large" else 415 if str(e) == "Unsupported image type" else 503
+        status = (
+            413
+            if str(e) == "Image is too large"
+            else 415
+            if str(e) == "Unsupported image type"
+            else 503
+        )
         raise HTTPException(status_code=status, detail=str(e)) from e
     if not url:
         raise HTTPException(status_code=404, detail="Tenant not found")
@@ -36,13 +43,21 @@ async def upload_list_template_video_endpoint(
     current_user: dict = Depends(require_editor),
 ):
     if current_user.get("tenant_id") != tenant_id:
-        raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+        raise HTTPException(
+            status_code=403, detail="No tenés permisos para esta acción"
+        )
     try:
         url = brand_assets.upload_list_template_video(
             tenant_id, await video.read(), video.content_type or ""
         )
     except brand_assets.BrandImageUploadError as e:
-        status = 413 if str(e) == "Video is too large" else 415 if str(e) == "Unsupported video type" else 503
+        status = (
+            413
+            if str(e) == "Video is too large"
+            else 415
+            if str(e) == "Unsupported video type"
+            else 503
+        )
         raise HTTPException(status_code=status, detail=str(e)) from e
     if not url:
         raise HTTPException(status_code=404, detail="Tenant not found")
@@ -60,7 +75,13 @@ async def upload_linktree_avatar_endpoint(
             tenant_id, await image.read(), image.content_type or ""
         )
     except brand_assets.BrandImageUploadError as e:
-        status = 413 if str(e) == "Image is too large" else 415 if str(e) == "Unsupported image type" else 503
+        status = (
+            413
+            if str(e) == "Image is too large"
+            else 415
+            if str(e) == "Unsupported image type"
+            else 503
+        )
         raise HTTPException(status_code=status, detail=str(e)) from e
     if not url:
         raise HTTPException(status_code=404, detail="Tenant not found")
@@ -86,9 +107,7 @@ def update_linktree_endpoint(
     tree = linktrees.get_linktree(tenant_id)
     if not tree:
         raise HTTPException(status_code=404, detail="Business not found")
-    tree = linktrees.update_linktree(
-        tree.id, **data.model_dump(exclude_unset=True)
-    )
+    tree = linktrees.update_linktree(tree.id, **data.model_dump(exclude_unset=True))
     activity.record(
         tenant_id,
         "linktree.updated",
@@ -103,8 +122,13 @@ def update_linktree_endpoint(
 
 @router.get("/public/{subdomain}/linktree")
 def get_public_linktree_endpoint(subdomain: str):
-    tree = linktrees.LinkTree.get_or_none(linktrees.LinkTree.public_slug == subdomain.lower())
+    tree = linktrees.LinkTree.get_or_none(
+        linktrees.LinkTree.public_slug == subdomain.lower()
+    )
     tenant = tree.tenant if tree else None
     if not tenant or not tree or not tree.published:
         raise HTTPException(status_code=404, detail="Linktree not found")
-    return {"tenant": {"name": tenant.name, "subdomain": tenant.subdomain}, "linktree": LinkTreeView.render(tree)}
+    return {
+        "tenant": {"name": tenant.name, "subdomain": tenant.subdomain},
+        "linktree": LinkTreeView.render(tree),
+    }

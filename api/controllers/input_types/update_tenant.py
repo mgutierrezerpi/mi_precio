@@ -1,5 +1,6 @@
-from pydantic import BaseModel, field_validator
 import re
+
+from pydantic import BaseModel, field_validator
 
 from controllers.input_types.appearance import validate_design, validate_hex_color
 from controllers.input_types.socials import normalize_social_url, normalize_whatsapp

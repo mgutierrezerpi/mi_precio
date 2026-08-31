@@ -3,6 +3,7 @@
 import json
 from typing import Any
 
+from lib.list_content_template import validate_template
 from lib.list_designs import supported_blocks
 
 MAX_DOCUMENT_BYTES = 50_000
@@ -29,7 +30,7 @@ def _validate_document(content: dict[str, Any], allowed_blocks: set[str]) -> Non
     if content.get("schema_version") != 1:
         raise ValueError("content.schema_version must be 1")
     _validate_hero(content.get("hero"))
-    _validate_template(content.get("template"))
+    validate_template(content.get("template"))
     blocks = content.get("blocks")
     if not isinstance(blocks, list):
         raise TypeError("content.blocks must be a list")
@@ -70,53 +71,6 @@ def _validate_hero(hero: Any) -> None:
                 raise ValueError("each hero stat needs value and label")
             _string(stat["value"], "hero stat value")
             _string(stat["label"], "hero stat label")
-
-
-def _validate_template(template: Any) -> None:
-    """Template-specific editorial overrides. The renderer decides which apply."""
-    if template is None:
-        return
-    allowed = {
-        "font", "image", "image_label", "image_title", "promo_eyebrow",
-        "promo_title", "promo_body", "promo_price", "promo_note",
-        "footer_left", "footer_right", "checkout_channel", "instagram_handle", "price_format",
-        "logo", "profile_name", "profile_image", "story_videos", "story_metrics",
-        "film_images",
-        "collaboration_heading", "stories_heading",
-    }
-    if not isinstance(template, dict) or set(template) - allowed:
-        raise ValueError("content.template has unknown fields")
-    if "font" in template and template["font"] not in {
-        "sans", "editorial", "serif", "mono", "code-pro",
-    }:
-        raise ValueError("content.template.font is not supported")
-    if "checkout_channel" in template and template["checkout_channel"] not in {
-        "whatsapp", "instagram",
-    }:
-        raise ValueError("content.template.checkout_channel is not supported")
-    if "price_format" in template and template["price_format"] not in {"$", "U$D", "USD"}:
-        raise ValueError("content.template.price_format is not supported")
-    if "story_videos" in template:
-        if not isinstance(template["story_videos"], list) or len(template["story_videos"]) > 6:
-            raise ValueError("content.template.story_videos must have at most 6 videos")
-        for video in template["story_videos"]:
-            _string(video, "content.template.story_videos entry")
-    if "story_metrics" in template:
-        if not isinstance(template["story_metrics"], list) or len(template["story_metrics"]) > 6:
-            raise ValueError("content.template.story_metrics must have at most 6 entries")
-        for metric in template["story_metrics"]:
-            if not isinstance(metric, dict) or set(metric) != {"views", "likes", "comments"}:
-                raise ValueError("each story metric needs views, likes, and comments")
-            for value in metric.values():
-                _string(value, "story metric value")
-    if "film_images" in template:
-        if not isinstance(template["film_images"], list) or len(template["film_images"]) > 8:
-            raise ValueError("content.template.film_images must have at most 8 images")
-        for image in template["film_images"]:
-            _string(image, "content.template.film_images entry")
-    for key, value in template.items():
-        if key not in {"font", "checkout_channel", "price_format", "story_videos", "story_metrics", "film_images"}:
-            _string(value, f"content.template.{key}", allow_empty=True)
 
 
 def _validate_catalog(block: dict[str, Any]) -> None:

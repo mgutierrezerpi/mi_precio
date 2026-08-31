@@ -1,28 +1,28 @@
 """Products context - tenant-level product catalog operations."""
 
-from io import BytesIO
-from typing import TypedDict
-from uuid import uuid4
-
 from infra.storage import object_storage
-from infra.storage import ObjectStorageError
-from models import Tenant, Product, PriceList, ListVersion, Item
+from lib.ctx import product_images
+from lib.ctx.product_images import (
+    ProductImageUpload,
+    ProductImageUploadError,  # noqa: F401
+)
+from lib.ctx.product_item_sync import (
+    next_position,
+    norm_name,
+    sync_item_images,
+    sync_item_prices,
+    sync_item_profile,
+)
+from models import Item, ListVersion, PriceList, Product, Tenant
 
 
-SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
-PRODUCT_IMAGE_MAX_SIDE = 1600
-PRODUCT_THUMB_MAX_SIDE = 320
-WEBP_QUALITY = 82
-WEBP_THUMB_QUALITY = 76
-
-
-class ProductImageUpload(TypedDict):
-    url: str
-    thumbnail_url: str
-
-
-class ProductImageUploadError(Exception):
-    pass
+def upload_product_image(
+    tenant_id: str, content_type: str, data: bytes
+) -> ProductImageUpload | None:
+    """Upload an image while preserving this module's storage patch point."""
+    return product_images.upload_product_image(
+        tenant_id, content_type, data, object_storage
+    )
 
 
 def list_products(tenant_id: str) -> list[Product]:
@@ -53,18 +53,18 @@ def create_product(tenant_id: str, **attrs) -> Product | None:
         return update_product(existing.id, **attrs)
     return Product.create(
         tenant=tenant,
-        position=_next_position(tenant_id),
+        position=next_position(tenant_id),
         **attrs,
     )
 
 
 def find_product_by_name(tenant_id: str, name: str | None) -> Product | None:
     """Find a tenant product by its normalized, case-insensitive name."""
-    normalized = _norm_name(name)
+    normalized = norm_name(name)
     if not normalized:
         return None
     for product in Product.select().where(Product.tenant == tenant_id):
-        if _norm_name(product.name) == normalized:
+        if norm_name(product.name) == normalized:
             return product
     return None
 
@@ -102,7 +102,7 @@ def backfill_orphan_items() -> int:
                 image_url=item.image_url,
                 image_thumb_url=item.image_thumb_url,
                 category=item.category,
-                position=_next_position(tenant_id),
+                position=next_position(tenant_id),
             )
         item.product = product
         item.save()
@@ -125,11 +125,13 @@ def update_product(product_id: str, **updates) -> Product | None:
         setattr(product, key, value)
     product.save()
     if "price" in updates:
-        _sync_item_prices(product.tenant_id, product.id, product.price, price_list_ids)
-    if any(field in updates for field in ("name", "description", "category", "currency")):
-        _sync_item_profile(product.id, product)
+        sync_item_prices(product.tenant_id, product.id, product.price, price_list_ids)
+    if any(
+        field in updates for field in ("name", "description", "category", "currency")
+    ):
+        sync_item_profile(product.id, product)
     if "image_url" in updates or "image_thumb_url" in updates:
-        _sync_item_images(product.id, product.image_url, product.image_thumb_url)
+        sync_item_images(product.id, product.image_url, product.image_thumb_url)
     return product
 
 
@@ -141,106 +143,3 @@ def delete_product(product_id: str) -> bool:
     Item.delete().where(Item.product == product.id).execute()
     product.delete_instance()
     return True
-
-
-def upload_product_image(
-    tenant_id: str, content_type: str, data: bytes
-) -> ProductImageUpload | None:
-    """Store a WebP product image and thumbnail, returning their public URLs."""
-    tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    if not tenant:
-        return None
-
-    try:
-        image = _open_image(data)
-        image_webp = _encode_webp(image, PRODUCT_IMAGE_MAX_SIDE, WEBP_QUALITY)
-        thumb_webp = _encode_webp(image, PRODUCT_THUMB_MAX_SIDE, WEBP_THUMB_QUALITY)
-    except Exception as e:
-        raise ProductImageUploadError("Invalid image data") from e
-
-    key_base = f"tenants/{tenant_id}/product_images/{uuid4().hex}"
-    try:
-        image_url = object_storage.upload(f"{key_base}.webp", image_webp, "image/webp")
-        thumb_url = object_storage.upload(
-            f"{key_base}_thumb.webp", thumb_webp, "image/webp"
-        )
-    except ObjectStorageError as e:
-        raise ProductImageUploadError(str(e)) from e
-
-    return {"url": image_url, "thumbnail_url": thumb_url}
-
-
-def _next_position(tenant_id: str) -> int:
-    """Get the next position for a new product."""
-    last = (
-        Product.select()
-        .where(Product.tenant == tenant_id)
-        .order_by(Product.position.desc())
-        .first()
-    )
-    return (last.position + 1) if last else 0
-
-
-def _sync_item_prices(
-    tenant_id: str, product_id: str, price, price_list_ids: list[str] | None
-) -> None:
-    version_ids = (
-        ListVersion.select(ListVersion.id)
-        .join(PriceList)
-        .where(PriceList.tenant == tenant_id)
-    )
-    if price_list_ids is not None:
-        version_ids = version_ids.where(PriceList.id.in_(price_list_ids))
-    Item.update(price=price).where(
-        (Item.list_version.in_(version_ids)) & (Item.product == product_id)
-    ).execute()
-
-
-def _sync_item_profile(product_id: str, product: Product) -> None:
-    """Keep all list snapshots aligned with global product metadata."""
-    Item.update(
-        name=product.name,
-        description=product.description,
-        category=product.category,
-        currency=product.currency,
-    ).where(Item.product == product_id).execute()
-
-
-def _sync_item_images(
-    product_id: str, image_url: str | None, image_thumb_url: str | None
-) -> None:
-    Item.update(image_url=image_url, image_thumb_url=image_thumb_url).where(
-        Item.product == product_id
-    ).execute()
-
-
-def _open_image(data: bytes):
-    from PIL import Image, ImageOps
-
-    image = Image.open(BytesIO(data))
-    return ImageOps.exif_transpose(image)
-
-
-def _encode_webp(image, max_side: int, quality: int) -> bytes:
-    from PIL import Image
-
-    image = image.copy()
-    image.thumbnail((max_side, max_side))
-
-    if image.mode in ("RGBA", "LA") or (
-        image.mode == "P" and "transparency" in image.info
-    ):
-        background = image.convert("RGBA")
-        flattened = Image.new("RGBA", background.size, (255, 255, 255, 255))
-        flattened.alpha_composite(background)
-        image = flattened.convert("RGB")
-    elif image.mode != "RGB":
-        image = image.convert("RGB")
-
-    output = BytesIO()
-    image.save(output, format="WEBP", quality=quality, method=6)
-    return output.getvalue()
-
-
-def _norm_name(name: str | None) -> str:
-    return (name or "").strip().casefold()

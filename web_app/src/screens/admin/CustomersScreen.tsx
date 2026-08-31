@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type MouseEvent,
+} from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
@@ -78,7 +84,10 @@ function parseUtc(iso?: string | null): Date | null {
   const d = new Date(hasTz ? iso : `${iso}Z`)
   return Number.isNaN(d.getTime()) ? null : d
 }
-function relativeTime(iso: string | null | undefined, t: (key: string, vars?: Record<string, string | number>) => string): string {
+function relativeTime(
+  iso: string | null | undefined,
+  t: (key: string, vars?: Record<string, string | number>) => string
+): string {
   const d = parseUtc(iso)
   if (!d) return t('time.noPurchases')
   const s = (Date.now() - d.getTime()) / 1000
@@ -137,7 +146,9 @@ export function CustomersScreen() {
   )
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
-  const [promotingViewerId, setPromotingViewerId] = useState<string | null>(null)
+  const [promotingViewerId, setPromotingViewerId] = useState<string | null>(
+    null
+  )
   const [viewerError, setViewerError] = useState<string | null>(null)
   const [customerEmailsCopied, setCustomerEmailsCopied] = useState(false)
   const [viewerEmailsCopied, setViewerEmailsCopied] = useState(false)
@@ -253,13 +264,31 @@ export function CustomersScreen() {
               {customerEmailList.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => void copyEmailList(customerEmailList, setCustomerEmailsCopied)}
+                  onClick={() =>
+                    void copyEmailList(
+                      customerEmailList,
+                      setCustomerEmailsCopied
+                    )
+                  }
                   className="flex h-9 items-center gap-1.5 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-[12px] font-bold text-[var(--dash-text2)] shadow-sm transition hover:border-[var(--dash-link)]/40 hover:bg-[var(--dash-soft)] hover:text-[var(--dash-link)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--dash-link)]/30"
-                  title={t('customers.copyEmails', { count: customerEmailList.length })}
-                  aria-label={t('customers.copyEmails', { count: customerEmailList.length })}
+                  title={t('customers.copyEmails', {
+                    count: customerEmailList.length,
+                  })}
+                  aria-label={t('customers.copyEmails', {
+                    count: customerEmailList.length,
+                  })}
                 >
-                  <Icon name={customerEmailsCopied ? 'circle-check' : 'copy'} size={15} />
-                  <span>{customerEmailsCopied ? t('customers.emailsCopied') : t('customers.copyEmails', { count: customerEmailList.length })}</span>
+                  <Icon
+                    name={customerEmailsCopied ? 'circle-check' : 'copy'}
+                    size={15}
+                  />
+                  <span>
+                    {customerEmailsCopied
+                      ? t('customers.emailsCopied')
+                      : t('customers.copyEmails', {
+                          count: customerEmailList.length,
+                        })}
+                  </span>
                 </button>
               )}
               <button
@@ -280,7 +309,9 @@ export function CustomersScreen() {
               <span className="w-[120px]">{t('customers.lastPurchase')}</span>
               <span className="w-[110px]">{t('customers.total')}</span>
               <span className="w-[90px]">{t('customers.status')}</span>
-              <span className="w-[184px] text-right">{t('customers.actions')}</span>
+              <span className="w-[184px] text-right">
+                {t('customers.actions')}
+              </span>
             </div>
 
             {loading ? (
@@ -330,7 +361,11 @@ export function CustomersScreen() {
                       </div>
                     </div>
                     <span className="w-[150px] text-xs font-medium text-[var(--dash-text2)]">
-                      {c.phone ? <CopyableContact value={c.phone} kind="phone" /> : '—'}
+                      {c.phone ? (
+                        <CopyableContact value={c.phone} kind="phone" />
+                      ) : (
+                        '—'
+                      )}
                     </span>
                     <span className="w-[120px] text-xs font-medium text-[var(--dash-muted)]">
                       {relativeTime(c.lastOrderAt, t)}
@@ -395,22 +430,43 @@ export function CustomersScreen() {
         <section className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
           <div className="flex items-start justify-between gap-4 border-b border-[var(--dash-divider)] px-5 py-4">
             <div className="min-w-0">
-              <h2 className="text-base font-extrabold text-[var(--dash-text)]">{t('viewers.title')}</h2>
-              <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">{t('viewers.subtitle')}</p>
+              <h2 className="text-base font-extrabold text-[var(--dash-text)]">
+                {t('viewers.title')}
+              </h2>
+              <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">
+                {t('viewers.subtitle')}
+              </p>
               {viewerError && (
-                <p className="mt-2 text-xs font-semibold text-[#EF4444]">{viewerError}</p>
+                <p className="mt-2 text-xs font-semibold text-[#EF4444]">
+                  {viewerError}
+                </p>
               )}
             </div>
             {canEdit && viewerEmailList.length > 0 && (
               <button
                 type="button"
-                onClick={() => void copyEmailList(viewerEmailList, setViewerEmailsCopied)}
+                onClick={() =>
+                  void copyEmailList(viewerEmailList, setViewerEmailsCopied)
+                }
                 className="flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-[12px] font-bold text-[var(--dash-text2)] shadow-sm transition hover:border-[var(--dash-link)]/40 hover:bg-[var(--dash-soft)] hover:text-[var(--dash-link)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--dash-link)]/30"
-                title={t('viewers.copyEmails', { count: viewerEmailList.length })}
-                aria-label={t('viewers.copyEmails', { count: viewerEmailList.length })}
+                title={t('viewers.copyEmails', {
+                  count: viewerEmailList.length,
+                })}
+                aria-label={t('viewers.copyEmails', {
+                  count: viewerEmailList.length,
+                })}
               >
-                <Icon name={viewerEmailsCopied ? 'circle-check' : 'copy'} size={15} />
-                <span>{viewerEmailsCopied ? t('customers.emailsCopied') : t('viewers.copyEmails', { count: viewerEmailList.length })}</span>
+                <Icon
+                  name={viewerEmailsCopied ? 'circle-check' : 'copy'}
+                  size={15}
+                />
+                <span>
+                  {viewerEmailsCopied
+                    ? t('customers.emailsCopied')
+                    : t('viewers.copyEmails', {
+                        count: viewerEmailList.length,
+                      })}
+                </span>
               </button>
             )}
           </div>
@@ -427,7 +483,9 @@ export function CustomersScreen() {
               <div className="min-w-[820px]">
                 <div className="grid grid-cols-[1.2fr_1fr_1.2fr_140px_80px_80px] gap-3 bg-[var(--dash-table-head)] px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
                   <span>{t('customers.customer')}</span>
-                  <span>{t('customers.phone')} / {t('customers.email')}</span>
+                  <span>
+                    {t('customers.phone')} / {t('customers.email')}
+                  </span>
                   <span>{t('viewers.list')}</span>
                   <span>{t('viewers.lastSeen')}</span>
                   <span>{t('viewers.views')}</span>
@@ -439,16 +497,24 @@ export function CustomersScreen() {
                     className={`grid grid-cols-[1.2fr_1fr_1.2fr_140px_80px_80px] items-center gap-3 px-5 py-3.5 text-xs ${index > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
                   >
                     <div className="min-w-0">
-                      <p className="truncate font-bold text-[var(--dash-text)]">{viewer.name}</p>
+                      <p className="truncate font-bold text-[var(--dash-text)]">
+                        {viewer.name}
+                      </p>
                       <p className="truncate text-[11px] font-medium text-[var(--dash-muted)]">
                         {fullDate(viewer.createdAt, localeOf(tenant?.language))}
                       </p>
                     </div>
                     <div className="flex min-w-0 flex-col items-start gap-0.5 font-medium text-[var(--dash-text2)]">
-                      {viewer.email && <CopyableContact value={viewer.email} kind="email" />}
-                      {viewer.phone && <CopyableContact value={viewer.phone} kind="phone" />}
+                      {viewer.email && (
+                        <CopyableContact value={viewer.email} kind="email" />
+                      )}
+                      {viewer.phone && (
+                        <CopyableContact value={viewer.phone} kind="phone" />
+                      )}
                       {!viewer.email && !viewer.phone && (
-                        <span className="truncate">{t('viewers.noContact')}</span>
+                        <span className="truncate">
+                          {t('viewers.noContact')}
+                        </span>
                       )}
                       {viewer.ipAddress && (
                         <p className="truncate text-[10px] font-medium text-[var(--dash-muted)]">
@@ -456,9 +522,15 @@ export function CustomersScreen() {
                         </p>
                       )}
                     </div>
-                    <div className="min-w-0 truncate font-semibold text-[var(--dash-text2)]">{viewer.listName}</div>
-                    <div className="text-[var(--dash-muted)]">{fullDate(viewer.lastSeenAt, localeOf(tenant?.language))}</div>
-                    <div className="font-bold text-[var(--dash-text2)]">{viewer.viewCount}</div>
+                    <div className="min-w-0 truncate font-semibold text-[var(--dash-text2)]">
+                      {viewer.listName}
+                    </div>
+                    <div className="text-[var(--dash-muted)]">
+                      {fullDate(viewer.lastSeenAt, localeOf(tenant?.language))}
+                    </div>
+                    <div className="font-bold text-[var(--dash-text2)]">
+                      {viewer.viewCount}
+                    </div>
                     <div className="flex justify-end">
                       {viewer.customerId ? (
                         <button
@@ -478,13 +550,23 @@ export function CustomersScreen() {
                           disabled={promotingViewerId !== null}
                           className={`flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A78BFA]/60 disabled:cursor-wait disabled:opacity-60 ${promotingViewerId === viewer.id ? 'animate-pulse' : ''} ${gradient}`}
                           aria-busy={promotingViewerId === viewer.id}
-                          title={promotingViewerId === viewer.id ? t('viewers.promoting') : t('viewers.promote')}
-                          aria-label={promotingViewerId === viewer.id ? t('viewers.promoting') : t('viewers.promote')}
+                          title={
+                            promotingViewerId === viewer.id
+                              ? t('viewers.promoting')
+                              : t('viewers.promote')
+                          }
+                          aria-label={
+                            promotingViewerId === viewer.id
+                              ? t('viewers.promoting')
+                              : t('viewers.promote')
+                          }
                         >
                           <Icon name="user-plus" size={16} />
                         </button>
                       ) : (
-                        <span className="text-[11px] text-[var(--dash-muted)]">—</span>
+                        <span className="text-[11px] text-[var(--dash-muted)]">
+                          —
+                        </span>
                       )}
                     </div>
                   </div>
@@ -497,16 +579,26 @@ export function CustomersScreen() {
         <section className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
           <div className="flex items-center justify-between gap-4 border-b border-[var(--dash-divider)] px-5 py-4">
             <div>
-              <h2 className="text-base font-extrabold text-[var(--dash-text)]">{t('anonymous.title')}</h2>
-              <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">{t('anonymous.subtitle')}</p>
+              <h2 className="text-base font-extrabold text-[var(--dash-text)]">
+                {t('anonymous.title')}
+              </h2>
+              <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">
+                {t('anonymous.subtitle')}
+              </p>
             </div>
             <div className="flex h-14 min-w-20 flex-col items-center justify-center rounded-xl bg-[var(--dash-soft)] px-4">
               {anonymousLoading ? (
-                <span className="text-sm font-bold text-[var(--dash-muted)]">…</span>
+                <span className="text-sm font-bold text-[var(--dash-muted)]">
+                  …
+                </span>
               ) : (
-                <span className="text-2xl font-black leading-none text-[var(--dash-text)]">{anonymousDismissals}</span>
+                <span className="text-2xl font-black leading-none text-[var(--dash-text)]">
+                  {anonymousDismissals}
+                </span>
               )}
-              <span className="mt-1 text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('anonymous.countLabel')}</span>
+              <span className="mt-1 text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+                {t('anonymous.countLabel')}
+              </span>
             </div>
           </div>
         </section>
@@ -563,7 +655,8 @@ function CopyableContact({
       window.setTimeout(() => setCopied(false), 1400)
     }
   }
-  const label = kind === 'email' ? t('contacts.copyEmail') : t('contacts.copyPhone')
+  const label =
+    kind === 'email' ? t('contacts.copyEmail') : t('contacts.copyPhone')
   return (
     <button
       type="button"
@@ -869,7 +962,10 @@ function CustomerDrawer({
                     value={`RUT ${customer.rut}`}
                   />
                 )}
-                <ContactRow icon="user" value={customer.email || t('customers.noEmail')} />
+                <ContactRow
+                  icon="user"
+                  value={customer.email || t('customers.noEmail')}
+                />
                 <ContactRow
                   icon="user-plus"
                   value={customer.phone || t('customers.noPhone')}
@@ -883,7 +979,10 @@ function CustomerDrawer({
 
               {/* Aggregates */}
               <div className="grid grid-cols-2 gap-3">
-                <Stat label={t('customers.purchases')} value={String(customer.ordersCount)} />
+                <Stat
+                  label={t('customers.purchases')}
+                  value={String(customer.ordersCount)}
+                />
                 <Stat
                   label={t('customers.totalSpent')}
                   value={money(customer.totalSpent)}
@@ -892,7 +991,10 @@ function CustomerDrawer({
                   label={t('customers.lastPurchase')}
                   value={fullDate(customer.lastOrderAt)}
                 />
-                <Stat label={t('customers.averageTicket')} value={money(avgTicket)} />
+                <Stat
+                  label={t('customers.averageTicket')}
+                  value={money(avgTicket)}
+                />
               </div>
 
               {/* Purchase history */}
@@ -912,7 +1014,9 @@ function CustomerDrawer({
                       style={tone('violet')}
                     >
                       <Icon name={adding ? 'circle-x' : 'plus'} size={14} />{' '}
-                      {adding ? t('common.cancel') : t('customers.recordPurchase')}
+                      {adding
+                        ? t('common.cancel')
+                        : t('customers.recordPurchase')}
                     </button>
                   )}
                 </div>
@@ -1321,7 +1425,11 @@ function OrderForm({
             disabled={!valid || saving}
             className={`h-9 rounded-xl px-4 text-sm font-bold text-white disabled:opacity-50 ${gradient}`}
           >
-            {saving ? t('common.saving') : isEdit ? t('common.saveChanges') : t('orders.record')}
+            {saving
+              ? t('common.saving')
+              : isEdit
+                ? t('common.saveChanges')
+                : t('orders.record')}
           </button>
         </div>
       </div>

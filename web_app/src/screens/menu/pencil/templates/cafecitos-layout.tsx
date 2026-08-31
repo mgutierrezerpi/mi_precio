@@ -37,12 +37,25 @@ function StoryMetricIcon({ type }: { type: 'views' | 'likes' | 'comments' }) {
   }
 
   if (type === 'views') {
-    return <svg {...common}><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.5" /></svg>
+    return (
+      <svg {...common}>
+        <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+        <circle cx="12" cy="12" r="2.5" />
+      </svg>
+    )
   }
   if (type === 'likes') {
-    return <svg {...common}><path d="M20.8 4.8a5.3 5.3 0 0 0-7.5 0L12 6.1l-1.3-1.3a5.3 5.3 0 1 0-7.5 7.5L12 21l8.8-8.7a5.3 5.3 0 0 0 0-7.5Z" /></svg>
+    return (
+      <svg {...common}>
+        <path d="M20.8 4.8a5.3 5.3 0 0 0-7.5 0L12 6.1l-1.3-1.3a5.3 5.3 0 1 0-7.5 7.5L12 21l8.8-8.7a5.3 5.3 0 0 0 0-7.5Z" />
+      </svg>
+    )
   }
-  return <svg {...common}><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3.1-.6L4 20l1.6-4A7.3 7.3 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z" /></svg>
+  return (
+    <svg {...common}>
+      <path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3.1-.6L4 20l1.6-4A7.3 7.3 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z" />
+    </svg>
+  )
 }
 
 function StoriesPhone({
@@ -85,26 +98,34 @@ function StoriesPhone({
       >
         <source src={videos[active]} type="video/mp4" />
       </video>
-      {stats && <aside
-        key={active}
-        className="pointer-events-none absolute inset-0 z-30 block text-[#16352A]"
-        aria-label={`Estadísticas de la historia ${active + 1}`}
-      >
-        <div className="absolute bottom-4 left-4 flex items-center gap-1.5">
-          <div className="flex h-9 items-center gap-1.5 rounded-full bg-[#DDF0E6] px-2.5 text-[#007239] shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
-            <StoryMetricIcon type="views" />
-            <strong className="text-[14px] leading-none tracking-[-.04em]">{stats.views}</strong>
+      {stats && (
+        <aside
+          key={active}
+          className="pointer-events-none absolute inset-0 z-30 block text-[#16352A]"
+          aria-label={`Estadísticas de la historia ${active + 1}`}
+        >
+          <div className="absolute bottom-4 left-4 flex items-center gap-1.5">
+            <div className="flex h-9 items-center gap-1.5 rounded-full bg-[#DDF0E6] px-2.5 text-[#007239] shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
+              <StoryMetricIcon type="views" />
+              <strong className="text-[14px] leading-none tracking-[-.04em]">
+                {stats.views}
+              </strong>
+            </div>
+            <div className="flex h-9 items-center gap-1.5 rounded-full bg-white px-2.5 text-[#16352A] shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
+              <StoryMetricIcon type="likes" />
+              <strong className="text-[14px] leading-none tracking-[-.04em]">
+                {stats.likes}
+              </strong>
+            </div>
+            <div className="flex h-9 items-center gap-1.5 rounded-full bg-[#00613E] px-2.5 text-white shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
+              <StoryMetricIcon type="comments" />
+              <strong className="text-[14px] leading-none tracking-[-.04em]">
+                {stats.comments}
+              </strong>
+            </div>
           </div>
-          <div className="flex h-9 items-center gap-1.5 rounded-full bg-white px-2.5 text-[#16352A] shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
-            <StoryMetricIcon type="likes" />
-            <strong className="text-[14px] leading-none tracking-[-.04em]">{stats.likes}</strong>
-          </div>
-          <div className="flex h-9 items-center gap-1.5 rounded-full bg-[#00613E] px-2.5 text-white shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
-            <StoryMetricIcon type="comments" />
-            <strong className="text-[14px] leading-none tracking-[-.04em]">{stats.comments}</strong>
-          </div>
-        </div>
-      </aside>}
+        </aside>
+      )}
       <div className="absolute inset-0 z-10 p-4 text-white">
         <div className="flex gap-1">
           {videos.map((_, index) => (
@@ -192,32 +213,50 @@ export function CafecitosTemplate({
   const template = props.content?.template
   const price = props.money
   const services = props.sections.flatMap((section) => section.items)
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
+    null
+  )
   const title = hero?.title || 'Contenido que conecta con tu comunidad.'
   const story =
     hero?.body ||
     'Compartí tu propuesta y creemos contenido que conecte con tu comunidad.'
   const storyVideos = template?.storyVideos?.filter(Boolean).slice(0, 6)
   const videos = storyVideos?.length ? storyVideos : DEFAULT_STORY_VIDEOS
-  const metrics = template?.storyMetrics?.slice(0, videos.length) || (storyVideos?.length ? [] : DEFAULT_STORY_METRICS)
-  const profileImage = template?.profileImage || config.image || DEFAULT_PROFILE_IMAGE
-  const filmImages = template?.filmImages?.filter(Boolean).slice(0, 8) || DEFAULT_FILM_IMAGES
-  const profileName = template?.profileName || hero?.eyebrow?.replace(/^hola,?\s*soy\s*/i, '') || props.tenant.name
+  const metrics =
+    template?.storyMetrics?.slice(0, videos.length) ||
+    (storyVideos?.length ? [] : DEFAULT_STORY_METRICS)
+  const profileImage =
+    template?.profileImage || config.image || DEFAULT_PROFILE_IMAGE
+  const filmImages =
+    template?.filmImages?.filter(Boolean).slice(0, 8) || DEFAULT_FILM_IMAGES
+  const profileName =
+    template?.profileName ||
+    hero?.eyebrow?.replace(/^hola,?\s*soy\s*/i, '') ||
+    props.tenant.name
   const logo = template?.logo || '/cafecitos-logo.svg'
-  const collaborationHeading = template?.collaborationHeading || 'Promocioná tu marca conmigo'
+  const collaborationHeading =
+    template?.collaborationHeading || 'Promocioná tu marca conmigo'
   const storiesHeading = template?.storiesHeading || 'Historias destacadas'
   const selectedService = services.find((item) => item.id === selectedServiceId)
-  const checkoutChannel = props.checkoutChannel === 'instagram' ? 'instagram' : 'whatsapp'
+  const checkoutChannel =
+    props.checkoutChannel === 'instagram' ? 'instagram' : 'whatsapp'
   const contactMessage = selectedService
     ? `Hola ${profileName}, me interesa ${selectedService.name} (${price(selectedService.price)}). ¿Coordinamos una colaboración?`
     : ''
-  const instagramHandle = (props.content?.template?.instagramHandle || props.tenant.instagramUrl || '')
+  const instagramHandle = (
+    props.content?.template?.instagramHandle ||
+    props.tenant.instagramUrl ||
+    ''
+  )
     .replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')
     .replace(/^@/, '')
     .split(/[/?#]/)[0]
-  const contactHref = checkoutChannel === 'instagram'
-    ? instagramHandle ? `https://ig.me/m/${instagramHandle}` : 'https://instagram.com'
-    : `https://wa.me/?text=${encodeURIComponent(contactMessage)}`
+  const contactHref =
+    checkoutChannel === 'instagram'
+      ? instagramHandle
+        ? `https://ig.me/m/${instagramHandle}`
+        : 'https://instagram.com'
+      : `https://wa.me/?text=${encodeURIComponent(contactMessage)}`
   return (
     <div
       className="min-h-[100svh] overflow-x-clip bg-[#F8FAF7] px-5 py-3 text-[#16352A] sm:px-10 sm:py-10"
@@ -242,7 +281,11 @@ export function CafecitosTemplate({
             </p>
           </div>
           <div className="cafecitos-film mx-auto w-full max-w-[400px]">
-            <div className="cafecitos-film-track">{[...filmImages, ...filmImages].map((image, index) => <img key={`${image}-${index}`} src={image} alt="" />)}</div>
+            <div className="cafecitos-film-track">
+              {[...filmImages, ...filmImages].map((image, index) => (
+                <img key={`${image}-${index}`} src={image} alt="" />
+              ))}
+            </div>
           </div>
         </section>
         <section className="border-y border-[#C9E2D5] py-10">
@@ -255,7 +298,9 @@ export function CafecitosTemplate({
                 type="button"
                 key={item.id}
                 onClick={() =>
-                  setSelectedServiceId((current) => current === item.id ? null : item.id)
+                  setSelectedServiceId((current) =>
+                    current === item.id ? null : item.id
+                  )
                 }
                 aria-pressed={selectedServiceId === item.id}
                 className={`rounded-[26px] bg-[#EAF4EE] p-6 text-left transition ${selectedServiceId === item.id ? 'ring-2 ring-[#007239] ring-offset-2 ring-offset-[#F8FAF7]' : 'hover:-translate-y-0.5 hover:bg-[#DDF0E6]'}`}
@@ -292,7 +337,9 @@ export function CafecitosTemplate({
               }}
               className="mt-5 flex w-full items-center justify-center rounded-full bg-[#00613E] px-5 py-4 text-center text-[16px] font-bold text-white no-underline transition hover:bg-[#007239]"
             >
-              {checkoutChannel === 'instagram' ? 'Enviar consulta por Instagram' : 'Enviar consulta por WhatsApp'}
+              {checkoutChannel === 'instagram'
+                ? 'Enviar consulta por Instagram'
+                : 'Enviar consulta por WhatsApp'}
             </a>
           )}
         </section>
@@ -304,7 +351,12 @@ export function CafecitosTemplate({
             {storiesHeading}
           </p>
           <div>
-            <StoriesPhone videos={videos} metrics={metrics} profileImage={profileImage} profileName={profileName} />
+            <StoriesPhone
+              videos={videos}
+              metrics={metrics}
+              profileImage={profileImage}
+              profileName={profileName}
+            />
           </div>
         </section>
       </main>

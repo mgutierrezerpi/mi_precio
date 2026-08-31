@@ -3,7 +3,7 @@
 import pytest
 
 from controllers.input_types import UpdateList
-from lib.ctx import lists, identity
+from lib.ctx import identity, lists
 
 
 def _list(name="Menu"):

@@ -1,4 +1,5 @@
-import type { PencilConfig, PencilVariant } from '../index'
+import type { PencilConfig } from '../index'
+import type { PencilVariant } from '../variants'
 import { pencilBakery } from './bakery'
 import { pencilGarden } from './garden'
 import { pencilMarket } from './market'

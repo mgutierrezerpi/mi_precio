@@ -15,30 +15,44 @@ function useOperationsLocalization() {
   useEffect(() => {
     const translate = () => {
       const entries = Object.values(DICT_OPERATIONS)
-      const localize = (value: string) => entries.find((entry) => entry.es === value)?.[lang] ?? value
-      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+      const localize = (value: string) =>
+        entries.find((entry) => entry.es === value)?.[lang] ?? value
+      const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT
+      )
       const nodes: Text[] = []
-      for (let node = walker.nextNode(); node; node = walker.nextNode()) nodes.push(node as Text)
+      for (let node = walker.nextNode(); node; node = walker.nextNode())
+        nodes.push(node as Text)
       nodes.forEach((node) => {
         const value = node.nodeValue ?? ''
         const translated = localize(value.trim())
-        if (translated !== value.trim()) node.nodeValue = value.replace(value.trim(), translated)
+        if (translated !== value.trim())
+          node.nodeValue = value.replace(value.trim(), translated)
       })
-      document.querySelectorAll<HTMLElement>('[title], [placeholder], [aria-label]').forEach((node) => {
-        for (const attribute of ['title', 'placeholder', 'aria-label']) {
-          const value = node.getAttribute(attribute)
-          if (value) node.setAttribute(attribute, localize(value))
-        }
-      })
+      document
+        .querySelectorAll<HTMLElement>('[title], [placeholder], [aria-label]')
+        .forEach((node) => {
+          for (const attribute of ['title', 'placeholder', 'aria-label']) {
+            const value = node.getAttribute(attribute)
+            if (value) node.setAttribute(attribute, localize(value))
+          }
+        })
     }
     translate()
     const observer = new MutationObserver(translate)
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    })
     return () => observer.disconnect()
   }, [lang, t])
   return (key: string, vars?: Record<string, string | number>) => {
     let value = DICT_OPERATIONS[key]?.[lang] ?? t(key, vars)
-    if (vars) for (const [name, variable] of Object.entries(vars)) value = value.replaceAll(`{${name}}`, String(variable))
+    if (vars)
+      for (const [name, variable] of Object.entries(vars))
+        value = value.replaceAll(`{${name}}`, String(variable))
     return value
   }
 }
@@ -185,10 +199,7 @@ export function TeamScreen() {
 
   const remove = async (m: TeamMember) => {
     if (!tenant?.id) return
-    if (
-      !confirm(t('team.removeConfirm', { name: m.name }))
-    )
-      return
+    if (!confirm(t('team.removeConfirm', { name: m.name }))) return
     const res = await api.removeMember(tenant.id, m.id)
     if (res.error) setError(res.error)
     else {

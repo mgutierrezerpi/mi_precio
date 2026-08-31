@@ -1,7 +1,7 @@
 from lib.value_objects import AuthResult
 from views.base_view import BaseView
-from views.user_view import UserView
 from views.tenant_view import TenantView
+from views.user_view import UserView
 
 
 class AuthTokenView(BaseView):

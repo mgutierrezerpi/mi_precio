@@ -13,8 +13,8 @@ export const pencilImages = {
     'https://images.unsplash.com/photo-1695728130932-7b5967d59f52?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080',
 }
 
-
-export const definePencilTemplate = (config: PencilConfig): PencilConfig => config
+export const definePencilTemplate = (config: PencilConfig): PencilConfig =>
+  config
 
 const SPECIAL_BASE: PencilConfig = {
   background: '#F5F1E8',
@@ -35,8 +35,9 @@ const SPECIAL_BASE: PencilConfig = {
   layout: 'alternating',
 }
 
-export const defineSpecialTemplate = (overrides: Partial<PencilConfig>): PencilConfig => ({
+export const defineSpecialTemplate = (
+  overrides: Partial<PencilConfig>
+): PencilConfig => ({
   ...SPECIAL_BASE,
   ...overrides,
 })
-

@@ -16,7 +16,8 @@ import { Icon, type IconName } from './crm/ui'
 import { QrCode } from './crm/QrCode'
 import { QrModal } from './PriceListsScreen'
 import { tone, gradient, type Tone } from './crm/theme'
-import { DEFAULT_QR_COLOR, QR_COLOR_STORAGE_PREFIX } from '../../lib/qrRender'
+import { QR_COLOR_STORAGE_PREFIX } from '../../lib/qrRender'
+import { useStoredQrColor } from '../../hooks/useStoredQrColor'
 import { localeOf, normalizeLang, useT, type TFn } from '../../lib/i18n'
 import { DICT_ANALYTICS } from '../../lib/i18nDictionaryAnalytics'
 import { ActivityRow } from './crm/activity'
@@ -46,11 +47,29 @@ function useAnalyticsI18n() {
   return { locale: localeOf(tenant?.language), t }
 }
 
-const quickActions = (t: TFn): { icon: IconName; title: string; desc: string }[] => [
-  { icon: 'plus', title: t('analytics.newProduct'), desc: t('analytics.addToCatalog') },
-  { icon: 'list-plus', title: t('analytics.createList'), desc: t('analytics.selectProducts') },
-  { icon: 'user-plus', title: t('analytics.newCustomer'), desc: t('analytics.addContact') },
-  { icon: 'qr-code', title: t('analytics.shareQr'), desc: t('analytics.generateAndDownload') },
+const quickActions = (
+  t: TFn
+): { icon: IconName; title: string; desc: string }[] => [
+  {
+    icon: 'plus',
+    title: t('analytics.newProduct'),
+    desc: t('analytics.addToCatalog'),
+  },
+  {
+    icon: 'list-plus',
+    title: t('analytics.createList'),
+    desc: t('analytics.selectProducts'),
+  },
+  {
+    icon: 'user-plus',
+    title: t('analytics.newCustomer'),
+    desc: t('analytics.addContact'),
+  },
+  {
+    icon: 'qr-code',
+    title: t('analytics.shareQr'),
+    desc: t('analytics.generateAndDownload'),
+  },
 ]
 
 /* ── Screen ──────────────────────────────────────────────────────── */
@@ -89,7 +108,9 @@ export function DashboardScreen() {
     api.getReports(tenant.id, 30).then((res) => {
       if (!cancelled && res.data) setTrend(res.data)
     })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [tenant?.id])
   const qrLinkUrl = qrList
     ? `${window.location.origin}/p/${tenant?.subdomain || 'mi-negocio'}/${qrList.slug || qrList.id}`
@@ -219,13 +240,10 @@ function useDashboardData(navigate: ReturnType<typeof useNavigate>) {
 }
 
 function usePublicListUrls(tenant: Tenant | null) {
-  const [qrColor, setQrColor] = useState(DEFAULT_QR_COLOR)
+  const [qrColor] = useStoredQrColor(
+    tenant?.id ? `${QR_COLOR_STORAGE_PREFIX}${tenant.id}` : null
+  )
   const [copied, setCopied] = useState(false)
-  useEffect(() => {
-    if (!tenant?.id) return
-    const saved = localStorage.getItem(`${QR_COLOR_STORAGE_PREFIX}${tenant.id}`)
-    if (saved) setQrColor(saved)
-  }, [tenant?.id])
   const copyUrl = (url: string) => {
     if (!url) return
     navigator.clipboard?.writeText(url)
@@ -330,9 +348,7 @@ function QrHeroCard({
           {t('analytics.shareCatalogTitle')}
         </h3>
         <p className="text-sm leading-relaxed text-[#E9D5FF]">
-          {qrList
-            ? t('analytics.qrReady')
-            : t('analytics.createQrDescription')}
+          {qrList ? t('analytics.qrReady') : t('analytics.createQrDescription')}
         </p>
         <button
           type="button"
@@ -386,7 +402,13 @@ function DashboardMetrics({
       <OverviewMetric
         label={t('analytics.listViews')}
         value={listViews.toLocaleString(locale)}
-        detail={visits ? t('analytics.todayCount', { count: visits.today.toLocaleString(locale) }) : t('analytics.noData')}
+        detail={
+          visits
+            ? t('analytics.todayCount', {
+                count: visits.today.toLocaleString(locale),
+              })
+            : t('analytics.noData')
+        }
         featured
       />
       <OverviewMetric
@@ -398,7 +420,13 @@ function DashboardMetrics({
       <OverviewMetric
         label={t('analytics.qrScans')}
         value={qrScans.toLocaleString(locale)}
-        detail={visits ? t('analytics.todayCount', { count: visits.qr.today.toLocaleString(locale) }) : t('analytics.noData')}
+        detail={
+          visits
+            ? t('analytics.todayCount', {
+                count: visits.qr.today.toLocaleString(locale),
+              })
+            : t('analytics.noData')
+        }
         onClick={goQr}
       />
     </section>
@@ -448,29 +476,88 @@ function DailyVisitsChart({
   const max = Math.max(1, ...totals)
   const recent = totals.slice(-7).reduce((sum, value) => sum + value, 0)
   const previous = totals.slice(-14, -7).reduce((sum, value) => sum + value, 0)
-  const change = previous ? Math.round(((recent - previous) / previous) * 100) : recent ? 100 : 0
-  const points = totals.map((value, index) => `${(index / Math.max(1, totals.length - 1)) * 100},${100 - (value / max) * 82 - 9}`).join(' ')
+  const change = previous
+    ? Math.round(((recent - previous) / previous) * 100)
+    : recent
+      ? 100
+      : 0
+  const points = totals
+    .map(
+      (value, index) =>
+        `${(index / Math.max(1, totals.length - 1)) * 100},${100 - (value / max) * 82 - 9}`
+    )
+    .join(' ')
   const hasVisits = totals.some(Boolean)
 
   return (
-    <section className={`card dash-card flex flex-col gap-4 rounded-[10px] p-5 ${hasVisits ? 'min-h-[300px] flex-1' : ''}`}>
+    <section
+      className={`card dash-card flex flex-col gap-4 rounded-[10px] p-5 ${hasVisits ? 'min-h-[300px] flex-1' : ''}`}
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="text-lg font-bold text-[#F8F7FF]">{t('analytics.visitGrowth')}</h3>
-          <p className="text-[13px] text-[#9694A6]">{t('analytics.last30Days')}</p>
+          <h3 className="text-lg font-bold text-[#F8F7FF]">
+            {t('analytics.visitGrowth')}
+          </h3>
+          <p className="text-[13px] text-[#9694A6]">
+            {t('analytics.last30Days')}
+          </p>
         </div>
-        <button type="button" onClick={() => navigate('/reports')} className="btn btn-sm h-8 w-fit rounded-md bg-[#1C1730] px-3 text-xs font-semibold text-[#C4B5FD]">{t('analytics.cumulativeData')}</button>
+        <button
+          type="button"
+          onClick={() => navigate('/reports')}
+          className="btn btn-sm h-8 w-fit rounded-md bg-[#1C1730] px-3 text-xs font-semibold text-[#C4B5FD]"
+        >
+          {t('analytics.cumulativeData')}
+        </button>
       </div>
-      {hasVisits ? <>
-        <div className="flex items-end justify-between rounded-xl bg-[#1C1730] px-4 py-3">
-          <div><p className="text-[11px] font-semibold text-[#9694A6]">{t('analytics.last7Days')}</p><p className="text-2xl font-bold text-[#F8F7FF]">{recent.toLocaleString(locale)}</p></div>
-          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${change >= 0 ? 'bg-[#14532D] text-[#86EFAC]' : 'bg-[#7F1D1D] text-[#FCA5A5]'}`}>{change >= 0 ? '+' : ''}{change}%</span>
+      {hasVisits ? (
+        <>
+          <div className="flex items-end justify-between rounded-xl bg-[#1C1730] px-4 py-3">
+            <div>
+              <p className="text-[11px] font-semibold text-[#9694A6]">
+                {t('analytics.last7Days')}
+              </p>
+              <p className="text-2xl font-bold text-[#F8F7FF]">
+                {recent.toLocaleString(locale)}
+              </p>
+            </div>
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-bold ${change >= 0 ? 'bg-[#14532D] text-[#86EFAC]' : 'bg-[#7F1D1D] text-[#FCA5A5]'}`}
+            >
+              {change >= 0 ? '+' : ''}
+              {change}%
+            </span>
+          </div>
+          <div className="flex min-h-40 flex-1 flex-col justify-end gap-2">
+            <svg
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              className="h-36 w-full overflow-visible"
+            >
+              <polyline
+                points={points}
+                fill="none"
+                stroke="#A78BFA"
+                strokeWidth="2"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+            <div className="flex justify-between text-[10px] text-[#9694A6]">
+              <span>{t('analytics.thirtyDaysAgo')}</span>
+              <span>{t('analytics.today')}</span>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex items-center gap-3 rounded-xl bg-[#1C1730] px-4 py-4 text-[13px] text-[#9694A6]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2B1A4B] text-[#C4B5FD]">
+            <Icon name="trending-up" size={17} />
+          </span>
+          <span>
+            {data ? t('analytics.shareListToMeasure') : t('analytics.loading')}
+          </span>
         </div>
-        <div className="flex min-h-40 flex-1 flex-col justify-end gap-2">
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-36 w-full overflow-visible"><polyline points={points} fill="none" stroke="#A78BFA" strokeWidth="2" vectorEffect="non-scaling-stroke" /></svg>
-          <div className="flex justify-between text-[10px] text-[#9694A6]"><span>{t('analytics.thirtyDaysAgo')}</span><span>{t('analytics.today')}</span></div>
-        </div>
-      </> : <div className="flex items-center gap-3 rounded-xl bg-[#1C1730] px-4 py-4 text-[13px] text-[#9694A6]"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2B1A4B] text-[#C4B5FD]"><Icon name="trending-up" size={17} /></span><span>{data ? t('analytics.shareListToMeasure') : t('analytics.loading')}</span></div>}
+      )}
     </section>
   )
 }

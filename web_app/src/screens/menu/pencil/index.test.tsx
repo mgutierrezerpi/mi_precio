@@ -1,20 +1,59 @@
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import type { DesignProps } from './designs'
-import { PencilList, pencilCartThemeFor, type PencilVariant } from './index'
+import type { DesignProps } from '../designs'
+import { PencilList } from './index'
+import { pencilCartThemeFor } from './cartTheme'
+import type { PencilVariant } from './variants'
 
 const variants: PencilVariant[] = [
-  'pencil-bakery', 'pencil-garden', 'pencil-market', 'pencil-evening', 'pencil-workshop',
-  'pencil-cheese', 'pencil-flower', 'pencil-flower-summer', 'pencil-flower-winter', 'pencil-flower-spring', 'pencil-wine',
-  'pencil-cheese-alternating', 'pencil-hardware-alternating', 'pencil-hardware-weekend', 'pencil-hardware-shelf',
-  'pencil-casa-ritual', 'pencil-casa-bath', 'pencil-casa-signature', 'pencil-casa-services', 'pencil-auto-detail',
-  'pencil-blush-bloom', 'pencil-nova', 'pencil-beardy', 'pencil-calm-spa', 'pencil-union-barber',
-  'pencil-studio-mono', 'pencil-beauty-issue', 'pencil-obsidian-quarterly',
+  'pencil-bakery',
+  'pencil-garden',
+  'pencil-market',
+  'pencil-evening',
+  'pencil-workshop',
+  'pencil-cheese',
+  'pencil-flower',
+  'pencil-flower-summer',
+  'pencil-flower-winter',
+  'pencil-flower-spring',
+  'pencil-wine',
+  'pencil-cheese-alternating',
+  'pencil-hardware-alternating',
+  'pencil-hardware-weekend',
+  'pencil-hardware-shelf',
+  'pencil-casa-ritual',
+  'pencil-casa-bath',
+  'pencil-casa-signature',
+  'pencil-casa-services',
+  'pencil-auto-detail',
+  'pencil-blush-bloom',
+  'pencil-nova',
+  'pencil-beardy',
+  'pencil-calm-spa',
+  'pencil-union-barber',
+  'pencil-studio-mono',
+  'pencil-beauty-issue',
+  'pencil-obsidian-quarterly',
 ]
 
 const props = {
   tenant: { name: 'Demo Studio' },
-  sections: [{ key: 'services', name: 'Services', min: 1, max: 2, items: [{ id: 'item-1', name: 'Signature service', price: '42', description: 'A considered detail.' }] }],
+  sections: [
+    {
+      key: 'services',
+      name: 'Services',
+      min: 1,
+      max: 2,
+      items: [
+        {
+          id: 'item-1',
+          name: 'Signature service',
+          price: '42',
+          description: 'A considered detail.',
+        },
+      ],
+    },
+  ],
   cart: {},
   cartCount: 0,
   addToCart: () => undefined,
@@ -22,7 +61,15 @@ const props = {
   openCart: () => undefined,
   waHref: '#',
   isService: false,
-  content: { schemaVersion: 1, hero: { eyebrow: 'Demo', title: 'Demo price list', body: 'A short description.' }, blocks: [] },
+  content: {
+    schemaVersion: 1,
+    hero: {
+      eyebrow: 'Demo',
+      title: 'Demo price list',
+      body: 'A short description.',
+    },
+    blocks: [],
+  },
   listName: 'Demo price list',
   monthYear: 'AUG 2026',
 } as unknown as DesignProps
@@ -50,7 +97,11 @@ describe('Pencil price-list templates', () => {
         {...props}
         content={{
           schemaVersion: 1,
-          hero: { eyebrow: 'Demo', title: 'Demo price list', body: 'A short description.' },
+          hero: {
+            eyebrow: 'Demo',
+            title: 'Demo price list',
+            body: 'A short description.',
+          },
           blocks: [],
           template: {
             imageLabel: '',
@@ -64,11 +115,15 @@ describe('Pencil price-list templates', () => {
             footerRight: '',
           },
         }}
-      />,
+      />
     )
 
-    expect(view.container.textContent).not.toContain('WILD STEM STUDIO · WINTER EDITION')
-    expect(view.container.textContent).not.toContain('Flowers for the darker hours.')
+    expect(view.container.textContent).not.toContain(
+      'WILD STEM STUDIO · WINTER EDITION'
+    )
+    expect(view.container.textContent).not.toContain(
+      'Flowers for the darker hours.'
+    )
     expect(view.container.textContent).not.toContain('order by Thursday')
     view.unmount()
   })

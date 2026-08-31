@@ -1,7 +1,8 @@
-from peewee import CharField, TextField, DecimalField, ForeignKeyField
+from peewee import CharField, DecimalField, ForeignKeyField, TextField
+
 from models.base import BaseModel
-from models.tenant import Tenant
 from models.customer import Customer
+from models.tenant import Tenant
 
 
 class Order(BaseModel):

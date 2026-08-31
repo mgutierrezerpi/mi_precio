@@ -3,7 +3,7 @@
 import json
 import logging
 
-from models import Tenant, Activity
+from models import Activity, Tenant
 
 logger = logging.getLogger(__name__)
 

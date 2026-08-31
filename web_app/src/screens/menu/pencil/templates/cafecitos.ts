@@ -11,7 +11,8 @@ export const pencilCafecitos = defineSpecialTemplate({
   imageTitle: 'Colaboraciones',
   promoEyebrow: 'CONTENIDO QUE CONECTA',
   promoTitle: 'Tu marca, en una historia que se comparte.',
-  promoBody: 'Reels auténticos para mostrar lo que hacés y conectar con nuevas personas.',
+  promoBody:
+    'Reels auténticos para mostrar lo que hacés y conectar con nuevas personas.',
   promoPrice: '',
   promoNote: '',
   footerLeft: 'CAFECITOS CON DANI',

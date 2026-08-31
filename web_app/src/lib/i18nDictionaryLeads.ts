@@ -15,8 +15,16 @@ export const DICT_LEADS: Record<string, TranslationEntry> = {
     pt: 'Deixe seus dados e a gente te escreve.',
   },
   'lead.name': { es: 'Tu nombre', en: 'Your name', pt: 'Seu nome' },
-  'lead.phone': { es: 'Teléfono o WhatsApp', en: 'Phone or WhatsApp', pt: 'Telefone ou WhatsApp' },
-  'lead.email': { es: 'Email (opcional)', en: 'Email (optional)', pt: 'E-mail (opcional)' },
+  'lead.phone': {
+    es: 'Teléfono o WhatsApp',
+    en: 'Phone or WhatsApp',
+    pt: 'Telefone ou WhatsApp',
+  },
+  'lead.email': {
+    es: 'Email (opcional)',
+    en: 'Email (optional)',
+    pt: 'E-mail (opcional)',
+  },
   'lead.message': {
     es: 'Contanos qué necesitás (opcional)',
     en: 'Tell us what you need (optional)',
@@ -53,14 +61,34 @@ export const DICT_LEADS: Record<string, TranslationEntry> = {
   'leads.column.status': { es: 'Estado', en: 'Status', pt: 'Status' },
   'leads.column.date': { es: 'Llegó', en: 'Received', pt: 'Chegou' },
   'leads.status.new': { es: 'Nuevo', en: 'New', pt: 'Novo' },
-  'leads.status.contacted': { es: 'Contactado', en: 'Contacted', pt: 'Contatado' },
+  'leads.status.contacted': {
+    es: 'Contactado',
+    en: 'Contacted',
+    pt: 'Contatado',
+  },
   'leads.status.converted': { es: 'Cliente', en: 'Customer', pt: 'Cliente' },
-  'leads.status.discarded': { es: 'Descartado', en: 'Discarded', pt: 'Descartado' },
+  'leads.status.discarded': {
+    es: 'Descartado',
+    en: 'Discarded',
+    pt: 'Descartado',
+  },
   'leads.source.form': { es: 'Formulario', en: 'Form', pt: 'Formulário' },
   'leads.source.cart': { es: 'Carrito', en: 'Cart', pt: 'Carrinho' },
-  'leads.action.whatsapp': { es: 'Escribir por WhatsApp', en: 'Message on WhatsApp', pt: 'Falar no WhatsApp' },
-  'leads.action.contacted': { es: 'Marcar contactado', en: 'Mark contacted', pt: 'Marcar contatado' },
-  'leads.action.convert': { es: 'Pasar a clientes', en: 'Make a customer', pt: 'Tornar cliente' },
+  'leads.action.whatsapp': {
+    es: 'Escribir por WhatsApp',
+    en: 'Message on WhatsApp',
+    pt: 'Falar no WhatsApp',
+  },
+  'leads.action.contacted': {
+    es: 'Marcar contactado',
+    en: 'Mark contacted',
+    pt: 'Marcar contatado',
+  },
+  'leads.action.convert': {
+    es: 'Pasar a clientes',
+    en: 'Make a customer',
+    pt: 'Tornar cliente',
+  },
   'leads.action.discard': { es: 'Descartar', en: 'Discard', pt: 'Descartar' },
   'leads.tab.all': { es: 'Todos', en: 'All', pt: 'Todos' },
   'leads.upsellTitle': {

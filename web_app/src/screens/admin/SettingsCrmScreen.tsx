@@ -29,10 +29,12 @@ import {
 import {
   ListAppearanceFields,
   Toggle,
-  hasOwnAppearance,
-  BRAND_SWATCHES,
-  type ListAppearance,
 } from '../../components/appearance/ListAppearanceFields'
+import {
+  BRAND_SWATCHES,
+  hasOwnAppearance,
+  type ListAppearance,
+} from '../../lib/listAppearance'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
 import { gradient, tone } from './crm/theme'
@@ -65,10 +67,18 @@ const LANGUAGES: { code: string; label: string }[] = [
   { code: 'pt', label: 'Português' },
 ]
 const BUSINESS_CATEGORIES = [
-  ['restaurant', 'Restaurante'], ['bakery', 'Panadería'], ['cafe', 'Cafetería'],
-  ['grocery', 'Almacén / minimercado'], ['drugstore', 'Farmacia'], ['hardware', 'Ferretería'],
-  ['beauty', 'Belleza / salón'], ['clothing', 'Indumentaria'], ['home', 'Hogar / decoración'],
-  ['pets', 'Mascotas'], ['services', 'Servicios'], ['other', 'Otro'],
+  ['restaurant', 'Restaurante'],
+  ['bakery', 'Panadería'],
+  ['cafe', 'Cafetería'],
+  ['grocery', 'Almacén / minimercado'],
+  ['drugstore', 'Farmacia'],
+  ['hardware', 'Ferretería'],
+  ['beauty', 'Belleza / salón'],
+  ['clothing', 'Indumentaria'],
+  ['home', 'Hogar / decoración'],
+  ['pets', 'Mascotas'],
+  ['services', 'Servicios'],
+  ['other', 'Otro'],
 ] as const
 
 const TIMEZONES = [
@@ -189,7 +199,12 @@ export function SettingsCrmContent({ simple = false }: { simple?: boolean }) {
           />
         )}
         {active === 'billing' && (
-          <BillingSection t={t} tenant={tenant} isOwner={isOwner} />
+          <BillingSection
+            key={tenant?.id ?? 'no_tenant'}
+            t={t}
+            tenant={tenant}
+            isOwner={isOwner}
+          />
         )}
         {/* Datos fiscales: oculta por ahora (ver array `sections`). Para reactivar, descomentá: */}
         {/* {active === 'tax' && <TaxSection {...ctx} />} */}
@@ -386,14 +401,13 @@ function useInfoFields(
   const [taxId, setTaxId] = useState(tenant?.taxId ?? '')
   const [logo, setLogo] = useState<string | null>(tenant?.logoUrl ?? null)
   const touched = useRef(false)
-  const saveRef = useLatest(save)
   const touch = () => markTouched(touched)
 
   useEffect(() => {
     if (!canManage || !touched.current) return
     const timer = setTimeout(() => {
       touched.current = false
-      void saveRef.current(
+      void save(
         {
           name: name.trim(),
           subdomain: subdomain.trim(),
@@ -404,7 +418,7 @@ function useInfoFields(
       )
     }, 500)
     return () => clearTimeout(timer)
-  }, [name, subdomain, taxId, logo, canManage])
+  }, [name, subdomain, taxId, logo, canManage, save])
 
   return {
     fields: { name, subdomain, taxId, logo, setName, setSubdomain, setTaxId },
@@ -629,18 +643,17 @@ function useBrandIdentity(
   const [color, setColor] = useState(tenant?.brandColor ?? '#7C3AED')
   const [description, setDescription] = useState(tenant?.description ?? '')
   const touched = useRef(false)
-  const saveRef = useLatest(save)
   useEffect(() => {
     if (!canManage || !touched.current) return
     const timer = setTimeout(() => {
       touched.current = false
-      void saveRef.current(
+      void save(
         { brandColor: color, description: description.trim() || null },
         'brand'
       )
     }, 500)
     return () => clearTimeout(timer)
-  }, [color, description, canManage])
+  }, [color, description, canManage, save])
   const changeColor = (value: string) => {
     markTouched(touched)
     setColor(value)
@@ -665,7 +678,6 @@ function useAppearanceEditor(
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const touched = useRef(false)
-  const saveRef = useLatest(save)
   const editingTenant = targetId === ''
   const tenantDefaults = tenantAppearance(tenant)
 
@@ -685,7 +697,7 @@ function useAppearanceEditor(
     const timer = setTimeout(async () => {
       touched.current = false
       if (editingTenant) {
-        await saveRef.current(
+        await save(
           {
             listDesign: appearance.design,
             listHeroColor: appearance.heroColor,
@@ -708,7 +720,7 @@ function useAppearanceEditor(
       }
     }, 400)
     return () => clearTimeout(timer)
-  }, [appearance, canManage, editingTenant, targetId])
+  }, [appearance, canManage, editingTenant, targetId, save])
 
   const pickTarget = (id: string) => {
     touched.current = false
@@ -1092,21 +1104,36 @@ function RegionSection({
   const [deliveryEnabled, setDeliveryEnabled] = useState(
     tenant?.deliveryEnabled ?? false
   )
-  const [businessCategory, setBusinessCategory] = useState(tenant?.businessCategory ?? '')
+  const [businessCategory, setBusinessCategory] = useState(
+    tenant?.businessCategory ?? ''
+  )
   const touched = useRef(false)
-  const saveRef = useLatest(save)
 
   useEffect(() => {
     if (!canManage || !touched.current) return
     const timer = setTimeout(() => {
       touched.current = false
-      void saveRef.current(
-        { currency, language, timezone, deliveryEnabled, businessCategory: businessCategory || null },
+      void save(
+        {
+          currency,
+          language,
+          timezone,
+          deliveryEnabled,
+          businessCategory: businessCategory || null,
+        },
         'region'
       )
     }, 500)
     return () => clearTimeout(timer)
-  }, [currency, language, timezone, deliveryEnabled, businessCategory, canManage])
+  }, [
+    currency,
+    language,
+    timezone,
+    deliveryEnabled,
+    businessCategory,
+    canManage,
+    save,
+  ])
 
   return (
     <>
@@ -1141,7 +1168,9 @@ function RegionSection({
         t={t}
         value={deliveryEnabled}
       />
-      <MarketplaceProfileFields {...{ canManage, save, savingKey, savedKey, t, tenant }} />
+      <MarketplaceProfileFields
+        {...{ canManage, save, savingKey, savedKey, t, tenant }}
+      />
       <MarketplaceControl
         canManage={canManage}
         enabled={tenant?.marketplaceEnabled ?? false}
@@ -1242,13 +1271,12 @@ function MarketplaceProfileFields({
   const [websiteUrl, setWebsiteUrl] = useState(tenant?.websiteUrl ?? '')
   const [instagramUrl, setInstagramUrl] = useState(tenant?.instagramUrl ?? '')
   const touched = useRef(false)
-  const saveRef = useLatest(save)
 
   useEffect(() => {
     if (!canManage || !touched.current) return
     const timer = setTimeout(() => {
       touched.current = false
-      void saveRef.current(
+      void save(
         {
           address: address.trim() || null,
           whatsappUrl: whatsappUrl.trim() || null,
@@ -1259,7 +1287,7 @@ function MarketplaceProfileFields({
       )
     }, 500)
     return () => clearTimeout(timer)
-  }, [address, whatsappUrl, websiteUrl, instagramUrl, canManage])
+  }, [address, whatsappUrl, websiteUrl, instagramUrl, canManage, save])
 
   const onChange = (setter: (value: string) => void, value: string) => {
     markTouched(touched)
@@ -1369,22 +1397,21 @@ function MarketplaceControl({
         <span className="text-[11px] font-medium text-[var(--dash-muted)]">
           {t('set.marketplace.subtitle')}
         </span>
-
       </div>
       <div className="flex shrink-0 items-center gap-3">
-        <span className={`text-xs font-bold ${enabled ? 'text-[var(--tone-green-fg)]' : 'text-[var(--dash-muted)]'}`}>
-          {saving ? t('common.saving') : enabled ? t('set.marketplace.listed') : t('set.marketplace.hidden')}
+        <span
+          className={`text-xs font-bold ${enabled ? 'text-[var(--tone-green-fg)]' : 'text-[var(--dash-muted)]'}`}
+        >
+          {saving
+            ? t('common.saving')
+            : enabled
+              ? t('set.marketplace.listed')
+              : t('set.marketplace.hidden')}
         </span>
         <Toggle on={enabled} onClick={toggle} disabled={!canManage || saving} />
       </div>
     </div>
   )
-}
-
-function useLatest<T>(value: T) {
-  const ref = useRef(value)
-  ref.current = value
-  return ref
 }
 
 function markTouched(ref: { current: boolean }) {
@@ -1479,6 +1506,22 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 /* ── 5. Billing — plans, usage and limit enforcement ── */
+function validPlan(value: string | null): PlanId | null {
+  return value && PLANS.some((plan) => plan.id === value)
+    ? (value as PlanId)
+    : null
+}
+
+function checkoutReturnPlan(): PlanId | null {
+  return validPlan(
+    new URLSearchParams(window.location.search).get('checkout_plan')
+  )
+}
+
+function storedPendingPlan(key: string | null): PlanId | null {
+  return key ? validPlan(sessionStorage.getItem(key)) : null
+}
+
 function BillingSection({
   t,
   tenant,
@@ -1491,10 +1534,13 @@ function BillingSection({
   const dispatch = useAppDispatch()
   const [info, setInfo] = useState<PlanInfo | null>(null)
   const [changing, setChanging] = useState<PlanId | null>(null)
-  const [pendingPlan, setPendingPlan] = useState<PlanId | null>(null)
   const [error, setError] = useState<string | null>(null)
   const tenantId = tenant?.id
   const pendingKey = tenantId ? `billing_pending_plan_${tenantId}` : null
+  const returnedPlan = checkoutReturnPlan()
+  const [pendingPlan] = useState<PlanId | null>(
+    () => returnedPlan ?? storedPendingPlan(pendingKey)
+  )
 
   useEffect(() => {
     if (!tenantId) return
@@ -1510,9 +1556,7 @@ function BillingSection({
   useEffect(() => {
     if (!pendingKey) return
     const params = new URLSearchParams(window.location.search)
-    const { checkout_plan: returnedPlanValue, order_id: orderId } =
-      Object.fromEntries(params)
-    const returnedPlan = returnedPlanValue as PlanId | undefined
+    const orderId = params.get('order_id')
     if (orderId && tenantId) {
       void api.reconcileCheckout(tenantId, orderId).then(() =>
         api.getPlan(tenantId).then((res) => {
@@ -1521,9 +1565,8 @@ function BillingSection({
       )
       params.delete('order_id')
     }
-    if (returnedPlan && PLANS.some((plan) => plan.id === returnedPlan)) {
+    if (returnedPlan) {
       sessionStorage.setItem(pendingKey, returnedPlan)
-      setPendingPlan(returnedPlan)
       params.delete('checkout_plan')
       const qs = params.toString()
       window.history.replaceState(
@@ -1531,23 +1574,16 @@ function BillingSection({
         '',
         `${window.location.pathname}${qs ? `?${qs}` : ''}`
       )
-      return
     }
-    const storedPlan = sessionStorage.getItem(pendingKey) as PlanId | null
-    setPendingPlan(
-      storedPlan && PLANS.some((plan) => plan.id === storedPlan)
-        ? storedPlan
-        : null
-    )
-  }, [pendingKey, tenantId])
+  }, [pendingKey, returnedPlan, tenantId])
 
   const current = info?.plan ?? tenant?.plan ?? 'free'
-  const visiblePlan = pendingPlan ?? current
+  const visiblePlan =
+    pendingPlan && current !== pendingPlan ? pendingPlan : current
 
   useEffect(() => {
-    if (!pendingKey || !pendingPlan || current !== pendingPlan) return
+    if (!pendingKey || current !== pendingPlan) return
     sessionStorage.removeItem(pendingKey)
-    setPendingPlan(null)
   }, [current, pendingKey, pendingPlan])
 
   const choosePlan = async (plan: PlanId) => {

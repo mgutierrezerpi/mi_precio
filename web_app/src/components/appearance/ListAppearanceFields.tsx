@@ -2,6 +2,11 @@ import { useRef } from 'react'
 import type { Item, ListDesign, Tenant } from '../../types'
 import { getT, type TFn } from '../../lib/i18n'
 import { fileToDataUrl } from '../../lib/image'
+import {
+  BRAND_SWATCHES,
+  LIST_DESIGNS,
+  type ListAppearance,
+} from '../../lib/listAppearance'
 import { Icon } from '../../screens/admin/crm/ui'
 import { gradient } from '../../screens/admin/crm/theme'
 import {
@@ -15,80 +20,11 @@ import {
   TechGrid,
   type DesignProps,
 } from '../../screens/menu/designs'
-import { isPencilVariant, PencilList } from '../../screens/menu/pencil'
+import { PencilList } from '../../screens/menu/pencil'
+import { isPencilVariant } from '../../screens/menu/pencil/variants'
 import { PencilJournal } from '../../screens/menu/pencilJournal'
 
-/** Visual templates for the public list. Mirrors LIST_DESIGNS in
- *  api/controllers/input_types/appearance.py — keep both in sync. */
-export const LIST_DESIGNS: ListDesign[] = [
-  'store',
-  'classic',
-  'nordic',
-  'fine',
-  'modern',
-  'photo',
-  'cards',
-  'catalog',
-  'tech',
-  'pencil-bakery',
-  'pencil-garden',
-  'pencil-market',
-  'pencil-evening',
-  'pencil-workshop',
-  'pencil-cheese',
-  'pencil-flower',
-  'pencil-flower-summer',
-  'pencil-flower-winter',
-  'pencil-flower-spring',
-  'pencil-wine',
-  'pencil-cheese-alternating',
-  'pencil-hardware-alternating',
-  'pencil-hardware-weekend',
-  'pencil-hardware-shelf',
-  'pencil-casa-ritual',
-  'pencil-casa-bath',
-  'pencil-casa-signature',
-  'pencil-casa-services',
-  'pencil-auto-detail',
-  'pencil-blush-bloom',
-  'pencil-nova',
-  'pencil-beardy',
-  'pencil-calm-spa',
-  'pencil-union-barber',
-  'pencil-studio-mono',
-  'pencil-beauty-issue',
-  'pencil-obsidian-quarterly',
-  'pencil-cafecitos',
-]
-
-export const BRAND_SWATCHES = [
-  '#7C3AED',
-  '#2563EB',
-  '#0EA5E9',
-  '#10B981',
-  '#F59E0B',
-  '#EF4444',
-  '#DB2777',
-  '#475569',
-]
-
 const SERIF = "'Playfair Display', Georgia, serif"
-
-/** The look of one public list: the tenant sets the defaults, each list may
- *  override any subset of them. `null` on a list means "inherit the tenant's". */
-export type ListAppearance = {
-  design: ListDesign | null
-  heroColor: string | null
-  bgUrl: string | null
-  bgOverlay: boolean | null
-}
-
-/** True when this list overrides at least one thing instead of inheriting everything. */
-export function hasOwnAppearance(
-  a: Pick<ListAppearance, 'design' | 'heroColor' | 'bgUrl'>
-): boolean {
-  return !!(a.design || a.heroColor || a.bgUrl)
-}
 
 const inputCls =
   'h-11 w-full rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3.5 text-sm font-medium text-[var(--dash-text)] outline-none transition focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/15 placeholder:text-[var(--dash-muted)] disabled:opacity-60'
@@ -117,7 +53,8 @@ export function DesignThumb({
   const props = createDesignPreviewProps(accent)
   let preview: React.ReactNode
 
-  if (isPencilVariant(design)) preview = <PencilList variant={design} {...props} />
+  if (isPencilVariant(design))
+    preview = <PencilList variant={design} {...props} />
   else if (design === 'pencil-journal') preview = <PencilJournal {...props} />
   else {
     const Renderer = standardPreviewRenderers[design]
@@ -131,7 +68,10 @@ export function DesignThumb({
   }
 
   return (
-    <div className="relative h-40 w-full overflow-hidden bg-white" aria-hidden="true">
+    <div
+      className="relative h-40 w-full overflow-hidden bg-white"
+      aria-hidden="true"
+    >
       <div className="pointer-events-none absolute left-1/2 top-0 w-[960px] origin-top -translate-x-1/2 scale-[0.27]">
         {preview}
       </div>
@@ -151,26 +91,70 @@ const previewItem = {
 // eslint-disable-next-line react-refresh/only-export-components
 export function createDesignPreviewProps(accent: string): DesignProps {
   const tenant = {
-    id: 'preview', name: 'Casa MiPrecio', subdomain: 'preview', currency: 'UYU',
-    description: 'Una selección para todos los días.', brandColor: accent,
-    listHeroColor: accent, language: 'es', taxId: null,
+    id: 'preview',
+    name: 'Casa MiPrecio',
+    subdomain: 'preview',
+    currency: 'UYU',
+    description: 'Una selección para todos los días.',
+    brandColor: accent,
+    listHeroColor: accent,
+    language: 'es',
+    taxId: null,
   } as Tenant
-  const C = { bg: '#FAFAF7', ink: '#0F0D1A', body: '#44424E', muted: '#84818E', accent, accent2: '#6D28D9', line: '#E5E2DC' }
+  const C = {
+    bg: '#FAFAF7',
+    ink: '#0F0D1A',
+    body: '#44424E',
+    muted: '#84818E',
+    accent,
+    accent2: '#6D28D9',
+    line: '#E5E2DC',
+  }
   return {
-    tenant, C, accent, heroColor: accent,
+    tenant,
+    C,
+    accent,
+    heroColor: accent,
     brandGradient: `linear-gradient(135deg, ${accent}, #A855F7)`,
-    t: getT('es'), money: (value) => `$ ${value}`, currency: 'UYU',
-    updated: 'Hoy', monthYear: 'Junio 2026',
-    sections: [{ key: 'featured', name: 'Destacados', items: [previewItem], min: 890, max: 890 }],
-    base: [previewItem], allItems: [previewItem], cat: 'all', setCat: () => {}, q: '', setQ: () => {},
-    cart: {}, cartCount: 0, addToCart: () => {}, decFromCart: () => {}, openCart: () => {},
-    waHref: '#', isService: false, listName: 'Selección', edition: '001', taxId: null, hasBg: false,
+    t: getT('es'),
+    money: (value) => `$ ${value}`,
+    currency: 'UYU',
+    updated: 'Hoy',
+    monthYear: 'Junio 2026',
+    sections: [
+      {
+        key: 'featured',
+        name: 'Destacados',
+        items: [previewItem],
+        min: 890,
+        max: 890,
+      },
+    ],
+    base: [previewItem],
+    allItems: [previewItem],
+    cat: 'all',
+    setCat: () => {},
+    q: '',
+    setQ: () => {},
+    cart: {},
+    cartCount: 0,
+    addToCart: () => {},
+    decFromCart: () => {},
+    openCart: () => {},
+    waHref: '#',
+    isService: false,
+    listName: 'Selección',
+    edition: '001',
+    taxId: null,
+    hasBg: false,
   }
 }
 
 type ThumbProps = { accent: string }
 
-const thumbs: Partial<Record<ListDesign, (props: ThumbProps) => React.ReactNode>> = {
+const thumbs: Partial<
+  Record<ListDesign, (props: ThumbProps) => React.ReactNode>
+> = {
   store: StoreThumb,
   classic: ClassicThumb,
   nordic: NordicThumb,
@@ -443,11 +427,20 @@ function PencilThumb({
   )
   const promo = <div className="h-7 w-2/3" style={{ background: darkPanel }} />
   return (
-    <div className="flex h-24 w-full flex-col gap-1.5 p-2" style={{ background }}>
+    <div
+      className="flex h-24 w-full flex-col gap-1.5 p-2"
+      style={{ background }}
+    >
       {imageFirst ? imageBlock : promo}
       <div className="flex flex-col items-center gap-1">
-        <span className="h-1 w-14 rounded-full" style={{ background: accent }} />
-        <span className="h-1 w-24 rounded-full" style={{ background: '#6D6A63' }} />
+        <span
+          className="h-1 w-14 rounded-full"
+          style={{ background: accent }}
+        />
+        <span
+          className="h-1 w-24 rounded-full"
+          style={{ background: '#6D6A63' }}
+        />
       </div>
       {imageFirst ? promo : imageBlock}
       <div className="grid grid-cols-2 gap-1">
@@ -517,13 +510,26 @@ function PencilWorkshopThumb({ accent }: ThumbProps) {
 
 function PencilExtendedThumb({ accent }: ThumbProps) {
   return (
-    <div className="flex h-24 w-full flex-col gap-2 p-3" style={{ background: '#F4F0E8' }}>
+    <div
+      className="flex h-24 w-full flex-col gap-2 p-3"
+      style={{ background: '#F4F0E8' }}
+    >
       <div className="h-3 w-2/3 rounded-sm" style={{ background: '#252525' }} />
       <div className="grid flex-1 grid-cols-2 gap-2">
         {[0, 1, 2, 3].map((index) => (
-          <div key={index} className="flex items-end justify-between border-b pb-1" style={{ borderColor: '#D5CEC2' }}>
-            <span className="h-1 w-2/3 rounded-full" style={{ background: '#8C857A' }} />
-            <span className="h-1 w-5 rounded-full" style={{ background: accent }} />
+          <div
+            key={index}
+            className="flex items-end justify-between border-b pb-1"
+            style={{ borderColor: '#D5CEC2' }}
+          >
+            <span
+              className="h-1 w-2/3 rounded-full"
+              style={{ background: '#8C857A' }}
+            />
+            <span
+              className="h-1 w-5 rounded-full"
+              style={{ background: accent }}
+            />
           </div>
         ))}
       </div>
@@ -533,11 +539,23 @@ function PencilExtendedThumb({ accent }: ThumbProps) {
 
 function PencilJournalThumb({ accent }: ThumbProps) {
   return (
-    <div className="flex h-24 w-full flex-col gap-1 p-2" style={{ background: '#EEE5D7' }}>
-      <div className="h-8 w-full bg-cover bg-center" style={{ backgroundImage: 'url(/pencil/cheese-factory/zLZId.png)' }} />
+    <div
+      className="flex h-24 w-full flex-col gap-1 p-2"
+      style={{ background: '#EEE5D7' }}
+    >
+      <div
+        className="h-8 w-full bg-cover bg-center"
+        style={{ backgroundImage: 'url(/pencil/cheese-factory/zLZId.png)' }}
+      />
       <div className="flex items-center gap-1">
-        <span className="h-1 w-1/3 rounded-full" style={{ background: '#A76D3E' }} />
-        <span className="h-1 w-1/2 rounded-full" style={{ background: '#6D5B4A' }} />
+        <span
+          className="h-1 w-1/3 rounded-full"
+          style={{ background: '#A76D3E' }}
+        />
+        <span
+          className="h-1 w-1/2 rounded-full"
+          style={{ background: '#6D5B4A' }}
+        />
       </div>
       <div className="grid flex-1 grid-cols-3 gap-1">
         <span style={{ background: '#3A2A1D' }} />
@@ -625,7 +643,10 @@ export function ListAppearanceFields({
   const scrollDesignGallery = (direction: -1 | 1) => {
     const gallery = designGalleryRef.current
     if (!gallery) return
-    gallery.scrollBy({ left: direction * gallery.clientWidth * 0.82, behavior: 'smooth' })
+    gallery.scrollBy({
+      left: direction * gallery.clientWidth * 0.82,
+      behavior: 'smooth',
+    })
   }
 
   return (
@@ -714,57 +735,27 @@ export function ListAppearanceFields({
           className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 pr-2 [scrollbar-width:thin]"
           aria-label={t('set.design.title')}
         >
-        {canInherit && (
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange({ design: null })}
-            className={`flex w-[min(18rem,calc(100vw-4rem))] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${value.design === null ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
-          >
-            <DesignThumb
-              design={inherited?.design ?? 'store'}
-              accent={accent}
-            />
-            <div className="flex items-start justify-between gap-2 border-t border-[var(--dash-border)] bg-[var(--dash-surface)] p-3">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[13px] font-bold text-[var(--dash-text)]">
-                  {t('list.appearance.inherit')}
-                </span>
-                <span className="text-[11px] font-medium leading-tight text-[var(--dash-muted)]">
-                  {t('list.appearance.inheritDesc')}
-                </span>
-              </div>
-              {value.design === null && (
-                <Icon
-                  name="circle-check"
-                  size={16}
-                  className="mt-0.5 shrink-0 text-[#7C3AED]"
-                />
-              )}
-            </div>
-          </button>
-        )}
-        {LIST_DESIGNS.map((d) => {
-          const on = canInherit ? value.design === d : effectiveDesign === d
-          return (
+          {canInherit && (
             <button
-              key={d}
               type="button"
               disabled={disabled}
-              onClick={() => onChange({ design: d })}
-              className={`flex w-[min(18rem,calc(100vw-4rem))] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${on ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
+              onClick={() => onChange({ design: null })}
+              className={`flex w-[min(18rem,calc(100vw-4rem))] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${value.design === null ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
             >
-              <DesignThumb design={d} accent={accent} />
+              <DesignThumb
+                design={inherited?.design ?? 'store'}
+                accent={accent}
+              />
               <div className="flex items-start justify-between gap-2 border-t border-[var(--dash-border)] bg-[var(--dash-surface)] p-3">
                 <div className="flex flex-col gap-0.5">
                   <span className="text-[13px] font-bold text-[var(--dash-text)]">
-                    {t(`set.design.${d}.name`)}
+                    {t('list.appearance.inherit')}
                   </span>
                   <span className="text-[11px] font-medium leading-tight text-[var(--dash-muted)]">
-                    {t(`set.design.${d}.desc`)}
+                    {t('list.appearance.inheritDesc')}
                   </span>
                 </div>
-                {on && (
+                {value.design === null && (
                   <Icon
                     name="circle-check"
                     size={16}
@@ -773,8 +764,38 @@ export function ListAppearanceFields({
                 )}
               </div>
             </button>
-          )
-        })}
+          )}
+          {LIST_DESIGNS.map((d) => {
+            const on = canInherit ? value.design === d : effectiveDesign === d
+            return (
+              <button
+                key={d}
+                type="button"
+                disabled={disabled}
+                onClick={() => onChange({ design: d })}
+                className={`flex w-[min(18rem,calc(100vw-4rem))] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${on ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
+              >
+                <DesignThumb design={d} accent={accent} />
+                <div className="flex items-start justify-between gap-2 border-t border-[var(--dash-border)] bg-[var(--dash-surface)] p-3">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[13px] font-bold text-[var(--dash-text)]">
+                      {t(`set.design.${d}.name`)}
+                    </span>
+                    <span className="text-[11px] font-medium leading-tight text-[var(--dash-muted)]">
+                      {t(`set.design.${d}.desc`)}
+                    </span>
+                  </div>
+                  {on && (
+                    <Icon
+                      name="circle-check"
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[#7C3AED]"
+                    />
+                  )}
+                </div>
+              </button>
+            )
+          })}
         </div>
         <div className="mt-1 flex justify-end gap-2">
           <button

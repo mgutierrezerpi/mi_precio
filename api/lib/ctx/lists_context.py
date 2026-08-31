@@ -2,17 +2,17 @@
 
 from datetime import datetime
 
-from models import Customer, Item, PriceList, ListVersion
-from models.price_list import unique_list_slug
 from lib.ctx.identity_context import get_tenant
+from lib.ctx.list_variants import copy_parent_snapshot
 from lib.value_objects import CreatedList
+from models import Customer, ListVersion, PriceList
+from models.price_list import unique_list_slug
 
 
 def list_lists(tenant_id: str) -> list[PriceList]:
     """Get all price lists for a tenant."""
     return list(
-        PriceList.select()
-        .where(
+        PriceList.select().where(
             (PriceList.tenant == tenant_id)
             & (PriceList.design.is_null(True) | (PriceList.design != "pencil-journal"))
         )
@@ -80,18 +80,7 @@ def create_list(
     version = ListVersion.create(list=price_list, name="v1", version_number=1)
 
     if parent:
-        source = (
-            ListVersion.select()
-            .where(ListVersion.list == parent.id)
-            .order_by(ListVersion.published.desc(), ListVersion.version_number.desc())
-            .first()
-        )
-        if source:
-            version.content = source.content
-            version.content_revision = 0
-            version.save()
-            for item in source.items.order_by(Item.position):
-                item.duplicate(list_version=version)
+        copy_parent_snapshot(parent, version)
 
     return CreatedList(price_list, version)
 

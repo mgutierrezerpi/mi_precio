@@ -6,7 +6,6 @@ from uuid import uuid4
 from infra.storage import ObjectStorageError, object_storage
 from models import Tenant
 
-
 SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_BRAND_IMAGE_BYTES = 5 * 1024 * 1024
 BRAND_IMAGE_MAX_SIDE = 1200
@@ -46,7 +45,9 @@ def upload_brand_image(tenant_id: str, data: bytes, content_type: str) -> str | 
         raise BrandImageUploadError("Invalid image data") from e
 
 
-def upload_list_template_image(tenant_id: str, data: bytes, content_type: str) -> str | None:
+def upload_list_template_image(
+    tenant_id: str, data: bytes, content_type: str
+) -> str | None:
     """Upload an editorial image for a public list template."""
     if content_type not in SUPPORTED_IMAGE_TYPES:
         raise BrandImageUploadError("Unsupported image type")
@@ -74,7 +75,9 @@ def upload_list_template_image(tenant_id: str, data: bytes, content_type: str) -
         raise BrandImageUploadError("Invalid image data") from e
 
 
-def upload_list_template_video(tenant_id: str, data: bytes, content_type: str) -> str | None:
+def upload_list_template_video(
+    tenant_id: str, data: bytes, content_type: str
+) -> str | None:
     """Upload an MP4 story clip without transcoding it."""
     if content_type != "video/mp4":
         raise BrandImageUploadError("Unsupported video type")

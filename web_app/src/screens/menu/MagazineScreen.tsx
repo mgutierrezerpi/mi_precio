@@ -4,11 +4,8 @@ import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
 import { getT } from '../../lib/i18n'
 import type { Magazine, Tenant } from '../../types'
-import { PencilJournal } from './pencilJournal'
 import type { DesignProps, StoreColors } from './designs'
-import { MagazineTemplate } from '../../components/magazine/MagazineTemplate'
-import { WildStemJournal } from './wildStemJournal'
-import { AquaObjectsJournal } from './aquaObjectsJournal'
+import { MagazineDesign } from './MagazineDesign'
 
 const BASE: StoreColors = {
   bg: '#FAFAF7',
@@ -79,30 +76,25 @@ export function MagazineScreen() {
   }, [accent, magazine?.name, t, tenant])
 
   if (!tenant && !error)
-    return <div className="flex min-h-screen items-center justify-center bg-[#241B15]"><LoadingSpinner size="lg" /></div>
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#241B15]">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
   if (error || !tenant || !magazine)
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#241B15] px-6 text-center text-[#F3EDE2]">
-        <h1 className="text-3xl" style={{ fontFamily: 'Georgia, serif' }}>Magazine not found</h1>
-        <Link className="text-sm underline" to={subdomain ? `/p/${subdomain}` : '/'}>Back to price lists</Link>
+        <h1 className="text-3xl" style={{ fontFamily: 'Georgia, serif' }}>
+          Magazine not found
+        </h1>
+        <Link
+          className="text-sm underline"
+          to={subdomain ? `/p/${subdomain}` : '/'}
+        >
+          Back to price lists
+        </Link>
       </div>
     )
 
-  if (magazine.design === 'editorial' || magazine.design === 'catalog')
-    return <MagazineTemplate magazine={magazine} variant={magazine.design} />
-
-  if (magazine.design === 'wild-stem')
-    return <WildStemJournal magazineTitle={magazine.name} magazinePages={magazine.pages} />
-
-  if (magazine.design === 'aqua-objects')
-    return <AquaObjectsJournal magazineTitle={magazine.name} magazinePages={magazine.pages} />
-
-  if (magazine.design !== 'pencil-journal')
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#241B15] px-6 text-center text-[#F3EDE2]">
-        This magazine design is not available yet.
-      </div>
-    )
-
-  return <PencilJournal {...designProps} magazineTitle={magazine.name} magazineCoverImage={magazine.coverImageUrl} magazinePages={magazine.pages} />
+  return <MagazineDesign designProps={designProps} magazine={magazine} />
 }
