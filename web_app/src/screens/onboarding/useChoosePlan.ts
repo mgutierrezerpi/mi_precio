@@ -114,6 +114,8 @@ export function useChoosePlan() {
   return {
     choosing, checking, confirming, error, handleLogout, isAuthenticated,
     isOwner, needsPlan, noPaymentYet, choosePlan, recheck, t,
+    isPlanStatusKnown: info !== null,
+    isPlanRequired: info?.planRequired === true,
     tenant, expired: Boolean(info?.billing?.status),
   }
 }

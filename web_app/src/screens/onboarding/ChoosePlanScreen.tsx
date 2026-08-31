@@ -6,7 +6,20 @@ import { useChoosePlan } from './useChoosePlan'
 export function ChoosePlanScreen() {
   const plan = useChoosePlan()
   if (!plan.isAuthenticated) return <Navigate to="/" replace />
-  if (!plan.needsPlan) return <Navigate to="/admin" replace />
+  if (!plan.isPlanStatusKnown) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center bg-[#F5F3FF] px-4 text-[#0F172A]"
+        role="status"
+      >
+        <p className="rounded-2xl bg-white px-5 py-4 text-sm font-semibold shadow-sm">
+          Verificando el estado de tu cuenta…
+        </p>
+      </div>
+    )
+  }
+  if (!plan.needsPlan && !plan.isPlanRequired)
+    return <Navigate to="/admin" replace />
   return (
     <ChoosePlanContent
       choosing={plan.choosing}
