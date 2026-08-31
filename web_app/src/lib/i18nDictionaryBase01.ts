@@ -23,9 +23,15 @@ export const DICT_BASE_01: Record<string, TranslationEntry> = {
     pt: 'Ação permanente e irreversível.',
   },
   'set.delete.warning': {
-    es: 'Se eliminará tu cuenta «{name}» con todos sus productos, listas, clientes, ventas y miembros del equipo. Esta acción no se puede deshacer.',
-    en: 'Your account “{name}” will be deleted with all its products, lists, customers, sales and team members. This cannot be undone.',
-    pt: 'Sua conta “{name}” será excluída com todos os produtos, listas, clientes, vendas e membros da equipe. Isso não pode ser desfeito.',
+    es:
+      'Se eliminará tu cuenta «{name}» con todos sus productos, listas, clientes, ' +
+        'ventas y miembros del equipo. Esta acción no se puede deshacer.',
+    en:
+      'Your account “{name}” will be deleted with all its products, lists, customers, ' +
+        'sales and team members. This cannot be undone.',
+    pt:
+      'Sua conta “{name}” será excluída com todos os produtos, listas, clientes, ' +
+        'vendas e membros da equipe. Isso não pode ser desfeito.',
   },
   'set.delete.confirm': {
     es: 'Escribí «{keyword}» para confirmar',

@@ -94,9 +94,15 @@ export const DICT_BASE_12: Record<string, TranslationEntry> = {
     pt: 'Escolha o que o sino da barra superior avisa.',
   },
   'set.notif.banner': {
-    es: 'Las notificaciones aparecen dentro de la app (campana arriba a la derecha) y, si las activás abajo, también en tu escritorio o celular.',
-    en: 'Notifications appear inside the app (bell, top right) and, if you enable them below, on your desktop or phone too.',
-    pt: 'As notificações aparecem dentro do app (sino, canto superior direito) e, se ativá-las abaixo, também no seu desktop ou celular.',
+    es:
+      'Las notificaciones aparecen dentro de la app (campana arriba a la derecha) y, ' +
+        'si las activás abajo, también en tu escritorio o celular.',
+    en:
+      'Notifications appear inside the app (bell, top right) and, if you enable them ' +
+        'below, on your desktop or phone too.',
+    pt:
+      'As notificações aparecem dentro do app (sino, canto superior direito) e, se ' +
+        'ativá-las abaixo, também no seu desktop ou celular.',
   },
   'set.notif.sales': { es: 'Ventas', en: 'Sales', pt: 'Vendas' },
   'set.notif.salesDesc': {
@@ -141,4 +147,3 @@ export const DICT_BASE_12: Record<string, TranslationEntry> = {
     pt: 'Ativadas neste dispositivo ✓',
   },
 }
-

@@ -17,9 +17,15 @@ export const DICT_TOUR_BASICS: Record<string, TranslationEntry> = {
     pt: 'Suas listas de preços',
   },
   'tour.lists.body': {
-    es: 'Acá vive tu carta. Creá una lista, elegí qué productos entran y publicala: eso es lo que van a ver tus clientes.',
-    en: 'This is where your menu lives. Create a list, pick which products go in it and publish: that is what your customers see.',
-    pt: 'É aqui que vive o seu cardápio. Crie uma lista, escolha os produtos e publique: é isso que seus clientes veem.',
+    es:
+      'Acá vive tu carta. Creá una lista, elegí qué productos entran y publicala: ' +
+        'eso es lo que van a ver tus clientes.',
+    en:
+      'This is where your menu lives. Create a list, pick which products go in it and ' +
+        'publish: that is what your customers see.',
+    pt:
+      'É aqui que vive o seu cardápio. Crie uma lista, escolha os produtos e publique: ' +
+        'é isso que seus clientes veem.',
   },
   'tour.products.title': {
     es: 'Tu catálogo',
@@ -45,4 +51,3 @@ export const DICT_TOUR_BASICS: Record<string, TranslationEntry> = {
       + 'É isso que seus clientes veem na sua lista pública, não a marca do MiPrecio.',
   },
 }
-

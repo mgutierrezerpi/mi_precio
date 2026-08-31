@@ -33,10 +33,22 @@ export const DICT_CATALOG_CODES: Record<string, TranslationEntry> = {
   'codes.openList': { es: 'Abrir lista', en: 'Open list', pt: 'Abrir lista' },
   'codes.copyLink': { es: 'Copiar link', en: 'Copy link', pt: 'Copiar link' },
   'codes.posterTitle': { es: 'Tu cartel para imprimir', en: 'Your printable poster', pt: 'Seu cartaz para imprimir' },
-  'codes.posterHelp': { es: 'Una hoja A4 lista para pegar en tu local.', en: 'An A4 sheet ready to put up in your shop.', pt: 'Uma folha A4 pronta para colar no seu local.' },
+  'codes.posterHelp': {
+    es: 'Una hoja A4 lista para pegar en tu local.',
+    en: 'An A4 sheet ready to put up in your shop.',
+    pt: 'Uma folha A4 pronta para colar no seu local.',
+  },
   'codes.posterWorking': { es: 'Generando cartel…', en: 'Building poster…', pt: 'Gerando cartaz…' },
-  'codes.posterHeadline': { es: 'Escaneá y mirá la carta', en: 'Scan to see the menu', pt: 'Escaneie e veja o cardápio' },
-  'codes.posterFooter': { es: 'Hecho con MiPrecio · miprecio.app', en: 'Made with MiPrecio · miprecio.app', pt: 'Feito com MiPrecio · miprecio.app' },
+  'codes.posterHeadline': {
+    es: 'Escaneá y mirá la carta',
+    en: 'Scan to see the menu',
+    pt: 'Escaneie e veja o cardápio',
+  },
+  'codes.posterFooter': {
+    es: 'Hecho con MiPrecio · miprecio.app',
+    en: 'Made with MiPrecio · miprecio.app',
+    pt: 'Feito com MiPrecio · miprecio.app',
+  },
   'codes.customize': {
     es: 'Personalizá tu QR',
     en: 'Customize your QR',
@@ -48,7 +60,11 @@ export const DICT_CATALOG_CODES: Record<string, TranslationEntry> = {
     pt: 'O estilo se aplica a todos os seus códigos.',
   },
   'codes.color': { es: 'Color', en: 'Color', pt: 'Cor' },
-  'codes.colorHelp': { es: 'Se aplica a todos tus códigos y al cartel.', en: 'Applies to all your codes and to the poster.', pt: 'Aplica-se a todos os seus códigos e ao cartaz.' },
+  'codes.colorHelp': {
+    es: 'Se aplica a todos tus códigos y al cartel.',
+    en: 'Applies to all your codes and to the poster.',
+    pt: 'Aplica-se a todos os seus códigos e ao cartaz.',
+  },
   'codes.logoCenter': {
     es: 'Logo en el centro',
     en: 'Logo in the center',

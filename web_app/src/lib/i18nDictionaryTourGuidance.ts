@@ -30,8 +30,12 @@ export const DICT_TOUR_GUIDANCE: Record<string, TranslationEntry> = {
       'Descargalo e imprimilo para la mesa, la vidriera o el mostrador. Cuando cambiás un precio no ',
       'hace falta reimprimir nada: el QR es siempre el mismo.',
     ].join(''),
-    en: 'Download it and print it for the table, the window or the counter. Changing a price never means reprinting: the QR code stays the same.',
-    pt: 'Baixe e imprima para a mesa, a vitrine ou o balcão. Mudar um preço não exige reimprimir nada: o QR é sempre o mesmo.',
+    en:
+      'Download it and print it for the table, the window or the counter. Changing a ' +
+        'price never means reprinting: the QR code stays the same.',
+    pt:
+      'Baixe e imprima para a mesa, a vitrine ou o balcão. Mudar um preço não exige ' +
+        'reimprimir nada: o QR é sempre o mesmo.',
   },
   'tour.share.title': {
     es: 'Tu link público',
@@ -39,8 +43,12 @@ export const DICT_TOUR_GUIDANCE: Record<string, TranslationEntry> = {
     pt: 'Seu link público',
   },
   'tour.share.body': {
-    es: 'Este botón copia el link de tu lista principal. Mandalo por WhatsApp o pegalo en tus redes y ya estás vendiendo.',
-    en: 'This button copies the link to your main list. Send it over WhatsApp or drop it on your socials and you are selling.',
+    es:
+      'Este botón copia el link de tu lista principal. Mandalo por WhatsApp o pegalo en ' +
+        'tus redes y ya estás vendiendo.',
+    en:
+      'This button copies the link to your main list. Send it over WhatsApp or drop it ' +
+        'on your socials and you are selling.',
     pt: 'Este botão copia o link da sua lista principal. Mande por WhatsApp ou publique nas suas redes e pronto.',
   },
   'tour.support.title': {
@@ -49,8 +57,12 @@ export const DICT_TOUR_GUIDANCE: Record<string, TranslationEntry> = {
     pt: 'Travou?',
   },
   'tour.support.body': {
-    es: 'Escribinos desde acá y te respondemos. Y desde esta misma pantalla podés volver a ver este recorrido cuando quieras.',
-    en: 'Write to us from here and we will get back to you. This same screen is where you can replay this tour whenever you want.',
+    es:
+      'Escribinos desde acá y te respondemos. Y desde esta misma pantalla podés volver ' +
+        'a ver este recorrido cuando quieras.',
+    en:
+      'Write to us from here and we will get back to you. This same screen is where you ' +
+        'can replay this tour whenever you want.',
     pt: 'Escreva para nós por aqui e respondemos. Nesta mesma tela você pode rever este tour quando quiser.',
   },
 }

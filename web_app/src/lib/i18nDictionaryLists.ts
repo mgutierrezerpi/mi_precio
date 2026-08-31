@@ -88,7 +88,9 @@ export const DICT_LISTS: Record<string, TranslationEntry> = {
   'pl.offline.manyDescription': {
     es: 'Tu plan permite {active} listas publicadas. Quien abra sus links o escanee sus QR no va a ver nada. '
       + 'No se borró nada: subí de plan y vuelven solas, tal como estaban.',
-    en: 'Your plan allows {active} published lists. Anyone who opens their links or scans their QR codes will see nothing. '
+    en:
+      'Your plan allows {active} published lists. Anyone who opens their links or ' +
+        'scans their QR codes will see nothing. '
       + 'Nothing was deleted: upgrade your plan and they will come back just as they were.',
     pt: 'Seu plano permite {active} listas publicadas. Quem abrir os links ou escanear os QRs não verá nada. '
       + 'Nada foi apagado: faça upgrade do plano e elas voltarão como estavam.',
