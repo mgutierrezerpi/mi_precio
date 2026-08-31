@@ -1,0 +1,98 @@
+/* The editor is a deliberate, phone-sized window into the public page—not a
+   second full page squeezed into a dashboard column. */
+.link-tree-page--preview {
+  width: 100%;
+  max-width: 100%;
+  min-height: 560px;
+  overflow-x: clip;
+}
+
+.link-tree-page--preview .link-tree-header {
+  padding: 15px 18px;
+}
+
+.link-tree-page--preview .link-tree-header-note {
+  display: none;
+}
+
+.link-tree-page--preview .link-tree-icon-button {
+  width: 30px;
+  height: 30px;
+}
+
+.link-tree-page--preview .link-tree-content {
+  min-height: 0;
+  width: calc(100% - 32px);
+  padding: 12px 0 28px;
+}
+
+.link-tree-page--preview .link-tree-header,
+.link-tree-page--preview .link-tree-content,
+.link-tree-page--preview .link-tree-links,
+.link-tree-page--preview .link-card-copy {
+  min-width: 0;
+}
+
+.link-tree-page--preview .profile-avatar {
+  width: 68px;
+  height: 68px;
+  margin-bottom: 11px;
+  font-size: 22px;
+}
+
+.link-tree-page--preview .profile-name-row h1 {
+  font-size: 29px;
+}
+
+.link-tree-page--preview.link-tree-page--font-code-pro .profile-name-row h1 {
+  font-size: 24px;
+}
+
+.link-tree-page--preview .profile-bio {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.link-tree-page--preview .profile-tags {
+  margin-top: 11px;
+}
+
+.link-tree-page--preview .link-tree-links {
+  gap: 8px;
+  margin-top: 19px;
+}
+
+.link-tree-page--preview .link-card {
+  min-height: 60px;
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+
+.link-tree-page--preview .link-card-icon {
+  width: 39px;
+  height: 39px;
+  flex-basis: 39px;
+  border-radius: 9px;
+}
+
+.link-tree-page--preview .link-card-copy strong {
+  font-size: 13px;
+}
+.link-tree-page--preview .link-card-copy small {
+  font-size: 10px;
+}
+.link-tree-page--preview .link-card-arrow {
+  width: 26px;
+  height: 26px;
+  flex-basis: 26px;
+}
+.link-tree-page--preview .link-tree-feature-grid {
+  gap: 8px;
+}
+.link-tree-page--preview .feature-card {
+  min-height: 115px;
+  padding: 13px;
+}
+.link-tree-page--preview .link-tree-socials {
+  margin-top: 16px;
+}

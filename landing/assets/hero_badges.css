@@ -1,0 +1,91 @@
+
+.ok {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.warn {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.bad {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--violet);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.card-link :is(i, svg) {
+  width: 14px;
+  height: 14px;
+}
+
+.card-qr {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #fff;
+}
+
+.card-qr :is(i, svg) {
+  width: 30px;
+  height: 30px;
+}
+
+.float-badge {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 0.74rem;
+  font-weight: 600;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
+}
+
+.float-badge :is(i, svg) {
+  width: 16px;
+  height: 16px;
+}
+
+.badge-qr {
+  top: -18px;
+  left: -18px;
+}
+
+.badge-stock {
+  right: -14px;
+  bottom: -16px;
+}
+
+.badge-stock .dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #10b981;
+}
+

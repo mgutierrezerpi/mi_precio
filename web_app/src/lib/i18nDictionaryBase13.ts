@@ -37,7 +37,9 @@ export const DICT_BASE_13: Record<string, TranslationEntry> = {
   'set.marketplace.subtitle': {
     es: 'Las personas podrán descubrir tu negocio. Si compartís tu ubicación, aparecerá ordenado por distancia.',
     en: 'People can discover your business. If you share your location, it will be ordered by distance.',
-    pt: 'As pessoas poderão descobrir seu negócio. Se você compartilhar sua localização, ele aparecerá ordenado por distância.',
+    pt:
+      'As pessoas poderão descobrir seu negócio. Se você compartilhar sua localização, ' +
+        'ele aparecerá ordenado por distância.',
   },
   'set.marketplace.profileTitle': {
     es: 'Perfil del marketplace',
@@ -142,4 +144,3 @@ export const DICT_BASE_13: Record<string, TranslationEntry> = {
     pt: 'Ao continuar, guardaremos estes dados, um cookie de identificação e seu IP para reconhecer visitas futuras.',
   },
 }
-

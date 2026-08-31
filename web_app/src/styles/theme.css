@@ -1,0 +1,98 @@
+
+@font-face {
+  font-family: 'Code Pro';
+  src: url('/fonts/code-pro-lc.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Code Pro';
+  src: url('/fonts/code-pro-bold-lc.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Custom theme - Soft Modern Aesthetic */
+:root {
+  /* Typography */
+  --font-serif: 'Lora', Georgia, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Spacing & Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* Shadows */
+  --shadow-soft:
+    0 2px 8px -2px rgba(0, 0, 0, 0.15), 0 4px 16px -4px rgba(0, 0, 0, 0.1);
+  --shadow-medium:
+    0 4px 12px -2px rgba(0, 0, 0, 0.2), 0 8px 24px -4px rgba(0, 0, 0, 0.15);
+  --shadow-elevated:
+    0 8px 24px -4px rgba(0, 0, 0, 0.25), 0 16px 48px -8px rgba(0, 0, 0, 0.2);
+  --shadow-glow: 0 0 40px -10px;
+
+  /* Glass effect */
+  --glass-blur: blur(16px);
+  --glass-saturate: saturate(180%);
+}
+
+/* Dark theme (default) - Warm, soft, organic */
+:root,
+[data-theme='dark'] {
+  /* Warmer, softer dark tones */
+  --color-bg-primary: #121214;
+  --color-bg-secondary: #18181b;
+  --color-bg-card: #1e1e22;
+  --color-bg-elevated: #26262b;
+  --color-bg-hover: #2a2a30;
+
+  /* Warm cream text */
+  --color-text-primary: #f8f5f0;
+  --color-text-secondary: #d8d4cc;
+  --color-text-muted: #9d9890;
+  --color-text-subtle: #6b6860;
+
+  /* Warm gold accent */
+  --color-accent: #d4a574;
+  --color-accent-hover: #e0b586;
+  --color-accent-muted: #9a7a55;
+  --color-accent-soft: rgba(212, 165, 116, 0.15);
+  --color-accent-rgb: 212, 165, 116;
+
+  /* Soft borders */
+  --color-border: #28282d;
+  --color-border-light: #35353b;
+  --color-border-accent: rgba(212, 165, 116, 0.3);
+
+  /* Semantic colors */
+  --color-success: #6fcf97;
+  --color-success-soft: rgba(111, 207, 151, 0.15);
+  --color-error: #f07178;
+  --color-error-soft: rgba(240, 113, 120, 0.15);
+  --color-warning: #ffd080;
+  --color-warning-soft: rgba(255, 208, 128, 0.15);
+  --color-info: #82aaff;
+  --color-info-soft: rgba(130, 170, 255, 0.15);
+
+  /* Gradients */
+  --gradient-subtle: linear-gradient(
+    135deg,
+    var(--color-bg-card) 0%,
+    var(--color-bg-elevated) 100%
+  );
+  --gradient-accent: linear-gradient(
+    135deg,
+    var(--color-accent) 0%,
+    #e8c49a 100%
+  );
+  --gradient-glass: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+}
