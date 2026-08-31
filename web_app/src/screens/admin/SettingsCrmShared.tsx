@@ -1,8 +1,17 @@
 import type { ReactNode } from 'react'
 import type { Tenant } from '../../types'
-import { type TFn } from '../../lib/i18n'
 import api from '../../services/api'
+import type { TFn } from '../../lib/i18n'
 import { gradient } from './crm/theme'
+
+export const inputClass =
+  'h-11 w-full rounded-xl border border-[var(--dash-border)] ' +
+  'bg-[var(--dash-soft)] px-3.5 text-sm font-medium ' +
+  'text-[var(--dash-text)] outline-none transition focus:border-[#7C3AED] ' +
+  'focus:ring-2 focus:ring-[#7C3AED]/15 placeholder:text-[var(--dash-muted)] ' +
+  'disabled:opacity-60'
+
+export const inputCls = inputClass
 
 export type SettingsContext = {
   tenant: Tenant | null
@@ -15,9 +24,6 @@ export type SettingsContext = {
   savedKey: string | null
   t: TFn
 }
-
-export const inputClass =
-  'h-11 w-full rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3.5 text-sm font-medium text-[var(--dash-text)] outline-none transition focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/15 placeholder:text-[var(--dash-muted)] disabled:opacity-60'
 
 export function SectionHeader({
   t,
@@ -50,7 +56,9 @@ export function SectionHeader({
       </div>
       {autosave && canManage && (saving || saved) && (
         <span
-          className={`shrink-0 text-xs font-bold ${saving ? 'text-[var(--dash-muted)]' : 'text-[var(--tone-green-fg)]'}`}
+          className={`shrink-0 text-xs font-bold ${saving
+            ? 'text-[var(--dash-muted)]'
+            : 'text-[var(--tone-green-fg)]'}`}
         >
           {saving ? t('common.saving') : t('common.saved')}
         </span>
@@ -60,7 +68,8 @@ export function SectionHeader({
           type="button"
           onClick={onSave}
           disabled={saving}
-          className={`flex h-10 items-center rounded-xl px-5 text-sm font-bold text-white disabled:opacity-60 ${gradient}`}
+          className={`flex h-10 items-center rounded-xl px-5 text-sm font-bold
+            text-white disabled:opacity-60 ${gradient}`}
         >
           {saving
             ? t('common.saving')
@@ -101,4 +110,8 @@ export function Row({ label, value }: { label: string; value: string }) {
       </span>
     </div>
   )
+}
+
+export function markTouched(ref: { current: boolean }) {
+  ref.current = true
 }
