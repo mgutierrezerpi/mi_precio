@@ -35,6 +35,8 @@ import { PencilActionBar } from './pencilActions'
 import { PencilJournal } from './pencilJournal'
 import { StoreChip } from './StoreChip'
 import { MagazineShelf } from './MagazineShelf'
+import { CartBar } from './CartBar'
+import { buildMenuSections } from './menuSections'
 import {
   BASE,
   MIPRECIO_LOGO_WHITE,
@@ -234,37 +236,10 @@ export function MenuScreen() {
     }
   }, [tenant, list?.name])
 
-  const sections = useMemo(() => {
-    const map = new Map<string, { key: string; name: string; items: Item[] }>()
-    for (const it of base) {
-      const k = norm(it.category)
-      if (!map.has(k))
-        map.set(k, { key: k, name: disp(it.category), items: [] })
-      map.get(k)!.items.push(it)
-    }
-    const inferred = Array.from(map.values()).map((s) => {
-      const prices = s.items
-        .map((i) => parseFloat(i.price))
-        .filter((n) => !Number.isNaN(n))
-      return {
-        ...s,
-        min: prices.length ? Math.min(...prices) : 0,
-        max: prices.length ? Math.max(...prices) : 0,
-      }
-    })
-    const catalog = content?.blocks.find((block) => block.type === 'catalog')
-    if (!catalog || catalog.type !== 'catalog') return inferred
-
-    const remaining = new Map(inferred.map((section) => [section.key, section]))
-    const ordered = catalog.sections.flatMap((definition) => {
-      const key = norm(definition.source.value)
-      const section = remaining.get(key)
-      if (!section) return []
-      remaining.delete(key)
-      return [{ ...section, name: definition.title }]
-    })
-    return [...ordered, ...remaining.values()]
-  }, [base, content])
+  const sections = useMemo(
+    () => buildMenuSections(base, content, norm, disp),
+    [base, content, norm, disp]
+  )
   const viewerPromptEnabled = Boolean(
     list?.captureViewerInfo && !viewerSubmitted && !isEditorPreview
   )
@@ -746,8 +721,21 @@ export function MenuScreen() {
 
       {/* Sticky cart bar — follows the selected design's theme; opens the full cart page. */}
       {!isService && !isPencilCartDesign && cartCount > 0 && !showCart && (
+        <CartBar
+          theme={cartT}
+          accent={cartActionAccent}
+          gradient={cartGradient}
+          t={t}
+          count={cartCount}
+          total={money(cartTotal)}
+          onClear={clearCart}
+          onOpen={() => setShowCart(true)}
+        />
+      )}
+
+      {!isService && !isPencilCartDesign && cartCount > 0 && !showCart && (
         <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur"
+          className="fixed inset-x-0 bottom-0 z-40 hidden border-t backdrop-blur md:block"
           style={{
             background: `${cartT.surface}F2`,
             borderColor: cartT.line,
