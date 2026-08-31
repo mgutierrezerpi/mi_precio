@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
-import type { LinkTree } from '../../types'
-import { LinkTreeView } from './LinkTreeView'
+import type { LinkTree } from '../../../src/types'
+import { LinkTreeView } from '../../../src/components/linktree/LinkTreeView'
 
 const tree: LinkTree = {
   id: 'tree-1',

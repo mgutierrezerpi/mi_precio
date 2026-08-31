@@ -1,9 +1,9 @@
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import type { DesignProps } from '../designs'
-import { PencilList } from './index'
-import { pencilCartThemeFor } from './cartTheme'
-import type { PencilVariant } from './variants'
+import type { DesignProps } from '../../../../src/screens/menu/designs'
+import { PencilList } from '../../../../src/screens/menu/pencil'
+import { pencilCartThemeFor } from '../../../../src/screens/menu/pencil/cartTheme'
+import type { PencilVariant } from '../../../../src/screens/menu/pencil/variants'
 
 const variants: PencilVariant[] = [
   'pencil-bakery',

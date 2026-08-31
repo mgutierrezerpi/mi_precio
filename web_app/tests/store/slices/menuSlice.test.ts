@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import menuReducer, { setCurrentList, clearError } from './menuSlice'
-import type { PriceList } from '../../types'
+import menuReducer, { setCurrentList, clearError } from '../../../src/store/slices/menuSlice'
+import type { PriceList } from '../../../src/types'
 
 describe('menuSlice', () => {
   const initialState = {

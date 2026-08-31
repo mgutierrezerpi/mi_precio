@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseUtc, formatDateTime } from './datetime'
+import { parseUtc, formatDateTime } from '../../src/lib/datetime'
 
 describe('parseUtc', () => {
   it('reads an offset-less timestamp as UTC, not as local time', () => {

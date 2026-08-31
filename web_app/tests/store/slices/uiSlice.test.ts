@@ -7,7 +7,7 @@ import uiReducer, {
   setViewMode,
   setDensity,
   setTourOpen,
-} from './uiSlice'
+} from '../../../src/store/slices/uiSlice'
 
 describe('uiSlice', () => {
   const initialState = {

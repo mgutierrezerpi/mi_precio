@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   EXPORT_ASSET_TIMEOUT_MS,
   useExportPdfWhenReady,
-} from './useExportPdfWhenReady'
+} from '../../src/hooks/useExportPdfWhenReady'
 
 const exportListPdf = vi.hoisted(() => vi.fn())
-vi.mock('../lib/exportListPdf', () => ({ exportListPdf }))
+vi.mock('../../src/lib/exportListPdf', () => ({ exportListPdf }))
 
 /** happy-dom never fires load on an <img>, so tests drive it by hand. */
 function addImage({ complete }: { complete: boolean }) {

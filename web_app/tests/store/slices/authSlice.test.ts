@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import authReducer, { setUser, setTenant, clearAuthError } from './authSlice'
-import type { User, Tenant } from '../../types'
+import authReducer, { setUser, setTenant, clearAuthError } from '../../../src/store/slices/authSlice'
+import type { User, Tenant } from '../../../src/types'
 
 describe('authSlice', () => {
   const initialState = {
