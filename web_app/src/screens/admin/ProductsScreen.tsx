@@ -21,7 +21,6 @@ import { tone, gradient } from './crm/theme'
 import {
   catTone,
   catIcon,
-
   displayCategory,
   normalizeCategory,
 } from './crm/productFormat'
@@ -64,7 +63,9 @@ function isPageSize(value: number): value is PageSize {
 function readPageSize(tenantId: string | undefined): PageSize {
   if (!tenantId || typeof window === 'undefined') return DEFAULT_PAGE_SIZE
   try {
-    const stored = Number(window.localStorage.getItem(pageSizeStorageKey(tenantId)))
+    const stored = Number(
+      window.localStorage.getItem(pageSizeStorageKey(tenantId))
+    )
     return isPageSize(stored) ? stored : DEFAULT_PAGE_SIZE
   } catch {
     return DEFAULT_PAGE_SIZE
@@ -140,8 +141,10 @@ export function ProductsScreen() {
     searchParams.get('cat') || 'all'
   )
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE)
-  const [pageSizeTenantId, setPageSizeTenantId] = useState<string | null>(null)
+  const [pageSize, setPageSize] = useState<PageSize>(() =>
+    readPageSize(tenant?.id)
+  )
+  const pageSizeTenantId = tenant?.id ?? null
   const [modal, setModal] = useState<{
     open: boolean
     product: Product | null
@@ -161,12 +164,6 @@ export function ProductsScreen() {
   useEffect(() => {
     if (tenant?.id) dispatch(fetchLists(tenant.id))
   }, [dispatch, tenant?.id])
-
-  useEffect(() => {
-    if (!tenant?.id) return
-    setPageSize(readPageSize(tenant.id))
-    setPageSizeTenantId(tenant.id)
-  }, [tenant?.id])
 
   useEffect(() => {
     if (tenant?.id && pageSizeTenantId === tenant.id) {
@@ -212,7 +209,9 @@ export function ProductsScreen() {
     const arr =
       status === 'recent'
         ? [...base]
-            .sort((a, b) => +parseUtcDate(b.createdAt) - +parseUtcDate(a.createdAt))
+            .sort(
+              (a, b) => +parseUtcDate(b.createdAt) - +parseUtcDate(a.createdAt)
+            )
             .slice(0, 12)
         : base.filter((p) => {
             if (status === 'all') return true
@@ -245,9 +244,7 @@ export function ProductsScreen() {
   }
 
   const handleDelete = (p: Product) => {
-    if (
-      window.confirm(t('products.deleteConfirm', { name: p.name }))
-    ) {
+    if (window.confirm(t('products.deleteConfirm', { name: p.name }))) {
       dispatch(deleteProduct(p.id))
     }
   }
@@ -285,9 +282,9 @@ export function ProductsScreen() {
     if (
       !window.confirm(
         t('products.bulkDeleteConfirm', {
-                  count: selected.size,
-                  plural: selected.size === 1 ? '' : 's',
-                })
+          count: selected.size,
+          plural: selected.size === 1 ? '' : 's',
+        })
       )
     )
       return
@@ -332,9 +329,7 @@ export function ProductsScreen() {
           <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">
             {t('products.title')}
           </h1>
-          <p className="text-[13px] text-[#9694A6]">
-            {t('products.subtitle')}
-          </p>
+          <p className="text-[13px] text-[#9694A6]">{t('products.subtitle')}</p>
         </section>
 
         <div className="flex flex-col gap-4">
@@ -458,48 +453,56 @@ export function ProductsScreen() {
                         />
                       </span>
                       <div className="flex min-w-0 flex-1 items-start gap-3 lg:items-center">
-                      {p.imageUrl ? (
-                        <img
-                          src={p.imageThumbUrl || p.imageUrl}
-                          alt={p.name}
-                          className="h-10 w-10 shrink-0 rounded-[10px] object-cover"
-                        />
-                      ) : (
-                        <span
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
-                          style={tone(catTone(p.category))}
-                        >
-                          <Icon name={catIcon(p.category)} size={20} />
-                        </span>
-                      )}
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <span
-                          title={p.name}
-                          className="line-clamp-2 break-words text-sm font-bold leading-5 text-[var(--dash-text)]"
-                        >
-                          {p.name}
-                        </span>
-                        <span className="line-clamp-2 text-xs font-medium text-[var(--dash-muted)] lg:truncate">
-                          {p.description || '—'}
-                        </span>
-                      </div>
-                      {canEdit && (
-                        <div className="shrink-0 lg:hidden">
-                          <RowMenu
-                            onEdit={() => setModal({ open: true, product: p })}
-                            onDelete={() => handleDelete(p)}
+                        {p.imageUrl ? (
+                          <img
+                            src={p.imageThumbUrl || p.imageUrl}
+                            alt={p.name}
+                            className="h-10 w-10 shrink-0 rounded-[10px] object-cover"
                           />
+                        ) : (
+                          <span
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
+                            style={tone(catTone(p.category))}
+                          >
+                            <Icon name={catIcon(p.category)} size={20} />
+                          </span>
+                        )}
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span
+                            title={p.name}
+                            className="line-clamp-2 break-words text-sm font-bold leading-5 text-[var(--dash-text)]"
+                          >
+                            {p.name}
+                          </span>
+                          <span className="line-clamp-2 text-xs font-medium text-[var(--dash-muted)] lg:truncate">
+                            {p.description || '—'}
+                          </span>
                         </div>
-                      )}
+                        {canEdit && (
+                          <div className="shrink-0 lg:hidden">
+                            <RowMenu
+                              onEdit={() =>
+                                setModal({ open: true, product: p })
+                              }
+                              onDelete={() => handleDelete(p)}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 pl-9 text-xs sm:grid-cols-3 lg:hidden">
                       <span className="flex min-w-0 flex-col gap-0.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">SKU</span>
-                        <span className="truncate font-semibold text-[var(--dash-text2)]">{p.sku || '—'}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+                          SKU
+                        </span>
+                        <span className="truncate font-semibold text-[var(--dash-text2)]">
+                          {p.sku || '—'}
+                        </span>
                       </span>
                       <span className="flex min-w-0 flex-col gap-0.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.category')}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+                          {t('products.category')}
+                        </span>
                         {p.category ? (
                           <span
                             className="inline-flex max-w-full w-fit truncate rounded-full px-2 py-1 text-[11px] font-bold"
@@ -508,15 +511,23 @@ export function ProductsScreen() {
                             {displayCategory(p.category)}
                           </span>
                         ) : (
-                          <span className="font-medium text-[var(--dash-muted)]">{t('products.noCategory')}</span>
+                          <span className="font-medium text-[var(--dash-muted)]">
+                            {t('products.noCategory')}
+                          </span>
                         )}
                       </span>
                       <span className="flex min-w-0 flex-col gap-0.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.price')}</span>
-                        <span className="font-extrabold text-[var(--dash-text)]">{formatProductPrice(p.price)}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+                          {t('products.price')}
+                        </span>
+                        <span className="font-extrabold text-[var(--dash-text)]">
+                          {formatProductPrice(p.price)}
+                        </span>
                       </span>
                       <span className="flex min-w-0 flex-col gap-0.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.availability')}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+                          {t('products.availability')}
+                        </span>
                         {canEdit ? (
                           <AvailabilitySwitch
                             value={p.available}
@@ -541,9 +552,13 @@ export function ProductsScreen() {
                         )}
                       </span>
                       <span className="flex min-w-0 flex-col gap-0.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.updated')}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+                          {t('products.updated')}
+                        </span>
                         <span className="truncate font-medium text-[var(--dash-muted)]">
-                          {new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(parseUtcDate(p.updatedAt))}
+                          {new Intl.DateTimeFormat(locale, {
+                            dateStyle: 'medium',
+                          }).format(parseUtcDate(p.updatedAt))}
                         </span>
                       </span>
                     </div>
@@ -641,43 +656,43 @@ export function ProductsScreen() {
               </label>
             </div>
             <div className="flex items-center justify-end gap-1">
-                <PagerBtn
-                  icon="chevrons-left"
-                  disabled={safePage === 1}
-                  onClick={() => setPage(1)}
-                />
-                <PagerBtn
-                  icon="chevron-left"
-                  disabled={safePage === 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                />
-                {pageList(safePage, totalPages).map((n, i) =>
-                  n === '…' ? (
-                    <span
-                      key={`e${i}`}
-                      className="px-1 text-xs font-bold text-[var(--dash-muted)]"
-                    >
-                      …
-                    </span>
-                  ) : (
-                    <PagerNum
-                      key={n}
-                      n={n}
-                      active={n === safePage}
-                      onClick={() => setPage(n)}
-                    />
-                  )
-                )}
-                <PagerBtn
-                  icon="chevron-right"
-                  disabled={safePage === totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                />
-                <PagerBtn
-                  icon="chevrons-right"
-                  disabled={safePage === totalPages}
-                  onClick={() => setPage(totalPages)}
-                />
+              <PagerBtn
+                icon="chevrons-left"
+                disabled={safePage === 1}
+                onClick={() => setPage(1)}
+              />
+              <PagerBtn
+                icon="chevron-left"
+                disabled={safePage === 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              />
+              {pageList(safePage, totalPages).map((n, i) =>
+                n === '…' ? (
+                  <span
+                    key={`e${i}`}
+                    className="px-1 text-xs font-bold text-[var(--dash-muted)]"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <PagerNum
+                    key={n}
+                    n={n}
+                    active={n === safePage}
+                    onClick={() => setPage(n)}
+                  />
+                )
+              )}
+              <PagerBtn
+                icon="chevron-right"
+                disabled={safePage === totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              />
+              <PagerBtn
+                icon="chevrons-right"
+                disabled={safePage === totalPages}
+                onClick={() => setPage(totalPages)}
+              />
             </div>
           </div>
         </div>
@@ -770,9 +785,7 @@ function EmptyState({ hasProducts }: { hasProducts: boolean }) {
         <Icon name="package" size={24} />
       </span>
       <p className="text-sm font-semibold text-[var(--dash-text)]">
-        {hasProducts
-          ? t('products.emptyFiltered')
-          : t('products.empty')}
+        {hasProducts ? t('products.emptyFiltered') : t('products.empty')}
       </p>
     </div>
   )
@@ -959,7 +972,9 @@ function ExportMenu({
             {t('products.exportScope', {
               count,
               plural: count === 1 ? '' : 's',
-              scope: scoped ? t('products.selection') : t('products.currentFilter'),
+              scope: scoped
+                ? t('products.selection')
+                : t('products.currentFilter'),
             })}
           </p>
           <MenuRow
@@ -1111,7 +1126,9 @@ function downloadExcel(
   t: ReturnType<typeof useCatalogT>
 ) {
   if (!products.length) return
-  const head = `<tr>${exportColumns(t).map((c) => `<th>${c}</th>`).join('')}</tr>`
+  const head = `<tr>${exportColumns(t)
+    .map((c) => `<th>${c}</th>`)
+    .join('')}</tr>`
   const rows = products
     .map(
       (p) =>
@@ -1142,7 +1159,9 @@ function printPdf(
   locale: string
 ) {
   if (!products.length) return
-  const head = `<tr>${exportColumns(t).map((c) => `<th>${c}</th>`).join('')}</tr>`
+  const head = `<tr>${exportColumns(t)
+    .map((c) => `<th>${c}</th>`)
+    .join('')}</tr>`
   const rows = products
     .map(
       (p) =>

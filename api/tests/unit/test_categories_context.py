@@ -8,9 +8,8 @@ case-insensitively or it silently misses differently-cased ones.
 import pytest
 from peewee import SqliteDatabase
 
-from lib.ctx import identity, categories, products
+from lib.ctx import categories, identity, products
 from models import Category, Product, Tenant
-
 
 categories_db = SqliteDatabase(":memory:")
 

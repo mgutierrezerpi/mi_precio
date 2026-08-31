@@ -29,10 +29,16 @@ class TestWhoCanReceiveLeads:
 
     def test_a_tier_without_the_feature_takes_none(self, db):
         # Even with the toggle on: the tier is what decides.
-        assert leads.create_lead(_shop(plan="micro").id, "Ana", phone="59899123456") is None
+        assert (
+            leads.create_lead(_shop(plan="micro").id, "Ana", phone="59899123456")
+            is None
+        )
 
     def test_a_shop_that_turned_it_off_takes_none(self, db):
-        assert leads.create_lead(_shop(enabled=False).id, "Ana", phone="59899123456") is None
+        assert (
+            leads.create_lead(_shop(enabled=False).id, "Ana", phone="59899123456")
+            is None
+        )
 
     def test_a_closed_shop_refuses_silently_rather_than_erroring(self, db):
         # The visitor did nothing wrong, and the form may have been on when the
@@ -83,7 +89,7 @@ class TestTheInbox:
         leads.create_lead(shop.id, "Primera", phone="59899123456")
         leads.create_lead(shop.id, "Segunda", phone="59899123457")
 
-        assert [lead.name for lead in leads.list_leads(shop.id)][0] == "Segunda"
+        assert next(lead.name for lead in leads.list_leads(shop.id)) == "Segunda"
 
     def test_leads_stay_inside_their_shop(self, db):
         a, b = _shop(), _shop()

@@ -1,7 +1,9 @@
 """JWT token utilities."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+
 import jwt
+
 from config import settings
 
 
@@ -19,7 +21,7 @@ def encode_token(
         "tenant_id": tenant_id,
         "role": role,
         "is_super_admin": is_super_admin,
-        "exp": datetime.utcnow() + timedelta(minutes=settings.jwt_expire_minutes),
+        "exp": datetime.now(UTC) + timedelta(minutes=settings.jwt_expire_minutes),
     }
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 

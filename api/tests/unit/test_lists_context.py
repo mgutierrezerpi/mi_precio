@@ -1,6 +1,6 @@
 """Tests for lists context."""
 
-from lib.ctx import lists, identity
+from lib.ctx import identity, lists
 
 
 def test_create_list(db):

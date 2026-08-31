@@ -1,7 +1,7 @@
 """Tenant data that is safe to return from public catalog endpoints."""
 
-from views.base_view import BaseView
 from models import LinkTree
+from views.base_view import BaseView
 
 
 class PublicTenantView(BaseView):

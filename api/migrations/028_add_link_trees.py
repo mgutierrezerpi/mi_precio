@@ -37,4 +37,3 @@ def rollback(migrator, database, fake=False, **kwargs):
     database.execute_sql("DROP INDEX IF EXISTS link_trees_published")
     database.execute_sql("DROP INDEX IF EXISTS link_trees_tenant_id")
     database.execute_sql("DROP TABLE IF EXISTS link_trees")
-

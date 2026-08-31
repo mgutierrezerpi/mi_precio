@@ -30,19 +30,26 @@ timeline = {
 for name, (joined, _, _) in timeline.items():
     t = ts(joined)
     db.execute("update customers set created_at=? where id=?", (t, custs[name]))
-    db.execute("update activities set created_at=?, updated_at=? where tenant_id=? and summary like ?",
-               (t, t, TID, f'Agregó el cliente «{name}%'))
+    db.execute(
+        "update activities set created_at=?, updated_at=? where tenant_id=? and summary like ?",
+        (t, t, TID, f'Agregó el cliente «{name}%'),
+    )
 
 # 3) setup activities (products / list) -> business start ~46-48 days ago
-setup = db.execute("select id from activities where tenant_id=? and summary not like 'Agregó el cliente%' order by created_at",
-                   (TID,)).fetchall()
+setup = db.execute(
+    "select id from activities where tenant_id=? and summary not like 'Agregó el cliente%' order by created_at",
+    (TID,),
+).fetchall()
 base = 48
 for idx, (aid,) in enumerate(setup):
     d = (now - timedelta(days=base) + timedelta(minutes=idx * 25)).strftime('%Y-%m-%d %H:%M:%S.%f')
     db.execute("update activities set created_at=?, updated_at=? where id=?", (d, d, aid))
 
 # 4) re-seed orders within each customer's tenure
-db.execute("delete from order_items where order_id in (select id from orders where tenant_id=?)", (TID,))
+db.execute(
+    "delete from order_items where order_id in (select id from orders where tenant_id=?)",
+    (TID,),
+)
 db.execute("delete from orders where tenant_id=?", (TID,))
 orders, items = [], []
 for name, (joined, offsets, maxq) in timeline.items():
@@ -56,8 +63,14 @@ for name, (joined, offsets, maxq) in timeline.items():
             total += price * qty
             items.append((uuid.uuid4().hex, t, t, oid, pname, qty, price))
         orders.append((oid, t, t, TID, cid, round(total, 2), 'UYU', 'paid', None, None))
-db.executemany("insert into orders (id,created_at,updated_at,tenant_id,customer_id,total,currency,status,note,reference) values (?,?,?,?,?,?,?,?,?,?)", orders)
-db.executemany("insert into order_items (id,created_at,updated_at,order_id,name,quantity,unit_price) values (?,?,?,?,?,?,?)", items)
+db.executemany(
+    "insert into orders (id,created_at,updated_at,tenant_id,customer_id,total,currency,status,note,reference) values (?,?,?,?,?,?,?,?,?,?)",
+    orders,
+)
+db.executemany(
+    "insert into order_items (id,created_at,updated_at,order_id,name,quantity,unit_price) values (?,?,?,?,?,?,?)",
+    items,
+)
 db.commit()
 
 print("customers updated:", len(timeline), "| setup activities spread:", len(setup),

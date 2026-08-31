@@ -1,12 +1,30 @@
 """Customers context - tenant CRM contacts and their purchase history."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from peewee import fn
 
-from models import Tenant, Customer, Order, OrderItem
+from lib.ctx.customer_orders import (
+    create_order,
+    delete_order,
+    list_orders,
+    update_order,
+)
+from models import Customer, Order, Tenant
 
+__all__ = [
+    "create_customer",
+    "create_order",
+    "customer_stats",
+    "delete_customer",
+    "delete_order",
+    "get_customer",
+    "list_customers",
+    "list_orders",
+    "update_customer",
+    "update_order",
+]
 
 # ── Customers ────────────────────────────────────────────────────────────
 
@@ -69,97 +87,12 @@ def delete_customer(customer_id: str) -> bool:
     return True
 
 
-# ── Orders (purchase history) ────────────────────────────────────────────
-
-
-def list_orders(customer_id: str) -> list[Order]:
-    """A customer's purchases, newest first, with their line items preloaded."""
-    return list(
-        Order.select()
-        .where(Order.customer == customer_id)
-        .order_by(Order.created_at.desc())
-    )
-
-
-def create_order(
-    customer_id: str,
-    items: list[dict],
-    status: str = "paid",
-    note: str | None = None,
-    currency: str | None = None,
-    reference: str | None = None,
-) -> Order | None:
-    """Register a purchase for a customer, computing the total from its items."""
-    customer = Customer.get_or_none(Customer.id == customer_id)
-    if not customer:
-        return None
-
-    line_items = items or []
-    total = sum(
-        (Decimal(str(i["unit_price"])) * int(i.get("quantity", 1)) for i in line_items),
-        Decimal(0),
-    )
-
-    order = Order.create(
-        tenant=customer.tenant,
-        customer=customer,
-        reference=reference,
-        total=total,
-        currency=currency or customer.tenant.currency,
-        status=status,
-        note=note,
-    )
-    for i in line_items:
-        OrderItem.create(
-            order=order,
-            name=i["name"],
-            quantity=int(i.get("quantity", 1)),
-            unit_price=Decimal(str(i["unit_price"])),
-        )
-    return order
-
-
-def update_order(
-    order_id: str, items: list[dict] | None = None, **fields
-) -> Order | None:
-    """Update an order's fields and, if `items` is given, replace its lines + recompute total."""
-    order = Order.get_or_none(Order.id == order_id)
-    if not order:
-        return None
-
-    for key, value in fields.items():
-        setattr(order, key, value)
-
-    if items is not None:
-        OrderItem.delete().where(OrderItem.order == order.id).execute()
-        total = Decimal(0)
-        for i in items:
-            qty = int(i.get("quantity", 1))
-            price = Decimal(str(i["unit_price"]))
-            OrderItem.create(
-                order=order, name=i["name"], quantity=qty, unit_price=price
-            )
-            total += price * qty
-        order.total = total
-
-    order.save()
-    return order
-
-
-def delete_order(order_id: str) -> bool:
-    order = Order.get_or_none(Order.id == order_id)
-    if not order:
-        return False
-    order.delete_instance(recursive=True)  # also removes its line items
-    return True
-
-
 # ── Stats ────────────────────────────────────────────────────────────────
 
 
 def customer_stats(tenant_id: str) -> dict:
     """KPI counts for the customers screen."""
-    cutoff = datetime.utcnow() - timedelta(days=30)
+    cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=30)
 
     total = Customer.select().where(Customer.tenant == tenant_id).count()
     new = (

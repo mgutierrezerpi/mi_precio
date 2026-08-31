@@ -215,6 +215,7 @@ from decimal import Decimal
 from domain.value_objects.sku import SKU
 from domain.value_objects.money import Money
 
+
 @dataclass
 class Product:
     id: int | None
@@ -259,6 +260,7 @@ class Price:
 from dataclasses import dataclass
 from decimal import Decimal
 
+
 @dataclass(frozen=True)
 class Money:
     amount: Decimal
@@ -273,16 +275,18 @@ class Money:
             raise ValueError("Cannot add different currencies")
         return Money(self.amount + other.amount, self.currency)
 
+
 # domain/value_objects/sku.py
 from dataclasses import dataclass
 import re
+
 
 @dataclass(frozen=True)
 class SKU:
     value: str
 
     def __post_init__(self):
-        if not re.match(r'^[A-Z0-9-]+$', self.value):
+        if not re.match(r"^[A-Z0-9-]+$", self.value):
             raise ValueError(f"Invalid SKU format: {self.value}")
 ```
 
@@ -292,6 +296,7 @@ class SKU:
 # domain/repositories/product_repository.py
 from abc import ABC, abstractmethod
 from domain.entities.product import Product
+
 
 class ProductRepository(ABC):
     @abstractmethod
@@ -331,6 +336,7 @@ from domain.value_objects.sku import SKU
 from application.dto.product_dto import CreateProductDTO
 from lib.exceptions import ConflictError
 
+
 @dataclass
 class CreateProductUseCase:
     product_repository: ProductRepository
@@ -361,10 +367,12 @@ class CreateProductUseCase:
 # application/dto/product_dto.py
 from pydantic import BaseModel, Field
 
+
 class CreateProductDTO(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
-    sku: str = Field(..., pattern=r'^[A-Z0-9-]+$')
+    sku: str = Field(..., pattern=r"^[A-Z0-9-]+$")
+
 
 class UpdateProductDTO(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=255)
@@ -388,11 +396,11 @@ from config import settings
 db = SqliteExtDatabase(
     settings.database_path,
     pragmas={
-        'journal_mode': 'wal',
-        'cache_size': -64 * 1000,
-        'foreign_keys': 1,
-        'synchronous': 'normal',
-    }
+        "journal_mode": "wal",
+        "cache_size": -64 * 1000,
+        "foreign_keys": 1,
+        "synchronous": "normal",
+    },
 )
 ```
 
@@ -402,6 +410,7 @@ db = SqliteExtDatabase(
 # infrastructure/database/models/product_model.py
 from peewee import CharField, TextField, DateTimeField, AutoField
 from infrastructure.database.models.base import BaseModel
+
 
 class ProductModel(BaseModel):
     id = AutoField()
@@ -423,10 +432,12 @@ Services are **only for external integrations** (APIs, email providers, storage,
 # infrastructure/services/email_service.py
 from abc import ABC, abstractmethod
 
+
 class EmailService(ABC):
     @abstractmethod
     def send(self, to: str, subject: str, body: str) -> bool:
         pass
+
 
 class SendGridEmailService(EmailService):
     def __init__(self, api_key: str):
@@ -445,6 +456,7 @@ from domain.entities.product import Product
 from domain.repositories.product_repository import ProductRepository
 from domain.value_objects.sku import SKU
 from infrastructure.database.models.product_model import ProductModel
+
 
 class PeeweeProductRepository(ProductRepository):
     def get_by_id(self, product_id: int) -> Product | None:
@@ -505,8 +517,11 @@ from application.use_cases.products.list_products import ListProductsUseCase
 from application.dto.product_dto import CreateProductDTO
 from interface.serializers.product_serializer import ProductSerializer
 
+
 class ProductsController:
-    def __init__(self, create_use_case: CreateProductUseCase, list_use_case: ListProductsUseCase):
+    def __init__(
+        self, create_use_case: CreateProductUseCase, list_use_case: ListProductsUseCase
+    ):
         self.create_use_case = create_use_case
         self.list_use_case = list_use_case
 
@@ -524,6 +539,7 @@ class ProductsController:
 ```python
 # interface/serializers/product_serializer.py
 from domain.entities.product import Product
+
 
 class ProductSerializer:
     @staticmethod
@@ -546,6 +562,7 @@ from fastapi import APIRouter, Depends
 from lib.dependency_injection import get_products_controller
 from application.dto.product_dto import CreateProductDTO
 
+
 def register_routes(app):
     api = APIRouter(prefix="/api/v1")
 
@@ -554,7 +571,9 @@ def register_routes(app):
         return controller.index()
 
     @api.post("/products", status_code=201)
-    def create_product(data: CreateProductDTO, controller=Depends(get_products_controller)):
+    def create_product(
+        data: CreateProductDTO, controller=Depends(get_products_controller)
+    ):
         return controller.create(data)
 
     @api.get("/products/{product_id}")
@@ -570,10 +589,13 @@ def register_routes(app):
 
 ```python
 # lib/dependency_injection.py
-from infrastructure.repositories.peewee_product_repository import PeeweeProductRepository
+from infrastructure.repositories.peewee_product_repository import (
+    PeeweeProductRepository,
+)
 from application.use_cases.products.create_product import CreateProductUseCase
 from application.use_cases.products.list_products import ListProductsUseCase
 from interface.controllers.products_controller import ProductsController
+
 
 def get_products_controller() -> ProductsController:
     repo = PeeweeProductRepository()
@@ -856,6 +878,7 @@ actually sees first.
 # config.py
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     app_name: str = "Mi Precio API"
     debug: bool = False
@@ -865,6 +888,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
 
 settings = Settings()
 ```

@@ -6,6 +6,11 @@ interface AuthModalProps {
   onClose: () => void
 }
 
+const overlayClass = [
+  'fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto',
+  'bg-[#1E1B4B]/70 p-4 font-sans backdrop-blur-sm animate-fade-in',
+].join(' ')
+
 /** Login card shown as an overlay on top of the landing page. */
 export function AuthModal({ open, onClose }: AuthModalProps) {
   // Lock background scroll + close on Escape while open.
@@ -27,7 +32,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-[#1E1B4B]/70 p-4 font-sans backdrop-blur-sm animate-fade-in"
+      className={overlayClass}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}

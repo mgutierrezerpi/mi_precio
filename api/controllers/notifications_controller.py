@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
+
 from config import settings
-from lib.ctx import notifications, identity, push
 from controllers.deps import get_current_user
-from controllers.input_types import UpdateNotifPrefs, PushSubscribe, PushUnsubscribe
+from controllers.input_types import PushSubscribe, PushUnsubscribe, UpdateNotifPrefs
+from lib.ctx import identity, notifications, push
 from views import ActivityView
 
 router = APIRouter(tags=["notifications"])

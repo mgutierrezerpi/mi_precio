@@ -29,4 +29,3 @@ export const DESIGN_TOKENS = {
     { name: 'Reading measure', value: '680px' },
   ],
 } as const
-

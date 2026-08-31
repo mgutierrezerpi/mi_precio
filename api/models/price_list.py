@@ -2,9 +2,10 @@ import re
 import unicodedata
 
 from peewee import BooleanField, CharField, DateTimeField, ForeignKeyField, TextField
+
 from models.base import BaseModel
-from models.tenant import Tenant
 from models.customer import Customer
+from models.tenant import Tenant
 
 
 def slugify_list_name(name: str) -> str:
@@ -47,7 +48,9 @@ class PriceList(BaseModel):
         "self", null=True, backref="variants", on_delete="CASCADE", index=True
     )
     variant_type = CharField(max_length=20, null=True)
-    customer = ForeignKeyField(Customer, null=True, backref="price_list_variants", on_delete="SET NULL")
+    customer = ForeignKeyField(
+        Customer, null=True, backref="price_list_variants", on_delete="SET NULL"
+    )
     starts_at = DateTimeField(null=True)
     ends_at = DateTimeField(null=True)
 

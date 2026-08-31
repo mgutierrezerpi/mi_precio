@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
-from lib.ctx import categories
+from fastapi import APIRouter, Depends, HTTPException
+
 from controllers import ownership
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateCategory, UpdateCategory
-from views import DeletedView, CategoryView
+from lib.ctx import categories
+from views import CategoryView, DeletedView
 
 router = APIRouter(tags=["categories"])
 

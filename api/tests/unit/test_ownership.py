@@ -8,17 +8,17 @@ import pytest
 from fastapi import HTTPException
 from peewee import SqliteDatabase
 
+from controllers import ownership
 from models import (
-    Tenant,
-    PriceList,
-    ListVersion,
-    Item,
     Category,
     Customer,
+    Item,
+    ListVersion,
     Order,
+    PriceList,
     Product,
+    Tenant,
 )
-from controllers import ownership
 
 own_db = SqliteDatabase(":memory:")
 MODELS = [Tenant, PriceList, ListVersion, Item, Category, Customer, Order, Product]

@@ -1,6 +1,8 @@
 /* MiPrecio · placas 4:5 (1080×1350) · Agosto — librería compartida
    Marca: violeta #7c3aed / claro #a855f7 / noche #2e1065 · Inter */
 
+@import url('./components.css');
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
@@ -117,56 +119,3 @@ h1 .hl { color: var(--sun); }
 .dots i.on { background: var(--sun); width: 40px; border-radius: 999px; }
 .handle { font-size: 30px; font-weight: 700; color: rgba(255,255,255,.85); }
 .swipe { font-size: 34px; font-weight: 700; color: var(--sun); }
-
-/* CTA */
-.cta {
-  display: inline-flex; align-items: center; gap: 18px;
-  align-self: flex-start;
-  margin-top: 0;
-  padding: 34px 48px;
-  border-radius: 999px;
-  background: #fff; color: var(--violet-night);
-  font-size: 42px; font-weight: 800; letter-spacing: -.3px;
-  box-shadow: 0 24px 50px rgba(20,6,50,.4);
-}
-.body.mid .cta { align-self: center; }
-.cta .free { color: var(--violet); }
-
-/* mockups */
-.mock { margin-top: 0; display: flex; gap: 44px; align-items: center; }
-.card {
-  background: #fff; border-radius: 34px; padding: 40px 44px;
-  box-shadow: 0 30px 60px rgba(20,6,50,.35);
-  color: var(--ink);
-}
-.card .pname { font-size: 46px; font-weight: 800; letter-spacing: -.5px; }
-.card .pmeta { margin-top: 12px; font-size: 30px; font-weight: 500; color: #6b7280; }
-.pricerow { margin-top: 26px; display:flex; align-items:center; justify-content:space-between; gap: 30px; }
-.price { font-size: 40px; font-weight: 900; color: var(--violet); }
-.stock { font-size: 24px; font-weight: 700; color:#16a34a; background:#dcfce7; padding:8px 16px; border-radius:999px; white-space:nowrap; }
-
-/* QR */
-.qrimg { width: 300px; height: 300px; border-radius: 30px; background:#fff; padding: 22px;
-  box-shadow: 0 30px 60px rgba(20,6,50,.35);
-  object-fit: contain; display:block; }
-
-.linkpill {
-  display:inline-flex; align-items:center; gap:16px;
-  background: rgba(255,255,255,.14); border:1.5px solid rgba(255,255,255,.3);
-  padding: 22px 30px; border-radius: 20px; font-size: 34px; font-weight: 700;
-}
-
-/* dashboard mock (Reportes) */
-.dash {
-  background:#fff; border-radius: 34px; padding: 44px; color: var(--ink);
-  box-shadow: 0 30px 60px rgba(20,6,50,.35); width: 100%;
-}
-.dash .dh { display:flex; justify-content:space-between; align-items:flex-end; }
-.dash .kpi { font-size: 30px; font-weight: 600; color:#6b7280; }
-.dash .kpi b { display:block; font-size: 76px; font-weight: 900; color: var(--violet); letter-spacing:-1px; }
-.bars { margin-top: 36px; display:flex; align-items:flex-end; gap: 20px; height: 260px; }
-.bars span { flex:1; background: linear-gradient(180deg, var(--violet-light), var(--violet)); border-radius: 14px 14px 0 0; }
-
-/* FAQ (pregunta/respuesta) */
-.qa .q { font-size: 60px; font-weight: 900; letter-spacing:-1px; }
-.qa .a { margin-top: 22px; font-size: 46px; font-weight: 500; line-height: 1.34; color: rgba(255,255,255,.92); }

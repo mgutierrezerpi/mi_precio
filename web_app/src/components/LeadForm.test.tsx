@@ -28,7 +28,9 @@ const paint = (over: Partial<Tenant> = {}) =>
 const fill = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } })
 
-beforeEach(() => createLead.mockReset().mockResolvedValue({ data: { ok: true } }))
+beforeEach(() =>
+  createLead.mockReset().mockResolvedValue({ data: { ok: true } })
+)
 afterEach(() => vi.restoreAllMocks())
 
 describe('LeadForm', () => {
@@ -76,12 +78,16 @@ describe('LeadForm', () => {
     await waitFor(() =>
       expect(screen.getByText('Dejanos un teléfono o un email.')).toBeTruthy()
     )
-    expect(screen.getByLabelText<HTMLInputElement>('Tu nombre').value).toBe('Ana')
+    expect(screen.getByLabelText<HTMLInputElement>('Tu nombre').value).toBe(
+      'Ana'
+    )
   })
 
   it('carries a honeypot that a person never sees', () => {
     const { container } = paint()
-    const trap = container.querySelector<HTMLInputElement>('input[name="website"]')
+    const trap = container.querySelector<HTMLInputElement>(
+      'input[name="website"]'
+    )
 
     expect(trap).not.toBeNull()
     // Off-screen rather than display:none — some bots skip hidden fields, and
@@ -102,5 +108,6 @@ describe('LeadForm', () => {
 
     expect(createLead).toHaveBeenCalledTimes(1)
     release({ data: { ok: true } })
+    await waitFor(() => expect(screen.getByText('¡Gracias!')).toBeTruthy())
   })
 })

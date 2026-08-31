@@ -18,9 +18,13 @@ from models import User
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Manage a user's platform super-admin flag")
+    parser = argparse.ArgumentParser(
+        description="Manage a user's platform super-admin flag"
+    )
     parser.add_argument("email", help="Existing user email")
-    parser.add_argument("--revoke", action="store_true", help="Remove super-admin access")
+    parser.add_argument(
+        "--revoke", action="store_true", help="Remove super-admin access"
+    )
     args = parser.parse_args()
 
     email = args.email.strip().lower()

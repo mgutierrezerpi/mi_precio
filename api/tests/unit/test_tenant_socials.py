@@ -11,10 +11,16 @@ class TestHandles:
     """Shops type what they know: usually the @handle, not the profile URL."""
 
     def test_bare_handle_becomes_a_profile_url(self):
-        assert normalize_social_url("micafe", "instagram") == "https://instagram.com/micafe"
+        assert (
+            normalize_social_url("micafe", "instagram")
+            == "https://instagram.com/micafe"
+        )
 
     def test_leading_at_is_dropped(self):
-        assert normalize_social_url("@micafe", "instagram") == "https://instagram.com/micafe"
+        assert (
+            normalize_social_url("@micafe", "instagram")
+            == "https://instagram.com/micafe"
+        )
 
     def test_tiktok_keeps_the_at_its_urls_require(self):
         assert normalize_social_url("@micafe", "tiktok") == "https://tiktok.com/@micafe"
@@ -39,7 +45,9 @@ class TestUrls:
         )
 
     def test_www_is_a_url_not_a_handle(self):
-        assert normalize_social_url("www.micafe.uy", "website") == "https://www.micafe.uy"
+        assert (
+            normalize_social_url("www.micafe.uy", "website") == "https://www.micafe.uy"
+        )
 
     def test_surrounding_whitespace_is_forgiven(self):
         assert (

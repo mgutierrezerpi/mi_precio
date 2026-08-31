@@ -16,6 +16,7 @@ def _plus_shop(enabled=True):
     """A shop on a tier that has leads, with the form switched on."""
     return _shop(plan="plus", enabled=enabled)
 
+
 _n = 0
 
 
@@ -65,7 +66,8 @@ class TestThePublicForm:
 
     def test_a_missing_shop_is_a_404(self, client, db):
         res = client.post(
-            "/api/v1/public/no-such-shop/leads", json={"name": "Ana", "phone": "59899123456"}
+            "/api/v1/public/no-such-shop/leads",
+            json={"name": "Ana", "phone": "59899123456"},
         )
         assert res.status_code == 404
 

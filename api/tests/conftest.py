@@ -6,27 +6,26 @@ from peewee import SqliteDatabase
 
 from app import create_app
 from models import (
-    Tenant,
-    User,
+    Activity,
     AuthCode,
-    PriceList,
+    Customer,
+    FeatureFlag,
+    FeatureFlagAssignment,
+    Invitation,
+    Item,
+    Lead,
+    LinkTree,
     ListVersion,
     Magazine,
     MagazinePage,
-    Item,
-    Invitation,
+    PriceList,
     Product,
-    Activity,
-    Customer,
-    Lead,
     PublicViewer,
     PublicViewerDismissal,
+    Tenant,
     TenantMembership,
-    LinkTree,
-    FeatureFlag,
-    FeatureFlagAssignment,
+    User,
 )
-
 
 # TestClient serves requests on another thread. A shared in-memory database
 # keeps those request connections on the same test schema.

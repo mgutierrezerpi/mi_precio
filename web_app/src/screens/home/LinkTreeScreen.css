@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
 
 @font-face {
   font-family: 'Code Pro';
@@ -77,17 +79,23 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
 
 .link-tree-page--font-mono .profile-name-row h1,
 .link-tree-page--font-mono .profile-bio,
-.link-tree-page--font-mono .link-card-copy strong { letter-spacing: -0.05em; }
+.link-tree-page--font-mono .link-card-copy strong {
+  letter-spacing: -0.05em;
+}
 
 .link-tree-page--font-code-pro .profile-name-row h1 {
-  font-size: clamp(24px, 4.5vw, 32px);
+  font-size: clamp(28px, 6vw, 38px);
   font-weight: 700;
   letter-spacing: -0.035em;
 }
 
-.link-tree-page--font-code-pro .profile-bio { font-weight: 700; }
+.link-tree-page--font-code-pro .profile-bio {
+  font-weight: 700;
+}
 
-.link-tree-page--font-code-pro .link-card-copy strong { font-weight: 700; }
+.link-tree-page--font-code-pro .link-card-copy strong {
+  font-weight: 700;
+}
 
 .link-tree-page button,
 .link-tree-page a {
@@ -100,7 +108,7 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   inset: 0;
   pointer-events: none;
   opacity: 0.1;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.07'/%3E%3C/svg%3E");
+  background-image: url('../../assets/linktree-noise.svg');
   mix-blend-mode: multiply;
 }
 
@@ -196,8 +204,8 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
 .link-tree-icon-button,
 .link-tree-menu-button {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   padding: 0;
   place-items: center;
   border: 1px solid var(--line);
@@ -259,10 +267,10 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   flex-direction: column;
   min-height: 0;
   flex: 1 1 0;
-  width: min(100% - 40px, 560px);
+  width: min(100% - 36px, 620px);
   margin: 0 auto;
   box-sizing: border-box;
-  padding: 28px 0 46px;
+  padding: 36px 0 54px;
 }
 
 .link-tree-main {
@@ -282,9 +290,9 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
 .profile-avatar {
   position: relative;
   display: grid;
-  width: 88px;
-  height: 88px;
-  margin-bottom: 17px;
+  width: 104px;
+  height: 104px;
+  margin-bottom: 20px;
   overflow: hidden;
   place-items: center;
   border: 1px solid rgba(32, 36, 29, 0.16);
@@ -292,7 +300,7 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   background: #b8c193;
   color: #39422e;
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 27px;
+  font-size: 31px;
   font-style: italic;
   box-shadow: 0 8px 20px rgba(71, 82, 48, 0.1);
 }
@@ -350,13 +358,13 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
 .profile-name-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 .profile-name-row h1 {
   margin: 0;
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(31px, 6vw, 42px);
+  font-size: clamp(34px, 6.5vw, 46px);
   font-weight: 500;
   letter-spacing: -0.045em;
   line-height: 1;
@@ -364,8 +372,8 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
 
 .verified-badge {
   display: grid;
-  width: 18px;
-  height: 18px;
+  width: 21px;
+  height: 21px;
   place-items: center;
   border-radius: 50%;
   background: var(--ink);
@@ -376,16 +384,16 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   margin: 9px 0 0;
   color: var(--muted);
   font-family: 'DM Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.08em;
 }
 
 .profile-bio {
-  max-width: 390px;
-  margin: 15px 0 0;
+  max-width: 450px;
+  margin: 17px 0 0;
   color: #4c5445;
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 17px;
+  font-size: 19px;
   line-height: 1.45;
 }
 
@@ -416,21 +424,20 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
 
 .link-tree-links {
   display: grid;
-  gap: 11px;
-  margin-top: 31px;
+  gap: 14px;
+  margin-top: 36px;
 }
 
 .link-card {
   position: relative;
   display: flex;
-  min-height: 72px;
+  min-height: 92px;
   align-items: center;
-  gap: 14px;
-  width: 100%;
-  padding: 11px 14px 11px 12px;
+  gap: 16px;
+  padding: 14px 17px 14px 14px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 15px;
+  border-radius: 18px;
   color: var(--ink);
   cursor: pointer;
   text-align: left;
@@ -452,11 +459,18 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,.35), transparent 80%);
+  background: linear-gradient(
+    120deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.35),
+    transparent 80%
+  );
   content: '';
   opacity: 0;
   transform: translateX(-100%);
-  transition: transform .5s ease, opacity .5s ease;
+  transition:
+    transform 0.5s ease,
+    opacity 0.5s ease;
 }
 
 .link-card:hover::before {
@@ -471,7 +485,7 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
 }
 
 .link-card:active {
-  transform: translateY(0) scale(.99);
+  transform: translateY(0) scale(0.99);
 }
 
 .link-card--featured {
@@ -491,11 +505,11 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
 
 .link-card-icon {
   display: grid;
-  width: 48px;
-  height: 48px;
-  flex: 0 0 48px;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
   place-items: center;
-  border-radius: 11px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.38);
 }
 
@@ -509,33 +523,33 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
 
 .link-card-copy {
   display: grid;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
 }
 
 .link-card-copy strong {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
 .link-card-copy small {
   color: inherit;
-  font-size: 11px;
-  line-height: 1.25;
-  opacity: .68;
+  font-size: 13px;
+  line-height: 1.3;
+  opacity: 0.68;
 }
 
 .link-card-arrow {
   display: grid;
-  width: 31px;
-  height: 31px;
+  width: 36px;
+  height: 36px;
   margin-left: auto;
-  flex: 0 0 31px;
+  flex: 0 0 36px;
   place-items: center;
   border: 1px solid currentColor;
   border-radius: 50%;
-  opacity: .7;
+  opacity: 0.7;
 }
 
 .link-card:hover .link-card-arrow {
@@ -581,7 +595,7 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   position: absolute;
   width: 150px;
   height: 150px;
-  border: 1px solid rgba(73, 84, 53, .25);
+  border: 1px solid rgba(73, 84, 53, 0.25);
   border-radius: 50%;
   content: '';
 }
@@ -611,7 +625,7 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   color: #59634c;
   font-family: 'DM Mono', monospace;
   font-size: 8px;
-  letter-spacing: .1em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -622,7 +636,7 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   margin-top: auto;
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 21px;
-  letter-spacing: -.04em;
+  letter-spacing: -0.04em;
   line-height: 1.05;
 }
 
@@ -631,7 +645,7 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 600;
-  letter-spacing: -.02em;
+  letter-spacing: -0.02em;
 }
 
 .feature-stamp {
@@ -649,7 +663,7 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   height: 40px;
   margin-bottom: 21px;
   place-items: center;
-  border: 1px solid rgba(32, 36, 29, .2);
+  border: 1px solid rgba(32, 36, 29, 0.2);
   border-radius: 50%;
 }
 
@@ -669,25 +683,27 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
-  margin-top: 24px;
+  gap: 10px;
+  margin-top: 28px;
 }
 
 .link-tree-socials a,
 .link-tree-socials button {
   display: inline-flex;
-  min-height: 34px;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 0 12px;
+  gap: 8px;
+  padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 100px;
   background: transparent;
   color: var(--ink);
   cursor: pointer;
-  font: 10px 'DM Mono', monospace;
-  letter-spacing: .04em;
+  font:
+    11px 'DM Mono',
+    monospace;
+  letter-spacing: 0.04em;
   text-decoration: none;
   text-transform: uppercase;
 }
@@ -705,11 +721,11 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   justify-content: center;
   gap: 7px;
   width: fit-content;
-  margin: 28px auto 0;
+  margin: 34px auto 0;
   color: var(--ink);
   font-family: 'DM Mono', monospace;
   font-size: 9px;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
   text-align: center;
   text-decoration: none;
   text-transform: uppercase;
@@ -718,8 +734,8 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
 .link-tree-footer-mark {
   position: relative;
   display: inline-flex;
-  width: 126px;
-  height: 34px;
+  width: 94px;
+  height: 24px;
   align-items: center;
   overflow: hidden;
 }
@@ -728,11 +744,14 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   width: 100%;
   height: 100%;
   background: var(--lime);
-  -webkit-mask: url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat;
+  -webkit-mask: url('/miprecio-logo-white-pencil.webp') left center / contain
+    no-repeat;
   mask: url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat;
 }
 
-.link-tree-footer--dark { color: #fff; }
+.link-tree-footer--dark {
+  color: #fff;
+}
 
 /* Hide the marketing tagline exactly like the compact admin-sidebar logo. */
 .link-tree-footer-mark::after {
@@ -822,12 +841,27 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   border-radius: 9px;
 }
 
-.link-tree-page--preview .link-card-copy strong { font-size: 13px; }
-.link-tree-page--preview .link-card-copy small { font-size: 10px; }
-.link-tree-page--preview .link-card-arrow { width: 26px; height: 26px; flex-basis: 26px; }
-.link-tree-page--preview .link-tree-feature-grid { gap: 8px; }
-.link-tree-page--preview .feature-card { min-height: 115px; padding: 13px; }
-.link-tree-page--preview .link-tree-socials { margin-top: 16px; }
+.link-tree-page--preview .link-card-copy strong {
+  font-size: 13px;
+}
+.link-tree-page--preview .link-card-copy small {
+  font-size: 10px;
+}
+.link-tree-page--preview .link-card-arrow {
+  width: 26px;
+  height: 26px;
+  flex-basis: 26px;
+}
+.link-tree-page--preview .link-tree-feature-grid {
+  gap: 8px;
+}
+.link-tree-page--preview .feature-card {
+  min-height: 115px;
+  padding: 13px;
+}
+.link-tree-page--preview .link-tree-socials {
+  margin-top: 16px;
+}
 
 /* Templates keep the same content structure and interaction model. They only
    tune the visual language so a business can change direction without
@@ -965,8 +999,8 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   display: grid;
   padding: 20px;
   place-items: center;
-  background: rgba(24, 29, 20, .48);
-  animation: backdrop-in .2s ease both;
+  background: rgba(24, 29, 20, 0.48);
+  animation: backdrop-in 0.2s ease both;
 }
 
 .catalog-modal {
@@ -974,11 +1008,11 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   max-height: min(680px, calc(100vh - 40px));
   padding: 21px;
   overflow: auto;
-  border: 1px solid rgba(32, 36, 29, .25);
+  border: 1px solid rgba(32, 36, 29, 0.25);
   border-radius: 21px;
   background: #f6f5ed;
-  box-shadow: 0 28px 60px rgba(23, 30, 18, .27);
-  animation: modal-in .35s cubic-bezier(.2,.8,.2,1) both;
+  box-shadow: 0 28px 60px rgba(23, 30, 18, 0.27);
+  animation: modal-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .catalog-modal-topline {
@@ -988,7 +1022,7 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   color: #878d7d;
   font-family: 'DM Mono', monospace;
   font-size: 9px;
-  letter-spacing: .09em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
@@ -1014,7 +1048,7 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   color: #84963a;
   font-family: 'DM Mono', monospace;
   font-size: 9px;
-  letter-spacing: .1em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -1023,8 +1057,8 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: clamp(34px, 10vw, 48px);
   font-weight: 500;
-  letter-spacing: -.06em;
-  line-height: .95;
+  letter-spacing: -0.06em;
+  line-height: 0.95;
 }
 
 .catalog-modal-heading h2 em {
@@ -1050,7 +1084,7 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   align-items: center;
   gap: 11px;
   padding: 8px 5px;
-  border-bottom: 1px solid rgba(32, 36, 29, .08);
+  border-bottom: 1px solid rgba(32, 36, 29, 0.08);
 }
 
 .catalog-item > span:nth-child(2) {
@@ -1082,10 +1116,28 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   background: #b5c486;
 }
 
-.catalog-item-art--1 { border-radius: 53% 47% 45% 55%; background: linear-gradient(135deg, #d3dba9, #8e9e5b); }
-.catalog-item-art--2 { border-radius: 12px; background: radial-gradient(circle at 35% 35%, #e4dfca 0 29%, transparent 30%), #a7ae80; }
-.catalog-item-art--3 { border-radius: 50% 50% 13px 13px; background: linear-gradient(135deg, #c8d6a0 0 48%, #78854a 49%); }
-.catalog-item-art--4 { border-radius: 11px 11px 24px 24px; background: linear-gradient(145deg, #e0e1c9 20%, #a4b373 21% 63%, #76884b 64%); }
+.catalog-item-art--1 {
+  border-radius: 53% 47% 45% 55%;
+  background: linear-gradient(135deg, #d3dba9, #8e9e5b);
+}
+.catalog-item-art--2 {
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 35% 35%, #e4dfca 0 29%, transparent 30%), #a7ae80;
+}
+.catalog-item-art--3 {
+  border-radius: 50% 50% 13px 13px;
+  background: linear-gradient(135deg, #c8d6a0 0 48%, #78854a 49%);
+}
+.catalog-item-art--4 {
+  border-radius: 11px 11px 24px 24px;
+  background: linear-gradient(
+    145deg,
+    #e0e1c9 20%,
+    #a4b373 21% 63%,
+    #76884b 64%
+  );
+}
 
 .catalog-cta {
   display: flex;
@@ -1122,21 +1174,52 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   border-radius: 100px;
   background: var(--ink);
   color: var(--cream);
-  box-shadow: 0 11px 26px rgba(31, 39, 24, .22);
+  box-shadow: 0 11px 26px rgba(31, 39, 24, 0.22);
   font-size: 12px;
   text-align: center;
   white-space: nowrap;
-  animation: toast-in .3s ease both;
+  animation: toast-in 0.3s ease both;
 }
 
 @keyframes link-card-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes modal-in { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@keyframes toast-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 @media (min-width: 720px) {
   .link-tree-content {
@@ -1197,9 +1280,9 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   .link-tree-page *,
   .link-tree-page *::before,
   .link-tree-page *::after {
-    animation-duration: .01ms !important;
+    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
-    transition-duration: .01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

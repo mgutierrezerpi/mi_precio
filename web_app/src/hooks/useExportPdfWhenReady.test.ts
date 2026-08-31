@@ -23,7 +23,8 @@ function addList() {
   return node
 }
 
-const run = () => renderHook(() => useExportPdfWhenReady(true, '.mp-public', 'carta'))
+const run = () =>
+  renderHook(() => useExportPdfWhenReady(true, '.mp-public', 'carta'))
 
 beforeEach(() => {
   document.body.innerHTML = ''
