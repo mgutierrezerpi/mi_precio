@@ -1,0 +1,52 @@
+/* ---------- Final CTA ---------- */
+.final-cta-section {
+  padding: clamp(64px, 8vw, 80px) clamp(20px, 4vw, 32px);
+  background: var(--tint-2);
+}
+
+.final-cta {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(48px, 6vw, 64px) clamp(28px, 6vw, 80px);
+  border-radius: 32px;
+  background: var(--grad);
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 32px 80px rgba(124, 58, 237, 0.3);
+}
+
+.final-cta h2 {
+  font-size: clamp(2rem, 3.6vw, 2.85rem);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.final-cta p {
+  max-width: 620px;
+  margin: 16px auto 0;
+  color: #e0e7ff;
+  font-size: 1.06rem;
+  font-weight: 500;
+}
+
+.final-cta-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.button.primary.light {
+  background: #fff;
+  color: var(--violet);
+  box-shadow: none;
+  font-weight: 700;
+}
+
+.button.outline-light {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+  font-weight: 700;
+}
+

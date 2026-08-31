@@ -1,0 +1,142 @@
+/* ---------- Hero visual / mockup ---------- */
+.hero-visual {
+  position: relative;
+}
+
+.product-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 30px 60px rgba(30, 41, 59, 0.28);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.card-header div {
+  display: grid;
+  gap: 2px;
+}
+
+.card-header strong {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.card-header span {
+  color: var(--soft-muted);
+  font-size: 0.74rem;
+}
+
+.card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #10b981;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.card-tag :is(i, svg) {
+  width: 14px;
+  height: 14px;
+}
+
+.card-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fafc;
+  color: var(--soft-muted);
+  font-size: 0.8rem;
+}
+
+.card-search :is(i, svg) {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.table {
+  border-radius: 8px;
+}
+
+.table-head,
+.table-row {
+  display: grid;
+  grid-template-columns: 1.5fr 0.9fr 0.7fr 0.9fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.table-head {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.table-row {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.78rem;
+}
+
+.cell-product {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.prod-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 7px;
+  border-radius: 6px;
+  background: var(--tint-2);
+  color: var(--violet);
+}
+
+.cell-sku {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.table-row b {
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.table-row small {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 600;
+}
