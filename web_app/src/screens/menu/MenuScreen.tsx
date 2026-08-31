@@ -5,7 +5,6 @@ import api from '../../services/api'
 import { getT, localeOf, type TFn } from '../../lib/i18n'
 import type {
   Tenant,
-  ListVersion,
   Item,
   ListDesign,
   ListContent,
@@ -36,45 +35,18 @@ import { PencilActionBar } from './pencilActions'
 import { PencilJournal } from './pencilJournal'
 import { StoreChip } from './StoreChip'
 import { MagazineShelf } from './MagazineShelf'
-
-export interface PublicList {
-  id: string
-  name: string
-  slug: string | null
-  kind?: 'product' | 'service'
-  /** The shop's main list — whose look stands in when no single list is shown. */
-  showOnIndex?: boolean
-  // Per-list appearance overrides; null falls back to the tenant's defaults.
-  design?: ListDesign | null
-  heroColor?: string | null
-  bgUrl?: string | null
-  bgOverlay?: boolean | null
-  captureViewerInfo?: boolean
-  version: ListVersion & { items: Item[] }
-}
-interface PublicMenuData {
-  tenant: Tenant
-  lists: PublicList[]
-  magazines?: Magazine[]
-  viewerIdentified?: boolean
-}
-
-// Dedupe view records within a short window (survives StrictMode remounts).
-const recentViews = new Map<string, number>()
-
-const BASE = {
-  bg: '#FAFAF7',
-  ink: '#0F0D1A',
-  body: '#44424E',
-  muted: '#84818E',
-  accent: '#7C3AED',
-  accent2: '#6D28D9',
-  line: '#E5E2DC',
-}
-
-// Only for the "no such shop" dead end, where there is no tenant to brand with.
-// The white mark is the one that sits on the purple half.
-const MIPRECIO_LOGO_WHITE = '/miprecio-logo-white-pencil.webp'
+import { CartBar } from './CartBar'
+import { buildMenuSections } from './menuSections'
+import {
+  BASE,
+  MIPRECIO_LOGO_WHITE,
+  recentViews,
+  displayCategory,
+  normalizeCategory,
+  moneyFor,
+  type PublicList,
+  type PublicMenuData,
+} from './menuHelpers'
 
 export function MenuScreen() {
   const { subdomain, listId } = useParams<{
@@ -194,18 +166,10 @@ export function MenuScreen() {
   const locale = localeOf(tenant?.language)
 
   const currency = tenant?.currency || 'UYU'
-  const fmt = (price: string | number) =>
-    new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0 }).format(
-      typeof price === 'number' ? price : parseFloat(price)
-    )
   // Non-breaking space keeps the currency and the amount together on the same line.
-  const money = (price: string | number) => `${currency}\u00a0${fmt(price)}`
-
-  const norm = (s?: string | null) => (s?.trim() || 'Otros').toLowerCase()
-  const disp = (s?: string | null) => {
-    const c = s?.trim() || 'Otros'
-    return c.charAt(0).toUpperCase() + c.slice(1)
-  }
+  const money = (price: string | number) => moneyFor(currency, price)
+  const norm = normalizeCategory
+  const disp = displayCategory
 
   const allItems = useMemo(
     () => displayLists.flatMap((l) => l.version?.items ?? []),
@@ -272,37 +236,10 @@ export function MenuScreen() {
     }
   }, [tenant, list?.name])
 
-  const sections = useMemo(() => {
-    const map = new Map<string, { key: string; name: string; items: Item[] }>()
-    for (const it of base) {
-      const k = norm(it.category)
-      if (!map.has(k))
-        map.set(k, { key: k, name: disp(it.category), items: [] })
-      map.get(k)!.items.push(it)
-    }
-    const inferred = Array.from(map.values()).map((s) => {
-      const prices = s.items
-        .map((i) => parseFloat(i.price))
-        .filter((n) => !Number.isNaN(n))
-      return {
-        ...s,
-        min: prices.length ? Math.min(...prices) : 0,
-        max: prices.length ? Math.max(...prices) : 0,
-      }
-    })
-    const catalog = content?.blocks.find((block) => block.type === 'catalog')
-    if (!catalog || catalog.type !== 'catalog') return inferred
-
-    const remaining = new Map(inferred.map((section) => [section.key, section]))
-    const ordered = catalog.sections.flatMap((definition) => {
-      const key = norm(definition.source.value)
-      const section = remaining.get(key)
-      if (!section) return []
-      remaining.delete(key)
-      return [{ ...section, name: definition.title }]
-    })
-    return [...ordered, ...remaining.values()]
-  }, [base, content])
+  const sections = useMemo(
+    () => buildMenuSections(base, content, norm, disp),
+    [base, content, norm, disp]
+  )
   const viewerPromptEnabled = Boolean(
     list?.captureViewerInfo && !viewerSubmitted && !isEditorPreview
   )
@@ -784,8 +721,21 @@ export function MenuScreen() {
 
       {/* Sticky cart bar — follows the selected design's theme; opens the full cart page. */}
       {!isService && !isPencilCartDesign && cartCount > 0 && !showCart && (
+        <CartBar
+          theme={cartT}
+          accent={cartActionAccent}
+          gradient={cartGradient}
+          t={t}
+          count={cartCount}
+          total={money(cartTotal)}
+          onClear={clearCart}
+          onOpen={() => setShowCart(true)}
+        />
+      )}
+
+      {!isService && !isPencilCartDesign && cartCount > 0 && !showCart && (
         <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur"
+          className="fixed inset-x-0 bottom-0 z-40 hidden border-t backdrop-blur md:block"
           style={{
             background: `${cartT.surface}F2`,
             borderColor: cartT.line,

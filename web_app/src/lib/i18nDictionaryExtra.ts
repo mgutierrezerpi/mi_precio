@@ -72,7 +72,9 @@ export const DICT_EXTRA: Record<string, TranslationEntry> = {
   'bill.paymentNote': {
     es: 'Los pagos se procesan con Lemon Squeezy. Tu plan se activa automáticamente cuando el pago queda confirmado.',
     en: 'Payments are processed with Lemon Squeezy. Your plan activates automatically once payment is confirmed.',
-    pt: 'Os pagamentos são processados com Lemon Squeezy. Seu plano é ativado automaticamente quando o pagamento é confirmado.',
+    pt:
+      'Os pagamentos são processados com Lemon Squeezy. Seu plano é ativado ' +
+        'automaticamente quando o pagamento é confirmado.',
   },
   'bill.managePortal': {
     es: 'Gestionar en Lemon Squeezy',
@@ -127,7 +129,9 @@ export const DICT_EXTRA: Record<string, TranslationEntry> = {
   'gate.recheckEmpty': {
     es: 'Todavía no nos llegó la confirmación del pago. Si acabás de pagar, esperá unos segundos y volvé a probar.',
     en: 'We haven’t received the payment confirmation yet. If you just paid, wait a few seconds and try again.',
-    pt: 'Ainda não recebemos a confirmação do pagamento. Se você acabou de pagar, aguarde alguns segundos e tente de novo.',
+    pt:
+      'Ainda não recebemos a confirmação do pagamento. Se você acabou de pagar, ' +
+        'aguarde alguns segundos e tente de novo.',
   },
   'gate.ownerOnly': {
     es: 'Solo el dueño de la cuenta puede activar el plan. Pedile que lo haga para poder entrar.',
