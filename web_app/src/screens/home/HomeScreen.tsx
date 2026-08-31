@@ -422,13 +422,13 @@ function Navbar({
           {isEnglishLanding ? (
             <span className="flex items-center gap-2.5 text-[25px] font-extrabold tracking-[-0.05em] text-white" aria-label="PricePanel">
               <span className="h-11 w-11 overflow-hidden" aria-hidden="true">
-                <img src="/miprecio-logo-white-pencil.webp" alt="" className="h-11 max-w-none w-auto" />
+                <img src="/miprecio-logo-pencil.webp" alt="" className="h-11 max-w-none w-auto" />
               </span>
               PricePanel
             </span>
           ) : (
             <img
-              src="/miprecio-logo-white-pencil.webp"
+              src="/miprecio-logo-pencil.webp"
               alt="MiPrecio"
               className="h-11 w-auto"
             />
