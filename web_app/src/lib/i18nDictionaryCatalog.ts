@@ -15,6 +15,7 @@ export const DICT_CATALOG: Record<string, TranslationEntry> = {
   'products.emptyFiltered': { es: 'Sin resultados para este filtro', en: 'No results for this filter', pt: 'Sem resultados para este filtro' },
   'products.empty': { es: 'Todavía no tenés productos', en: 'You do not have products yet', pt: 'Você ainda não tem produtos' },
   'products.showing': { es: 'Mostrando {shown} de {total} productos', en: 'Showing {shown} of {total} products', pt: 'Mostrando {shown} de {total} produtos' },
+  'products.perPage': { es: 'Por página', en: 'Per page', pt: 'Por página' },
   'products.noCategory': { es: 'Sin categoría', en: 'Uncategorized', pt: 'Sem categoria' },
   'products.available': { es: 'Disponible', en: 'Available', pt: 'Disponível' },
   'products.unavailable': { es: 'No disponible', en: 'Unavailable', pt: 'Indisponível' },

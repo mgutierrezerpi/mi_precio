@@ -39,7 +39,7 @@ class Tenant(BaseModel):
     logo_url = TextField(null=True)  # data URL or hosted URL
     brand_color = CharField(max_length=9, null=True)  # hex, e.g. #7C3AED
     description = TextField(null=True)
-    # Visual template for the public price list: store | classic | nordic | fine | modern | photo | cards | catalog
+    # Visual template for the public price list, including the Pencil editorial templates.
     list_design = CharField(max_length=32, null=True)
     # Optional background image for the public list + whether to tint it with the brand color.
     list_bg_url = TextField(null=True)
@@ -47,18 +47,11 @@ class Tenant(BaseModel):
     # Optional hero/header color for the public list (falls back to brand_color when null).
     list_hero_color = CharField(max_length=9, null=True)
 
-    # Social links shown in the public list footer. Each is optional: a null one
-    # simply has no icon. All hold a ready-to-open URL except whatsapp, which
-    # holds digits only (the public page builds wa.me/<digits> from it).
     social_instagram = TextField(null=True)
     social_facebook = TextField(null=True)
     social_tiktok = TextField(null=True)
     social_website = TextField(null=True)
     social_whatsapp = CharField(max_length=20, null=True)
-
-    # Whether the public list shows the lead form. Off by default: a shop that
-    # is not going to answer is better off without one, and an unanswered form
-    # is worse than no form. Only takes effect on tiers that include leads.
     leads_enabled = BooleanField(default=False)
 
     # Language & region
@@ -74,6 +67,10 @@ class Tenant(BaseModel):
     marketplace_latitude = CharField(max_length=32, null=True)
     marketplace_longitude = CharField(max_length=32, null=True)
     business_category = CharField(max_length=32, null=True)
+    # Public marketplace contact links.
+    whatsapp_url = TextField(null=True)
+    website_url = TextField(null=True)
+    instagram_url = TextField(null=True)
 
     # Tax / legal data
     legal_name = CharField(max_length=255, null=True)

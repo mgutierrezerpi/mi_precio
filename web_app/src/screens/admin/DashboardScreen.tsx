@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
-import { fetchProducts, selectProducts } from '../../store/slices/productsSlice'
 import type {
   Product,
   CustomerStats,
@@ -11,16 +10,14 @@ import type {
   Tenant,
   PriceList,
 } from '../../types'
-import api, { type VisitStats } from '../../services/api'
+import api, { type ReportData, type VisitStats } from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
-import { FirstSteps } from './crm/FirstSteps'
 import { Icon, type IconName } from './crm/ui'
 import { QrCode } from './crm/QrCode'
 import { QrModal } from './PriceListsScreen'
 import { tone, gradient, type Tone } from './crm/theme'
 import { DEFAULT_QR_COLOR, QR_COLOR_STORAGE_PREFIX } from '../../lib/qrRender'
 import { localeOf, normalizeLang, useT, type TFn } from '../../lib/i18n'
-import { markQrShared } from '../../lib/onboardingTour'
 import { DICT_ANALYTICS } from '../../lib/i18nDictionaryAnalytics'
 import { ActivityRow } from './crm/activity'
 import {
@@ -73,9 +70,7 @@ export function DashboardScreen() {
     goCreateList,
     goProducts,
     goQr,
-    lists,
     principalList,
-    products,
     publicUrlDisplay,
     qrColor,
     qrList,
@@ -85,8 +80,17 @@ export function DashboardScreen() {
     tenant,
     visits,
   } = dashboard
-  const { engagement, listViews, productClicks, qrScans } = dashboard.metrics
+  const { listViews, productClicks, qrScans } = dashboard.metrics
   const [qrModalOpen, setQrModalOpen] = useState(false)
+  const [trend, setTrend] = useState<ReportData | null>(null)
+  useEffect(() => {
+    if (!tenant?.id) return
+    let cancelled = false
+    api.getReports(tenant.id, 30).then((res) => {
+      if (!cancelled && res.data) setTrend(res.data)
+    })
+    return () => { cancelled = true }
+  }, [tenant?.id])
   const qrLinkUrl = qrList
     ? `${window.location.origin}/p/${tenant?.subdomain || 'mi-negocio'}/${qrList.slug || qrList.id}`
     : ''
@@ -114,7 +118,6 @@ export function DashboardScreen() {
     >
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
         <DashboardTitle t={t} />
-        <FirstSteps lists={lists} productCount={products.length} />
         <DashboardHero
           copied={copied}
           goCreateList={goCreateList}
@@ -139,11 +142,7 @@ export function DashboardScreen() {
           locale={locale}
         />
 
-        <EngagementChart
-          values={{ listViews, productClicks, qrScans, engagement }}
-          t={t}
-          locale={locale}
-        />
+        <DailyVisitsChart data={trend} t={t} locale={locale} />
       </main>
       {qrModalOpen && qrList && (
         <QrModal
@@ -164,18 +163,12 @@ function useDashboardData(navigate: ReturnType<typeof useNavigate>) {
   const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
   const lists = useAppSelector(selectLists)
-  const products = useAppSelector(selectProducts)
   const [visits, setVisits] = useState<VisitStats | null>(null)
   const [custStats, setCustStats] = useState<CustomerStats | null>(null)
   const [search, setSearch] = useState('')
   const { copied, copyUrl, qrColor } = usePublicListUrls(tenant)
   useEffect(() => {
     if (tenant?.id) dispatch(fetchLists(tenant.id))
-  }, [dispatch, tenant?.id])
-  // The first-steps checklist asks "does the catalog have anything in it?",
-  // which no list-shaped data can answer before the first list exists.
-  useEffect(() => {
-    if (tenant?.id) dispatch(fetchProducts(tenant.id))
   }, [dispatch, tenant?.id])
   useEffect(() => {
     if (!tenant?.id) return
@@ -212,10 +205,8 @@ function useDashboardData(navigate: ReturnType<typeof useNavigate>) {
     goCreateList: () => navigate('/admin/lists?new=1'),
     goProducts: () => navigate('/admin/items'),
     goQr: () => navigate('/admin/qr'),
-    lists,
     metrics,
     principalList,
-    products,
     publicUrlDisplay,
     qrColor,
     qrList,
@@ -238,7 +229,6 @@ function usePublicListUrls(tenant: Tenant | null) {
   const copyUrl = (url: string) => {
     if (!url) return
     navigator.clipboard?.writeText(url)
-    markQrShared(tenant?.id)
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }
@@ -452,76 +442,44 @@ function OverviewMetric({
   )
 }
 
-function EngagementChart({
-  values,
+function DailyVisitsChart({
+  data,
   t,
   locale,
 }: {
-  values: {
-    listViews: number
-    productClicks: number
-    qrScans: number
-    engagement: string
-  }
+  data: ReportData | null
   t: TFn
   locale: string
 }) {
-  const max = Math.max(
-    1,
-    values.listViews,
-    values.productClicks,
-    values.qrScans
-  )
-  const rows = [
-    [t('analytics.listViews'), values.listViews.toLocaleString(locale), values.listViews],
-    [
-      t('analytics.productClicks'),
-      values.productClicks.toLocaleString(locale),
-      values.productClicks,
-    ],
-    [t('analytics.qrScans'), values.qrScans.toLocaleString(locale), values.qrScans],
-    [
-      t('analytics.scanRate'),
-      values.engagement,
-      Number.parseFloat(values.engagement) || 0,
-    ],
-  ] as const
+  const navigate = useNavigate()
+  const series = data?.series ?? []
+  const totals = series.map((day) => day.link + day.qr)
+  const max = Math.max(1, ...totals)
+  const recent = totals.slice(-7).reduce((sum, value) => sum + value, 0)
+  const previous = totals.slice(-14, -7).reduce((sum, value) => sum + value, 0)
+  const change = previous ? Math.round(((recent - previous) / previous) * 100) : recent ? 100 : 0
+  const points = totals.map((value, index) => `${(index / Math.max(1, totals.length - 1)) * 100},${100 - (value / max) * 82 - 9}`).join(' ')
+  const hasVisits = totals.some(Boolean)
+
   return (
-    <section className="card dash-card flex min-h-[300px] flex-1 flex-col gap-4 rounded-[10px] p-5">
-      <div className="flex h-[38px] items-start justify-between">
-        <div className="flex flex-col gap-1">
-          <h3 className="text-lg font-bold text-[#F8F7FF]">
-            {t('analytics.engagementOverTime')}
-          </h3>
-          <p className="text-[13px] text-[#9694A6]">
-            {t('analytics.engagementDescription')}
-          </p>
+    <section className={`card dash-card flex flex-col gap-4 rounded-[10px] p-5 ${hasVisits ? 'min-h-[300px] flex-1' : ''}`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-lg font-bold text-[#F8F7FF]">{t('analytics.visitGrowth')}</h3>
+          <p className="text-[13px] text-[#9694A6]">{t('analytics.last30Days')}</p>
         </div>
-        <button
-          type="button"
-          className="btn btn-sm h-8 rounded-md bg-[#1C1730] px-3 text-xs font-semibold text-[#C4B5FD]"
-        >
-          {t('analytics.cumulativeData')}
-        </button>
+        <button type="button" onClick={() => navigate('/reports')} className="btn btn-sm h-8 w-fit rounded-md bg-[#1C1730] px-3 text-xs font-semibold text-[#C4B5FD]">{t('analytics.cumulativeData')}</button>
       </div>
-      <div className="flex flex-1 flex-col justify-center gap-3 px-0 sm:px-2">
-        {rows.map(([label, value, amount]) => (
-          <div key={label} className="flex h-9 items-center gap-3">
-            <span className="w-[120px] shrink-0 text-[13px] text-[#B7B3C5]">
-              {label}
-            </span>
-            <div className="h-2.5 flex-1 rounded-full bg-[#1C1B2A]">
-              <div
-                className="h-full rounded-full bg-[#6C43E8]"
-                style={{ width: `${Math.min(100, (amount / max) * 100)}%` }}
-              />
-            </div>
-            <span className="w-12 text-right text-[13px] font-semibold text-[#F8F7FF]">
-              {value}
-            </span>
-          </div>
-        ))}
-      </div>
+      {hasVisits ? <>
+        <div className="flex items-end justify-between rounded-xl bg-[#1C1730] px-4 py-3">
+          <div><p className="text-[11px] font-semibold text-[#9694A6]">{t('analytics.last7Days')}</p><p className="text-2xl font-bold text-[#F8F7FF]">{recent.toLocaleString(locale)}</p></div>
+          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${change >= 0 ? 'bg-[#14532D] text-[#86EFAC]' : 'bg-[#7F1D1D] text-[#FCA5A5]'}`}>{change >= 0 ? '+' : ''}{change}%</span>
+        </div>
+        <div className="flex min-h-40 flex-1 flex-col justify-end gap-2">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-36 w-full overflow-visible"><polyline points={points} fill="none" stroke="#A78BFA" strokeWidth="2" vectorEffect="non-scaling-stroke" /></svg>
+          <div className="flex justify-between text-[10px] text-[#9694A6]"><span>{t('analytics.thirtyDaysAgo')}</span><span>{t('analytics.today')}</span></div>
+        </div>
+      </> : <div className="flex items-center gap-3 rounded-xl bg-[#1C1730] px-4 py-4 text-[13px] text-[#9694A6]"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2B1A4B] text-[#C4B5FD]"><Icon name="trending-up" size={17} /></span><span>{data ? t('analytics.shareListToMeasure') : t('analytics.loading')}</span></div>}
     </section>
   )
 }

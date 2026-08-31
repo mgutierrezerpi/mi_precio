@@ -67,3 +67,40 @@ python build_tour.py      # re-embeber
 
 > `tok.json` (contiene un JWT) y `node_modules/` están gitignoreados: no se commitean.
 > El dataset demo vive en el volumen Docker local `api_data`, no en el repo.
+# Pencil price-list content demo
+
+After the local API and web app are running and `demo/tok.json` exists, seed
+the price lists shown in `pretty lists` without deleting current data:
+
+```bash
+python demo/seed_pencil_price_lists.py
+```
+
+An authenticated local shell can instead provide `DEMO_TOKEN`,
+`DEMO_TENANT_ID`, and optionally `DEMO_SUBDOMAIN`; no token file is required.
+
+It creates or updates the four Maison Étoile lists and Northline Hardware —
+Retail List as price lists. The Cheese Factory Journal is seeded separately as
+a `Magazine` with nine ordered `MagazinePage` records. The old demo journal
+price-list record is unpublished but kept intact; only the Northline list
+remains a draft.
+
+Price lists open at `http://localhost:3000/p/<subdomain>` and magazines at
+`http://localhost:3000/m/<subdomain>/<magazine-slug>`.
+
+To create every Pencil design for every tenant in the local SQLite database,
+run the database-local seeder. It is additive and skips a design that already
+exists for a tenant:
+
+```bash
+docker compose cp demo/seed_pencil_price_lists.py api:/tmp/seed_pencil_price_lists.py
+docker compose cp demo/seed_all_pencil_price_lists.py api:/tmp/seed_all_pencil_price_lists.py
+docker compose exec api python /tmp/seed_all_pencil_price_lists.py --dry-run
+docker compose exec api python /tmp/seed_all_pencil_price_lists.py
+```
+
+Users who belong to the same tenant share that tenant's generated lists. Only
+tenants associated with at least one local user or membership are included; the
+new lists are published but hidden from the tenant's list index, and contain the
+sample items used by the Pencil templates. Use `--database PATH` when running
+the script outside Docker.

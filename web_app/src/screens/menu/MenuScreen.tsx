@@ -2,15 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
-import { getT, localeOf } from '../../lib/i18n'
-import {
-  useExportPdfWhenReady,
-  type ExportState,
-} from '../../hooks/useExportPdfWhenReady'
-import { pdfFileName } from '../../lib/exportListPdf'
-import { SocialLinks } from '../../components/SocialLinks'
-import { LeadForm } from '../../components/LeadForm'
-import type { Tenant, ListVersion, Item, ListDesign } from '../../types'
+import { getT, localeOf, type TFn } from '../../lib/i18n'
+import type {
+  Tenant,
+  ListVersion,
+  Item,
+  ListDesign,
+  ListContent,
+  Magazine,
+} from '../../types'
 import {
   lighten,
   readableOn,
@@ -31,6 +31,9 @@ import {
   type CartTheme,
 } from './designs'
 import { parseUtc } from '../../lib/datetime'
+import { isPencilVariant, pencilCartThemeFor, PencilList } from './pencilDesigns'
+import { PencilActionBar } from './pencilActions'
+import { PencilJournal } from './pencilJournal'
 
 interface PublicList {
   id: string
@@ -44,11 +47,14 @@ interface PublicList {
   heroColor?: string | null
   bgUrl?: string | null
   bgOverlay?: boolean | null
+  captureViewerInfo?: boolean
   version: ListVersion & { items: Item[] }
 }
 interface PublicMenuData {
   tenant: Tenant
   lists: PublicList[]
+  magazines?: Magazine[]
+  viewerIdentified?: boolean
 }
 
 // Dedupe view records within a short window (survives StrictMode remounts).
@@ -68,7 +74,6 @@ const BASE = {
 // The white mark is the one that sits on the purple half.
 const MIPRECIO_LOGO_WHITE = '/miprecio-logo-white-pencil.webp'
 
-
 export function MenuScreen() {
   const { subdomain, listId } = useParams<{
     subdomain: string
@@ -76,11 +81,12 @@ export function MenuScreen() {
   }>()
   const [searchParams] = useSearchParams()
   const viewSource = searchParams.get('src') === 'qr' ? 'qr' : 'link'
-  // The CRM's "Exportar a PDF" opens the real list with ?pdf=1 rather than
-  // redrawing it: the sheet is then the design itself, not a copy that drifts.
-  const pdfMode = searchParams.get('pdf') === '1'
+  // Embedded in the admin template editor: show the list itself, never the
+  // visitor-identification interruption intended for real customers.
+  const isEditorPreview = searchParams.get('preview') === 'editor'
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [lists, setLists] = useState<PublicList[]>([])
+  const [magazines, setMagazines] = useState<Magazine[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [cat, setCat] = useState<string>('all')
@@ -115,6 +121,14 @@ export function MenuScreen() {
     address: '',
     notes: '',
   })
+  const [viewerContact, setViewerContact] = useState({
+    name: '',
+    email: '',
+    phone: '',
+  })
+  const [viewerSubmitted, setViewerSubmitted] = useState(false)
+  const [viewerSaving, setViewerSaving] = useState(false)
+  const [viewerError, setViewerError] = useState(false)
 
   const displayLists = listId
     ? lists.filter((l) => l.id === listId || l.slug === listId)
@@ -136,10 +150,18 @@ export function MenuScreen() {
       else if (response.data) {
         setTenant(response.data.tenant)
         setLists(response.data.lists)
+        setMagazines(response.data.magazines ?? [])
+        setViewerSubmitted(Boolean(response.data.viewerIdentified))
       }
       setIsLoading(false)
     }
     fetchPublicData()
+  }, [subdomain, listId])
+
+  useEffect(() => {
+    setViewerSubmitted(false)
+    setViewerContact({ name: '', email: '', phone: '' })
+    setViewerError(false)
   }, [subdomain, listId])
 
   useEffect(() => {
@@ -152,7 +174,11 @@ export function MenuScreen() {
     const last = recentViews.get(key)
     if (last && now - last < 3000) return
     recentViews.set(key, now)
-    api.recordPublicView(subdomain, listId ? displayLists[0]?.id : undefined, viewSource)
+    api.recordPublicView(
+      subdomain,
+      listId ? displayLists[0]?.id : undefined,
+      viewSource
+    )
   }, [
     subdomain,
     listId,
@@ -163,8 +189,8 @@ export function MenuScreen() {
     displayLists.length,
   ])
 
-  // Palette tinted by the tenant's brand color (falls back to the default purple).
-  const accent = tenant?.brandColor || BASE.accent
+  // Customer-facing catalog and Linktree intentionally share one accent.
+  const accent = tenant?.linktreeAccentColor || tenant?.brandColor || BASE.accent
   const C = { ...BASE, accent, accent2: accent }
   const brandGradient = `linear-gradient(135deg, ${accent} 0%, ${lighten(accent, 0.42)} 100%)`
 
@@ -214,6 +240,9 @@ export function MenuScreen() {
       : allItems
   }, [allItems, q])
 
+  const list = displayLists.length === 1 ? displayLists[0] : null
+  const content = list?.version.content ?? null
+
   const sections = useMemo(() => {
     const map = new Map<string, { key: string; name: string; items: Item[] }>()
     for (const it of base) {
@@ -222,7 +251,7 @@ export function MenuScreen() {
         map.set(k, { key: k, name: disp(it.category), items: [] })
       map.get(k)!.items.push(it)
     }
-    return Array.from(map.values()).map((s) => {
+    const inferred = Array.from(map.values()).map((s) => {
       const prices = s.items
         .map((i) => parseFloat(i.price))
         .filter((n) => !Number.isNaN(n))
@@ -232,9 +261,45 @@ export function MenuScreen() {
         max: prices.length ? Math.max(...prices) : 0,
       }
     })
-  }, [base])
+    const catalog = content?.blocks.find((block) => block.type === 'catalog')
+    if (!catalog || catalog.type !== 'catalog') return inferred
 
-  const list = displayLists.length === 1 ? displayLists[0] : null
+    const remaining = new Map(inferred.map((section) => [section.key, section]))
+    const ordered = catalog.sections.flatMap((definition) => {
+      const key = norm(definition.source.value)
+      const section = remaining.get(key)
+      if (!section) return []
+      remaining.delete(key)
+      return [{ ...section, name: definition.title }]
+    })
+    return [...ordered, ...remaining.values()]
+  }, [base, content])
+  const viewerPromptEnabled = Boolean(
+    list?.captureViewerInfo && !viewerSubmitted && !isEditorPreview
+  )
+  const submitViewer = async () => {
+    if (!list || !subdomain) return
+    const name = viewerContact.name.trim()
+    const email = viewerContact.email.trim()
+    const phone = viewerContact.phone.trim()
+    if (!name || (!email && !phone)) {
+      setViewerError(true)
+      return
+    }
+    setViewerError(false)
+    setViewerSaving(true)
+    const response = await api.submitPublicViewer(subdomain, {
+      listId: list.id,
+      name,
+      email: email || undefined,
+      phone: phone || undefined,
+    })
+    setViewerSaving(false)
+    if (response.data) {
+      setCustomer((current) => ({ ...current, name, email, phone }))
+      setViewerSubmitted(true)
+    } else setViewerError(true)
+  }
   // Backend stores naive UTC timestamps (datetime.utcnow, no offset). Tag them as UTC
   // so the browser converts to the correct local date instead of treating UTC as local.
   const vDate = parseUtc(list?.version?.updatedAt || list?.version?.createdAt)
@@ -254,35 +319,10 @@ export function MenuScreen() {
     setTimeout(() => setCopied(false), 1500)
   }
 
-  /** Records the cart's contact details as a lead.
-   *
-   *  Called on the way to WhatsApp, never in its place: whoever built a cart
-   *  is the warmest lead a shop gets, and today that contact evaporates every
-   *  time the WhatsApp message is composed but never actually sent.
-   *
-   *  Deliberately fire-and-forget. If this fails the order still goes through
-   *  — nobody loses a sale over a problem of ours. */
-  const rememberCartContact = () => {
-    if (!tenant?.leadsEnabled || !customer.name.trim()) return
-    const ordered = allItems
-      .filter((it) => cart[it.id])
-      .map((it) => `${cart[it.id]}× ${it.name}`)
-      .join(', ')
-    void api
-      .createLead(tenant.subdomain, {
-        name: customer.name,
-        phone: customer.phone,
-        email: customer.email,
-        message: ordered ? `Pedido: ${ordered}` : undefined,
-        listId: list?.id ?? null,
-        listName: list?.name ?? null,
-        source: 'cart',
-      })
-      .catch(() => {})
-  }
-
-  // Compose a WhatsApp order message from the cart (no phone on file → opens the chooser).
-  const waHref = useMemo(() => {
+  const checkoutChannel = content?.template?.checkoutChannel === 'instagram' && (content.template.instagramHandle || tenant?.instagramUrl)
+    ? 'instagram' as const
+    : 'whatsapp' as const
+  const orderMessage = useMemo(() => {
     const lines = allItems
       .filter((it) => cart[it.id])
       .map((it) => `• ${cart[it.id]}× ${it.name} — ${money(it.price)}`)
@@ -303,16 +343,18 @@ export function MenuScreen() {
       `Total: ${money(cartTotal)}`,
       datos.length ? `\n${datos.join('\n')}` : '',
     ].join('\n')
-    return `https://wa.me/?text=${encodeURIComponent(msg)}`
+    return msg
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, allItems, cartTotal, customer])
-
-  // Called before the early returns below so the hook order never changes.
-  const exportState = useExportPdfWhenReady(
-    pdfMode && !isLoading && !error && !!tenant,
-    '.mp-public',
-    pdfFileName(tenant?.name, list?.name)
-  )
+  const waHref = useMemo(() => {
+    if (checkoutChannel === 'whatsapp') return `https://wa.me/?text=${encodeURIComponent(orderMessage)}`
+    const raw = content?.template?.instagramHandle || tenant?.instagramUrl || ''
+    const handle = raw.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').split(/[/?#]/)[0]
+    return handle ? `https://ig.me/m/${handle}` : 'https://instagram.com'
+  }, [checkoutChannel, content?.template?.instagramHandle, orderMessage, tenant?.instagramUrl])
+  const onCheckout = () => {
+    if (checkoutChannel === 'instagram') void navigator.clipboard?.writeText(orderMessage)
+  }
 
   if (isLoading)
     return (
@@ -341,7 +383,10 @@ export function MenuScreen() {
         {/* Why they are here. Its own half, so the pitch can never bury it. */}
         {/* `overflow-y-auto`, not `hidden`: the page never scrolls, but on a very
             short phone a half scrolls itself rather than clipping its CTA. */}
-        <div className="flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-6 text-center md:gap-6 md:px-8" style={{ background: BASE.bg }}>
+        <div
+          className="flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-6 text-center md:gap-6 md:px-8"
+          style={{ background: BASE.bg }}
+        >
           {/* Sized to break in two. `text-balance` keeps the split even here and
               degrades sanely for the longer en/pt strings. */}
           <h1
@@ -350,7 +395,10 @@ export function MenuScreen() {
           >
             {t('pub.shopNotFound')}
           </h1>
-          <p className="max-w-sm text-[13px] font-medium leading-relaxed sm:text-sm md:text-lg" style={{ color: BASE.muted }}>
+          <p
+            className="max-w-sm text-[13px] font-medium leading-relaxed sm:text-sm md:text-lg"
+            style={{ color: BASE.muted }}
+          >
             {t('pub.shopNotFoundHint')}
           </p>
         </div>
@@ -358,18 +406,31 @@ export function MenuScreen() {
         {/* Ours to use: whoever reached this already scans QR menus. */}
         <div
           className="flex flex-col items-center justify-center gap-4 overflow-y-auto px-6 py-6 text-center text-white sm:gap-6 md:gap-11 md:px-8"
-          style={{ background: `linear-gradient(150deg, ${BASE.accent2} 0%, ${BASE.accent} 55%, ${lighten(BASE.accent, 0.3)} 100%)` }}
+          style={{
+            background: `linear-gradient(150deg, ${BASE.accent2} 0%, ${BASE.accent} 55%, ${lighten(BASE.accent, 0.3)} 100%)`,
+          }}
         >
-          <img src={MIPRECIO_LOGO_WHITE} alt="MiPrecio" className="h-9 w-auto sm:h-12 md:h-20 lg:h-24" />
+          <img
+            src={MIPRECIO_LOGO_WHITE}
+            alt="MiPrecio"
+            className="h-9 w-auto sm:h-12 md:h-20 lg:h-24"
+          />
 
           <div className="flex max-w-lg flex-col gap-2 md:gap-3">
-            <h2 className="text-[20px] font-extrabold leading-[1.15] sm:text-[24px] md:text-[36px] lg:text-[42px]">{t('pub.lpHeadline')}</h2>
-            <p className="text-xs font-medium leading-relaxed text-white/80 sm:text-[13px] md:text-base lg:text-lg">{t('pub.lpSub')}</p>
+            <h2 className="text-[20px] font-extrabold leading-[1.15] sm:text-[24px] md:text-[36px] lg:text-[42px]">
+              {t('pub.lpHeadline')}
+            </h2>
+            <p className="text-xs font-medium leading-relaxed text-white/80 sm:text-[13px] md:text-base lg:text-lg">
+              {t('pub.lpSub')}
+            </p>
           </div>
 
           <ul className="flex flex-col gap-1.5 text-left sm:gap-2 md:gap-3">
             {['pub.lpFeat1', 'pub.lpFeat2', 'pub.lpFeat3'].map((key) => (
-              <li key={key} className="flex items-center gap-2.5 text-xs font-semibold text-white/90 sm:text-[13px] md:gap-3 md:text-base lg:text-[17px]">
+              <li
+                key={key}
+                className="flex items-center gap-2.5 text-xs font-semibold text-white/90 sm:text-[13px] md:gap-3 md:text-base lg:text-[17px]"
+              >
                 <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-white/20 sm:h-5 sm:w-5 md:h-7 md:w-7">
                   <SIco name="check" size={12} />
                 </span>
@@ -393,7 +454,15 @@ export function MenuScreen() {
   // plan. The shop exists, so send its customer to the rest of its catalogue —
   // never to MiPrecio's landing, which sells them nothing they came for.
   if (listId && displayLists.length === 0) {
-    return <ListNotFound tenant={tenant} lists={lists} t={t} accent={accent} brandGradient={brandGradient} />
+    return (
+      <ListNotFound
+        tenant={tenant}
+        lists={lists}
+        t={t}
+        accent={accent}
+        brandGradient={brandGradient}
+      />
+    )
   }
 
   // Appearance falls back field by field: this list's own override → the
@@ -403,25 +472,29 @@ export function MenuScreen() {
   // when there happens to be a single list.
   const skin = listId ? list : null
   const design: ListDesign = skin?.design ?? tenant.listDesign ?? 'store'
-  const cartT = cartThemeFor(design)
+  const isPencilCartDesign = isPencilVariant(design) || design === 'pencil-journal'
+  const baseCartT = design === 'pencil-journal'
+    ? pencilCartThemeFor('pencil-journal')
+    : isPencilVariant(design)
+      ? pencilCartThemeFor(design)
+      : cartThemeFor(design)
+  const cartT = isPencilCartDesign
+    ? { ...baseCartT, accent, actionAccent: accent }
+    : baseCartT
+  const cartAccent = cartT.accent || accent
+  const cartActionAccent = cartT.actionAccent || cartAccent
+  const cartGradient = `linear-gradient(135deg, ${cartActionAccent} 0%, ${lighten(cartActionAccent, 0.22)} 100%)`
+  const listSurface = isPencilCartDesign ? cartT.bg : C.bg
   const bgUrl = skin?.bgUrl ?? tenant.listBgUrl
   const bgOverlay = skin?.bgUrl ? !!skin.bgOverlay : !!tenant.listBgOverlay
   const hasBg = !!bgUrl
   const heroColor = skin?.heroColor || tenant.listHeroColor || accent
   const edition = String(list?.version?.versionNumber ?? 1).padStart(3, '0')
-  // On the public list the accent IS the hero colour. It already falls back to
-  // the brand colour when the shop set none, so nothing changes for shops that
-  // never picked one — but a shop that did was getting a design split between
-  // two colours: badges and rules on the brand colour, everything else on the
-  // hero. One accent per page, chosen by the shop.
-  const listAccent = heroColor
-  const designC = { ...C, accent: listAccent, accent2: listAccent }
-  const designGradient = `linear-gradient(135deg, ${listAccent} 0%, ${lighten(listAccent, 0.42)} 100%)`
   const designProps: DesignProps = {
     tenant,
-    C: designC,
-    accent: listAccent,
-    brandGradient: designGradient,
+    C,
+    accent,
+    brandGradient,
     heroColor,
     t,
     money,
@@ -436,27 +509,40 @@ export function MenuScreen() {
     q,
     setQ,
     cart,
+    cartCount,
     addToCart,
     decFromCart,
+    openCart: () => setShowCart(true),
+    waHref,
+    checkoutChannel,
+    onCheckout,
     isService,
     listName: list?.name ?? null,
     edition,
-    listId: list?.id ?? null,
     taxId: tenant.taxId,
     hasBg,
+    content,
+    cartTheme: cartT,
   }
+  const templateFont = content?.template?.font
+  const publicFont =
+    templateFont === 'code-pro'
+      ? "'Code Pro', Inter, system-ui, sans-serif"
+      : templateFont === 'mono'
+        ? "'IBM Plex Mono', 'Courier New', monospace"
+        : templateFont === 'editorial' || templateFont === 'serif'
+          ? "'Playfair Display', Georgia, serif"
+          : "'Inter', system-ui, -apple-system, sans-serif"
 
   return (
     <div
-      className="mp-public min-h-screen font-sans"
+      className="miprecio-public-list min-h-[100dvh] font-sans"
       style={{
-        background: C.bg,
+        background: listSurface,
         color: C.ink,
-        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+        fontFamily: publicFont,
       }}
     >
-      {pdfMode && <ExportOverlay state={exportState} accent={accent} />}
-
       {/* Tint the page scrollbar with the tenant's brand color while this public list is shown. */}
       <style>{`
         html { scrollbar-color: ${accent} transparent; }
@@ -464,10 +550,14 @@ export function MenuScreen() {
         html::-webkit-scrollbar-track { background: transparent; }
         html::-webkit-scrollbar-thumb { background: ${accent}; border-radius: 9999px; border: 3px solid ${C.bg}; }
         html::-webkit-scrollbar-thumb:hover { background: ${C.accent2}; }
+        .miprecio-public-list button:not(:disabled),
+        .miprecio-public-list a[href],
+        .miprecio-public-list [role="button"] { cursor: pointer; }
+        .miprecio-public-list button:disabled { cursor: not-allowed; }
       `}</style>
 
       {!showCart && (
-        <div className="relative">
+        <div className="relative flex min-h-[100dvh] flex-col overflow-x-clip">
           {/* Optional background image, with an optional brand-color filter on top. */}
           {hasBg && (
             <div
@@ -492,8 +582,20 @@ export function MenuScreen() {
               )}
             </div>
           )}
-          <div className="relative" style={{ zIndex: 1 }}>
-            {design === 'store' ? (
+          <div className={`relative flex-1 ${isPencilCartDesign && !isService ? 'pb-24' : ''}`} style={{ zIndex: 1 }}>
+            {!listId && magazines.length > 0 && (
+              <MagazineShelf
+                tenant={tenant}
+                magazines={magazines}
+                accent={accent}
+                t={t}
+              />
+            )}
+            {isPencilVariant(design) ? (
+              <PencilList variant={design} {...designProps} />
+            ) : design === 'pencil-journal' ? (
+              <PencilJournal {...designProps} />
+            ) : design === 'store' ? (
               <Storefront
                 tenant={tenant}
                 C={C}
@@ -516,11 +618,11 @@ export function MenuScreen() {
                 shareLink={shareLink}
                 copied={copied}
                 waHref={waHref}
-                onOrder={rememberCartContact}
                 list={list}
                 norm={norm}
                 isService={isService}
                 openCart={() => setShowCart(true)}
+                content={content}
               />
             ) : design === 'nordic' ? (
               <NordicMenu {...designProps} />
@@ -540,14 +642,67 @@ export function MenuScreen() {
               <ClassicList {...designProps} />
             )}
           </div>
+          {isPencilCartDesign && !isService && !showCart && (
+            <PencilActionBar props={designProps} />
+          )}
+          <a
+            href="https://miprecio.app"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Powered by MiPrecio"
+            className="relative z-10 mx-auto flex w-fit items-center gap-2 px-5 py-7 text-[9px] font-bold uppercase tracking-[0.12em] no-underline"
+            style={{ color: C.muted, background: listSurface }}
+          >
+            <span>Powered by</span>
+            <span className="relative block h-6 w-[94px] overflow-hidden" aria-hidden="true">
+              <span
+                className="absolute inset-0"
+                style={{
+                  background: accent,
+                  WebkitMask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
+                  mask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
+                }}
+              />
+              <span className="absolute bottom-0 left-[30%] right-0 h-[25%]" style={{ background: listSurface }} />
+            </span>
+          </a>
         </div>
+      )}
+
+      {viewerPromptEnabled && !showCart && (
+        <ViewerCapturePrompt
+          t={t}
+          accent={accent}
+          values={viewerContact}
+          error={viewerError}
+          saving={viewerSaving}
+          onChange={(field, value) =>
+            setViewerContact((current) => ({ ...current, [field]: value }))
+          }
+          onSubmit={() => void submitViewer()}
+          onSkip={() => {
+            setViewerSubmitted(true)
+            if (subdomain && list) {
+              void api
+                .recordPublicViewerDismissal(subdomain, list.id)
+                .then((response) => {
+                  if (response.error) {
+                    console.warn(
+                      '[public] could not record anonymous dismissal',
+                      response.error
+                    )
+                  }
+                })
+            }
+          }}
+        />
       )}
 
       {showCart && !isService && (
         <CartView
           tenant={tenant}
           T={cartT}
-          accent={accent}
+          accent={cartAccent}
           t={t}
           money={money}
           cart={cart}
@@ -561,14 +716,15 @@ export function MenuScreen() {
           customer={customer}
           setCustomer={setCustomer}
           waHref={waHref}
-          onOrder={rememberCartContact}
+          checkoutChannel={checkoutChannel}
+          onCheckout={onCheckout}
           norm={norm}
           onBack={() => setShowCart(false)}
         />
       )}
 
       {/* Sticky cart bar — follows the selected design's theme; opens the full cart page. */}
-      {!isService && cartCount > 0 && !showCart && (
+      {!isService && !isPencilCartDesign && cartCount > 0 && !showCart && (
         <div
           className="fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur"
           style={{
@@ -585,7 +741,7 @@ export function MenuScreen() {
                 height="22"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke={accent}
+                stroke={cartActionAccent}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -598,7 +754,7 @@ export function MenuScreen() {
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span
                   className="hidden text-[11px] font-bold tracking-[1.6px] sm:block"
-                  style={{ color: accent }}
+                  style={{ color: cartActionAccent }}
                 >
                   {t('pub.cartTitle')}
                 </span>
@@ -628,7 +784,7 @@ export function MenuScreen() {
                 type="button"
                 onClick={() => setShowCart(true)}
                 className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-[13px] font-bold text-white hover:opacity-90 md:px-5 md:py-3 md:text-[14px]"
-                style={{ background: brandGradient }}
+                style={{ background: cartGradient }}
               >
                 <SIco name="shopping-cart" size={18} color="#fff" />
                 {t('store.myCart')}
@@ -655,7 +811,220 @@ export function MenuScreen() {
  *  (`showOnIndex`) and falls back field by field to the business defaults — the
  *  same cascade the storefront uses. A shop on the dark "tech" or "fine"
  *  template gets a dark dead end, not a white card that reads as another site. */
-function ListNotFound({ tenant, lists, t, accent, brandGradient }: {
+function ViewerCapturePrompt({
+  t,
+  accent,
+  values,
+  error,
+  saving,
+  onChange,
+  onSubmit,
+  onSkip,
+}: {
+  t: TFn
+  accent: string
+  values: { name: string; email: string; phone: string }
+  error: boolean
+  saving: boolean
+  onChange: (field: 'name' | 'email' | 'phone', value: string) => void
+  onSubmit: () => void
+  onSkip: () => void
+}) {
+  const [contactMethod, setContactMethod] = useState<'email' | 'phone'>('email')
+  const fieldClass =
+    'h-12 w-full rounded-xl border border-[#E5E2DC] bg-[#FAFAF7] px-3.5 text-sm font-medium text-[#0F0D1A] outline-none transition focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/15'
+
+  const switchContactMethod = (method: 'email' | 'phone') => {
+    setContactMethod(method)
+    onChange(method === 'email' ? 'phone' : 'email', '')
+    onChange(method, values[method])
+  }
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#0F0D1A]/45 p-4 backdrop-blur-sm">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          onSubmit()
+        }}
+        className="w-full max-w-[440px] overflow-hidden rounded-3xl bg-white shadow-[0_24px_70px_-20px_rgba(15,13,26,0.45)]"
+      >
+        <div className="h-1.5 w-full" style={{ background: accent }} />
+        <div className="p-6 sm:p-7">
+          <div className="-mx-6 -mt-6 flex items-start gap-3 px-6 py-6 sm:-mx-7 sm:-mt-7 sm:px-7" style={{ background: accent }}>
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              style={{ background: 'rgba(255,255,255,.18)' }}
+            >
+              <SIco name="message-circle" size={21} color="#fff" />
+            </span>
+            <div className="flex min-w-0 flex-col gap-1">
+              <h2 className="text-xl font-extrabold leading-tight" style={{ color: readableOn(accent) }}>
+                {t('viewer.title')}
+              </h2>
+              <p className="text-sm font-medium leading-5" style={{ color: `${readableOn(accent)}CC` }}>
+                {t('viewer.subtitle')}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-2xl bg-[#FAFAF7] p-1">
+            <div className="grid grid-cols-2 gap-1">
+              {(['email', 'phone'] as const).map((method) => {
+                const active = contactMethod === method
+                return (
+                  <button
+                    key={method}
+                    type="button"
+                    onClick={() => switchContactMethod(method)}
+                    aria-pressed={active}
+                    className="flex h-10 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold transition"
+                    style={{
+                      background: active ? accent : 'transparent',
+                      borderColor: active ? accent : 'transparent',
+                      color: active ? readableOn(accent) : '#84818E',
+                      boxShadow: active
+                        ? '0 4px 12px rgba(15,13,26,0.16)'
+                        : 'none',
+                    }}
+                  >
+                    {active && (
+                      <SIco name="check" size={13} color={readableOn(accent)} />
+                    )}
+                    {method === 'email' ? t('viewer.email') : t('viewer.phone')}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-[#44424E]">
+                {t('viewer.name')}
+              </span>
+              <input
+                autoFocus
+                value={values.name}
+                onChange={(event) => onChange('name', event.target.value)}
+                placeholder={t('viewer.namePlaceholder')}
+                className={fieldClass}
+                required
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-[#44424E]">
+                {contactMethod === 'email'
+                  ? t('viewer.email')
+                  : t('viewer.phone')}
+              </span>
+              <input
+                type={contactMethod === 'email' ? 'email' : 'tel'}
+                inputMode={contactMethod === 'email' ? 'email' : 'tel'}
+                value={values[contactMethod]}
+                onChange={(event) =>
+                  onChange(contactMethod, event.target.value)
+                }
+                placeholder={
+                  contactMethod === 'email'
+                    ? t('viewer.emailPlaceholder')
+                    : t('viewer.phonePlaceholder')
+                }
+                className={fieldClass}
+                required
+              />
+            </label>
+            <p className="text-[11px] font-medium text-[#84818E]">
+              {t('viewer.contactHint')}
+            </p>
+            <p className="text-[10px] font-medium leading-4 text-[#A19EAA]">
+              {t('viewer.privacy')}
+            </p>
+            {error && (
+              <p className="text-xs font-bold text-[#DC2626]">
+                {t('viewer.required')}
+              </p>
+            )}
+          </div>
+          <div className="mt-5 flex flex-col gap-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="h-11 rounded-xl px-4 text-sm font-bold text-white disabled:opacity-60"
+              style={{ background: accent }}
+            >
+              {saving ? t('viewer.submitting') : t('viewer.submit')}
+            </button>
+            <button
+              type="button"
+              onClick={onSkip}
+              className="h-10 rounded-xl px-4 text-xs font-bold text-[#84818E] hover:bg-[#FAFAF7]"
+            >
+              {t('viewer.skip')}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+function MagazineShelf({
+  tenant,
+  magazines,
+  accent,
+  t,
+}: {
+  tenant: Tenant
+  magazines: Magazine[]
+  accent: string
+  t: ReturnType<typeof getT>
+}) {
+  return (
+    <section className="mx-auto w-full max-w-6xl px-4 pb-3 pt-4 sm:px-6 sm:pt-6">
+      <div className="rounded-[24px] border border-[#DCCDBB] bg-[#F7F2EA] p-4 shadow-[0_18px_40px_-28px_rgba(58,42,29,.55)] sm:p-5">
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[2px] text-[#A76D3E]">{t('magazines.eyebrow')}</p>
+            <h2 className="mt-1 text-[25px] leading-none text-[#3A2A1D]" style={{ fontFamily: 'Georgia, serif' }}>{t('nav.magazines')}</h2>
+          </div>
+          <span className="text-[11px] font-semibold text-[#806C58]">{magazines.length}</span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {magazines.map((magazine) => (
+            <Link
+              key={magazine.id}
+              to={`/m/${tenant.subdomain}/${magazine.slug || magazine.id}`}
+              className="group relative min-h-[116px] overflow-hidden rounded-[18px] bg-[#3A2A1D] p-4 text-[#F3EDE2] transition-transform hover:-translate-y-0.5"
+            >
+              {magazine.coverImageUrl && <img src={magazine.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45" />}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#241B15] via-[#3A2A1D]/50 to-transparent" />
+              <div className="relative flex h-full flex-col justify-between">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[10px] font-bold uppercase tracking-[1.5px] text-[#D6B58B]">{magazine.issue || t('magazines.pages')}</span>
+                  <span className="text-lg transition-transform group-hover:translate-x-0.5">→</span>
+                </div>
+                <div>
+                  <h3 className="text-[21px] leading-none" style={{ fontFamily: 'Georgia, serif' }}>{magazine.name}</h3>
+                  <p className="mt-2 text-[11px] font-medium text-[#F3EDE2]/70">{magazine.pages?.length ?? 0} {t('magazines.pages')}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+      <div className="mx-6 h-px bg-gradient-to-r from-transparent via-current to-transparent opacity-10" style={{ color: accent }} />
+    </section>
+  )
+}
+
+function ListNotFound({
+  tenant,
+  lists,
+  t,
+  accent,
+  brandGradient,
+}: {
   tenant: Tenant
   lists: PublicList[]
   t: ReturnType<typeof getT>
@@ -671,32 +1040,68 @@ function ListNotFound({ tenant, lists, t, accent, brandGradient }: {
   const bgOverlay = main?.bgUrl ? !!main.bgOverlay : !!tenant.listBgOverlay
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 py-12 font-sans" style={{ background: skin.bg }}>
+    <div
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 py-12 font-sans"
+      style={{ background: skin.bg }}
+    >
       {bgUrl && (
-        <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: `url(${bgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-          {bgOverlay && <div className="absolute inset-0" style={{ background: accent, opacity: 0.5, mixBlendMode: 'multiply' }} />}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: `url(${bgUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          {bgOverlay && (
+            <div
+              className="absolute inset-0"
+              style={{
+                background: accent,
+                opacity: 0.5,
+                mixBlendMode: 'multiply',
+              }}
+            />
+          )}
         </div>
       )}
 
       <div className="relative flex flex-col items-center gap-3 text-center">
-        {tenant.logoUrl
-          ? <img src={tenant.logoUrl} alt={tenant.name} className="h-16 w-16 rounded-2xl object-cover" />
-          : (
-            <span className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-extrabold" style={{ background: brandGradient, color: onBrand }}>
-              {tenant.name.slice(0, 2).toUpperCase()}
-            </span>
-          )}
-        <h1 className="text-xl font-extrabold" style={{ color: skin.ink }}>{tenant.name}</h1>
+        {tenant.logoUrl ? (
+          <img
+            src={tenant.logoUrl}
+            alt={tenant.name}
+            className="h-16 w-16 rounded-2xl object-cover"
+          />
+        ) : (
+          <span
+            className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-extrabold"
+            style={{ background: brandGradient, color: onBrand }}
+          >
+            {tenant.name.slice(0, 2).toUpperCase()}
+          </span>
+        )}
+        <h1 className="text-xl font-extrabold" style={{ color: skin.ink }}>
+          {tenant.name}
+        </h1>
       </div>
 
       <div className="relative flex w-full max-w-sm flex-col gap-4">
-        <p className="text-center text-sm font-medium" style={{ color: skin.body }}>
+        <p
+          className="text-center text-sm font-medium"
+          style={{ color: skin.body }}
+        >
           {lists.length > 0 ? t('pub.listGone') : t('pub.catalogUnavailable')}
         </p>
 
         {lists.length > 0 ? (
           <>
-            <p className="text-center text-xs font-bold uppercase tracking-wide" style={{ color: skin.muted }}>{t('pub.listGoneOthers')}</p>
+            <p
+              className="text-center text-xs font-bold uppercase tracking-wide"
+              style={{ color: skin.muted }}
+            >
+              {t('pub.listGoneOthers')}
+            </p>
             <div className="flex flex-col gap-2">
               {lists.map((l) => {
                 const count = l.version?.items?.length ?? 0
@@ -705,10 +1110,17 @@ function ListNotFound({ tenant, lists, t, accent, brandGradient }: {
                     key={l.id}
                     to={`/p/${tenant.subdomain}/${l.slug || l.id}`}
                     className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 transition-transform active:scale-[0.99]"
-                    style={{ background: skin.surface, border: `1px solid ${skin.line}`, color: skin.ink }}
+                    style={{
+                      background: skin.surface,
+                      border: `1px solid ${skin.line}`,
+                      color: skin.ink,
+                    }}
                   >
                     <span className="truncate text-sm font-bold">{l.name}</span>
-                    <span className="shrink-0 text-xs font-semibold" style={{ color: skin.muted }}>
+                    <span
+                      className="shrink-0 text-xs font-semibold"
+                      style={{ color: skin.muted }}
+                    >
                       {count} {t(count === 1 ? 'pub.product' : 'pub.products')}
                     </span>
                   </Link>
@@ -726,7 +1138,12 @@ function ListNotFound({ tenant, lists, t, accent, brandGradient }: {
         ) : (
           /* Nothing of this shop is being served — most often an expired
              subscription. Say so and stop: there is nowhere useful to send them. */
-          <p className="text-center text-sm font-medium" style={{ color: skin.muted }}>{t('pub.catalogUnavailableHint')}</p>
+          <p
+            className="text-center text-sm font-medium"
+            style={{ color: skin.muted }}
+          >
+            {t('pub.catalogUnavailableHint')}
+          </p>
         )}
       </div>
     </div>
@@ -755,13 +1172,11 @@ interface StoreProps {
   shareLink: () => void
   copied: boolean
   waHref: string
-  /** Fired on the way to WhatsApp, so the cart's contact is not lost when the
-   *  message is composed and never sent. */
-  onOrder: () => void
   list: PublicList | null
   norm: (s?: string | null) => string
   isService: boolean
   openCart: () => void
+  content: ListContent | null
 }
 
 function Storefront(p: StoreProps) {
@@ -786,11 +1201,11 @@ function Storefront(p: StoreProps) {
     shareLink,
     copied,
     waHref,
-    onOrder,
     list,
     norm,
     isService,
     openCart,
+    content,
   } = p
   const grad = {
     background: `linear-gradient(135deg, ${accent} 0%, ${C.accent2} 100%)`,
@@ -810,11 +1225,23 @@ function Storefront(p: StoreProps) {
       )[0],
     [allItems]
   )
+  const hero = content?.hero
   const heroTitle =
-    tenant.description || t('store.heroTitle', { name: tenant.name })
+    hero?.title ||
+    tenant.description ||
+    t('store.heroTitle', { name: tenant.name })
+  const heroStats = hero?.stats?.map((stat) => [stat.value, stat.label]) ?? [
+    [`${allItems.length}`, t('store.statProducts')],
+    ['24/7', t('store.statShipping')],
+    [updated, t('store.statUpdated')],
+  ]
+  const promotion = content?.blocks.find(
+    (block) => block.type === 'promotion_strip'
+  )
+  const contact = content?.blocks.find((block) => block.type === 'contact')
 
   return (
-    <div>
+    <div className="min-h-screen bg-[#FCFBF9]">
       {/* Top nav */}
       <header
         className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur"
@@ -831,7 +1258,7 @@ function Storefront(p: StoreProps) {
             ) : (
               <>
                 <span
-                  className="flex h-11 w-11 items-center justify-center rounded-xl text-white"
+                  className="flex h-11 w-11 items-center justify-center rounded-[14px] text-white"
                   style={grad}
                 >
                   <SIco name="shopping-bag" size={22} color="#fff" />
@@ -861,7 +1288,7 @@ function Storefront(p: StoreProps) {
               <button
                 type="button"
                 onClick={openCart}
-                className="flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-bold text-white"
+                className="flex h-10 items-center gap-2 rounded-[12px] px-4 text-[13px] font-bold text-white shadow-[0_8px_18px_-10px_rgba(15,13,26,0.55)]"
                 style={grad}
               >
                 <SIco name="shopping-cart" size={16} color="#fff" />{' '}
@@ -874,14 +1301,14 @@ function Storefront(p: StoreProps) {
       </header>
 
       {/* Hero (uses the configurable hero color) */}
-      <section className="py-10 md:py-12" style={heroGrad}>
+      <section className="py-9 md:py-11" style={heroGrad}>
         <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center gap-10 px-5 md:px-16 lg:flex-row">
           <div className="flex flex-1 flex-col gap-4">
             <span
               className="w-fit rounded-full px-3 py-1 text-[11px] font-bold tracking-[2px]"
               style={{ background: heroChip, color: heroInk }}
             >
-              {t('store.badge')}
+              {hero?.eyebrow || t('store.badge')}
             </span>
             <h1
               className="text-3xl font-black leading-tight md:text-[40px]"
@@ -893,14 +1320,10 @@ function Storefront(p: StoreProps) {
               className="max-w-[560px] text-[15px] font-medium"
               style={{ color: heroInk, opacity: 0.82 }}
             >
-              {t('store.heroSub')}
+              {hero?.body || t('store.heroSub')}
             </p>
             <div className="mt-2 flex flex-wrap gap-8">
-              {[
-                [`${allItems.length}`, t('store.statProducts')],
-                ['24/7', t('store.statShipping')],
-                [updated, t('store.statUpdated')],
-              ].map(([v, l]) => (
+              {heroStats.map(([v, l]) => (
                 <div key={l} className="flex flex-col gap-0.5">
                   <span
                     className="text-[22px] font-extrabold"
@@ -919,9 +1342,9 @@ function Storefront(p: StoreProps) {
             </div>
           </div>
           {featured && (
-            <div className="w-full max-w-[380px] rounded-3xl bg-white p-6 shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
+            <div className="w-full max-w-[380px] rounded-[22px] bg-white p-5 shadow-[0_20px_42px_-18px_rgba(15,13,26,0.32)] md:p-6">
               <div
-                className="relative mb-4 flex h-44 items-end justify-between overflow-hidden rounded-2xl p-3"
+                className="relative mb-4 flex h-36 items-end justify-between overflow-hidden rounded-[16px] p-3 md:h-44"
                 style={{
                   background: `linear-gradient(135deg, ${accent}26 0%, #ffffff 100%)`,
                 }}
@@ -970,7 +1393,7 @@ function Storefront(p: StoreProps) {
                   <button
                     type="button"
                     onClick={() => addToCart(featured.id)}
-                    className="flex items-center gap-1 rounded-xl px-4 py-2 text-[13px] font-bold text-white"
+                    className="flex items-center gap-1 rounded-[10px] px-4 py-2 text-[13px] font-bold text-white"
                     style={grad}
                   >
                     <SIco name="plus" size={14} color="#fff" /> {t('pub.add')}
@@ -986,8 +1409,8 @@ function Storefront(p: StoreProps) {
       <div className="border-b bg-white" style={{ borderColor: C.line }}>
         <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-3 px-5 py-4 md:px-16">
           <label
-            className="flex h-12 flex-1 items-center gap-2.5 rounded-2xl border px-4"
-            style={{ borderColor: C.line, background: '#F5F3FF' }}
+            className="flex h-12 flex-1 items-center gap-2.5 rounded-[14px] border px-4"
+            style={{ borderColor: C.line, background: `${accent}08` }}
           >
             <SIco name="search" size={18} color={C.muted} />
             <input
@@ -1026,12 +1449,28 @@ function Storefront(p: StoreProps) {
         </div>
       </div>
 
+      {promotion?.type === 'promotion_strip' && promotion.items.length > 0 && (
+        <div className="border-b bg-violet-50" style={{ borderColor: C.line }}>
+          <div className="mx-auto flex w-full max-w-[1280px] flex-wrap gap-x-6 gap-y-2 px-5 py-3 text-[12px] font-bold md:px-16">
+            {promotion.items.map((item) => (
+              <span
+                key={item}
+                className="flex items-center gap-2"
+                style={{ color: accent }}
+              >
+                <SIco name="sparkles" size={14} color={accent} /> {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Main */}
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-5 py-8 md:px-16 lg:flex-row">
         {/* Sidebar */}
         <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-[280px]">
           <div
-            className="flex flex-col gap-4 rounded-3xl border bg-white p-6"
+            className="flex flex-col gap-4 rounded-[20px] border bg-white p-5 shadow-[0_8px_24px_-20px_rgba(15,13,26,0.28)] md:p-6"
             style={{ borderColor: C.line }}
           >
             <div className="flex items-center justify-between">
@@ -1095,7 +1534,7 @@ function Storefront(p: StoreProps) {
 
           {/* WhatsApp card */}
           <div
-            className="flex flex-col gap-3 rounded-3xl p-6 text-white"
+            className="flex flex-col gap-3 rounded-[20px] p-5 text-white shadow-[0_18px_30px_-18px_rgba(15,13,26,0.35)] md:p-6"
             style={grad}
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white">
@@ -1109,7 +1548,6 @@ function Storefront(p: StoreProps) {
             </span>
             <a
               href={waHref}
-              onClick={onOrder}
               target="_blank"
               rel="noopener noreferrer"
               className="w-fit rounded-lg bg-white px-3.5 py-2 text-[13px] font-bold"
@@ -1117,6 +1555,21 @@ function Storefront(p: StoreProps) {
             >
               {t('store.waBtn')}
             </a>
+            {contact?.type === 'contact' &&
+              contact.hours &&
+              contact.hours.length > 0 && (
+                <div className="mt-1 border-t border-white/20 pt-3 text-[12px] font-medium text-white/90">
+                  {contact.hours.map((entry) => (
+                    <div
+                      key={entry.days}
+                      className="flex justify-between gap-3"
+                    >
+                      <span>{entry.days}</span>
+                      <span>{entry.hours}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
           </div>
         </aside>
 
@@ -1167,11 +1620,11 @@ function Storefront(p: StoreProps) {
                 return (
                   <div
                     key={it.id}
-                    className="flex flex-col gap-2.5 rounded-3xl border bg-white p-3.5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]"
+                    className="flex flex-col gap-2.5 rounded-[20px] border bg-white p-3.5 shadow-[0_8px_20px_-16px_rgba(15,23,42,0.22)]"
                     style={{ borderColor: C.line }}
                   >
                     <div
-                      className="relative flex h-40 items-end justify-end overflow-hidden rounded-2xl p-2.5"
+                      className="relative flex h-32 items-end justify-end overflow-hidden rounded-[15px] p-2.5 sm:h-36 xl:h-40"
                       style={{
                         background: `linear-gradient(135deg, ${accent}22 0%, #ffffff 100%)`,
                       }}
@@ -1242,7 +1695,7 @@ function Storefront(p: StoreProps) {
                           <button
                             type="button"
                             onClick={() => addToCart(it.id)}
-                            className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-bold text-white"
+                            className="flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[12px] font-bold text-white"
                             style={grad}
                           >
                             <SIco name="plus" size={12} color="#fff" />{' '}
@@ -1258,44 +1711,28 @@ function Storefront(p: StoreProps) {
         </main>
       </div>
 
-      <div className="mx-auto w-full max-w-[1280px] px-5 pb-12 md:px-16">
-        <LeadForm
-          tenant={tenant}
-          listId={list?.id ?? null}
-          listName={list?.name ?? null}
-          ink={C.ink}
-          accent={accent}
-          accentInk={readableOn(accent)}
-        />
-      </div>
-
       {/* Footer */}
       <footer className="py-10" style={{ background: '#0F172A' }}>
         <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-3 px-5 md:px-16">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-col gap-3">
-              <span className="text-[16px] font-bold text-white">
-                {tenant.name}
-              </span>
-              {tenant.address && (
-                <span
-                  className="text-[12px] font-medium"
-                  style={{ color: '#94A3B8' }}
-                >
-                  {tenant.address}
-                </span>
-              )}
-              {tenant.taxId && (
-                <span
-                  className="text-[12px] font-medium"
-                  style={{ color: '#94A3B8' }}
-                >
-                  {t('pub.taxId')} {tenant.taxId}
-                </span>
-              )}
-            </div>
-            <SocialLinks tenant={tenant} color="#94A3B8" hoverColor="#FFFFFF" />
-          </div>
+          <span className="text-[16px] font-bold text-white">
+            {tenant.name}
+          </span>
+          {tenant.address && (
+            <span
+              className="text-[12px] font-medium"
+              style={{ color: '#94A3B8' }}
+            >
+              {tenant.address}
+            </span>
+          )}
+          {tenant.taxId && (
+            <span
+              className="text-[12px] font-medium"
+              style={{ color: '#94A3B8' }}
+            >
+              {t('pub.taxId')} {tenant.taxId}
+            </span>
+          )}
           <div
             className="my-2 h-px w-full"
             style={{ background: 'rgba(255,255,255,0.1)' }}
@@ -1339,9 +1776,8 @@ interface CartProps {
   customer: CartCustomer
   setCustomer: React.Dispatch<React.SetStateAction<CartCustomer>>
   waHref: string
-  /** Fired on the way to WhatsApp, so the cart's contact is not lost when the
-   *  message is composed and never sent. */
-  onOrder: () => void
+  checkoutChannel: 'whatsapp' | 'instagram'
+  onCheckout: () => void
   norm: (s?: string | null) => string
   onBack: () => void
 }
@@ -1364,34 +1800,51 @@ function CartView(p: CartProps) {
     customer,
     setCustomer,
     waHref,
-    onOrder,
+    checkoutChannel,
+    onCheckout,
     norm,
     onBack,
   } = p
+  const cartAccent = T.accent || accent
+  const cartActionAccent = T.actionAccent || cartAccent
   const grad = {
-    background: `linear-gradient(135deg, ${accent} 0%, ${lighten(accent, 0.22)} 100%)`,
+    background: `linear-gradient(135deg, ${cartActionAccent} 0%, ${lighten(cartActionAccent, 0.22)} 100%)`,
   }
   const cartItems = allItems.filter((it) => (cart[it.id] ?? 0) > 0)
   const set = (patch: Partial<CartCustomer>) =>
     setCustomer((c) => ({ ...c, ...patch }))
   const field =
-    'h-[46px] w-full rounded-xl border px-3.5 text-[13px] font-semibold outline-none focus:ring-2'
-  const fieldStyle = { borderColor: T.line, color: T.ink, background: T.field }
+    'h-[46px] w-full border px-3.5 text-[13px] font-semibold outline-none focus:ring-2'
+  const fieldStyle = {
+    borderColor: T.line,
+    color: T.ink,
+    background: T.field,
+    borderRadius: T.controlRadius,
+    fontFamily: T.bodyFamily,
+  }
   const labelCls = 'text-[12px] font-bold'
   const cardCls =
-    'rounded-[24px] border p-5 shadow-[0_18px_50px_-20px_rgba(15,13,26,0.30)] md:p-7'
+    'border p-5 md:p-7'
+  const cardStyle = {
+    background: T.surface,
+    borderColor: T.line,
+    borderRadius: T.cardRadius,
+    boxShadow: T.cardShadow,
+  }
 
   return (
     <div
       className="min-h-screen font-sans"
       style={{
-        background: `linear-gradient(180deg, ${accent}22 0%, ${accent}0A 300px, transparent 460px), ${T.bg}`,
+        background: `linear-gradient(180deg, ${cartAccent}22 0%, ${cartAccent}0A 300px, transparent 460px), ${T.bg}`,
+        color: T.ink,
+        fontFamily: T.bodyFamily,
       }}
     >
       {/* Navbar */}
       <header
         className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b px-5 py-3.5 backdrop-blur md:px-16"
-        style={{ background: `${T.surface}F2`, borderColor: T.line }}
+        style={{ background: `${T.surface}F2`, borderColor: T.line, fontFamily: T.bodyFamily }}
       >
         <div className="flex items-center gap-3">
           {tenant.logoUrl ? (
@@ -1404,7 +1857,7 @@ function CartView(p: CartProps) {
             <>
               <span
                 className="flex h-11 w-11 items-center justify-center rounded-xl text-white"
-                style={grad}
+                style={{ ...grad, borderRadius: T.buttonRadius }}
               >
                 <SIco name="shopping-bag" size={22} color="#fff" />
               </span>
@@ -1431,10 +1884,10 @@ function CartView(p: CartProps) {
         <button
           type="button"
           onClick={onBack}
-          className="flex h-9 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-bold"
-          style={{ background: `${accent}22`, color: accent }}
-        >
-          <SIco name="arrow-left" size={14} color={accent} />{' '}
+          className="flex h-9 items-center gap-2 px-3.5 text-[13px] font-bold"
+            style={{ background: `${cartActionAccent}22`, color: cartActionAccent, borderRadius: T.buttonRadius }}
+          >
+          <SIco name="arrow-left" size={14} color={cartActionAccent} />{' '}
           {t('store.keepShopping')}
         </button>
       </header>
@@ -1461,9 +1914,9 @@ function CartView(p: CartProps) {
         <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center gap-5 px-5 py-24 text-center md:px-16">
           <span
             className="flex h-20 w-20 items-center justify-center rounded-3xl"
-            style={{ background: `${accent}1F` }}
+            style={{ background: `${cartAccent}1F`, borderRadius: T.cardRadius }}
           >
-            <SIco name="shopping-cart" size={36} color={accent} />
+            <SIco name="shopping-cart" size={36} color={cartAccent} />
           </span>
           <div className="flex flex-col gap-1">
             <p className="text-[20px] font-extrabold" style={{ color: T.ink }}>
@@ -1477,7 +1930,7 @@ function CartView(p: CartProps) {
             type="button"
             onClick={onBack}
             className="flex h-12 items-center gap-2 rounded-2xl px-6 text-[14px] font-bold text-white"
-            style={grad}
+            style={{ ...grad, borderRadius: T.buttonRadius }}
           >
             <SIco name="arrow-left" size={16} color="#fff" />{' '}
             {t('store.keepShopping')}
@@ -1492,7 +1945,7 @@ function CartView(p: CartProps) {
               <div className="flex flex-col gap-1">
                 <h1
                   className="text-[28px] font-black md:text-[32px]"
-                  style={{ color: T.ink }}
+                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
                 >
                   {t('store.yourCart')}
                 </h1>
@@ -1506,11 +1959,12 @@ function CartView(p: CartProps) {
               <button
                 type="button"
                 onClick={clearCart}
-                className="flex h-9 items-center gap-2 rounded-[10px] border px-3.5 text-[13px] font-bold"
+                className="flex h-9 items-center gap-2 border px-3.5 text-[13px] font-bold"
                 style={{
                   borderColor: '#EF444455',
                   color: '#EF4444',
                   background: '#EF444414',
+                  borderRadius: T.buttonRadius,
                 }}
               >
                 <SIco name="trash-2" size={14} color="#EF4444" />{' '}
@@ -1521,18 +1975,18 @@ function CartView(p: CartProps) {
             {/* Products card */}
             <div
               className={cardCls}
-              style={{ background: T.surface, borderColor: T.line }}
+              style={cardStyle}
             >
               <div className="flex items-center gap-2.5 pb-2">
                 <h2
                   className="text-[18px] font-extrabold md:text-[20px]"
-                  style={{ color: T.ink }}
+                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
                 >
                   {t('store.cartProducts')}
                 </h2>
                 <span
                   className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
-                  style={{ background: `${accent}22`, color: accent }}
+                  style={{ background: `${cartAccent}22`, color: cartAccent }}
                 >
                   {cartCount}{' '}
                   {cartCount === 1 ? t('pub.product') : t('pub.products')}
@@ -1550,7 +2004,7 @@ function CartView(p: CartProps) {
                     <div
                       className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[14px]"
                       style={{
-                        background: `linear-gradient(135deg, ${accent}2A 0%, ${T.field} 100%)`,
+                        background: `linear-gradient(135deg, ${cartAccent}2A 0%, ${T.field} 100%)`,
                       }}
                     >
                       {it.imageUrl ? (
@@ -1563,7 +2017,7 @@ function CartView(p: CartProps) {
                         <SIco
                           name={catIco(it.category)}
                           size={34}
-                          color={accent}
+                          color={cartAccent}
                           style={{ opacity: 0.7 }}
                         />
                       )}
@@ -1596,7 +2050,7 @@ function CartView(p: CartProps) {
                     </div>
                     <div
                       className="flex items-center rounded-xl border"
-                      style={{ borderColor: T.line, background: T.field }}
+                      style={{ borderColor: T.line, background: T.field, borderRadius: T.controlRadius }}
                     >
                       <button
                         type="button"
@@ -1641,8 +2095,8 @@ function CartView(p: CartProps) {
                       type="button"
                       onClick={() => removeFromCart(it.id)}
                       aria-label={t('store.cartRemove')}
-                      className="flex h-9 w-9 items-center justify-center rounded-[10px]"
-                      style={{ background: '#EF444418' }}
+                      className="flex h-9 w-9 items-center justify-center"
+                      style={{ background: '#EF444418', borderRadius: T.controlRadius }}
                     >
                       <SIco name="x" size={16} color="#EF4444" />
                     </button>
@@ -1661,7 +2115,7 @@ function CartView(p: CartProps) {
                 </span>
                 <span
                   className="text-[18px] font-extrabold"
-                  style={{ color: T.ink }}
+                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
                 >
                   {money(cartTotal)}
                 </span>
@@ -1671,12 +2125,12 @@ function CartView(p: CartProps) {
             {/* Contact card */}
             <div
               className={`flex flex-col gap-4 ${cardCls}`}
-              style={{ background: T.surface, borderColor: T.line }}
+              style={cardStyle}
             >
               <div className="flex flex-col gap-1">
                 <h2
                   className="text-[18px] font-extrabold"
-                  style={{ color: T.ink }}
+                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
                 >
                   {t('store.cartYourData')}
                 </h2>
@@ -1689,7 +2143,7 @@ function CartView(p: CartProps) {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body }}>
+                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                     {t('store.cartName')}
                   </span>
                   <input
@@ -1701,7 +2155,7 @@ function CartView(p: CartProps) {
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body }}>
+                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                     {t('store.cartPhone')}
                   </span>
                   <input
@@ -1713,7 +2167,7 @@ function CartView(p: CartProps) {
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body }}>
+                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                     {t('store.cartEmail')}
                   </span>
                   <input
@@ -1725,7 +2179,7 @@ function CartView(p: CartProps) {
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelCls} style={{ color: T.body }}>
+                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                     {t('store.cartDelivery')}
                   </span>
                   {tenant.deliveryEnabled ? (
@@ -1760,7 +2214,7 @@ function CartView(p: CartProps) {
                 </label>
                 {tenant.deliveryEnabled && customer.delivery === 'delivery' && (
                   <label className="flex flex-col gap-1.5 md:col-span-2">
-                    <span className={labelCls} style={{ color: T.body }}>
+                    <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                       {t('store.cartAddress')}
                     </span>
                     <input
@@ -1773,7 +2227,7 @@ function CartView(p: CartProps) {
                   </label>
                 )}
                 <label className="flex flex-col gap-1.5 md:col-span-2">
-                  <span className={labelCls} style={{ color: T.body }}>
+                  <span className={labelCls} style={{ color: T.body, fontFamily: T.labelFamily }}>
                     {t('store.cartNotes')}
                   </span>
                   <textarea
@@ -1781,7 +2235,7 @@ function CartView(p: CartProps) {
                     onChange={(e) => set({ notes: e.target.value })}
                     placeholder={t('store.cartNotesPh')}
                     rows={3}
-                    className="w-full rounded-xl border px-3.5 py-3 text-[13px] font-semibold outline-none focus:ring-2"
+                    className="w-full border px-3.5 py-3 text-[13px] font-semibold outline-none focus:ring-2"
                     style={fieldStyle}
                   />
                 </label>
@@ -1793,12 +2247,12 @@ function CartView(p: CartProps) {
           <div className="flex w-full flex-col gap-4 lg:w-[380px]">
             <div
               className={`flex flex-col gap-4 ${cardCls} lg:sticky lg:top-24`}
-              style={{ background: T.surface, borderColor: T.line }}
+              style={cardStyle}
             >
               <div className="flex flex-col gap-1">
                 <h2
                   className="text-[18px] font-extrabold"
-                  style={{ color: T.ink }}
+                  style={{ color: T.ink, fontFamily: T.headingFamily, letterSpacing: T.headingTracking }}
                 >
                   {t('store.cartSummary')}
                 </h2>
@@ -1842,14 +2296,14 @@ function CartView(p: CartProps) {
               </div>
               <a
                 href={waHref}
-                onClick={onOrder}
+                onClick={onCheckout}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-14 items-center justify-center gap-2 rounded-2xl text-[16px] font-extrabold text-white"
-                style={grad}
+                className="flex h-14 items-center justify-center gap-2 text-[16px] font-extrabold text-white"
+                style={{ ...grad, borderRadius: T.buttonRadius }}
               >
                 <SIco name="message-circle" size={22} color="#fff" />{' '}
-                {t('store.cartSend')}
+                {checkoutChannel === 'instagram' ? 'Copiar pedido y abrir Instagram' : t('store.cartSend')}
               </a>
               <div className="flex items-center justify-center gap-1.5">
                 <SIco name="shield-check" size={12} color="#10B981" />
@@ -1867,16 +2321,10 @@ function CartView(p: CartProps) {
 
       {/* Footer */}
       <footer
-        className="flex flex-col items-center gap-5 px-5 py-10 md:px-16"
+        className="flex flex-col items-center gap-2 px-5 py-8 md:px-16"
         style={{ background: T.footerBg }}
       >
         <span className="text-[14px] font-bold text-white">{tenant.name}</span>
-        <SocialLinks
-          tenant={tenant}
-          color={T.footerText}
-          hoverColor="#FFFFFF"
-          align="center"
-        />
         <span
           className="text-[12px] font-medium"
           style={{ color: T.footerText }}
@@ -1884,41 +2332,6 @@ function CartView(p: CartProps) {
           {t('pub.footer', { currency: tenant.currency || 'UYU' })}
         </span>
       </footer>
-    </div>
-  )
-}
-
-/** What the shop sees in the tab that exists only to produce a file.
- *
- *  `data-no-export` keeps it out of the capture — otherwise the notice would be
- *  baked into the PDF it is announcing. */
-function ExportOverlay({
-  state,
-  accent,
-}: {
-  state: ExportState
-  accent: string
-}) {
-  const message =
-    state === 'error'
-      ? 'No pudimos generar el PDF. Cerrá esta pestaña y probá de nuevo.'
-      : state === 'done'
-        ? 'Listo. Buscá el PDF en tus descargas.'
-        : 'Generando tu PDF…'
-
-  return (
-    <div
-      data-no-export
-      className="fixed inset-x-0 top-0 z-[200] flex items-center justify-center gap-3 px-5 py-3 text-[13px] font-bold text-white"
-      style={{ background: state === 'error' ? '#B91C1C' : accent }}
-    >
-      {state === 'working' && (
-        <span
-          aria-hidden
-          className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
-        />
-      )}
-      <span>{message}</span>
     </div>
   )
 }

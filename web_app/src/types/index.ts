@@ -5,7 +5,14 @@ export type PlanId = 'free' | 'micro' | 'plus' | 'pro'
 /** Lemon Squeezy subscription states we surface. `cancelled` still has access
  *  until `endsAt`; `expired` is when the plan actually drops back to free. */
 export type BillingStatus =
-  | 'on_trial' | 'active' | 'paid' | 'past_due' | 'unpaid' | 'cancelled' | 'expired' | 'paused'
+  | 'on_trial'
+  | 'active'
+  | 'paid'
+  | 'past_due'
+  | 'unpaid'
+  | 'cancelled'
+  | 'expired'
+  | 'paused'
 
 export interface PlanInfo {
   plan: PlanId
@@ -15,8 +22,6 @@ export interface PlanInfo {
     members: number | null
   }
   usage: { products: number; lists: number; members: number }
-  /** Whole features this tier unlocks, e.g. `['leads']`. The server is the
-   *  authority; the UI uses it to show or hide, never to enforce. */
   features?: string[]
   /** When false there is no payment gateway, so plan changes apply immediately. */
   billingEnabled?: boolean
@@ -48,6 +53,11 @@ export interface MarketplaceBusiness {
   description: string | null
   address: string | null
   businessCategory: string | null
+  whatsappUrl: string | null
+  websiteUrl: string | null
+  instagramUrl: string | null
+  tiktokUrl: string | null
+  emailUrl: string | null
   distanceKm: number | null
 }
 
@@ -62,21 +72,17 @@ export interface Tenant {
   planGate?: boolean
   logoUrl: string | null
   brandColor: string | null
+  linktreeAccentColor?: string | null
   description: string | null
   listDesign: ListDesign | null
   listBgUrl: string | null
   listBgOverlay: boolean
   listHeroColor: string | null
-  /** Social links for the public footer. Null = the shop does not use it, so
-   *  no icon is shown. All are ready-to-open URLs except `socialWhatsapp`,
-   *  which holds digits only and becomes wa.me/<digits> on the page. */
   socialInstagram: string | null
   socialFacebook: string | null
   socialTiktok: string | null
   socialWebsite: string | null
   socialWhatsapp: string | null
-  /** Whether the public list shows the lead form. Only has an effect on the
-   *  tiers that include leads — the server decides, this just drives the UI. */
   leadsEnabled: boolean
   language: string
   timezone: string
@@ -85,11 +91,30 @@ export interface Tenant {
   marketplaceLatitude: number | null
   marketplaceLongitude: number | null
   businessCategory: string | null
+  whatsappUrl: string | null
+  websiteUrl: string | null
+  instagramUrl: string | null
   legalName: string | null
   taxId: string | null
   address: string | null
+  features?: Record<string, boolean>
   createdAt: string
   updatedAt: string
+}
+
+export interface FeatureFlagTenant {
+  id: string
+  name: string
+  subdomain: string
+  enabled: boolean
+  hasOverride: boolean
+}
+
+export interface FeatureFlag {
+  key: string
+  description: string | null
+  defaultEnabled: boolean
+  tenants: FeatureFlagTenant[]
 }
 
 /** Visual template for the public price list. */
@@ -103,6 +128,35 @@ export type ListDesign =
   | 'cards'
   | 'catalog'
   | 'tech'
+  | 'pencil-bakery'
+  | 'pencil-garden'
+  | 'pencil-market'
+  | 'pencil-evening'
+  | 'pencil-workshop'
+  | 'pencil-cheese'
+  | 'pencil-flower'
+  | 'pencil-flower-summer'
+  | 'pencil-flower-winter'
+  | 'pencil-flower-spring'
+  | 'pencil-wine'
+  | 'pencil-cheese-alternating'
+  | 'pencil-hardware-alternating'
+  | 'pencil-hardware-weekend'
+  | 'pencil-hardware-shelf'
+  | 'pencil-casa-ritual'
+  | 'pencil-casa-bath'
+  | 'pencil-casa-signature'
+  | 'pencil-casa-services'
+  | 'pencil-auto-detail'
+  | 'pencil-blush-bloom'
+  | 'pencil-nova'
+  | 'pencil-beardy'
+  | 'pencil-calm-spa'
+  | 'pencil-union-barber'
+  | 'pencil-studio-mono'
+  | 'pencil-beauty-issue'
+  | 'pencil-obsidian-quarterly'
+  | 'pencil-journal'
 
 export type ListKind = 'product' | 'service'
 export type PriceListVariantType =
@@ -114,6 +168,7 @@ export type PriceListVariantType =
 export interface PriceList {
   id: string
   tenantId: string
+  publicSlug?: string
   name: string
   slug: string | null
   published: boolean
@@ -130,6 +185,7 @@ export interface PriceList {
   heroColor: string | null
   bgUrl: string | null
   bgOverlay: boolean | null
+  captureViewerInfo?: boolean
   itemCount: number
   /** `published` is intent; `live` is what the plan actually serves. A published
    *  list goes `live: false` when the plan allows fewer lists than are published
@@ -141,6 +197,61 @@ export interface PriceList {
   versions?: ListVersion[]
 }
 
+export interface MagazinePage {
+  id: string
+  magazineId: string
+  position: number
+  pageType: string
+  title: string | null
+  imageUrl: string | null
+  content: Record<string, unknown> | null
+}
+
+export const MAGAZINE_DESIGNS = [
+  'pencil-journal',
+  'wild-stem',
+  'aqua-objects',
+  'editorial',
+  'catalog',
+] as const
+
+export type MagazineDesign = (typeof MAGAZINE_DESIGNS)[number]
+
+export interface Magazine {
+  id: string
+  tenantId?: string
+  name: string
+  slug: string | null
+  issue: string | null
+  description: string | null
+  design: MagazineDesign | string
+  coverImageUrl: string | null
+  published?: boolean
+  showOnIndex?: boolean
+  pages: MagazinePage[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface PublicViewer {
+  id: string
+  tenantId: string
+  listId: string
+  listName: string
+  name: string
+  email: string | null
+  phone: string | null
+  customerId: string | null
+  ipAddress: string | null
+  viewCount: number
+  createdAt: string
+  lastSeenAt: string
+}
+
+export interface PublicViewerStats {
+  anonymousDismissals: number
+}
+
 export interface ListVersion {
   id: string
   listId: string
@@ -150,8 +261,58 @@ export interface ListVersion {
   publishedAt: string | null
   createdAt: string
   updatedAt: string
+  /** Authored public-list copy and layout. Null keeps legacy category rendering. */
+  content: ListContent | null
+  contentRevision: number
   items?: Item[]
 }
+
+export interface ListContent {
+  schemaVersion: 1
+  hero?: {
+    eyebrow?: string
+    title?: string
+    body?: string
+    stats?: { value: string; label: string }[]
+  }
+  /** Copy and media that only templates with editorial regions consume. */
+  template?: {
+    font?: 'sans' | 'editorial' | 'serif' | 'mono' | 'code-pro'
+    checkoutChannel?: 'whatsapp' | 'instagram'
+    instagramHandle?: string
+    priceFormat?: '$' | 'U$D' | 'USD'
+    image?: string
+    imageLabel?: string
+    imageTitle?: string
+    promoEyebrow?: string
+    promoTitle?: string
+    promoBody?: string
+    promoPrice?: string
+    promoNote?: string
+    footerLeft?: string
+    footerRight?: string
+  }
+  blocks: ListContentBlock[]
+}
+
+export type ListContentBlock =
+  | {
+      id: string
+      type: 'catalog'
+      sections: {
+        id: string
+        title: string
+        body?: string
+        source: { kind: 'category'; value: string }
+      }[]
+    }
+  | { id: string; type: 'promotion_strip'; items: string[] }
+  | {
+      id: string
+      type: 'contact'
+      showWhatsapp?: boolean
+      hours?: { days: string; hours: string }[]
+    }
 
 export interface Item {
   id: string
@@ -234,9 +395,6 @@ export interface Order {
   items: OrderItem[]
 }
 
-/** Someone who left their details on a shop's public list. Not a Customer:
- *  that one means a contact with a purchase history, and a lead becomes one
- *  only when the shop converts it. */
 export type LeadStatus = 'new' | 'contacted' | 'converted' | 'discarded'
 export type LeadSource = 'form' | 'cart'
 
@@ -247,7 +405,6 @@ export interface Lead {
   phone: string | null
   email: string | null
   message: string | null
-  /** Which list they were reading. Kept as a plain id so the lead outlives it. */
   listId: string | null
   listName: string | null
   source: LeadSource
@@ -329,6 +486,8 @@ export interface User {
   email: string
   tenantId: string
   role: Role
+  /** Optional for sessions persisted before platform-level access existed. */
+  isSuperAdmin?: boolean
   name: string
   createdAt: string
   updatedAt: string
@@ -338,6 +497,45 @@ export interface AuthToken {
   token: string
   user: User
   tenant: Tenant
+}
+
+export type LinkTreeLinkStyle = 'featured' | 'dark' | 'light'
+export type LinkTreeTemplate = 'botanical' | 'editorial' | 'atelier'
+export type LinkTreeFont = 'sans' | 'editorial' | 'mono' | 'code-pro'
+
+export interface LinkTreeLink {
+  id: string | null
+  title: string
+  description: string | null
+  url: string
+  icon: string
+  style: LinkTreeLinkStyle
+  enabled: boolean
+}
+
+export interface LinkTree {
+  id: string
+  tenantId: string
+  publicSlug: string
+  displayName: string
+  handle: string | null
+  bio: string | null
+  avatarUrl: string | null
+  accentColor: string
+  backgroundColor: string
+  template: LinkTreeTemplate
+  font: LinkTreeFont
+  tags: string[]
+  links: LinkTreeLink[]
+  instagramUrl: string | null
+  tiktokUrl: string | null
+  emailUrl: string | null
+  whatsappUrl: string | null
+  websiteUrl: string | null
+  locationUrl: string | null
+  published: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 // UI State types

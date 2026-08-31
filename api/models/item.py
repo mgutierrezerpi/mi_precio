@@ -6,9 +6,9 @@ class Item(BaseModel):
     list_version = DeferredForeignKey(
         "ListVersion", backref="items", on_delete="CASCADE"
     )
-    # The catalog product this item was created from, when applicable. Lets the list
-    # editor track membership by a stable id instead of the (mutable) name. Nullable:
-    # items can be typed by hand or imported, and a deleted product leaves the snapshot.
+    # The catalog product this item belongs to. It remains nullable only so the
+    # startup backfill can migrate legacy snapshots; all new API writes resolve
+    # an item to a tenant-global Product.
     product = DeferredForeignKey(
         "Product", null=True, backref="items", on_delete="SET NULL"
     )

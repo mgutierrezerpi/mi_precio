@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from models import PriceList, ListVersion
+from lib.list_content import serialize_content
 
 
 def list_versions(list_id: str) -> list[ListVersion]:
@@ -46,6 +47,30 @@ def update_version(version_id: str, **updates) -> ListVersion | None:
     return version
 
 
+def update_content(
+    version_id: str, content: dict, expected_revision: int
+) -> ListVersion | None:
+    """Atomically replace a version's content if the editor is up to date."""
+    version = get_version(version_id)
+    if not version:
+        return None
+    design = version.list.design or version.list.tenant.list_design
+    serialized = serialize_content(content, design)
+    updated = (
+        ListVersion.update(
+            content=serialized,
+            content_revision=expected_revision + 1,
+            updated_at=datetime.utcnow(),
+        )
+        .where(
+            (ListVersion.id == version_id)
+            & (ListVersion.content_revision == expected_revision)
+        )
+        .execute()
+    )
+    return get_version(version_id) if updated else None
+
+
 def duplicate_version(version_id: str, name: str | None = None) -> ListVersion | None:
     """Duplicate a version with all its items."""
     version = get_version(version_id)
@@ -57,6 +82,7 @@ def duplicate_version(version_id: str, name: str | None = None) -> ListVersion |
         name=name or f"{version.name} (copy)",
         published=False,
         published_at=None,
+        content_revision=0,
     )
 
     for item in version.items:

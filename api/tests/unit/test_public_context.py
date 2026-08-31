@@ -1,6 +1,7 @@
 """Tests for public context."""
 
 from lib.ctx import lists, versions, items, products, public, identity
+from views.price_list_view import PriceListView
 from views.public_tenant_view import PublicTenantView
 
 
@@ -101,7 +102,7 @@ def test_get_published_lists_falls_back_to_product_image(db):
     assert result[0].items[0].image_thumb_url == "http://img/pizza_thumb.webp"
 
 
-def test_get_published_lists_keeps_item_image_over_product(db):
+def test_get_published_lists_uses_global_product_image(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
     items.create_item(
@@ -115,10 +116,45 @@ def test_get_published_lists_keeps_item_image_over_product(db):
 
     result = public.get_published_lists(tenant)
 
-    assert result[0].items[0].image_url == "http://img/item.jpg"
+    assert result[0].items[0].image_url == "http://img/product.jpg"
 
 
-def test_get_published_lists_adds_missing_thumb_from_product(db):
+def test_get_published_lists_excludes_unavailable_catalog_items(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    created = lists.create_list(tenant.id, "Menu")
+    unavailable = products.create_product(
+        tenant.id, name="Pizza", price=150.0, available=False
+    )
+    items.create_item(
+        created.version.id,
+        name="Pizza",
+        price=150.0,
+        product_id=unavailable.id,
+    )
+    items.create_item(created.version.id, name="Manual service", price=200.0)
+    lists.update_list(created.price_list.id, published=True)
+    versions.update_version(created.version.id, published=True)
+
+    result = public.get_published_lists(tenant)
+
+    assert [item.name for item in result[0].items] == ["Manual service"]
+    assert PriceListView.render(created.price_list).item_count == 1
+
+
+def test_get_published_lists_excludes_legacy_items_by_unavailable_product_name(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    created = lists.create_list(tenant.id, "Menu")
+    products.create_product(tenant.id, name="Pizza", price=150.0, available=False)
+    items.create_item(created.version.id, name="Pizza", price=150.0)
+    lists.update_list(created.price_list.id, published=True)
+    versions.update_version(created.version.id, published=True)
+
+    result = public.get_published_lists(tenant)
+
+    assert result[0].items == []
+
+
+def test_get_published_lists_uses_global_product_images(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
     items.create_item(
@@ -136,7 +172,7 @@ def test_get_published_lists_adds_missing_thumb_from_product(db):
 
     result = public.get_published_lists(tenant)
 
-    assert result[0].items[0].image_url == "http://img/item.webp"
+    assert result[0].items[0].image_url == "http://img/product.webp"
     assert result[0].items[0].image_thumb_url == "http://img/product_thumb.webp"
 
 

@@ -4,6 +4,7 @@ from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from lib import decode_token
 from lib.ctx import plans_context
+from models import User
 
 security = HTTPBearer(auto_error=False)
 
@@ -65,3 +66,11 @@ require_editor = require_roles("owner", "admin", "editor")
 require_admin = require_roles("owner", "admin")
 # Destructive account-level actions (e.g. deleting the account): owner only.
 require_owner = require_roles("owner")
+
+
+def require_super_admin(current_user: dict = Depends(get_current_user)) -> dict:
+    """Allow only platform super admins, independent of tenant role."""
+    user = User.get_or_none(User.id == current_user.get("sub"))
+    if not user or not bool(getattr(user, "is_super_admin", False)):
+        raise HTTPException(status_code=403, detail="Super admin access required")
+    return current_user

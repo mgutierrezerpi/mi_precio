@@ -62,6 +62,66 @@ def test_update_product_without_price_does_not_update_item_prices(db):
     assert item.price == Decimal("150.00")
 
 
+def test_product_profile_is_global_across_list_items(db):
+    tenant = identity.create_tenant("Test Store", "test_store")
+    product = products.create_product(
+        tenant.id,
+        name="Pizza",
+        price=150,
+        description="Old description",
+        category="Food",
+    )
+    first_list = lists.create_list(tenant.id, "Lunch")
+    second_list = lists.create_list(tenant.id, "Dinner")
+    first_item = items.create_item(first_list.version.id, name="Pizza", price=150)
+    second_item = items.create_item(second_list.version.id, name="Pizza", price=180)
+
+    products.update_product(
+        product.id,
+        name="Margherita pizza",
+        description="New description",
+        category="Specials",
+    )
+
+    first_item = Item.get_by_id(first_item.id)
+    second_item = Item.get_by_id(second_item.id)
+    assert first_item.name == "Margherita pizza"
+    assert second_item.name == "Margherita pizza"
+    assert first_item.description == "New description"
+    assert second_item.category == "Specials"
+    assert first_item.price == Decimal("150.00")
+    assert second_item.price == Decimal("180.00")
+
+
+def test_create_product_reuses_existing_name_case_insensitively(db):
+    tenant = identity.create_tenant("Test Store", "test_store")
+    first = products.create_product(tenant.id, name="Pizza", price=150)
+
+    second = products.create_product(tenant.id, name=" pizza ", price=175)
+
+    assert second.id == first.id
+    assert Product.select().where(Product.tenant == tenant.id).count() == 1
+    assert Product.get_by_id(first.id).price == Decimal("175.00")
+
+
+def test_backfill_orphan_items_creates_and_links_global_products(db):
+    tenant = identity.create_tenant("Test Store", "test_store")
+    created = lists.create_list(tenant.id, "Legacy menu")
+    orphan = Item.create(
+        list_version=created.version,
+        name="Legacy Pizza",
+        price=150,
+        description="Imported",
+    )
+
+    linked = products.backfill_orphan_items()
+
+    orphan = Item.get_by_id(orphan.id)
+    assert linked == 1
+    assert orphan.product_id is not None
+    assert Product.get_by_id(orphan.product_id).name == "Legacy Pizza"
+
+
 def test_update_product_price_can_target_selected_lists(db):
     tenant = identity.create_tenant("Test Store", "test_store")
     product = products.create_product(tenant.id, name="Pizza", price=150)

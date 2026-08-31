@@ -1,9 +1,22 @@
 import { useRef } from 'react'
-import type { ListDesign } from '../../types'
-import type { TFn } from '../../lib/i18n'
+import type { Item, ListDesign, Tenant } from '../../types'
+import { getT, type TFn } from '../../lib/i18n'
 import { fileToDataUrl } from '../../lib/image'
 import { Icon } from '../../screens/admin/crm/ui'
 import { gradient } from '../../screens/admin/crm/theme'
+import {
+  ClassicList,
+  FineDining,
+  ImageCatalog,
+  ModernBrand,
+  NordicMenu,
+  PhotoLookbook,
+  ServiceCards,
+  TechGrid,
+  type DesignProps,
+} from '../../screens/menu/designs'
+import { isPencilVariant, PencilList } from '../../screens/menu/pencilDesigns'
+import { PencilJournal } from '../../screens/menu/pencilJournal'
 
 /** Visual templates for the public list. Mirrors LIST_DESIGNS in
  *  api/controllers/input_types/appearance.py — keep both in sync. */
@@ -17,6 +30,34 @@ export const LIST_DESIGNS: ListDesign[] = [
   'cards',
   'catalog',
   'tech',
+  'pencil-bakery',
+  'pencil-garden',
+  'pencil-market',
+  'pencil-evening',
+  'pencil-workshop',
+  'pencil-cheese',
+  'pencil-flower',
+  'pencil-flower-summer',
+  'pencil-flower-winter',
+  'pencil-flower-spring',
+  'pencil-wine',
+  'pencil-cheese-alternating',
+  'pencil-hardware-alternating',
+  'pencil-hardware-weekend',
+  'pencil-hardware-shelf',
+  'pencil-casa-ritual',
+  'pencil-casa-bath',
+  'pencil-casa-signature',
+  'pencil-casa-services',
+  'pencil-auto-detail',
+  'pencil-blush-bloom',
+  'pencil-nova',
+  'pencil-beardy',
+  'pencil-calm-spa',
+  'pencil-union-barber',
+  'pencil-studio-mono',
+  'pencil-beauty-issue',
+  'pencil-obsidian-quarterly',
 ]
 
 export const BRAND_SWATCHES = [
@@ -51,7 +92,20 @@ export function hasOwnAppearance(
 const inputCls =
   'h-11 w-full rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3.5 text-sm font-medium text-[var(--dash-text)] outline-none transition focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/15 placeholder:text-[var(--dash-muted)] disabled:opacity-60'
 
-/** Lightweight stylized mini-preview of each public-list design (not real data). */
+const standardPreviewRenderers: Partial<
+  Record<ListDesign, React.ComponentType<DesignProps>>
+> = {
+  classic: ClassicList,
+  nordic: NordicMenu,
+  fine: FineDining,
+  modern: ModernBrand,
+  photo: PhotoLookbook,
+  cards: ServiceCards,
+  catalog: ImageCatalog,
+  tech: TechGrid,
+}
+
+/** A clipped, scaled instance of the same components used by the public list. */
 export function DesignThumb({
   design,
   accent,
@@ -59,13 +113,62 @@ export function DesignThumb({
   design: ListDesign
   accent: string
 }) {
-  const Thumb = thumbs[design]
-  return <Thumb accent={accent} />
+  const props = designPreviewProps(accent)
+  let preview: React.ReactNode
+
+  if (isPencilVariant(design)) preview = <PencilList variant={design} {...props} />
+  else if (design === 'pencil-journal') preview = <PencilJournal {...props} />
+  else {
+    const Renderer = standardPreviewRenderers[design]
+    if (Renderer) preview = <Renderer {...props} />
+    else {
+      // Store is the only public layout still embedded in MenuScreen. Keep its
+      // current dedicated preview until that renderer is extracted.
+      const Thumb = thumbs.store ?? PencilExtendedThumb
+      return <Thumb accent={accent} />
+    }
+  }
+
+  return (
+    <div className="relative h-40 w-full overflow-hidden bg-white" aria-hidden="true">
+      <div className="pointer-events-none absolute left-1/2 top-0 w-[960px] origin-top -translate-x-1/2 scale-[0.27]">
+        {preview}
+      </div>
+    </div>
+  )
+}
+
+const previewItem = {
+  id: 'preview-item',
+  name: 'Producto destacado',
+  price: '890',
+  description: 'Una selección para conocer este estilo.',
+  category: 'Destacados',
+  imageUrl: '/mockup-img.webp',
+} as Item
+
+function designPreviewProps(accent: string): DesignProps {
+  const tenant = {
+    id: 'preview', name: 'Casa MiPrecio', subdomain: 'preview', currency: 'UYU',
+    description: 'Una selección para todos los días.', brandColor: accent,
+    listHeroColor: accent, language: 'es', taxId: null,
+  } as Tenant
+  const C = { bg: '#FAFAF7', ink: '#0F0D1A', body: '#44424E', muted: '#84818E', accent, accent2: '#6D28D9', line: '#E5E2DC' }
+  return {
+    tenant, C, accent, heroColor: accent,
+    brandGradient: `linear-gradient(135deg, ${accent}, #A855F7)`,
+    t: getT('es'), money: (value) => `$ ${value}`, currency: 'UYU',
+    updated: 'Hoy', monthYear: 'Junio 2026',
+    sections: [{ key: 'featured', name: 'Destacados', items: [previewItem], min: 890, max: 890 }],
+    base: [previewItem], allItems: [previewItem], cat: 'all', setCat: () => {}, q: '', setQ: () => {},
+    cart: {}, cartCount: 0, addToCart: () => {}, decFromCart: () => {}, openCart: () => {},
+    waHref: '#', isService: false, listName: 'Selección', edition: '001', taxId: null, hasBg: false,
+  }
 }
 
 type ThumbProps = { accent: string }
 
-const thumbs: Record<ListDesign, (props: ThumbProps) => React.ReactNode> = {
+const thumbs: Partial<Record<ListDesign, (props: ThumbProps) => React.ReactNode>> = {
   store: StoreThumb,
   classic: ClassicThumb,
   nordic: NordicThumb,
@@ -75,6 +178,12 @@ const thumbs: Record<ListDesign, (props: ThumbProps) => React.ReactNode> = {
   cards: CardsThumb,
   catalog: CatalogThumb,
   tech: TechThumb,
+  'pencil-bakery': PencilBakeryThumb,
+  'pencil-garden': PencilGardenThumb,
+  'pencil-market': PencilMarketThumb,
+  'pencil-evening': PencilEveningThumb,
+  'pencil-workshop': PencilWorkshopThumb,
+  'pencil-journal': PencilJournalThumb,
 }
 
 function StoreThumb({ accent }: ThumbProps) {
@@ -311,6 +420,132 @@ function PhotoThumb({ accent }: ThumbProps) {
   )
 }
 
+function PencilThumb({
+  accent,
+  background,
+  image,
+  darkPanel,
+  imageFirst = false,
+}: {
+  accent: string
+  background: string
+  image: string
+  darkPanel: string
+  imageFirst?: boolean
+}) {
+  const imageBlock = (
+    <div
+      className="h-7 w-full bg-cover bg-center"
+      style={{ backgroundImage: `url(${image})` }}
+    />
+  )
+  const promo = <div className="h-7 w-2/3" style={{ background: darkPanel }} />
+  return (
+    <div className="flex h-24 w-full flex-col gap-1.5 p-2" style={{ background }}>
+      {imageFirst ? imageBlock : promo}
+      <div className="flex flex-col items-center gap-1">
+        <span className="h-1 w-14 rounded-full" style={{ background: accent }} />
+        <span className="h-1 w-24 rounded-full" style={{ background: '#6D6A63' }} />
+      </div>
+      {imageFirst ? promo : imageBlock}
+      <div className="grid grid-cols-2 gap-1">
+        <span className="h-1 rounded-full" style={{ background: '#9B988F' }} />
+        <span className="h-1 rounded-full" style={{ background: accent }} />
+      </div>
+    </div>
+  )
+}
+
+function PencilBakeryThumb({ accent }: ThumbProps) {
+  return (
+    <PencilThumb
+      accent={accent}
+      background="#F4F2EF"
+      darkPanel="#1B1B1B"
+      image="https://images.unsplash.com/photo-1753826366896-170e04691b1c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=480"
+    />
+  )
+}
+
+function PencilGardenThumb({ accent }: ThumbProps) {
+  return (
+    <PencilThumb
+      accent={accent}
+      background="#FBF7EF"
+      darkPanel="#1B1B1B"
+      imageFirst
+      image="https://images.unsplash.com/photo-1726950189914-8fe1016eb9c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=480"
+    />
+  )
+}
+
+function PencilMarketThumb({ accent }: ThumbProps) {
+  return (
+    <PencilThumb
+      accent={accent}
+      background="#F8F1E7"
+      darkPanel="#1B1B1B"
+      image="https://images.unsplash.com/photo-1693140539040-aa567b436278?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=480"
+    />
+  )
+}
+
+function PencilEveningThumb({ accent }: ThumbProps) {
+  return (
+    <PencilThumb
+      accent={accent}
+      background="#F2EFE9"
+      darkPanel="#1B1B1B"
+      imageFirst
+      image="https://images.unsplash.com/photo-1779282620211-810663eac20e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=480"
+    />
+  )
+}
+
+function PencilWorkshopThumb({ accent }: ThumbProps) {
+  return (
+    <PencilThumb
+      accent={accent}
+      background="#E7ECE7"
+      darkPanel="#20322C"
+      image="https://images.unsplash.com/photo-1695728130932-7b5967d59f52?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=480"
+    />
+  )
+}
+
+function PencilExtendedThumb({ accent }: ThumbProps) {
+  return (
+    <div className="flex h-24 w-full flex-col gap-2 p-3" style={{ background: '#F4F0E8' }}>
+      <div className="h-3 w-2/3 rounded-sm" style={{ background: '#252525' }} />
+      <div className="grid flex-1 grid-cols-2 gap-2">
+        {[0, 1, 2, 3].map((index) => (
+          <div key={index} className="flex items-end justify-between border-b pb-1" style={{ borderColor: '#D5CEC2' }}>
+            <span className="h-1 w-2/3 rounded-full" style={{ background: '#8C857A' }} />
+            <span className="h-1 w-5 rounded-full" style={{ background: accent }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PencilJournalThumb({ accent }: ThumbProps) {
+  return (
+    <div className="flex h-24 w-full flex-col gap-1 p-2" style={{ background: '#EEE5D7' }}>
+      <div className="h-8 w-full bg-cover bg-center" style={{ backgroundImage: 'url(/pencil/cheese-factory/zLZId.png)' }} />
+      <div className="flex items-center gap-1">
+        <span className="h-1 w-1/3 rounded-full" style={{ background: '#A76D3E' }} />
+        <span className="h-1 w-1/2 rounded-full" style={{ background: '#6D5B4A' }} />
+      </div>
+      <div className="grid flex-1 grid-cols-3 gap-1">
+        <span style={{ background: '#3A2A1D' }} />
+        <span style={{ background: '#E75B39' }} />
+        <span style={{ background: accent }} />
+      </div>
+    </div>
+  )
+}
+
 export function Toggle({
   on,
   onClick,
@@ -368,6 +603,7 @@ export function ListAppearanceFields({
   savedBg,
 }: Props) {
   const bgFileRef = useRef<HTMLInputElement>(null)
+  const designGalleryRef = useRef<HTMLDivElement>(null)
   const canInherit = !!inherited
   const effectiveDesign = value.design ?? inherited?.design ?? 'store'
   const effectiveHero =
@@ -382,6 +618,12 @@ export function ListAppearanceFields({
       bgUrl: await fileToDataUrl(file, 1600),
       bgOverlay: value.bgOverlay ?? false,
     })
+  }
+
+  const scrollDesignGallery = (direction: -1 | 1) => {
+    const gallery = designGalleryRef.current
+    if (!gallery) return
+    gallery.scrollBy({ left: direction * gallery.clientWidth * 0.82, behavior: 'smooth' })
   }
 
   return (
@@ -464,13 +706,18 @@ export function ListAppearanceFields({
           </span>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="relative">
+        <div
+          ref={designGalleryRef}
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 pr-2 [scrollbar-width:thin]"
+          aria-label={t('set.design.title')}
+        >
         {canInherit && (
           <button
             type="button"
             disabled={disabled}
             onClick={() => onChange({ design: null })}
-            className={`flex flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${value.design === null ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
+            className={`flex w-[min(18rem,calc(100vw-4rem))] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${value.design === null ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
           >
             <DesignThumb
               design={inherited?.design ?? 'store'}
@@ -503,7 +750,7 @@ export function ListAppearanceFields({
               type="button"
               disabled={disabled}
               onClick={() => onChange({ design: d })}
-              className={`flex flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${on ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
+              className={`flex w-[min(18rem,calc(100vw-4rem))] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${on ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
             >
               <DesignThumb design={d} accent={accent} />
               <div className="flex items-start justify-between gap-2 border-t border-[var(--dash-border)] bg-[var(--dash-surface)] p-3">
@@ -526,6 +773,25 @@ export function ListAppearanceFields({
             </button>
           )
         })}
+        </div>
+        <div className="mt-1 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => scrollDesignGallery(-1)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
+            aria-label="Tema anterior"
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollDesignGallery(1)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
+            aria-label="Tema siguiente"
+          >
+            →
+          </button>
+        </div>
       </div>
 
       {/* Background image + brand-colour filter */}

@@ -55,6 +55,14 @@ def delete_customer(customer_id: str) -> bool:
     customer = Customer.get_or_none(Customer.id == customer_id)
     if not customer:
         return False
+    # Public viewer links are intentionally plain ids, so clear them before
+    # deleting a customer. The table is optional in focused/legacy databases.
+    database = customer._meta.database
+    if database.table_exists("public_viewers"):
+        database.execute_sql(
+            'UPDATE "public_viewers" SET "customer_id" = NULL WHERE "customer_id" = ?',
+            (customer.id,),
+        )
     # Recursive delete also removes the customer's orders and their line items
     # (the DB isn't started with the SQLite foreign_keys pragma).
     customer.delete_instance(recursive=True)

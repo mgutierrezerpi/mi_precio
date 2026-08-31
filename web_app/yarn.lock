@@ -2943,9 +2943,9 @@ dom-accessibility-api@^0.5.9:
   integrity sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg==
 
 dompurify@^3.3.1:
-  version "3.4.13"
-  resolved "https://registry.yarnpkg.com/dompurify/-/dompurify-3.4.13.tgz#fc28949d59f92d62e28a3a764bcbeee35897a1be"
-  integrity sha512-2vmYIoqjze2d+kakP8S/nS5shfsl587kzwEjcGlTdiksUVgFHnFCsLYDVj/JNqJVOQZGSYBTmuycv0PodwmnMQ==
+  version "3.4.14"
+  resolved "https://registry.yarnpkg.com/dompurify/-/dompurify-3.4.14.tgz#a789edb2c7bcdb69a93713a34edb7e0a5245d8c9"
+  integrity sha512-dVoH9z+MY+C9IilgGCk3YfFqjLi3fChm2OiKJMzh6axrJ5qwxqWaZamgmHrpv22CN/KdbZJuGEGgfQoL00LTdg==
   optionalDependencies:
     "@types/trusted-types" "^2.0.7"
 
@@ -3575,9 +3575,9 @@ html-escaper@^2.0.0:
   integrity sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==
 
 html2canvas-pro@^2.3.7:
-  version "2.3.7"
-  resolved "https://registry.yarnpkg.com/html2canvas-pro/-/html2canvas-pro-2.3.7.tgz#334bd9a55c1f082fd9a4d2c0ece48f1d36188eac"
-  integrity sha512-z0Yn97ccPUzczDqlMZ7Kbsd/caFnAaJAwmJ9Us8ifZR75eo3Vy3TmqoRDbNLB3q3RlRHuu5js++tjyLohKAZWw==
+  version "2.4.0"
+  resolved "https://registry.yarnpkg.com/html2canvas-pro/-/html2canvas-pro-2.4.0.tgz#2cc986ea5eb698e55d99bb44600ec6745bcb37ba"
+  integrity sha512-ERxMm/ZGRatO9g0mAM2EBlWFgCXDjma7RZFLCHm71gM6q/WqQRYaqB0MIGjjYKEHF8rKvXIeshrrJ8ovImd9aw==
   dependencies:
     css-line-break "^2.1.0"
     text-segmentation "^1.0.3"
@@ -4346,7 +4346,7 @@ picomatch@^4.0.3:
   resolved "https://registry.yarnpkg.com/picomatch/-/picomatch-4.0.3.tgz#796c76136d1eead715db1e7bad785dedd695a042"
   integrity sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==
 
-possible-typed-array-names@^1.0.0, possible-typed-array-names@^1.1.0:
+possible-typed-array-names@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/possible-typed-array-names/-/possible-typed-array-names-1.1.0.tgz#93e3582bc0e5426586d9d07b79ee40fc841de4ae"
   integrity sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==

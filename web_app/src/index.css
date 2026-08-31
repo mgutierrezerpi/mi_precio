@@ -1,5 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Inter:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import 'tailwindcss';
 @plugin "@tailwindcss/forms";
+
+@font-face {
+  font-family: 'Code Pro';
+  src: url('/fonts/code-pro-lc.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Code Pro';
+  src: url('/fonts/code-pro-bold-lc.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* Custom theme - Soft Modern Aesthetic */
 :root {
@@ -1037,31 +1054,32 @@ a {
   }
 }
 
-
-/* ==========================================
-   Exporting a public price list to PDF
-   ==========================================
-   The export captures the real page (lib/exportListPdf), so the sheet is the
-   design itself rather than a copy of it that drifts. This class is worn only
-   while the capture runs, and only removes what belongs to a screen. */
-.mp-exporting button,
-.mp-exporting input,
-.mp-exporting select,
-.mp-exporting [data-no-export] {
-  display: none !important;
+@keyframes journal-page-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-/* A hero sized to fill the viewport would leave a screen-tall gap of colour at
-   the top of the PDF, and `min-h-screen` pads a short menu the same way. */
-.mp-exporting.min-h-screen,
-.mp-exporting .min-h-screen,
-.mp-exporting .h-screen {
-  min-height: 0 !important;
-  height: auto !important;
+/* Magazine admin canvas: the rendered page stays faithful to the public
+   design while making its editable regions discoverable on hover/focus. */
+.magazine-editor-canvas [data-magazine-field] {
+  cursor: pointer;
+  outline: 1px solid transparent;
+  outline-offset: 4px;
+  transition: outline-color 0.15s ease, background-color 0.15s ease;
 }
 
-/* Sticky bars are anchored to a scrolling viewport that the PDF does not have;
-   left alone they land halfway down the capture. */
-.mp-exporting .sticky {
-  position: static !important;
+.magazine-editor-canvas [data-magazine-field]:hover,
+.magazine-editor-canvas [data-magazine-field]:focus-visible {
+  outline-color: rgb(167 109 62 / 70%);
+  background-color: rgb(255 255 255 / 10%);
+}
+
+.magazine-editor-canvas [data-magazine-field][data-magazine-editing="true"] {
+  visibility: hidden;
 }

@@ -207,7 +207,6 @@ function PerformanceReport({
           onSelectList={onSelectList}
         />
         <VisitChart data={data} loading={loading} t={t} locale={locale} />
-        <ChartLegend t={t} />
       </section>
       <div className={`grid grid-cols-1 gap-4 ${selectedListId ? '' : 'xl:grid-cols-2'}`}>
         {!selectedListId && <TopProducts data={data} loading={loading} />}
@@ -240,10 +239,10 @@ function PerformanceHeader({
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-bold text-[var(--dash-text)]">
-          {t('analytics.visitsAndScans')}
+          {t('analytics.totalVisitsByDay')}
         </h2>
         <p className="text-[13px] text-[var(--dash-muted)]">
-          {t('analytics.opensInLastDays', { count: fmtInt(periodVisits, locale), days })}
+          {t('analytics.visitsInPeriod', { count: fmtInt(periodVisits, locale), days })}
         </p>
       </div>
       <div className="flex flex-col gap-2 sm:items-end">
@@ -261,31 +260,23 @@ function PerformanceHeader({
           </select>
         </label>
         <div className="flex w-full items-center gap-1 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] p-1 sm:w-auto sm:shrink-0">
-          {[7, 30, 90].map((rangeDays) => (
+          {[
+            [7, 'analytics.periodWeek'],
+            [30, 'analytics.periodMonth'],
+            [180, 'analytics.periodSixMonths'],
+            [365, 'analytics.periodYear'],
+          ].map(([rangeDays, label]) => (
           <button
-            key={rangeDays}
+            key={rangeDays as number}
             type="button"
-            onClick={() => setDays(rangeDays)}
+            onClick={() => setDays(rangeDays as number)}
             className={`flex h-8 flex-1 items-center justify-center rounded-md px-3 text-xs font-bold sm:flex-none ${days === rangeDays ? `text-white ${gradient}` : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`}
           >
-            {t('analytics.days', { count: rangeDays })}
+            {t(label as string)}
           </button>
           ))}
         </div>
       </div>
-    </div>
-  )
-}
-
-function ChartLegend({ t }: { t: TFn }) {
-  return (
-    <div className="flex items-center gap-5 text-[11px] font-semibold text-[var(--dash-text2)]">
-      <span className="flex items-center gap-1.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-[#7C3AED]" /> {t('analytics.directLink')}
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-[#0EA5E9]" /> {t('analytics.qrCode')}
-      </span>
     </div>
   )
 }
@@ -464,7 +455,7 @@ function ActivityPagination({
   )
 }
 
-/** Stacked daily bars (link + qr), heights relative to the busiest day. */
+/** Total visits per day, heights relative to the busiest day. */
 function VisitChart({
   data,
   loading,
@@ -556,25 +547,9 @@ function VisitBar({ day, max, t, locale }: { day: ReportSeries[number]; max: num
     <div
       className="group relative flex flex-1 items-end"
       style={{ height: '100%' }}
-      title={`${dayLabel(day.date, locale)}: ${total} (${t('analytics.directLink')} ${day.link} · ${t('analytics.qrCode')} ${day.qr})`}
+      title={`${dayLabel(day.date, locale)}: ${total} ${t('analytics.visits')}`}
     >
-      <div
-        className="flex w-full flex-col justify-end overflow-hidden rounded-t-md"
-        style={{ height: `${(total / max) * 100}%` }}
-      >
-        {day.qr > 0 && (
-          <div
-            className="w-full bg-[#0EA5E9]"
-            style={{ height: `${(day.qr / total) * 100}%` }}
-          />
-        )}
-        {day.link > 0 && (
-          <div
-            className="w-full bg-[#7C3AED]"
-            style={{ height: `${(day.link / total) * 100}%` }}
-          />
-        )}
-      </div>
+      <div className="w-full rounded-t-md bg-[#7C3AED]" style={{ height: `${(total / max) * 100}%` }} />
       {total === 0 && (
         <div
           className="w-full rounded-t-md bg-[var(--dash-soft)]"

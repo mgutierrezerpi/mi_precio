@@ -28,9 +28,11 @@ import {
 import api from '../../services/api'
 import { localeOf } from '../../lib/i18n'
 import { useCatalogT } from '../../lib/i18nDictionaryCatalog'
-import { trackEvent } from '../../lib/analytics'
 
-const PAGE_SIZE = 8
+const DEFAULT_PAGE_SIZE = 8
+const PAGE_SIZE_OPTIONS = [8, 16, 32, 64] as const
+type PageSize = (typeof PAGE_SIZE_OPTIONS)[number]
+const PAGE_SIZE_STORAGE_KEY = 'mi_precio:products-page-size'
 type Status = 'all' | 'available' | 'unavailable' | 'nophoto' | 'recent'
 type SortKey = 'recent' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc'
 
@@ -44,6 +46,38 @@ const SORT_OPTIONS: { key: SortKey; labelKey: string }[] = [
 
 const outlineBtn =
   'flex h-[38px] items-center gap-2 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3.5 text-[13px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'
+
+/** Backend timestamps are naive UTC; convert them to the browser's local time. */
+function parseUtcDate(value: string) {
+  const hasTimezone = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(value)
+  return new Date(hasTimezone ? value : `${value}Z`)
+}
+
+function pageSizeStorageKey(tenantId: string) {
+  return `${PAGE_SIZE_STORAGE_KEY}:${tenantId}`
+}
+
+function isPageSize(value: number): value is PageSize {
+  return PAGE_SIZE_OPTIONS.includes(value as PageSize)
+}
+
+function readPageSize(tenantId: string | undefined): PageSize {
+  if (!tenantId || typeof window === 'undefined') return DEFAULT_PAGE_SIZE
+  try {
+    const stored = Number(window.localStorage.getItem(pageSizeStorageKey(tenantId)))
+    return isPageSize(stored) ? stored : DEFAULT_PAGE_SIZE
+  } catch {
+    return DEFAULT_PAGE_SIZE
+  }
+}
+
+function savePageSize(tenantId: string, pageSize: PageSize) {
+  try {
+    window.localStorage.setItem(pageSizeStorageKey(tenantId), String(pageSize))
+  } catch {
+    // Storage can be unavailable in private browsing; pagination still works.
+  }
+}
 
 /** Read an image file, downscale it, and return a compressed WebP blob. */
 async function fileToImageBlob(file: File, max = 1600): Promise<Blob> {
@@ -106,6 +140,8 @@ export function ProductsScreen() {
     searchParams.get('cat') || 'all'
   )
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE)
+  const [pageSizeTenantId, setPageSizeTenantId] = useState<string | null>(null)
   const [modal, setModal] = useState<{
     open: boolean
     product: Product | null
@@ -125,6 +161,18 @@ export function ProductsScreen() {
   useEffect(() => {
     if (tenant?.id) dispatch(fetchLists(tenant.id))
   }, [dispatch, tenant?.id])
+
+  useEffect(() => {
+    if (!tenant?.id) return
+    setPageSize(readPageSize(tenant.id))
+    setPageSizeTenantId(tenant.id)
+  }, [tenant?.id])
+
+  useEffect(() => {
+    if (tenant?.id && pageSizeTenantId === tenant.id) {
+      savePageSize(tenant.id, pageSize)
+    }
+  }, [pageSize, pageSizeTenantId, tenant?.id])
 
   // Distinct categories, deduped case-insensitively (keeps first-seen spelling).
   const categories = useMemo(() => {
@@ -164,7 +212,7 @@ export function ProductsScreen() {
     const arr =
       status === 'recent'
         ? [...base]
-            .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
+            .sort((a, b) => +parseUtcDate(b.createdAt) - +parseUtcDate(a.createdAt))
             .slice(0, 12)
         : base.filter((p) => {
             if (status === 'all') return true
@@ -175,7 +223,7 @@ export function ProductsScreen() {
           })
     const price = (p: Product) => parseFloat(p.price) || 0
     const cmp: Record<SortKey, (a: Product, b: Product) => number> = {
-      recent: (a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt),
+      recent: (a, b) => +parseUtcDate(b.createdAt) - +parseUtcDate(a.createdAt),
       'name-asc': (a, b) => a.name.localeCompare(b.name),
       'name-desc': (a, b) => b.name.localeCompare(a.name),
       'price-asc': (a, b) => price(a) - price(b),
@@ -184,11 +232,11 @@ export function ProductsScreen() {
     return [...arr].sort(cmp[sort])
   }, [base, status, sort])
 
-  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize))
   const safePage = Math.min(page, totalPages)
   const pageItems = visible.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE
+    (safePage - 1) * pageSize,
+    safePage * pageSize
   )
 
   const resetTo = (fn: () => void) => {
@@ -363,8 +411,16 @@ export function ProductsScreen() {
           )}
 
           {/* Table */}
-          <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
-            <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
+            <div className="flex items-center gap-3 bg-[var(--dash-table-head)] px-4 py-3 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)] lg:hidden">
+              <Checkbox
+                checked={allSelected}
+                indeterminate={someSelected && !allSelected}
+                onChange={toggleSelectAll}
+              />
+              <span>{t('products.product')}</span>
+            </div>
+            <div className="hidden min-w-[720px] items-center gap-2 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)] lg:flex">
               <span className="w-9">
                 <Checkbox
                   checked={allSelected}
@@ -373,11 +429,11 @@ export function ProductsScreen() {
                 />
               </span>
               <span className="flex-1">{t('products.product')}</span>
-              <span className="w-[110px]">SKU</span>
-              <span className="w-[130px]">{t('products.category')}</span>
-              <span className="w-[110px]">{t('products.price')}</span>
-              <span className="w-[160px]">{t('products.availability')}</span>
-              <span className="w-[120px]">{t('products.updated')}</span>
+              <span className="w-[90px]">SKU</span>
+              <span className="w-[115px]">{t('products.category')}</span>
+              <span className="w-[100px]">{t('products.price')}</span>
+              <span className="w-[145px]">{t('products.availability')}</span>
+              <span className="w-[105px]">{t('products.updated')}</span>
               <span className="w-8" />
             </div>
 
@@ -392,15 +448,16 @@ export function ProductsScreen() {
                 return (
                   <div
                     key={p.id}
-                    className={`flex min-w-[720px] items-center gap-3 px-5 py-4 ${selected.has(p.id) ? 'bg-[var(--dash-soft)]' : 'bg-[var(--dash-surface)]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
+                    className={`flex min-w-0 flex-col gap-3 px-4 py-4 lg:min-w-[720px] lg:flex-row lg:items-center lg:gap-2 lg:px-5 ${selected.has(p.id) ? 'bg-[var(--dash-soft)]' : 'bg-[var(--dash-surface)]'} ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
                   >
-                    <span className="w-9">
-                      <Checkbox
-                        checked={selected.has(p.id)}
-                        onChange={() => toggleSelect(p.id)}
-                      />
-                    </span>
-                    <div className="flex flex-1 items-center gap-3">
+                    <div className="flex min-w-0 items-start gap-3 lg:contents">
+                      <span className="w-9 shrink-0">
+                        <Checkbox
+                          checked={selected.has(p.id)}
+                          onChange={() => toggleSelect(p.id)}
+                        />
+                      </span>
+                      <div className="flex min-w-0 flex-1 items-start gap-3 lg:items-center">
                       {p.imageUrl ? (
                         <img
                           src={p.imageThumbUrl || p.imageUrl}
@@ -415,19 +472,85 @@ export function ProductsScreen() {
                           <Icon name={catIcon(p.category)} size={20} />
                         </span>
                       )}
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-sm font-bold text-[var(--dash-text)]">
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span
+                          title={p.name}
+                          className="line-clamp-2 break-words text-sm font-bold leading-5 text-[var(--dash-text)]"
+                        >
                           {p.name}
                         </span>
-                        <span className="truncate text-xs font-medium text-[var(--dash-muted)]">
+                        <span className="line-clamp-2 text-xs font-medium text-[var(--dash-muted)] lg:truncate">
                           {p.description || '—'}
                         </span>
                       </div>
+                      {canEdit && (
+                        <div className="shrink-0 lg:hidden">
+                          <RowMenu
+                            onEdit={() => setModal({ open: true, product: p })}
+                            onDelete={() => handleDelete(p)}
+                          />
+                        </div>
+                      )}
+                      </div>
                     </div>
-                    <span className="w-[110px] text-xs font-semibold text-[var(--dash-text2)]">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 pl-9 text-xs sm:grid-cols-3 lg:hidden">
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">SKU</span>
+                        <span className="truncate font-semibold text-[var(--dash-text2)]">{p.sku || '—'}</span>
+                      </span>
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.category')}</span>
+                        {p.category ? (
+                          <span
+                            className="inline-flex max-w-full w-fit truncate rounded-full px-2 py-1 text-[11px] font-bold"
+                            style={tone(catTone(p.category))}
+                          >
+                            {displayCategory(p.category)}
+                          </span>
+                        ) : (
+                          <span className="font-medium text-[var(--dash-muted)]">{t('products.noCategory')}</span>
+                        )}
+                      </span>
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.price')}</span>
+                        <span className="font-extrabold text-[var(--dash-text)]">{formatProductPrice(p.price)}</span>
+                      </span>
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.availability')}</span>
+                        {canEdit ? (
+                          <AvailabilitySwitch
+                            value={p.available}
+                            onToggle={() =>
+                              dispatch(
+                                updateProduct({
+                                  productId: p.id,
+                                  data: { available: !p.available },
+                                })
+                              )
+                            }
+                          />
+                        ) : (
+                          <span
+                            className="w-fit rounded-full px-2.5 py-1 text-[11px] font-bold"
+                            style={tone(p.available ? 'green' : 'red')}
+                          >
+                            {p.available
+                              ? t('products.available')
+                              : t('products.unavailable')}
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">{t('products.updated')}</span>
+                        <span className="truncate font-medium text-[var(--dash-muted)]">
+                          {new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(parseUtcDate(p.updatedAt))}
+                        </span>
+                      </span>
+                    </div>
+                    <span className="hidden w-[90px] text-xs font-semibold text-[var(--dash-text2)] lg:block">
                       {p.sku || '—'}
                     </span>
-                    <span className="w-[130px]">
+                    <span className="hidden w-[115px] lg:block">
                       {p.category ? (
                         <span
                           className="rounded-full px-2.5 py-1 text-[11px] font-bold"
@@ -441,10 +564,10 @@ export function ProductsScreen() {
                         </span>
                       )}
                     </span>
-                    <span className="w-[110px] text-sm font-extrabold text-[var(--dash-text)]">
+                    <span className="hidden w-[100px] text-sm font-extrabold text-[var(--dash-text)] lg:block">
                       {formatProductPrice(p.price)}
                     </span>
-                    <span className="w-[160px]">
+                    <span className="hidden w-[145px] lg:block">
                       {canEdit ? (
                         <AvailabilitySwitch
                           value={p.available}
@@ -468,18 +591,20 @@ export function ProductsScreen() {
                         </span>
                       )}
                     </span>
-                    <span className="w-[120px] text-xs font-medium text-[var(--dash-muted)]">
+                    <span className="hidden w-[105px] text-xs font-medium text-[var(--dash-muted)] lg:block">
                       {new Intl.DateTimeFormat(locale, {
                         dateStyle: 'medium',
-                      }).format(new Date(p.updatedAt))}
+                      }).format(parseUtcDate(p.updatedAt))}
                     </span>
                     {canEdit ? (
-                      <RowMenu
-                        onEdit={() => setModal({ open: true, product: p })}
-                        onDelete={() => handleDelete(p)}
-                      />
+                      <span className="hidden shrink-0 lg:block">
+                        <RowMenu
+                          onEdit={() => setModal({ open: true, product: p })}
+                          onDelete={() => handleDelete(p)}
+                        />
+                      </span>
                     ) : (
-                      <span className="w-8" />
+                      <span className="hidden w-8 shrink-0 lg:block" />
                     )}
                   </div>
                 )
@@ -488,51 +613,71 @@ export function ProductsScreen() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-xs font-medium text-[var(--dash-muted)]">
-              {t('products.showing', {
-                shown: pageItems.length,
-                total: visible.length,
-              })}
-            </span>
-            <div className="flex items-center gap-1">
-              <PagerBtn
-                icon="chevrons-left"
-                disabled={safePage === 1}
-                onClick={() => setPage(1)}
-              />
-              <PagerBtn
-                icon="chevron-left"
-                disabled={safePage === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              />
-              {pageList(safePage, totalPages).map((n, i) =>
-                n === '…' ? (
-                  <span
-                    key={`e${i}`}
-                    className="px-1 text-xs font-bold text-[var(--dash-muted)]"
-                  >
-                    …
-                  </span>
-                ) : (
-                  <PagerNum
-                    key={n}
-                    n={n}
-                    active={n === safePage}
-                    onClick={() => setPage(n)}
-                  />
-                )
-              )}
-              <PagerBtn
-                icon="chevron-right"
-                disabled={safePage === totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              />
-              <PagerBtn
-                icon="chevrons-right"
-                disabled={safePage === totalPages}
-                onClick={() => setPage(totalPages)}
-              />
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center justify-between gap-4 sm:justify-start">
+              <span className="text-xs font-medium text-[var(--dash-muted)]">
+                {t('products.showing', {
+                  shown: pageItems.length,
+                  total: visible.length,
+                })}
+              </span>
+              <label className="flex items-center gap-2 text-xs font-medium text-[var(--dash-muted)]">
+                <span>{t('products.perPage')}</span>
+                <select
+                  value={pageSize}
+                  onChange={(event) => {
+                    setPageSize(Number(event.target.value) as PageSize)
+                    setPage(1)
+                  }}
+                  className="h-8 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-xs font-bold text-[var(--dash-text2)] outline-none focus:border-[var(--dash-link)]"
+                  aria-label={t('products.perPage')}
+                >
+                  {PAGE_SIZE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="flex items-center justify-end gap-1">
+                <PagerBtn
+                  icon="chevrons-left"
+                  disabled={safePage === 1}
+                  onClick={() => setPage(1)}
+                />
+                <PagerBtn
+                  icon="chevron-left"
+                  disabled={safePage === 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                />
+                {pageList(safePage, totalPages).map((n, i) =>
+                  n === '…' ? (
+                    <span
+                      key={`e${i}`}
+                      className="px-1 text-xs font-bold text-[var(--dash-muted)]"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <PagerNum
+                      key={n}
+                      n={n}
+                      active={n === safePage}
+                      onClick={() => setPage(n)}
+                    />
+                  )
+                )}
+                <PagerBtn
+                  icon="chevron-right"
+                  disabled={safePage === totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                />
+                <PagerBtn
+                  icon="chevrons-right"
+                  disabled={safePage === totalPages}
+                  onClick={() => setPage(totalPages)}
+                />
             </div>
           </div>
         </div>
@@ -1302,14 +1447,7 @@ export function ProductModal({
       (createProduct.fulfilled.match(result) ||
         updateProduct.fulfilled.match(result))
     ) {
-      if (createProduct.fulfilled.match(result)) {
-        trackEvent('Created Product', {
-          has_image: Boolean(imageUrl),
-          has_category: Boolean(data.category),
-          is_available: available,
-        })
-        onCreated?.(result.payload)
-      }
+      if (createProduct.fulfilled.match(result)) onCreated?.(result.payload)
       onClose()
     } else if (
       result &&

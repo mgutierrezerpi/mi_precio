@@ -49,6 +49,9 @@ init_sentry()
 async def lifespan(app: FastAPI):
     db.connect(reuse_if_open=True)
     create_tables()
+    from lib.ctx import products
+
+    products.backfill_orphan_items()
     yield
     if not db.is_closed():
         db.close()
@@ -57,7 +60,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
-        description="API for managing price lists",
+        description="API for managing price lists and magazines",
         version="1.0.0",
         debug=settings.debug,
         lifespan=lifespan,

@@ -37,12 +37,9 @@ export function CodesScreen() {
   const lists = useAppSelector(selectLists)
 
   const [search, setSearch] = useState('')
-  const [copied, setCopied] = useState<string | null>(null)
-  // Códigos QR is the only place the colour is chosen, but Listas and the
-  // dashboard both read it back from this key — so it is stored, not local.
   const [color, setColor] = useState(DEFAULT_QR_COLOR)
   const [busy, setBusy] = useState<'png' | 'svg' | null>(null)
-
+  const [copied, setCopied] = useState<string | null>(null)
   const colorStorageKey = tenant?.id
     ? `${QR_COLOR_STORAGE_PREFIX}${tenant.id}`
     : null
@@ -120,7 +117,6 @@ export function CodesScreen() {
       .finally(() => setBusy(null))
   }
 
-  // Which list the big preview and its downloads are showing.
   const previewList = filtered[0] ?? lists[0] ?? null
 
   return (
@@ -144,9 +140,9 @@ export function CodesScreen() {
             </p>
           </div>
         </section>
-        <div className="flex items-start flex-col gap-5 xl:flex-row">
+        <div className="flex w-full flex-col items-stretch gap-5 xl:flex-row xl:items-start">
           {/* QR grid */}
-          <div className="flex flex-1 flex-col gap-4">
+          <div className="flex w-full flex-1 flex-col gap-4">
             {filtered.length === 0 ? (
               <div className="flex min-h-[208px] flex-col items-center justify-center gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 text-center">
                 <span
@@ -221,7 +217,7 @@ export function CodesScreen() {
           </div>
 
           {/* Customization panel */}
-          <div className="flex w-full shrink-0 flex-col gap-4 self-start rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 xl:-mt-2 xl:sticky xl:top-6 lg:w-[300px]">
+          <div className="flex w-full shrink-0 flex-col gap-4 self-start rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 xl:mt-0 xl:sticky xl:top-6 xl:w-[300px]">
             <div className="flex flex-col gap-1">
               <h3 className="text-lg font-extrabold text-[var(--dash-text)]">
                 {t('codes.posterTitle')}
@@ -274,8 +270,7 @@ export function CodesScreen() {
                 onClick={() => download(previewList, 'png')}
                 className={`flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 ${gradient}`}
               >
-                <Icon name="download" size={16} />
-                {busy === 'png' ? t('codes.posterWorking') : t('codes.downloadPng')}
+                <Icon name="download" size={16} /> {busy === 'png' ? t('codes.posterWorking') : t('codes.downloadPng')}
               </button>
             </span>
             <span
@@ -288,14 +283,12 @@ export function CodesScreen() {
                 onClick={() => download(previewList, 'svg')}
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <Icon name="download" size={15} />
-                {busy === 'svg' ? t('codes.posterWorking') : t('codes.downloadSvg')}
+                <Icon name="download" size={15} /> {busy === 'svg' ? t('codes.posterWorking') : t('codes.downloadSvg')}
               </button>
             </span>
           </div>
         </div>
       </main>
-
     </CrmLayout>
   )
 }

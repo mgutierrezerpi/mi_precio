@@ -83,6 +83,12 @@ def authenticate(email: str, code: str) -> AuthResult | None:
     user.last_seen_at = datetime.utcnow()
     user.save()
 
-    token = encode_token(str(user.id), user.email, tenant.id, user.role)
+    token = encode_token(
+        str(user.id),
+        user.email,
+        tenant.id,
+        user.role,
+        bool(getattr(user, "is_super_admin", False)),
+    )
 
     return AuthResult(token, user, tenant, user.role)

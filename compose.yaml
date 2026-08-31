@@ -22,7 +22,7 @@ services:
       DEBUG: "true"
       DATABASE_PATH: /data/mi_precio.db
       SECRET_KEY: change_me_for_local_development
-      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:3000", "http://localhost:5173", "https://miprecio.app", "https://www.miprecio.app"]}'
+      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "https://miprecio.app", "https://www.miprecio.app"]}'
       JWT_ALGORITHM: HS256
       JWT_EXPIRE_MINUTES: "1440"
       SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
