@@ -128,7 +128,6 @@ export function DashboardScreen() {
           qrColor={qrColor}
           qrList={qrList}
           qrUrl={qrUrl}
-          tenant={tenant}
           visits={visits}
           t={t}
         />
@@ -272,7 +271,6 @@ function DashboardHero({
   qrColor,
   qrList,
   qrUrl,
-  tenant,
   visits,
   t,
 }: {
@@ -285,7 +283,6 @@ function DashboardHero({
   qrColor: string
   qrList: PriceList | null
   qrUrl: string
-  tenant: Tenant | null
   visits: VisitStats | null
   t: TFn
 }) {
@@ -296,7 +293,6 @@ function DashboardHero({
         qrColor={qrColor}
         qrList={qrList}
         qrUrl={qrUrl}
-        tenant={tenant}
         t={t}
       />
       {principalList ? (
@@ -322,14 +318,12 @@ function QrHeroCard({
   qrColor,
   qrList,
   qrUrl,
-  tenant,
   t,
 }: {
   goQr: () => void
   qrColor: string
   qrList: PriceList | null
   qrUrl: string
-  tenant: Tenant | null
   t: TFn
 }) {
   return (
@@ -363,12 +357,13 @@ function QrHeroCard({
         title={t('analytics.viewQrs')}
         className="flex h-[180px] w-[180px] shrink-0 items-center justify-center self-center rounded-[14px] bg-white p-1"
       >
+        {/* No mark in the middle: the hero shows the code at 176px, where a
+            logo punched into the centre costs modules a scanner needs. */}
         <QrCode
           value={qrUrl}
           size={176}
           margin={1}
           fg={qrColor}
-          logoUrl={tenant?.logoUrl || FAVICON}
           className="h-full w-full object-contain"
         />
       </button>

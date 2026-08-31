@@ -8,17 +8,19 @@ import { Icon } from './crm/ui'
 import { QrCode } from './crm/QrCode'
 import { gradient } from './crm/theme'
 import { useCatalogT } from '../../lib/i18nDictionaryCatalog'
+import { markQrShared } from '../../lib/onboardingTour'
 import {
-  downloadQrPng,
-  downloadQrSvg,
-  QR_COLOR_STORAGE_PREFIX,
-  DEFAULT_QR_COLOR,
-} from '../../lib/qrRender'
+  downloadQrPosterPng,
+  downloadQrPosterSvg,
+  type PosterRequest,
+} from '../../lib/exportQrPoster'
+import { QR_COLOR_STORAGE_PREFIX, DEFAULT_QR_COLOR } from '../../lib/qrRender'
 
-const FAVICON = '/miprecio-favicon.png'
-
+/** The palette the shop picks from. Every swatch is dark enough to hold its
+ *  contrast against the white card a code always sits on, so none of them can
+ *  produce a sheet a scanner struggles with. */
 const QR_COLORS: { key: string; value: string }[] = [
-  { key: 'violet', value: '#7C3AED' },
+  { key: 'violet', value: DEFAULT_QR_COLOR },
   { key: 'black', value: '#0F172A' },
   { key: 'blue', value: '#2563EB' },
   { key: 'green', value: '#059669' },
@@ -36,7 +38,8 @@ export function CodesScreen() {
 
   const [search, setSearch] = useState('')
   const [color, setColor] = useState(DEFAULT_QR_COLOR)
-  const [withLogo, setWithLogo] = useState(true)
+  const [busy, setBusy] = useState<'png' | 'svg' | null>(null)
+  const [copied, setCopied] = useState<string | null>(null)
   const colorStorageKey = tenant?.id
     ? `${QR_COLOR_STORAGE_PREFIX}${tenant.id}`
     : null
@@ -50,7 +53,6 @@ export function CodesScreen() {
     const saved = localStorage.getItem(colorStorageKey)
     if (saved && QR_COLORS.some((c) => c.value === saved)) setColor(saved)
   }, [colorStorageKey])
-  const [copied, setCopied] = useState<string | null>(null)
 
   useEffect(() => {
     if (tenant?.id) dispatch(fetchLists(tenant.id))
@@ -67,9 +69,6 @@ export function CodesScreen() {
     return q ? lists.filter((l) => l.name.toLowerCase().includes(q)) : lists
   }, [lists, search])
 
-  // Use the business logo in the QR when one is configured. Keep the MiPrecio
-  // mark as a fallback so the center still has a recognizable brand.
-  const logoUrl = withLogo ? tenant?.logoUrl || FAVICON : null
   const previewUrl = filtered[0]
     ? qrUrlOf(filtered[0])
     : lists[0]
@@ -78,6 +77,7 @@ export function CodesScreen() {
 
   const copy = (l: PriceList) => {
     navigator.clipboard?.writeText(urlOf(l))
+    markQrShared(tenant?.id)
     setCopied(l.id)
     setTimeout(() => setCopied(null), 1500)
   }
@@ -86,12 +86,38 @@ export function CodesScreen() {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') || l.id
-  const downloadCard = (l: PriceList) => {
-    void downloadQrPng(qrUrlOf(l), `qr-${slugOf(l)}.png`, {
-      fg: color,
-      logoUrl,
-    })
+  /** Every download is the poster now: a bare code is not what a shop tapes to
+   *  its counter. PNG and SVG are two ways to take the same sheet — the SVG is
+   *  the vector a print shop wants, the PNG is what goes into WhatsApp.
+   *
+   *  The sheet carries **our** brand and nothing of the shop's. It hangs at a
+   *  counter where strangers see it every day, so it works as advertising for
+   *  MiPrecio — the same reason a Mercado Pago sticker is Mercado Pago yellow.
+   *  Which list it opens lives in the code and in the file name, not on the
+   *  paper: the customer is already standing in the shop. */
+  const posterFor = (l: PriceList): PosterRequest | null => {
+    if (!tenant) return null
+    return {
+      value: qrUrlOf(l),
+      headline: t('codes.posterHeadline'),
+      footer: t('codes.posterFooter'),
+      fileName: `qr-${slugOf(l)}`,
+      qrColor: color,
+    }
   }
+
+  const download = (l: PriceList | null, as: 'png' | 'svg') => {
+    const request = l && posterFor(l)
+    if (!request) return
+    markQrShared(tenant?.id)
+    setBusy(as)
+    const run = as === 'png' ? downloadQrPosterPng : downloadQrPosterSvg
+    void run(request)
+      .catch((err) => console.error('[qr-poster] export failed', err))
+      .finally(() => setBusy(null))
+  }
+
+  const previewList = filtered[0] ?? lists[0] ?? null
 
   return (
     <CrmLayout
@@ -149,7 +175,6 @@ export function CodesScreen() {
                         size={128}
                         margin={2}
                         fg={color}
-                        logoUrl={logoUrl}
                         className="!h-full !w-full rounded-lg object-contain"
                       />
                     </div>
@@ -172,7 +197,7 @@ export function CodesScreen() {
                       <CardBtn
                         icon="download"
                         title={t('codes.downloadPng')}
-                        onClick={() => downloadCard(l)}
+                        onClick={() => download(l, 'png')}
                       />
                       <CardBtn
                         icon="share-2"
@@ -195,10 +220,10 @@ export function CodesScreen() {
           <div className="flex w-full shrink-0 flex-col gap-4 self-start rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 xl:mt-0 xl:sticky xl:top-6 xl:w-[300px]">
             <div className="flex flex-col gap-1">
               <h3 className="text-lg font-extrabold text-[var(--dash-text)]">
-                {t('codes.customize')}
+                {t('codes.posterTitle')}
               </h3>
               <p className="text-xs font-medium text-[var(--dash-muted)]">
-                {t('codes.customizeHelp')}
+                {t('codes.posterHelp')}
               </p>
             </div>
             <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-lg bg-white p-1">
@@ -207,7 +232,6 @@ export function CodesScreen() {
                 size={128}
                 margin={2}
                 fg={color}
-                logoUrl={logoUrl}
                 className="!h-full !w-full rounded-lg object-contain"
               />
             </div>
@@ -222,50 +246,31 @@ export function CodesScreen() {
                     type="button"
                     onClick={() => chooseColor(c.value)}
                     aria-label={t(`codes.color.${c.key}`)}
+                    aria-pressed={color === c.value}
                     title={t(`codes.color.${c.key}`)}
                     className={`h-7 w-7 rounded-lg ${color === c.value ? 'ring-2 ring-offset-2 ring-offset-[var(--dash-surface)] ring-[var(--dash-link)]' : ''}`}
                     style={{ backgroundColor: c.value }}
                   />
                 ))}
               </div>
+              <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+                {t('codes.colorHelp')}
+              </span>
             </div>
-            <div className="flex items-center justify-between overflow-hidden rounded-[12px] border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3 py-3">
-              <div className="flex flex-col">
-                <span className="text-[13px] font-bold text-[var(--dash-text)]">
-                  {t('codes.logoCenter')}
-                </span>
-                <span className="text-[11px] font-medium text-[var(--dash-muted)]">
-                  {t('codes.logoHelp')}
-                </span>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={withLogo}
-                onClick={() => setWithLogo((v) => !v)}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${withLogo ? 'bg-[#10B981]' : 'bg-[var(--dash-border)]'}`}
-              >
-                <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${withLogo ? 'left-[22px]' : 'left-0.5'}`}
-                />
-              </button>
-            </div>
+            {/* Both downloads are the same A4 poster in two formats: the
+                SVG is the vector a print shop wants, the PNG is what goes into
+                a WhatsApp. Neither hands over a bare code any more. */}
             <span
               className="dash-tooltip block"
               data-tooltip={lists.length === 0 ? t('codes.downloadDisabled') : ''}
             >
               <button
                 type="button"
-                disabled={lists.length === 0}
-                onClick={() =>
-                  void downloadQrPng(previewUrl, `qr-${sub}.png`, {
-                    fg: color,
-                    logoUrl,
-                  })
-                }
+                disabled={lists.length === 0 || busy !== null}
+                onClick={() => download(previewList, 'png')}
                 className={`flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 ${gradient}`}
               >
-                <Icon name="download" size={16} /> {t('codes.downloadPng')}
+                <Icon name="download" size={16} /> {busy === 'png' ? t('codes.posterWorking') : t('codes.downloadPng')}
               </button>
             </span>
             <span
@@ -274,13 +279,11 @@ export function CodesScreen() {
             >
               <button
                 type="button"
-                disabled={lists.length === 0}
-                onClick={() =>
-                  downloadQrSvg(previewUrl, `qr-${sub}.svg`, { fg: color })
-                }
+                disabled={lists.length === 0 || busy !== null}
+                onClick={() => download(previewList, 'svg')}
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <Icon name="download" size={15} /> {t('codes.downloadSvg')}
+                <Icon name="download" size={15} /> {busy === 'svg' ? t('codes.posterWorking') : t('codes.downloadSvg')}
               </button>
             </span>
           </div>

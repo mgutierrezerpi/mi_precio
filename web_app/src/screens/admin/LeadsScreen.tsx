@@ -9,6 +9,7 @@ import { Icon, type IconName } from './crm/ui'
 import { tone, gradient, type Tone } from './crm/theme'
 import { localeOf, useT } from '../../lib/i18n'
 import { planHasFeature } from '../../lib/plans'
+import { formatDateTime } from '../../lib/datetime'
 
 const STATUS_TONE: Record<LeadStatus, Tone> = {
   new: 'violet',
@@ -170,7 +171,7 @@ function LeadRow({
           </p>
         )}
         <span className="text-[11px] text-[var(--dash-muted)]">
-          {new Date(lead.createdAt).toLocaleString(locale)}
+          {formatDateTime(lead.createdAt, locale)}
         </span>
       </div>
 
