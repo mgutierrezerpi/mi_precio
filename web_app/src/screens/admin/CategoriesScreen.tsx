@@ -110,9 +110,7 @@ export function CategoriesScreen() {
             plural: n === 1 ? '' : 's',
           })
         : ''
-    if (
-      window.confirm(t('categories.deleteConfirm', { name: c.name, extra }))
-    ) {
+    if (window.confirm(t('categories.deleteConfirm', { name: c.name, extra }))) {
       dispatch(deleteCategory(c.id))
     }
   }
@@ -294,8 +292,7 @@ export function CategoriesScreen() {
                       }
                       className="flex items-center gap-1 text-xs font-bold text-[var(--dash-link)] hover:underline"
                     >
-                      {t('categories.view')}{' '}
-                      <Icon name="chevron-right" size={12} />
+                      {t('categories.view')} <Icon name="chevron-right" size={12} />
                     </button>
                   </div>
                 </div>

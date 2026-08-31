@@ -10,15 +10,9 @@ export const DICT_SOCIALS: Record<string, TranslationEntry> = {
     pt: 'Suas redes sociais',
   },
   'social.subtitle': {
-    es:
-      'Pegá el link completo de cada perfil. Se muestran como íconos al pie de tu ' +
-        'lista pública; las que dejes vacías no aparecen.',
-    en:
-      'Paste the full link to each profile. They appear as icons at the foot of your ' +
-        'public list; the ones you leave empty are not shown.',
-    pt:
-      'Cole o link completo de cada perfil. Aparecem como ícones no rodapé da sua lista ' +
-        'pública; as que ficarem vazias não aparecem.',
+    es: 'Pegá el link completo de cada perfil. Se muestran como íconos al pie de tu lista pública; las que dejes vacías no aparecen.',
+    en: 'Paste the full link to each profile. They appear as icons at the foot of your public list; the ones you leave empty are not shown.',
+    pt: 'Cole o link completo de cada perfil. Aparecem como ícones no rodapé da sua lista pública; as que ficarem vazias não aparecem.',
   },
 
   'social.instagram': { es: 'Instagram', en: 'Instagram', pt: 'Instagram' },

@@ -6,8 +6,8 @@ from decimal import Decimal
 import pytest
 from peewee import SqliteDatabase
 
+from models import Tenant, Customer, Order, OrderItem, PriceList
 from lib.ctx import customers
-from models import Customer, Order, OrderItem, PriceList, Tenant
 
 customers_db = SqliteDatabase(":memory:", pragmas={"foreign_keys": 1})
 

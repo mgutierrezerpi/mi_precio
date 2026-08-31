@@ -1,18 +1,17 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-
+from fastapi import APIRouter, HTTPException, Depends, File, Query, UploadFile
 from config import settings
+from lib.ctx import identity, analytics, activity, brand_assets, plans
 from controllers.deps import (
     get_current_user,
     require_active_plan,
     require_admin,
     require_owner,
 )
-from controllers.input_types import CreateTenant, UpdatePlan, UpdateTenant
+from controllers.input_types import CreateTenant, UpdateTenant, UpdatePlan
+from views import TenantView, ActivityView, DeletedView, AuthTokenView
 from lib import encode_token
-from lib.ctx import activity, brand_assets, identity, plans
-from lib.value_objects import AuthResult
 from models import User
-from views import AuthTokenView, DeletedView, TenantView
+from lib.value_objects import AuthResult
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
@@ -20,6 +19,13 @@ router = APIRouter(prefix="/tenants", tags=["tenants"])
 # tenant, reading/changing the plan and deleting the account stay open so a
 # gated owner can still get out of the plan screen.
 plan_gated = [Depends(require_active_plan)]
+
+
+@router.get("/{tenant_id}/stats/visits", dependencies=plan_gated)
+def visit_stats_endpoint(
+    tenant_id: str, current_user: dict = Depends(get_current_user)
+):
+    return analytics.visit_stats(tenant_id)
 
 
 @router.get("/{tenant_id}/plan")
@@ -56,6 +62,28 @@ def update_plan_endpoint(
         meta={"plan": data.plan},
     )
     return TenantView.render(tenant)
+
+
+@router.get("/{tenant_id}/stats/reports", dependencies=plan_gated)
+def reports_endpoint(
+    tenant_id: str,
+    days: int = 30,
+    list_id: str | None = None,
+    current_user: dict = Depends(get_current_user),
+):
+    return analytics.reports(tenant_id, days, list_id)
+
+
+@router.get("/{tenant_id}/activity", dependencies=plan_gated)
+def list_activity_endpoint(
+    tenant_id: str,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: dict = Depends(get_current_user),
+):
+    return ActivityView.render_many(
+        activity.list_activity(tenant_id, limit=limit, offset=offset)
+    )
 
 
 @router.get("")
@@ -123,13 +151,7 @@ async def upload_tenant_logo_endpoint(
             tenant_id, await image.read(), image.content_type or ""
         )
     except brand_assets.BrandImageUploadError as e:
-        status = (
-            413
-            if str(e) == "Image is too large"
-            else 415
-            if str(e) == "Unsupported image type"
-            else 503
-        )
+        status = 413 if str(e) == "Image is too large" else 415 if str(e) == "Unsupported image type" else 503
         raise HTTPException(status_code=status, detail=str(e)) from e
     if not url:
         raise HTTPException(status_code=404, detail="Tenant not found")

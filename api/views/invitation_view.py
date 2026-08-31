@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from views.base_view import BaseView
 
 

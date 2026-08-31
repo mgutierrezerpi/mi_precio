@@ -1,9 +1,9 @@
-from lib.value_objects import PublishedList
 from models import Tenant
+from lib.value_objects import PublishedList
 from views.base_view import BaseView
+from views.public_tenant_view import PublicTenantView
 from views.public_list_view import PublicListView
 from views.public_magazine_view import PublicMagazineView
-from views.public_tenant_view import PublicTenantView
 
 
 class PublicMenuView(BaseView):

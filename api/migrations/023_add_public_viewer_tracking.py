@@ -5,7 +5,9 @@ def migrate(migrator, database, fake=False, **kwargs):
     database.execute_sql(
         "ALTER TABLE public_viewers ADD COLUMN visitor_token VARCHAR(64)"
     )
-    database.execute_sql("ALTER TABLE public_viewers ADD COLUMN ip_address VARCHAR(64)")
+    database.execute_sql(
+        "ALTER TABLE public_viewers ADD COLUMN ip_address VARCHAR(64)"
+    )
     database.execute_sql(
         "CREATE INDEX IF NOT EXISTS public_viewers_visitor_token "
         "ON public_viewers(visitor_token)"

@@ -1,6 +1,6 @@
 """Tests for items context."""
 
-from lib.ctx import identity, items, lists, products
+from lib.ctx import lists, items, identity, products
 from models import Item
 from views import ItemView
 

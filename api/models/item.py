@@ -1,5 +1,4 @@
-from peewee import CharField, DecimalField, DeferredForeignKey, IntegerField, TextField
-
+from peewee import CharField, TextField, DecimalField, IntegerField, DeferredForeignKey
 from models.base import BaseModel
 
 

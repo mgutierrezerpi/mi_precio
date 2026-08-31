@@ -1,8 +1,8 @@
 """Versions context - list version operations."""
 
+from datetime import datetime
+from models import PriceList, ListVersion
 from lib.list_content import serialize_content
-from models import ListVersion, PriceList
-from models.base import utc_now
 
 
 def list_versions(list_id: str) -> list[ListVersion]:
@@ -33,7 +33,7 @@ def update_version(version_id: str, **updates) -> ListVersion | None:
     if updates.get("published"):
         _unpublish_others(version)
         version.published = True
-        version.published_at = utc_now()
+        version.published_at = datetime.utcnow()
         updates.pop("published")
     elif updates.get("published") is False:
         version.published = False
@@ -60,7 +60,7 @@ def update_content(
         ListVersion.update(
             content=serialized,
             content_revision=expected_revision + 1,
-            updated_at=utc_now(),
+            updated_at=datetime.utcnow(),
         )
         .where(
             (ListVersion.id == version_id)

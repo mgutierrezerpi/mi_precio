@@ -6,16 +6,11 @@ per-user unread count tracked via `notifications_seen_at`."""
 
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import datetime
 
-from models import Activity, User
+from models import User, Activity
 
 logger = logging.getLogger(__name__)
-
-
-def _utc_now() -> datetime:
-    """UTC clock compatible with the API's legacy naive database columns."""
-    return datetime.now(UTC).replace(tzinfo=None)
 
 # Maps an activity action to a notification category.
 ACTION_CATEGORY = {
@@ -84,6 +79,6 @@ def mark_seen(user_id: str) -> bool:
     user = User.get_or_none(User.id == user_id)
     if not user:
         return False
-    user.notifications_seen_at = _utc_now()
+    user.notifications_seen_at = datetime.utcnow()
     user.save()
     return True

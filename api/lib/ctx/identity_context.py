@@ -1,7 +1,9 @@
 """Identity context - interface for tenant and user operations."""
 
+from datetime import datetime
+
+from models import Tenant, User, Invitation, TenantMembership
 from lib.value_objects import UserResult
-from models import Invitation, Tenant, TenantMembership, User
 
 
 def list_tenants(user_id: str | None = None) -> list[Tenant]:
@@ -81,6 +83,21 @@ def find_tenant_by_subdomain(subdomain: str) -> Tenant | None:
     return Tenant.get_or_none(Tenant.subdomain == subdomain.lower())
 
 
+def touch_last_seen(user_id: str, min_interval_seconds: int = 60) -> None:
+    """Mark a user as recently active (presence heartbeat), throttled so we don't
+    write on every request. Called from polled endpoints while the app is open."""
+    user = User.get_or_none(User.id == user_id)
+    if not user:
+        return
+    now = datetime.utcnow()
+    if (
+        user.last_seen_at is None
+        or (now - user.last_seen_at).total_seconds() >= min_interval_seconds
+    ):
+        user.last_seen_at = now
+        user.save()
+
+
 def delete_tenant(tenant_id: str) -> bool:
     """Permanently delete a tenant and everything under it (users, lists, products,
     customers, orders, page views, etc.) via cascading FK deletes."""
@@ -91,7 +108,7 @@ def delete_tenant(tenant_id: str) -> bool:
     return True
 
 
-def get_or_create_user(email: str, language: str = "es") -> UserResult:
+def get_or_create_user(email: str) -> UserResult:
     email = email.lower()
     user = User.get_or_none(User.email == email)
     if user:
@@ -132,12 +149,7 @@ def get_or_create_user(email: str, language: str = "es") -> UserResult:
         counter += 1
 
     # Brand-new signup: gate the CRM until the owner picks a plan (plans_context).
-    tenant = Tenant.create(
-        name=name,
-        subdomain=subdomain,
-        language="en" if language == "en" else "es",
-        plan_gate=True,
-    )
+    tenant = Tenant.create(name=name, subdomain=subdomain, plan_gate=True)
     # First user of a brand-new tenant owns it.
     user = User.create(email=email, tenant=tenant, name=name, role="owner")
     TenantMembership.create(user=user, tenant=tenant, role="owner")

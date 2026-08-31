@@ -3,8 +3,8 @@
 import pytest
 from peewee import SqliteDatabase
 
-from lib.ctx import activity, notifications
-from models import Activity, Tenant, User
+from models import Tenant, User, Activity
+from lib.ctx import notifications, activity
 
 notif_db = SqliteDatabase(":memory:")
 

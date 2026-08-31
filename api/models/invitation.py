@@ -1,5 +1,4 @@
 from peewee import CharField, ForeignKeyField
-
 from models.base import BaseModel
 from models.tenant import Tenant
 

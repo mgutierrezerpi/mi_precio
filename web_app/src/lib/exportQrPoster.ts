@@ -28,10 +28,7 @@ function triggerDownload(href: string, filename: string) {
  *  Re-encoded to PNG because the asset ships as WebP, which a print shop's
  *  software may well refuse to open inside an SVG. Returns null on failure,
  *  which falls the poster back to the wordmark drawn as text. */
-async function loadBrandMark(): Promise<{
-  dataUrl: string
-  aspect: number
-} | null> {
+async function loadBrandMark(): Promise<{ dataUrl: string; aspect: number } | null> {
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const image = new Image()

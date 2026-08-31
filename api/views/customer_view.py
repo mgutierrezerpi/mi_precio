@@ -1,8 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-
 from pydantic import field_serializer
-
 from views.base_view import BaseView
 
 

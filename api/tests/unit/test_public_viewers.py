@@ -19,12 +19,9 @@ def test_capture_viewer_requires_enabled_published_list(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     price_list = lists.create_list(tenant.id, "Retail").price_list
 
-    assert (
-        public_viewers.capture_viewer(
-            tenant.id, price_list.id, "Lucía", email="lucia@example.com"
-        )
-        is None
-    )
+    assert public_viewers.capture_viewer(
+        tenant.id, price_list.id, "Lucía", email="lucia@example.com"
+    ) is None
     assert PublicViewer.select().count() == 0
 
 
@@ -81,15 +78,15 @@ def test_cookie_identifies_future_list_visits(db):
     token = "b" * 43
 
     first = public_viewers.capture_viewer(
-        tenant.id,
-        first_list.id,
-        "Lucía",
-        email="lucia@example.com",
-        visitor_token=token,
+        tenant.id, first_list.id, "Lucía", email="lucia@example.com", visitor_token=token
     )
     assert public_viewers.has_viewer(tenant.id, token)
-    assert public_viewers.touch_viewer(tenant.id, token, first_list.id, "192.0.2.1")
-    assert public_viewers.touch_viewer(tenant.id, token, second_list.id, "192.0.2.1")
+    assert public_viewers.touch_viewer(
+        tenant.id, token, first_list.id, "192.0.2.1"
+    )
+    assert public_viewers.touch_viewer(
+        tenant.id, token, second_list.id, "192.0.2.1"
+    )
 
     second = PublicViewer.get_or_none(
         (PublicViewer.tenant == tenant.id) & (PublicViewer.price_list == second_list.id)

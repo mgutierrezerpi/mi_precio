@@ -7,10 +7,7 @@ TID = 'e9d5801b4f8646e8acd41780839b5ee1'
 now = datetime.now()
 
 # clean previous orders for a repeatable seed
-db.execute(
-    "delete from order_items where order_id in (select id from orders where tenant_id=?)",
-    (TID,),
-)
+db.execute("delete from order_items where order_id in (select id from orders where tenant_id=?)", (TID,))
 db.execute("delete from orders where tenant_id=?", (TID,))
 
 products = db.execute("select name, price from products where tenant_id=?", (TID,)).fetchall()
@@ -43,14 +40,8 @@ for name, (offsets, maxq) in plan.items():
             items.append((uuid.uuid4().hex, ts, ts, oid, pname, qty, price))
         orders.append((oid, ts, ts, TID, cid, round(total, 2), 'UYU', 'paid', None, None))
 
-db.executemany(
-    "insert into orders (id,created_at,updated_at,tenant_id,customer_id,total,currency,status,note,reference) values (?,?,?,?,?,?,?,?,?,?)",
-    orders,
-)
-db.executemany(
-    "insert into order_items (id,created_at,updated_at,order_id,name,quantity,unit_price) values (?,?,?,?,?,?,?)",
-    items,
-)
+db.executemany("insert into orders (id,created_at,updated_at,tenant_id,customer_id,total,currency,status,note,reference) values (?,?,?,?,?,?,?,?,?,?)", orders)
+db.executemany("insert into order_items (id,created_at,updated_at,order_id,name,quantity,unit_price) values (?,?,?,?,?,?,?)", items)
 db.commit()
 
 rev = db.execute("select coalesce(sum(total),0) from orders where tenant_id=? and status='paid'", (TID,)).fetchone()[0]

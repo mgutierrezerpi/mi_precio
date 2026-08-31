@@ -2,9 +2,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from config import settings
 from controllers.deps import require_owner
-from controllers.input_types import CreateCheckout, ManualSubscriptionSync
-from lib.ctx import activity
-from lib.ctx import billing_context as billing
+from controllers.input_types import (
+    CreateCheckout,
+    ManualSubscriptionSync,
+    ReconcileCheckout,
+    SubscriptionAction,
+)
+from lib.ctx import activity, billing_context as billing
 from tasks import check_pending_billing, notify_subscription_expired
 from views import TenantView
 
@@ -34,6 +38,56 @@ def create_checkout_endpoint(
     )
     check_pending_billing.schedule((data.tenant_id,), delay=10)
     return {"url": checkout["url"]}
+
+
+@router.post("/cancellations")
+def cancel_subscription_endpoint(
+    data: SubscriptionAction, current_user: dict = Depends(require_owner)
+):
+    if current_user.get("tenant_id") != data.tenant_id:
+        raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+    try:
+        tenant = billing.cancel_subscription(data.tenant_id)
+    except billing.BillingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    activity.record(
+        tenant.id,
+        "billing.cancelled",
+        "Suscripción cancelada",
+        actor=current_user.get("email"),
+        actor_id=current_user.get("sub"),
+        entity_type="tenant",
+        entity_id=tenant.id,
+        meta={"plan": tenant.plan, "status": tenant.billing_status or ""},
+    )
+    return TenantView.render(tenant)
+
+
+@router.post("/resumptions")
+def resume_subscription_endpoint(
+    data: SubscriptionAction, current_user: dict = Depends(require_owner)
+):
+    if current_user.get("tenant_id") != data.tenant_id:
+        raise HTTPException(status_code=403, detail="No tenés permisos para esta acción")
+    try:
+        tenant = billing.resume_subscription(data.tenant_id)
+    except billing.BillingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    activity.record(
+        tenant.id,
+        "billing.resumed",
+        "Suscripción reanudada",
+        actor=current_user.get("email"),
+        actor_id=current_user.get("sub"),
+        entity_type="tenant",
+        entity_id=tenant.id,
+        meta={"plan": tenant.plan, "status": tenant.billing_status or ""},
+    )
+    return TenantView.render(tenant)
 
 
 @router.post("/manual-subscriptions")
@@ -71,6 +125,21 @@ def sync_manual_subscription_endpoint(
     return TenantView.render(tenant)
 
 
+@router.post("/reconcile-checkout")
+def reconcile_checkout_endpoint(
+    data: ReconcileCheckout, current_user: dict = Depends(require_owner)
+):
+    if current_user.get("tenant_id") != data.tenant_id:
+        raise HTTPException(
+            status_code=403, detail="No tenés permisos para esta acción"
+        )
+    try:
+        result = billing.reconcile_checkout_order(data.tenant_id, data.order_id)
+    except billing.BillingError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    return result
+
+
 @router.post("/lemon-squeezy/webhook")
 async def lemonsqueezy_webhook_endpoint(request: Request):
     raw = await request.body()
@@ -92,7 +161,9 @@ async def lemonsqueezy_webhook_endpoint(request: Request):
         )
         tenant_id = custom.get("tenant_id")
         was_expired = billing.is_expired(tenant_id) if tenant_id else False
-        tenant = billing.sync_subscription_from_attributes(attrs, tenant_id=tenant_id)
+        tenant = billing.sync_subscription_from_attributes(
+            attrs, tenant_id=tenant_id
+        )
         if tenant:
             summary = billing.activity_summary(event_name, plan=tenant.plan)
             activity.record(

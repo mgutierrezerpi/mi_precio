@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
-
+from fastapi import APIRouter, HTTPException, Depends
+from lib.ctx import versions
 from controllers import ownership
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateVersion, UpdateVersion, UpdateVersionContent
-from lib.ctx import versions
 from views import ListVersionView
 
 router = APIRouter(tags=["versions"])

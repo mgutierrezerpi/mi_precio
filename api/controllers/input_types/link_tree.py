@@ -1,5 +1,6 @@
-import re
 from typing import Literal
+
+import re
 
 from pydantic import BaseModel, Field, field_validator
 

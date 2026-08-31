@@ -1,12 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 
-MAGAZINE_DESIGNS = {
-    "pencil-journal",
-    "wild-stem",
-    "aqua-objects",
-    "editorial",
-    "catalog",
-}
+MAGAZINE_DESIGNS = {"pencil-journal", "wild-stem", "aqua-objects", "editorial", "catalog"}
 
 
 class CreateMagazine(BaseModel):

@@ -1,37 +1,40 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import type { Tenant, User, LoadingState } from '../../types'
-import { loadAuthState, saveAuthState } from './authPersistence'
-import {
-  logout,
-  refreshCurrentUser,
-  sendCode,
-  verifyCode,
-} from './authThunks'
+import api from '../../services/api'
 
-export { logout, refreshCurrentUser, sendCode, verifyCode } from './authThunks'
-export {
-  selectAuthError,
-  selectAuthLoading,
-  selectCanEdit,
-  selectCodeSent,
-  selectIsAdmin,
-  selectIsAuthenticated,
-  selectIsOwner,
-  selectIsSuperAdmin,
-  selectNeedsPlan,
-  selectPendingEmail,
-  selectTenant,
-  selectUser,
-  tenantNeedsPlan,
-} from './authSelectors'
+const AUTH_STORAGE_KEY = 'auth_state'
 
-export interface AuthState extends LoadingState {
+interface AuthState extends LoadingState {
   user: User | null
   tenant: Tenant | null
   isAuthenticated: boolean
   pendingEmail: string | null
   codeSent: boolean
+}
+
+function loadAuthState(): Partial<AuthState> {
+  try {
+    const stored = localStorage.getItem(AUTH_STORAGE_KEY)
+    if (stored) {
+      const { user, tenant } = JSON.parse(stored)
+      const token = localStorage.getItem('auth_token')
+      if (token && user && tenant) {
+        return { user, tenant, isAuthenticated: true }
+      }
+    }
+  } catch {
+    // Invalid stored state
+  }
+  return { user: null, tenant: null, isAuthenticated: false }
+}
+
+function saveAuthState(user: User | null, tenant: Tenant | null) {
+  if (user && tenant) {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, tenant }))
+  } else {
+    localStorage.removeItem(AUTH_STORAGE_KEY)
+  }
 }
 
 const persistedState = loadAuthState()
@@ -46,6 +49,49 @@ const initialState: AuthState = {
   codeSent: false,
 }
 
+export const sendCode = createAsyncThunk(
+  'auth/sendCode',
+  async ({ email }: { email: string }, { rejectWithValue }) => {
+    const response = await api.sendCode(email)
+    if (response.error) return rejectWithValue(response.error)
+    return { email }
+  }
+)
+
+export const verifyCode = createAsyncThunk(
+  'auth/verifyCode',
+  async (
+    { email, code }: { email: string; code: string },
+    { rejectWithValue }
+  ) => {
+    const response = await api.verifyCode(email, code)
+    if (response.error || !response.data)
+      return rejectWithValue(response.error || 'Error')
+    api.setToken(response.data.token)
+    saveAuthState(response.data.user, response.data.tenant)
+    return {
+      user: response.data.user,
+      tenant: response.data.tenant,
+    }
+  }
+)
+
+export const logout = createAsyncThunk('auth/logout', () => {
+  api.setToken(null)
+  saveAuthState(null, null)
+  return null
+})
+
+export const refreshCurrentUser = createAsyncThunk(
+  'auth/refreshCurrentUser',
+  async (_, { rejectWithValue }) => {
+    const response = await api.getCurrentUser()
+    if (response.error || !response.data)
+      return rejectWithValue(response.error || 'Error')
+    return response.data
+  }
+)
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -57,7 +103,13 @@ const authSlice = createSlice({
     },
     setTenant: (state, action: PayloadAction<Tenant | null>) => {
       state.tenant = action.payload
-      saveAuthState(state.user, action.payload)
+      // Persist to localStorage
+      if (state.user && action.payload) {
+        localStorage.setItem(
+          AUTH_STORAGE_KEY,
+          JSON.stringify({ user: state.user, tenant: action.payload })
+        )
+      }
     },
     clearAuthError: (state) => {
       state.error = null
@@ -120,3 +172,40 @@ const authSlice = createSlice({
 export const { setUser, setTenant, clearAuthError, resetCodeFlow } =
   authSlice.actions
 export default authSlice.reducer
+
+// Selectors
+export const selectUser = (state: { auth: AuthState }) => state.auth.user
+export const selectTenant = (state: { auth: AuthState }) => state.auth.tenant
+export const selectIsAuthenticated = (state: { auth: AuthState }) =>
+  state.auth.isAuthenticated
+export const selectAuthLoading = (state: { auth: AuthState }) =>
+  state.auth.isLoading
+export const selectAuthError = (state: { auth: AuthState }) => state.auth.error
+export const selectCodeSent = (state: { auth: AuthState }) =>
+  state.auth.codeSent
+export const selectPendingEmail = (state: { auth: AuthState }) =>
+  state.auth.pendingEmail
+
+/** True while the tenant has to pick a plan before the CRM opens up: gated
+ *  signup with no paid plan (either never chosen, or the subscription ended and
+ *  billing dropped it back to free). Mirrors plans_context.plan_required. */
+export const tenantNeedsPlan = (tenant: Tenant | null | undefined) =>
+  !!tenant?.planGate && (tenant.plan ?? 'free') === 'free'
+
+export const selectNeedsPlan = (state: { auth: AuthState }) =>
+  tenantNeedsPlan(state.auth.tenant)
+
+// Role-based permissions. Sessions stored before roles existed default to "owner".
+const roleOf = (state: { auth: AuthState }) => state.auth.user?.role ?? 'owner'
+// Can create/edit/delete catalog & CRM data (owners, admins, editors). Viewers are read-only.
+export const selectCanEdit = (state: { auth: AuthState }) =>
+  ['owner', 'admin', 'editor'].includes(roleOf(state))
+// Can manage the team and tenant settings (owners, admins).
+export const selectIsAdmin = (state: { auth: AuthState }) =>
+  ['owner', 'admin'].includes(roleOf(state))
+// Owner-only actions (change plan, delete account).
+export const selectIsOwner = (state: { auth: AuthState }) =>
+  roleOf(state) === 'owner'
+/** Platform-level access; intentionally independent from the tenant role. */
+export const selectIsSuperAdmin = (state: { auth: AuthState }) =>
+  state.auth.user?.isSuperAdmin === true

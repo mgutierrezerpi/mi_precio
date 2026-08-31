@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
-
+from fastapi import APIRouter, HTTPException, Depends
+from lib.ctx import lists, activity, plans
+from lib.ctx.plans_context import PlanLimitError
 from controllers import ownership
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateList, UpdateList
-from lib.ctx import activity, lists, plans
-from lib.ctx.plans_context import PlanLimitError
 from views import DeletedView, PriceListView
 
 router = APIRouter(tags=["lists"])

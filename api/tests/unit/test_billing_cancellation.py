@@ -9,8 +9,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from config import settings
-from lib.ctx import billing_context as billing
-from lib.ctx import identity
+from lib.ctx import billing_context as billing, identity
 
 
 @pytest.fixture

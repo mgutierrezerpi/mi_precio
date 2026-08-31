@@ -1,14 +1,67 @@
 # Builds a single self-contained tour.html with screenshots embedded as data URIs.
-import json
-import os
-
-from tour_assets import load_embedded_assets
-from tour_scenes import SCENES
+import base64, json, os
 
 SP = os.path.dirname(__file__)
-imgs, logo_datauri = load_embedded_assets(SP)
+SHOTS = os.path.join(SP, "shots")
 
-scenes_js = json.dumps(SCENES, ensure_ascii=False)
+def datauri(fname):
+    with open(os.path.join(SHOTS, fname), "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+imgs = {k: datauri(f"{k}.png") for k in
+        ["landing_full", "dashboard_full", "productos_full", "listas", "billing",
+         "publica_full", "publica_movil_full", "appearance_full", "publica_new_full",
+         "clientes_full", "reportes_full"]}
+
+# Brand logo for dark backgrounds (white lockup) — relative to the repo so it's portable
+LOGO_PATH = os.path.join(SP, "..", "web_app", "public", "miprecio-logo-white-pencil.webp")
+with open(LOGO_PATH, "rb") as f:
+    logo_datauri = "data:image/webp;base64," + base64.b64encode(f.read()).decode()
+
+# scene: image key | device | url | seconds | EN | ES
+scenes = [
+    ["title", "none", "", 7,
+     "A simple way for any small business to build an online catalog and share a live price list — by link or QR.",
+     "La forma simple de que cualquier comercio arme su catálogo online y comparta una lista de precios en vivo, por link o QR."],
+    ["landing_full", "scroll", "miprecio.app", 22,
+     "This is MiPrecio, a tool for small businesses. You load your products once and share an always-up-to-date price list by link or QR — no spreadsheets, no outdated PDFs sent over WhatsApp. Set it up in minutes, choose a plan that fits, and your prices stay in sync everywhere you share them.",
+     "Este es MiPrecio, una herramienta para comercios y pymes. Cargás tus productos una vez y compartís una lista de precios siempre actualizada por link o QR — sin planillas ni PDFs viejos por WhatsApp. Lo configurás en minutos, elegís el plan que te sirve, y tus precios quedan sincronizados en todos lados donde los compartas."],
+    ["dashboard_full", "scroll", "miprecio.app/admin", 12,
+     "To sign in, the owner receives a one-time code by email and enters it — quick and secure. Inside, they see their dashboard: total products, published lists, customers and their public link.",
+     "Para entrar, al dueño le llega un código por email y lo ingresa — rápido y seguro. Adentro ve su panel: productos, listas publicadas, clientes y su link público."],
+    ["productos_full", "scroll", "miprecio.app/admin/products", 12,
+     "The product catalog. Each item has a photo, a category, a price and an availability switch — and every change is instant.",
+     "El catálogo de productos. Cada ítem tiene foto, categoría, precio y un switch de disponibilidad, y todo cambia al instante."],
+    ["listas", "browser", "miprecio.app/admin/lists", 10,
+     "Products are grouped into price lists. Each list gets its own public link and a QR code to share with customers.",
+     "Los productos se agrupan en listas de precios. Cada lista tiene su link público y un QR para compartir con los clientes."],
+    ["clientes_full", "browser", "miprecio.app/admin/customers", 10,
+     "In 'Customers' you manage your client base: save each contact with their phone and email, and see who is new or recurring.",
+     "En 'Clientes' gestionás tu cartera: guardás cada contacto con su teléfono y email, y ves quiénes son nuevos o recurrentes."],
+    ["reportes_full", "browser", "miprecio.app/admin/reports", 11,
+     "And in 'Reports' you track how your catalog performs: visits, QR scans, channels and recent activity — all live.",
+     "Y en 'Reportes' medís el rendimiento de tu catálogo: visitas, escaneos de QR, canales y actividad reciente, todo en vivo."],
+    ["publica_full", "scroll", "miprecio.app/p/cafe-aurora", 13,
+     "And this is what the customer sees: a clean public catalog — no app, no login. When the owner changes a price, it updates here instantly.",
+     "Y esto es lo que ve el cliente: un catálogo público y limpio, sin app ni login. Si el dueño cambia un precio, se actualiza acá al instante."],
+    ["publica_movil_full", "phonescroll", "miprecio.app/p/cafe-aurora", 18,
+     "It is fully mobile-friendly — perfect to share on WhatsApp or from a QR code on the counter.",
+     "Es totalmente responsive: ideal para compartir por WhatsApp o desde un QR en el mostrador."],
+    ["billing", "browser", "miprecio.app/admin/settings", 12,
+     "Customers subscribe to a plan — Micro, Plus or Pro. Payments are processed through Lemon Squeezy, and the plan activates automatically once the payment is confirmed.",
+     "El cliente se suscribe a un plan: Micro, Plus o Pro. Los pagos se procesan con Lemon Squeezy y el plan se activa automáticamente al confirmarse el pago."],
+    ["appearance_full", "browser", "miprecio.app/admin/settings", 11,
+     "In 'Brand & appearance' you can customize your public list: upload your logo and pick your brand color so everything matches your identity.",
+     "En 'Marca y apariencia' personalizás tu lista pública: subís tu logo y elegís el color de tu marca para que todo tenga tu identidad."],
+    ["publica_new_full", "scroll", "miprecio.app/p/cafe-aurora", 13,
+     "And your public list instantly reflects the new brand color — the same catalog, now with your own style.",
+     "Y tu lista pública toma al instante el nuevo color de marca — el mismo catálogo, ahora con tu estilo."],
+    ["end", "none", "", 8,
+     "That's MiPrecio — build your catalog, share it anywhere, and keep your prices always up to date. Thanks for watching!",
+     "Eso es MiPrecio: armá tu catálogo, compartilo donde quieras y mantené tus precios siempre al día. ¡Gracias por ver!"],
+]
+
+scenes_js = json.dumps(scenes, ensure_ascii=False)
 imgs_js = json.dumps(imgs)
 
 html = """<!DOCTYPE html>
@@ -143,12 +196,7 @@ html = """<!DOCTYPE html>
 const IMGS = __IMGS__;
 const SCENES = __SCENES__;
 const LOGO_IMG = "__LOGO__";
-const LOGO = [
-  '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"',
-  'stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2',
-  '2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/>',
-  '<path d="M16 10a4 4 0 0 1-8 0"/></svg>',
-].join('');
+const LOGO = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
 
 let i = 0, lang = 'es', paused = false, t0 = 0, raf = null, elapsed = 0, scrollAnim = null;
 const stage = document.getElementById('stage');

@@ -2,11 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '../../../hooks/useTheme'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
-import {
-  selectIsSuperAdmin,
-  selectTenant,
-  setTenant,
-} from '../../../store/slices/authSlice'
+import { selectIsSuperAdmin, selectTenant, setTenant } from '../../../store/slices/authSlice'
 import { fetchLists, selectLists } from '../../../store/slices/menuSlice'
 import api from '../../../services/api'
 import type { PlanId } from '../../../types'
@@ -148,11 +144,7 @@ function NavItem({
     <>
       <Icon
         name={icon}
-        className={
-          active
-            ? 'text-[var(--dash-sidebar-active-text)]'
-            : 'text-[var(--dash-muted)]'
-        }
+        className={active ? 'text-[var(--dash-sidebar-active-text)]' : 'text-[var(--dash-muted)]'}
       />
       {!collapsed && (
         <span

@@ -19,11 +19,9 @@ class FeatureFlagAssignment(BaseModel):
     """A tenant-specific value for a feature flag."""
 
     flag = ForeignKeyField(FeatureFlag, backref="assignments", on_delete="CASCADE")
-    tenant = ForeignKeyField(
-        Tenant, backref="feature_flag_assignments", on_delete="CASCADE"
-    )
+    tenant = ForeignKeyField(Tenant, backref="feature_flag_assignments", on_delete="CASCADE")
     enabled = BooleanField(default=False)
 
     class Meta:
         table_name = "feature_flag_assignments"
-        indexes = ((("flag", "tenant"), True),)
+        indexes = ((('flag', 'tenant'), True),)

@@ -1,10 +1,9 @@
 """Tests for auth context."""
 
-from datetime import timedelta
-
-from lib import decode_token
-from lib.ctx import auth
+from datetime import datetime, timedelta
 from models import AuthCode
+from lib.ctx import auth
+from lib import decode_token
 
 
 def setup_function():
@@ -114,7 +113,7 @@ def test_verify_code_expired(db):
     code = auth.send_code("test@example.com")
 
     auth_code = AuthCode.get(AuthCode.email == "test@example.com")
-    auth_code.expires_at = auth._utc_now() - timedelta(minutes=1)
+    auth_code.expires_at = datetime.utcnow() - timedelta(minutes=1)
     auth_code.save()
 
     result = auth.verify_code("test@example.com", code)

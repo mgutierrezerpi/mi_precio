@@ -1,5 +1,4 @@
-from peewee import CharField, DecimalField, ForeignKeyField, IntegerField
-
+from peewee import CharField, DecimalField, IntegerField, ForeignKeyField
 from models.base import BaseModel
 from models.order import Order
 

@@ -10,6 +10,7 @@ from PIL import Image
 from lib.ctx import identity, items, lists, products
 from models import Item, ListVersion, PriceList, Product, Tenant
 
+
 products_db = SqliteDatabase(":memory:")
 
 

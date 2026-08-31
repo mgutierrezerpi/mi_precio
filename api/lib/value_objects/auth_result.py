@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-
-from models import Tenant, User
+from models import User, Tenant
 
 
 @dataclass(frozen=True)

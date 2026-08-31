@@ -1,10 +1,29 @@
 import type { TranslationEntry } from './i18nDictionary'
-import { DICT_NAVIGATION } from './i18nDictionaryNavigation'
-import { DICT_SECURITY } from './i18nDictionarySecurity'
 
 export const DICT_EXTRA: Record<string, TranslationEntry> = {
-  ...DICT_NAVIGATION,
-  ...DICT_SECURITY,
+  'set.region.deliverySub': {
+    es: 'Si está desactivado, el carrito solo muestra retiro en el local.',
+    en: 'When off, the cart only offers in-store pickup.',
+    pt: 'Quando desativado, o carrinho só oferece retirada na loja.',
+  },
+
+  'set.security.subtitle': {
+    es: 'Tu acceso a la cuenta.',
+    en: 'Your account access.',
+    pt: 'Seu acesso à conta.',
+  },
+  'set.security.passwordless': {
+    es: 'Tu cuenta usa acceso sin contraseña: ingresás con un código que enviamos a tu email.',
+    en: 'Your account uses passwordless access: you log in with a code we send to your email.',
+    pt: 'Sua conta usa acesso sem senha: você entra com um código que enviamos ao seu e-mail.',
+  },
+  'set.security.email': {
+    es: 'Email de acceso',
+    en: 'Login email',
+    pt: 'E-mail de acesso',
+  },
+  'set.security.role': { es: 'Rol', en: 'Role', pt: 'Função' },
+  'set.security.logout': { es: 'Cerrar sesión', en: 'Log out', pt: 'Sair' },
 
   'set.billing.subtitle': {
     es: 'Tu plan actual y facturación.',
@@ -72,9 +91,7 @@ export const DICT_EXTRA: Record<string, TranslationEntry> = {
   'bill.paymentNote': {
     es: 'Los pagos se procesan con Lemon Squeezy. Tu plan se activa automáticamente cuando el pago queda confirmado.',
     en: 'Payments are processed with Lemon Squeezy. Your plan activates automatically once payment is confirmed.',
-    pt:
-      'Os pagamentos são processados com Lemon Squeezy. Seu plano é ativado ' +
-        'automaticamente quando o pagamento é confirmado.',
+    pt: 'Os pagamentos são processados com Lemon Squeezy. Seu plano é ativado automaticamente quando o pagamento é confirmado.',
   },
   'bill.managePortal': {
     es: 'Gestionar en Lemon Squeezy',
@@ -129,9 +146,7 @@ export const DICT_EXTRA: Record<string, TranslationEntry> = {
   'gate.recheckEmpty': {
     es: 'Todavía no nos llegó la confirmación del pago. Si acabás de pagar, esperá unos segundos y volvé a probar.',
     en: 'We haven’t received the payment confirmation yet. If you just paid, wait a few seconds and try again.',
-    pt:
-      'Ainda não recebemos a confirmação do pagamento. Se você acabou de pagar, ' +
-        'aguarde alguns segundos e tente de novo.',
+    pt: 'Ainda não recebemos a confirmação do pagamento. Se você acabou de pagar, aguarde alguns segundos e tente de novo.',
   },
   'gate.ownerOnly': {
     es: 'Solo el dueño de la cuenta puede activar el plan. Pedile que lo haga para poder entrar.',
@@ -144,4 +159,60 @@ export const DICT_EXTRA: Record<string, TranslationEntry> = {
     pt: 'Sua assinatura terminou. Escolha um plano para voltar a entrar.',
   },
 
+  // ── Shared admin navigation ─────────────────────────────────────
+  'top.openMenu': { es: 'Abrir menú', en: 'Open menu', pt: 'Abrir menu' },
+  'side.expandSidebar': {
+    es: 'Expandir barra lateral',
+    en: 'Expand sidebar',
+    pt: 'Expandir barra lateral',
+  },
+  'side.collapseSidebar': {
+    es: 'Contraer barra lateral',
+    en: 'Collapse sidebar',
+    pt: 'Recolher barra lateral',
+  },
+  'side.copyPublicLink': {
+    es: 'Copiar enlace público',
+    en: 'Copy public link',
+    pt: 'Copiar link público',
+  },
+  'side.linkCopied': {
+    es: 'Enlace copiado',
+    en: 'Link copied',
+    pt: 'Link copiado',
+  },
+  'side.createMainList': {
+    es: 'Crear lista principal',
+    en: 'Create main list',
+    pt: 'Criar lista principal',
+  },
+  'side.main': { es: 'PRINCIPAL', en: 'MAIN', pt: 'PRINCIPAL' },
+  'side.settings': { es: 'AJUSTES', en: 'SETTINGS', pt: 'AJUSTES' },
+
+  // ── Price lists ─────────────────────────────────────────────────
+  'lists.subtitle': {
+    es: 'Compartí precios distintos por cliente o canal.',
+    en: 'Share different prices by customer or channel.',
+    pt: 'Compartilhe preços diferentes por cliente ou canal.',
+  },
+  'lists.search': {
+    es: 'Buscar listas…',
+    en: 'Search lists…',
+    pt: 'Buscar listas…',
+  },
+  'lists.noResults': {
+    es: 'Sin resultados',
+    en: 'No results',
+    pt: 'Sem resultados',
+  },
+  'lists.emptyTitle': {
+    es: 'Todavía no tenés listas',
+    en: 'You do not have any lists yet',
+    pt: 'Você ainda não tem listas',
+  },
+  'lists.emptyDescription': {
+    es: 'Creá una lista principal para compartir tu catálogo.',
+    en: 'Create a main list to share your catalog.',
+    pt: 'Crie uma lista principal para compartilhar seu catálogo.',
+  },
 }

@@ -14,8 +14,7 @@ from huey import SqliteHuey, crontab
 
 from config import settings
 from infra.mailer import mailer
-from lib.ctx import auth
-from lib.ctx import billing_context as billing
+from lib.ctx import auth, billing_context as billing
 from models import db
 
 logger = logging.getLogger(__name__)

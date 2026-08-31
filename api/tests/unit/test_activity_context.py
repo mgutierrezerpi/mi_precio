@@ -3,8 +3,8 @@
 import pytest
 from peewee import SqliteDatabase
 
+from models import Tenant, Activity
 from lib.ctx import activity
-from models import Activity, Tenant
 from views import ActivityView
 
 activity_db = SqliteDatabase(":memory:")

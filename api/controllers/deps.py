@@ -1,8 +1,7 @@
 """Controller dependencies."""
 
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
+from fastapi import HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from lib import decode_token
 from lib.ctx import plans_context
 from models import User

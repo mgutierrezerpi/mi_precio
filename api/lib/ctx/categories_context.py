@@ -2,7 +2,7 @@
 
 from peewee import fn
 
-from models import Category, Product, Tenant
+from models import Tenant, Category, Product
 
 
 def list_categories(tenant_id: str) -> list[Category]:

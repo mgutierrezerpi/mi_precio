@@ -109,7 +109,9 @@ def create_magazine_page_endpoint(
 ):
     magazine = ownership.own_magazine(magazine_id, current_user)
     _require_magazines(magazine.tenant_id)
-    page = magazines.create_page(magazine_id, **data.model_dump(exclude_unset=True))
+    page = magazines.create_page(
+        magazine_id, **data.model_dump(exclude_unset=True)
+    )
     if not page:
         raise HTTPException(status_code=404, detail="Magazine not found")
     return MagazinePageView.render(page)

@@ -10,18 +10,110 @@
  *  business, not the person looking at it).
  */
 
-export {
-  FIRST_STEPS_EVENT,
-  TOUR_STEPS,
-  hideChecklist,
-  isChecklistHidden,
-  isQrShared,
-  isTourSeen,
-  markQrShared,
-  markTourSeen,
-  resetTour,
-} from './onboardingTourStorage'
-export type { TourStep } from './onboardingTourStorage'
+const TOUR_SEEN_PREFIX = 'mp_tour_seen_'
+const CHECKLIST_HIDDEN_PREFIX = 'mp_first_steps_hidden_'
+const QR_SHARED_PREFIX = 'mp_qr_shared_'
+
+/* ── Tour steps ──────────────────────────────────────────────────── */
+
+export interface TourStep {
+  id: string
+  /** `data-tour` value of the element to highlight. Absent = centered card. */
+  anchor?: string
+  /** Preferred side to hang the card off. Falls back when it does not fit. */
+  placement?: 'right' | 'bottom'
+}
+
+/** Every anchor lives in the CRM sidebar, which is on screen on every admin
+ *  route — so the tour never has to navigate the user around mid-run, and a
+ *  step whose anchor is hidden (mobile drawer) just degrades to a centered
+ *  card instead of pointing at nothing. */
+export const TOUR_STEPS: TourStep[] = [
+  { id: 'welcome' },
+  { id: 'lists', anchor: 'nav-lists', placement: 'right' },
+  { id: 'products', anchor: 'nav-products', placement: 'right' },
+  // Brand and per-list design both live in Configuración → Marca y apariencia,
+  // so they share an anchor; the list step that follows is where a shop
+  // actually overrides the design for one list.
+  { id: 'brand', anchor: 'nav-settings', placement: 'right' },
+  { id: 'design', anchor: 'nav-lists', placement: 'right' },
+  { id: 'qr', anchor: 'nav-qr', placement: 'right' },
+  { id: 'share', anchor: 'share-link', placement: 'right' },
+  { id: 'support', anchor: 'nav-support', placement: 'right' },
+]
+
+/* ── Tour state ──────────────────────────────────────────────────── */
+
+function read(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    // Private mode / storage disabled: treat as "never seen". Showing the tour
+    // twice is a smaller sin than crashing the panel.
+    return null
+  }
+}
+
+function write(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    // Nothing to do: the tour is a nicety, not a feature to fail the app over.
+  }
+}
+
+function remove(key: string) {
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    // Same as above.
+  }
+}
+
+/** True once this user finished or skipped the tour. Unknown user = "seen", so
+ *  a half-loaded session never flashes the overlay. */
+export function isTourSeen(userId?: string | null): boolean {
+  if (!userId) return true
+  return read(`${TOUR_SEEN_PREFIX}${userId}`) === '1'
+}
+
+export function markTourSeen(userId?: string | null) {
+  if (userId) write(`${TOUR_SEEN_PREFIX}${userId}`, '1')
+}
+
+/** Replays the tour from "Volver a ver el recorrido". */
+export function resetTour(userId?: string | null) {
+  if (userId) remove(`${TOUR_SEEN_PREFIX}${userId}`)
+}
+
+/* ── Checklist state ─────────────────────────────────────────────── */
+
+export function isChecklistHidden(tenantId?: string | null): boolean {
+  if (!tenantId) return true
+  return read(`${CHECKLIST_HIDDEN_PREFIX}${tenantId}`) === '1'
+}
+
+export function hideChecklist(tenantId?: string | null) {
+  if (tenantId) write(`${CHECKLIST_HIDDEN_PREFIX}${tenantId}`, '1')
+}
+
+/** Fired when a checklist step is completed somewhere other than the dashboard
+ *  (the sidebar's copy-link button, the QR screen), so the card can tick the
+ *  row without waiting for a remount. */
+export const FIRST_STEPS_EVENT = 'miprecio:first-steps'
+
+/** Sharing is the one step with no server-side trace, so the CRM records it
+ *  when the shop copies its public link or downloads a QR. */
+export function isQrShared(tenantId?: string | null): boolean {
+  if (!tenantId) return false
+  return read(`${QR_SHARED_PREFIX}${tenantId}`) === '1'
+}
+
+export function markQrShared(tenantId?: string | null) {
+  if (!tenantId) return
+  write(`${QR_SHARED_PREFIX}${tenantId}`, '1')
+  window.dispatchEvent(new CustomEvent(FIRST_STEPS_EVENT))
+}
 
 /* ── Checklist ───────────────────────────────────────────────────── */
 

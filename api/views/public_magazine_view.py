@@ -1,6 +1,6 @@
-from models import MagazinePage
 from views.base_view import BaseView
 from views.magazine_page_view import MagazinePageView
+from models import MagazinePage
 
 
 class PublicMagazineView(BaseView):

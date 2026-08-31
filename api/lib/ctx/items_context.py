@@ -1,6 +1,5 @@
 """Items context - item operations."""
 
-from lib.ctx.item_products import find_product, next_product_position
 from models import Item, ListVersion, Product
 
 
@@ -38,7 +37,7 @@ def create_item(version_id: str, **attrs) -> Item | None:
         name = str(attrs.get("name", "")).strip()
         if not name:
             return None
-        product = find_product(tenant_id, name)
+        product = _find_product(tenant_id, name)
         if not product:
             product = Product.create(
                 tenant=version.list.tenant,
@@ -49,7 +48,7 @@ def create_item(version_id: str, **attrs) -> Item | None:
                 image_url=attrs.get("image_url"),
                 image_thumb_url=attrs.get("image_thumb_url"),
                 category=attrs.get("category"),
-                position=next_product_position(tenant_id),
+                position=_next_product_position(tenant_id),
             )
     attrs.update(
         product=product,
@@ -82,9 +81,7 @@ def update_item(item_id: str, **updates) -> Item | None:
             "image_url",
             "image_thumb_url",
         }
-        profile_updates = {
-            key: value for key, value in updates.items() if key in profile_fields
-        }
+        profile_updates = {key: value for key, value in updates.items() if key in profile_fields}
         for key, value in profile_updates.items():
             setattr(product, key, value)
         if profile_updates:
@@ -103,9 +100,7 @@ def update_item(item_id: str, **updates) -> Item | None:
                 image_url=product.image_url,
                 image_thumb_url=product.image_thumb_url,
             ).where(Item.product == product.id).execute()
-        updates = {
-            key: value for key, value in updates.items() if key not in profile_fields
-        }
+        updates = {key: value for key, value in updates.items() if key not in profile_fields}
     for key, value in updates.items():
         if value is not None:
             setattr(item, key, value)
@@ -137,6 +132,24 @@ def _next_position(version_id: str) -> int:
         Item.select()
         .where(Item.list_version == version_id)
         .order_by(Item.position.desc())
+        .first()
+    )
+    return (last.position + 1) if last else 0
+
+
+def _find_product(tenant_id: str, name: str) -> Product | None:
+    normalized = name.strip().casefold()
+    for product in Product.select().where(Product.tenant == tenant_id):
+        if product.name.strip().casefold() == normalized:
+            return product
+    return None
+
+
+def _next_product_position(tenant_id: str) -> int:
+    last = (
+        Product.select()
+        .where(Product.tenant == tenant_id)
+        .order_by(Product.position.desc())
         .first()
     )
     return (last.position + 1) if last else 0

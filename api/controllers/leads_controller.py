@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 
-from controllers.deps import get_current_user, require_editor
 from lib.ctx import leads, plans
+from controllers.deps import get_current_user, require_editor
 from views import CustomerView, LeadView
 
 router = APIRouter(tags=["leads"])

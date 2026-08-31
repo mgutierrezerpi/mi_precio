@@ -3,8 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from controllers.deps import get_current_user
 from controllers.input_types import CreateSupportTicket
 from infra.zohodesk import ZohoDeskError
-from lib.ctx import activity
-from lib.ctx import support_context as support
+from lib.ctx import activity, support_context as support
 
 router = APIRouter(prefix="/support", tags=["support"])
 

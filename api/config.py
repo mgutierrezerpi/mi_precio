@@ -1,6 +1,5 @@
-from functools import lru_cache
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from functools import lru_cache
 
 
 class Settings(BaseSettings):
@@ -15,9 +14,7 @@ class Settings(BaseSettings):
     app_name: str = "Mi Precio API"
     debug: bool = False
     database_path: str = "mi_precio.db"
-    # Local-only fallback. Deployments must provide SECRET_KEY through their
-    # secret store; keeping this at least 32 bytes avoids weak HS256 signatures.
-    secret_key: str = "local-development-secret-key-change-before-production"
+    secret_key: str = "change-me-in-production"
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
     public_app_url: str = "http://localhost:3000"
 

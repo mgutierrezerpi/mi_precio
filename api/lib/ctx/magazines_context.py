@@ -1,8 +1,9 @@
 import json
 
-from lib.ctx.identity_context import get_tenant
 from models import Magazine, MagazinePage, Tenant
+from lib.ctx.identity_context import get_tenant
 from models.magazine import unique_magazine_slug
+
 
 CHEESE_FACTORY_JOURNAL_SLUG = "the_cheese_factory_journal"
 
@@ -89,25 +90,27 @@ def get_published_magazines(
     conditions = [Magazine.tenant == tenant.id, Magazine.published]
     if requested_magazine:
         conditions.append(
-            (Magazine.id == requested_magazine) | (Magazine.slug == requested_magazine)
+            (Magazine.id == requested_magazine)
+            | (Magazine.slug == requested_magazine)
         )
     else:
         conditions.append(Magazine.show_on_index)
     return list(
-        Magazine.select().where(*conditions).order_by(Magazine.created_at, Magazine.id)
+        Magazine.select()
+        .where(*conditions)
+        .order_by(Magazine.created_at, Magazine.id)
     )
 
 
-def get_public_magazine(tenant: Tenant, requested_magazine: str) -> Magazine | None:
+def get_public_magazine(
+    tenant: Tenant, requested_magazine: str
+) -> Magazine | None:
     magazine = (
         Magazine.select()
         .where(
             (Magazine.tenant == tenant.id)
             & Magazine.published
-            & (
-                (Magazine.id == requested_magazine)
-                | (Magazine.slug == requested_magazine)
-            )
+            & ((Magazine.id == requested_magazine) | (Magazine.slug == requested_magazine))
         )
         .first()
     )

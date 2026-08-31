@@ -98,37 +98,7 @@ export function buildQrPosterSvg({
     `<svg x="${cardX + qrPad}" y="${cardY + qrPad}" width="${qrSize}" height="${qrSize}" `
   )
 
-  const svgOpen = [
-    '<svg xmlns="http://www.w3.org/2000/svg"',
-    'xmlns:xlink="http://www.w3.org/1999/xlink"',
-    `width="${POSTER_W}" height="${POSTER_H}"`,
-    `viewBox="0 0 ${POSTER_W} ${POSTER_H}">`,
-  ].join(' ')
-  const logo = logoDataUrl
-    ? [
-        '<image',
-        `href="${logoDataUrl}" xlink:href="${logoDataUrl}"`,
-        `x="${(POSTER_W - mark.w) / 2}" y="${TOP}"`,
-        `width="${mark.w}" height="${mark.h}"`,
-        'preserveAspectRatio="xMidYMid meet"/>',
-      ].join(' ')
-    : [
-        `<text x="${POSTER_W / 2}" y="${TOP + mark.h * 0.78}"`,
-        `font-family="${font}" font-size="${Math.round(mark.h)}"`,
-        'font-weight="800" fill="#FFFFFF" text-anchor="middle">MiPrecio</text>',
-      ].join(' ')
-  const headlineText = [
-    `<text x="${POSTER_W / 2}" y="${Math.round(headlineY)}"`,
-    `font-family="${font}" font-size="${headlineSize}" font-weight="800"`,
-    `fill="#FFFFFF" text-anchor="middle">${esc(headline)}</text>`,
-  ].join(' ')
-  const footerText = [
-    `<text x="${POSTER_W / 2}" y="${Math.round(footerY)}"`,
-    `font-family="${font}" font-size="${footerSize}" font-weight="700"`,
-    `fill="${soft}" text-anchor="middle" letter-spacing="1">${esc(footer)}</text>`,
-  ].join(' ')
-
-  return `${svgOpen}
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${POSTER_W}" height="${POSTER_H}" viewBox="0 0 ${POSTER_W} ${POSTER_H}">
   <defs>
     <linearGradient id="mp" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="${BRAND_FROM}"/>
@@ -136,10 +106,14 @@ export function buildQrPosterSvg({
     </linearGradient>
   </defs>
   <rect width="${POSTER_W}" height="${POSTER_H}" fill="url(#mp)"/>
-  ${logo}
+  ${
+    logoDataUrl
+      ? `<image href="${logoDataUrl}" xlink:href="${logoDataUrl}" x="${(POSTER_W - mark.w) / 2}" y="${TOP}" width="${mark.w}" height="${mark.h}" preserveAspectRatio="xMidYMid meet"/>`
+      : `<text x="${POSTER_W / 2}" y="${TOP + mark.h * 0.78}" font-family="${font}" font-size="${Math.round(mark.h)}" font-weight="800" fill="#FFFFFF" text-anchor="middle">MiPrecio</text>`
+  }
   <rect x="${cardX}" y="${cardY}" width="${cardSize}" height="${cardSize}" rx="48" fill="#FFFFFF"/>
   ${qr}
-  ${headlineText}
-  ${footerText}
+  <text x="${POSTER_W / 2}" y="${Math.round(headlineY)}" font-family="${font}" font-size="${headlineSize}" font-weight="800" fill="#FFFFFF" text-anchor="middle">${esc(headline)}</text>
+  <text x="${POSTER_W / 2}" y="${Math.round(footerY)}" font-family="${font}" font-size="${footerSize}" font-weight="700" fill="${soft}" text-anchor="middle" letter-spacing="1">${esc(footer)}</text>
 </svg>`
 }

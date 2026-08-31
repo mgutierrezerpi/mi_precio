@@ -86,9 +86,7 @@ def list_flags() -> list[dict[str, object]]:
     return result
 
 
-def set_tenant_flag(
-    key: str, tenant_id: str, enabled: bool
-) -> dict[str, object] | None:
+def set_tenant_flag(key: str, tenant_id: str, enabled: bool) -> dict[str, object] | None:
     ensure_defaults()
     flag = FeatureFlag.get_or_none(FeatureFlag.key == key)
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)

@@ -6,7 +6,7 @@ serves no more lists than the current plan allows, and an expired subscription
 takes the storefront offline entirely.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from lib.ctx import identity, plans, public
 from models import ListVersion, PriceList
@@ -25,15 +25,13 @@ def _published_list(tenant, name, created_at):
     """A list that is published, with a published version, created at a set time."""
     price_list = PriceList.create(tenant=tenant.id, name=name, published=True)
     # created_at has a default, so set it after the fact to control the order.
-    PriceList.update(created_at=created_at).where(
-        PriceList.id == price_list.id
-    ).execute()
+    PriceList.update(created_at=created_at).where(PriceList.id == price_list.id).execute()
     ListVersion.create(list=price_list.id, name=name, published=True)
     return price_list
 
 
 def _six_lists(tenant):
-    base = datetime(2026, 1, 1, tzinfo=UTC)
+    base = datetime(2026, 1, 1)
     return [
         _published_list(tenant, f"Lista {n}", base + timedelta(days=n))
         for n in range(6)
@@ -82,7 +80,7 @@ def test_downgrade_does_not_unpublish_anything(db):
 
 
 def test_expired_subscription_takes_every_list_offline(db):
-    """ "free" is not a tier to land on — an expired sub serves nothing at all."""
+    """"free" is not a tier to land on — an expired sub serves nothing at all."""
     tenant = _tenant(plan="pro")
     _six_lists(tenant)
 

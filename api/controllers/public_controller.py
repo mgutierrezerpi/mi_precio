@@ -1,18 +1,14 @@
-"""Public marketplace and catalog rendering endpoints."""
+import ipaddress
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 
-from controllers.public_interactions_controller import (
-    router as public_interactions_router,
-)
-from controllers.public_leads_controller import public_leads_router
-from controllers.public_request import request_ip
-from lib.ctx import feature_flags, public, public_viewers
+from controllers.input_types import CreateLead, PublicViewerCapture, PublicViewerDismissal
+from lib import rate_limit
+from lib.ctx import analytics, feature_flags, leads, public, public_viewers
+from lib.ctx.leads_context import LeadRejected
 from views import PublicMagazineView, PublicMenuView, PublicTenantView
 
 router = APIRouter(prefix="/public", tags=["public"])
-router.include_router(public_interactions_router)
-router.include_router(public_leads_router)
 
 
 @router.get("/marketplace/nearby")
@@ -45,7 +41,9 @@ def nearby_marketplace_endpoint(
 @router.get("/{subdomain}/magazines/{magazine}")
 def get_public_magazine(subdomain: str, magazine: str):
     tenant = public.get_tenant_by_subdomain(subdomain)
-    if not tenant or not feature_flags.magazines_enabled(tenant.id):
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Not found")
+    if not feature_flags.magazines_enabled(tenant.id):
         raise HTTPException(status_code=404, detail="Not found")
     published = public.get_public_magazine(tenant, magazine)
     if not published:
@@ -72,16 +70,127 @@ def get_public_menu(
         if feature_flags.magazines_enabled(tenant.id)
         else []
     )
-    viewer_token = request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE)
-    selected_list_id = (
-        published_lists[0].price_list.id if list and published_lists else None
-    )
+    viewer_token = request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE) if request else None
+    selected_list_id = published_lists[0].price_list.id if list and published_lists else None
     viewer_identified = public_viewers.touch_viewer(
-        str(tenant.id), viewer_token, selected_list_id, request_ip(request)
-    ) or public_viewers.has_viewer(str(tenant.id), viewer_token)
+        str(tenant.id), viewer_token, selected_list_id, _request_ip(request)
+    )
+    if not viewer_identified:
+        viewer_identified = public_viewers.has_viewer(str(tenant.id), viewer_token)
     return PublicMenuView.render(
         tenant,
         published_lists,
         viewer_identified,
         published_magazines=published_magazines,
     )
+
+
+@router.post("/{subdomain}/viewer")
+def capture_public_viewer(
+    subdomain: str,
+    data: PublicViewerCapture,
+    request: Request,
+    response: Response,
+):
+    tenant = public.get_tenant_by_subdomain(subdomain)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Not found")
+    viewer = public_viewers.capture_viewer(
+        str(tenant.id),
+        data.list_id,
+        data.name,
+        data.email,
+        data.phone,
+        request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE),
+        _request_ip(request),
+    )
+    if not viewer:
+        raise HTTPException(status_code=400, detail="Viewer capture is not enabled")
+    cookie_value = viewer.visitor_token
+    if not cookie_value:
+        raise HTTPException(status_code=500, detail="Could not create viewer cookie")
+    response.set_cookie(
+        key=public_viewers.PUBLIC_VIEWER_COOKIE,
+        value=cookie_value,
+        max_age=public_viewers.PUBLIC_VIEWER_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+        path="/",
+    )
+    return {"ok": True}
+
+
+@router.post("/{subdomain}/viewer-dismissed")
+def record_public_viewer_dismissal(
+    subdomain: str, data: PublicViewerDismissal
+):
+    tenant = public.get_tenant_by_subdomain(subdomain)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Not found")
+    if not public_viewers.record_anonymous_dismissal(
+        str(tenant.id), data.list_id
+    ):
+        raise HTTPException(status_code=400, detail="Viewer capture is not enabled")
+    return {"ok": True}
+
+
+def _request_ip(request: Request | None) -> str | None:
+    """Resolve the client IP through the app's local reverse proxy."""
+    if not request:
+        return None
+    client_host = request.client.host if request.client else None
+    if client_host and client_host not in {"127.0.0.1", "::1"}:
+        try:
+            return str(ipaddress.ip_address(client_host))
+        except ValueError:
+            pass
+    forwarded = request.headers.get("x-forwarded-for", "")
+    for candidate in reversed([part.strip() for part in forwarded.split(",") if part.strip()]):
+        try:
+            return str(ipaddress.ip_address(candidate))
+        except ValueError:
+            continue
+    try:
+        return str(ipaddress.ip_address(client_host)) if client_host else None
+    except ValueError:
+        return None
+
+
+@router.post("/{subdomain}/view")
+def record_public_view(
+    subdomain: str, list: str | None = None, source: str | None = None
+):
+    """Record a single visit to a tenant's public page (called once per open).
+
+    `source` distinguishes QR scans ("qr") from direct/shared link visits.
+    """
+    tenant = public.get_tenant_by_subdomain(subdomain)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Not found")
+    analytics.record_view(str(tenant.id), list_id=list, source=source)
+    return {"ok": True}
+
+
+LEADS_PER_WINDOW = 5
+LEADS_WINDOW_SECONDS = 600
+
+
+@router.post("/{subdomain}/leads", status_code=201)
+def create_public_lead(subdomain: str, data: CreateLead, request: Request):
+    """Store a public-list lead without exposing the shop's plan to visitors."""
+    tenant = public.get_tenant_by_subdomain(subdomain)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Not found")
+    if data.website:
+        return {"ok": True}
+    client = request.client.host if request.client else "unknown"
+    if not rate_limit.allow(
+        f"lead:{tenant.id}:{client}", LEADS_PER_WINDOW, LEADS_WINDOW_SECONDS
+    ):
+        raise HTTPException(status_code=429, detail="Probá de nuevo en un rato.")
+    try:
+        leads.create_lead(tenant.id, **data.model_dump(exclude={"website"}))
+    except LeadRejected as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"ok": True}

@@ -41,24 +41,21 @@ export function useExportPdfWhenReady(
       setTimeout(resolve, EXPORT_ASSET_TIMEOUT_MS)
     )
 
-    void (async () => {
-      await Promise.resolve()
-      if (cancelled) return
-      setState('working')
-      try {
-        await Promise.race([settled, deadline])
+    setState('working')
+    void Promise.race([settled, deadline])
+      .then(async () => {
         if (cancelled) return
         const node = document.querySelector<HTMLElement>(selector)
         if (!node) throw new Error(`nothing to export at ${selector}`)
         await exportListPdf({ node, fileName })
         if (!cancelled) setState('done')
-      } catch (err) {
+      })
+      .catch((err) => {
         // The shop is looking at a tab that exists only to produce a file, so
         // the state drives what it reads there instead of a silent dead end.
         console.error('[pdf] export failed', err)
         if (!cancelled) setState('error')
-      }
-    })()
+      })
 
     return () => {
       cancelled = true

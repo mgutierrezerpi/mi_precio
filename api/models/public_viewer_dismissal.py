@@ -17,4 +17,4 @@ class PublicViewerDismissal(BaseModel):
 
     class Meta:
         table_name = "public_viewer_dismissals"
-        indexes = ((("tenant", "price_list"), True),)
+        indexes = ((('tenant', 'price_list'), True),)

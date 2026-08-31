@@ -16,7 +16,7 @@ kill_timeout = "30s"
   DATABASE_PATH = "/litefs/mi_precio.db"
   HUEY_DB_PATH = "/litefs/huey.db"
   HUEY_WORKERS = "1"
-  CORS_ORIGINS = '["https://mi-precio.fly.dev", "https://miprecio.app", "https://www.miprecio.app", "https://pricepanel.app", "https://www.pricepanel.app"]'
+  CORS_ORIGINS = '["https://mi-precio.fly.dev", "https://miprecio.app", "https://www.miprecio.app"]'
   PUBLIC_APP_URL = "https://miprecio.app"
   JWT_ALGORITHM = "HS256"
   # Keep users signed in for 30 days in production.

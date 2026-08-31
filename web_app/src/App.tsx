@@ -9,49 +9,31 @@ import api, {
   setPlanRequiredHandler,
 } from './services/api'
 import { logout, setTenant } from './store/slices/authSlice'
-import { ToastContainer } from './components/Toast'
+import { ToastContainer, toast } from './components/Toast'
 import { trackEvent } from './lib/analytics'
-import { toast } from './lib/toast'
 
 let lastConnectionToastAt = 0
 
 function pageDetails(pathname: string): { page_name: string; area: string } {
   if (pathname === '/') return { page_name: 'Home', area: 'public' }
   if (pathname === '/login') return { page_name: 'Login', area: 'public' }
-  if (pathname.startsWith('/p/'))
-    return { page_name: 'Public Menu', area: 'public' }
-  if (pathname.startsWith('/m/'))
-    return { page_name: 'Public Magazine', area: 'public' }
-  if (pathname === '/plans')
-    return { page_name: 'Choose Plan', area: 'onboarding' }
-  if (pathname === '/linktree')
-    return { page_name: 'Link Tree PoC', area: 'public' }
-  if (pathname === '/admin')
-    return { page_name: 'Admin Dashboard', area: 'admin' }
-  if (pathname === '/admin/items')
-    return { page_name: 'Products', area: 'admin' }
-  if (pathname === '/admin/categories')
-    return { page_name: 'Categories', area: 'admin' }
-  if (pathname === '/admin/lists')
-    return { page_name: 'Price Lists', area: 'admin' }
-  if (pathname === '/admin/magazines')
-    return { page_name: 'Magazines', area: 'admin' }
-  if (pathname.startsWith('/admin/lists/'))
-    return { page_name: 'Price List Editor', area: 'admin' }
+  if (pathname.startsWith('/p/')) return { page_name: 'Public Menu', area: 'public' }
+  if (pathname.startsWith('/m/')) return { page_name: 'Public Magazine', area: 'public' }
+  if (pathname === '/plans') return { page_name: 'Choose Plan', area: 'onboarding' }
+  if (pathname === '/linktree') return { page_name: 'Link Tree PoC', area: 'public' }
+  if (pathname === '/admin') return { page_name: 'Admin Dashboard', area: 'admin' }
+  if (pathname === '/admin/items') return { page_name: 'Products', area: 'admin' }
+  if (pathname === '/admin/categories') return { page_name: 'Categories', area: 'admin' }
+  if (pathname === '/admin/lists') return { page_name: 'Price Lists', area: 'admin' }
+  if (pathname === '/admin/magazines') return { page_name: 'Magazines', area: 'admin' }
+  if (pathname.startsWith('/admin/lists/')) return { page_name: 'Price List Editor', area: 'admin' }
   if (pathname === '/admin/qr') return { page_name: 'QR Codes', area: 'admin' }
-  if (pathname === '/admin/customers')
-    return { page_name: 'Customers', area: 'admin' }
-  if (pathname === '/admin/reports')
-    return { page_name: 'Reports', area: 'admin' }
+  if (pathname === '/admin/customers') return { page_name: 'Customers', area: 'admin' }
+  if (pathname === '/admin/reports') return { page_name: 'Reports', area: 'admin' }
   if (pathname === '/admin/team') return { page_name: 'Team', area: 'admin' }
-  if (pathname === '/admin/support')
-    return { page_name: 'Support', area: 'admin' }
-  if (pathname === '/admin/settings')
-    return { page_name: 'Settings', area: 'admin' }
-  return {
-    page_name: 'Unknown',
-    area: pathname.startsWith('/admin') ? 'admin' : 'public',
-  }
+  if (pathname === '/admin/support') return { page_name: 'Support', area: 'admin' }
+  if (pathname === '/admin/settings') return { page_name: 'Settings', area: 'admin' }
+  return { page_name: 'Unknown', area: pathname.startsWith('/admin') ? 'admin' : 'public' }
 }
 
 function App() {
@@ -65,8 +47,7 @@ function App() {
 
     trackPageView(router.state.location.pathname)
     const unsubscribe = router.subscribe((state) => {
-      if (state.navigation.state === 'idle')
-        trackPageView(state.location.pathname)
+      if (state.navigation.state === 'idle') trackPageView(state.location.pathname)
     })
 
     setAuthErrorHandler(() => {

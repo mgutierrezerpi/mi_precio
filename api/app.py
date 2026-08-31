@@ -3,16 +3,14 @@
 import logging
 import re
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-
 from config import settings
 from infra.sentry import init_sentry
 from lib import decode_token
-from models import create_tables, db
+from models import db, create_tables
 from routes import register_routes
 
 # Every authenticated `/tenants/{id}/...` request must target the caller's own

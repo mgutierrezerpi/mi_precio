@@ -1,8 +1,6 @@
 import { useAppSelector } from '../store/hooks'
 import { selectTenant } from '../store/slices/authSlice'
-import { EN_DICTIONARY } from './i18nDictionaryEn'
-import { ES_DICTIONARY } from './i18nDictionaryEs'
-import { PT_DICTIONARY } from './i18nDictionaryPt'
+import { DICT } from './i18nDictionary'
 
 export type Lang = 'es' | 'en' | 'pt'
 
@@ -20,17 +18,11 @@ export type TFn = (
   vars?: Record<string, string | number>
 ) => string
 
-const DICTIONARIES: Record<Lang, Record<string, string>> = {
-  es: ES_DICTIONARY,
-  en: EN_DICTIONARY,
-  pt: PT_DICTIONARY,
-}
-
 /** Build a translate function for a given language. */
 export function getT(lang?: string | null): TFn {
   const L = normalizeLang(lang)
   return (key: string, vars?: Record<string, string | number>) => {
-    let s = DICTIONARIES[L][key] ?? ES_DICTIONARY[key] ?? key
+    let s = DICT[key]?.[L] ?? DICT[key]?.es ?? key
     if (vars)
       for (const [k, v] of Object.entries(vars))
         s = s.replaceAll(`{${k}}`, String(v))

@@ -1,60 +1,50 @@
+from controllers.input_types.create_code import CreateCode as CreateCode
+from controllers.input_types.verify_code import VerifyCode as VerifyCode
+from controllers.input_types.create_tenant import CreateTenant as CreateTenant
+from controllers.input_types.update_tenant import UpdateTenant as UpdateTenant
+from controllers.input_types.create_list import CreateList as CreateList
+from controllers.input_types.update_list import UpdateList as UpdateList
+from controllers.input_types.create_magazine import CreateMagazine as CreateMagazine
+from controllers.input_types.update_magazine import UpdateMagazine as UpdateMagazine
+from controllers.input_types.create_magazine_page import CreateMagazinePage as CreateMagazinePage
+from controllers.input_types.update_magazine_page import UpdateMagazinePage as UpdateMagazinePage
+from controllers.input_types.create_version import CreateVersion as CreateVersion
+from controllers.input_types.update_version import UpdateVersion as UpdateVersion
+from controllers.input_types.update_version_content import (
+    UpdateVersionContent as UpdateVersionContent,
+)
+from controllers.input_types.create_item import CreateItem as CreateItem
+from controllers.input_types.update_item import UpdateItem as UpdateItem
+from controllers.input_types.create_product import CreateProduct as CreateProduct
+from controllers.input_types.update_product import UpdateProduct as UpdateProduct
+from controllers.input_types.create_category import CreateCategory as CreateCategory
+from controllers.input_types.update_category import UpdateCategory as UpdateCategory
+from controllers.input_types.create_customer import CreateCustomer as CreateCustomer
+from controllers.input_types.create_lead import CreateLead as CreateLead
+from controllers.input_types.public_viewer import PublicViewerCapture as PublicViewerCapture
+from controllers.input_types.public_viewer_dismissal import PublicViewerDismissal as PublicViewerDismissal
+from controllers.input_types.update_customer import UpdateCustomer as UpdateCustomer
+from controllers.input_types.create_order import CreateOrder as CreateOrder
+from controllers.input_types.create_order import UpdateOrder as UpdateOrder
+from controllers.input_types.reorder_items import ReorderItems as ReorderItems
+from controllers.input_types.import_from_url import ImportFromUrl as ImportFromUrl
+from controllers.input_types.import_from_images import (
+    ImportFromImages as ImportFromImages,
+)
+from controllers.input_types.invite_member import InviteMember as InviteMember
+from controllers.input_types.update_member import UpdateMember as UpdateMember
+from controllers.input_types.update_notif_prefs import (
+    UpdateNotifPrefs as UpdateNotifPrefs,
+)
+from controllers.input_types.push_subscription import PushSubscribe as PushSubscribe
+from controllers.input_types.push_subscription import PushUnsubscribe as PushUnsubscribe
+from controllers.input_types.update_plan import UpdatePlan as UpdatePlan
 from controllers.input_types.billing import CreateCheckout as CreateCheckout
 from controllers.input_types.billing import (
     ManualSubscriptionSync as ManualSubscriptionSync,
 )
 from controllers.input_types.billing import ReconcileCheckout as ReconcileCheckout
 from controllers.input_types.billing import SubscriptionAction as SubscriptionAction
-from controllers.input_types.create_category import CreateCategory as CreateCategory
-from controllers.input_types.create_code import CreateCode as CreateCode
-from controllers.input_types.create_customer import CreateCustomer as CreateCustomer
-from controllers.input_types.create_item import CreateItem as CreateItem
-from controllers.input_types.create_lead import CreateLead as CreateLead
-from controllers.input_types.create_list import CreateList as CreateList
-from controllers.input_types.create_magazine import CreateMagazine as CreateMagazine
-from controllers.input_types.create_magazine_page import (
-    CreateMagazinePage as CreateMagazinePage,
-)
-from controllers.input_types.create_order import CreateOrder as CreateOrder
-from controllers.input_types.create_order import UpdateOrder as UpdateOrder
-from controllers.input_types.create_product import CreateProduct as CreateProduct
-from controllers.input_types.create_tenant import CreateTenant as CreateTenant
-from controllers.input_types.create_version import CreateVersion as CreateVersion
-from controllers.input_types.import_from_images import (
-    ImportFromImages as ImportFromImages,
-)
-from controllers.input_types.import_from_url import ImportFromUrl as ImportFromUrl
-from controllers.input_types.invite_member import InviteMember as InviteMember
-from controllers.input_types.link_tree import UpdateLinkTree as UpdateLinkTree
-from controllers.input_types.public_viewer import (
-    PublicViewerCapture as PublicViewerCapture,
-)
-from controllers.input_types.public_viewer_dismissal import (
-    PublicViewerDismissal as PublicViewerDismissal,
-)
-from controllers.input_types.push_subscription import PushSubscribe as PushSubscribe
-from controllers.input_types.push_subscription import PushUnsubscribe as PushUnsubscribe
-from controllers.input_types.reorder_items import ReorderItems as ReorderItems
 from controllers.input_types.support import CreateSupportTicket as CreateSupportTicket
-from controllers.input_types.update_category import UpdateCategory as UpdateCategory
-from controllers.input_types.update_customer import UpdateCustomer as UpdateCustomer
-from controllers.input_types.update_feature_flag import (
-    UpdateFeatureFlag as UpdateFeatureFlag,
-)
-from controllers.input_types.update_item import UpdateItem as UpdateItem
-from controllers.input_types.update_list import UpdateList as UpdateList
-from controllers.input_types.update_magazine import UpdateMagazine as UpdateMagazine
-from controllers.input_types.update_magazine_page import (
-    UpdateMagazinePage as UpdateMagazinePage,
-)
-from controllers.input_types.update_member import UpdateMember as UpdateMember
-from controllers.input_types.update_notif_prefs import (
-    UpdateNotifPrefs as UpdateNotifPrefs,
-)
-from controllers.input_types.update_plan import UpdatePlan as UpdatePlan
-from controllers.input_types.update_product import UpdateProduct as UpdateProduct
-from controllers.input_types.update_tenant import UpdateTenant as UpdateTenant
-from controllers.input_types.update_version import UpdateVersion as UpdateVersion
-from controllers.input_types.update_version_content import (
-    UpdateVersionContent as UpdateVersionContent,
-)
-from controllers.input_types.verify_code import VerifyCode as VerifyCode
+from controllers.input_types.update_feature_flag import UpdateFeatureFlag as UpdateFeatureFlag
+from controllers.input_types.link_tree import UpdateLinkTree as UpdateLinkTree

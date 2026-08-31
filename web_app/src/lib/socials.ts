@@ -33,11 +33,7 @@ export const SOCIALS: SocialDef[] = [
     tKey: 'social.facebook',
     placeholder: 'https://facebook.com/minegocio',
   },
-  {
-    id: 'socialWhatsapp',
-    tKey: 'social.whatsapp',
-    placeholder: '+598 99 123 456',
-  },
+  { id: 'socialWhatsapp', tKey: 'social.whatsapp', placeholder: '+598 99 123 456' },
   {
     id: 'socialTiktok',
     tKey: 'social.tiktok',
@@ -58,10 +54,7 @@ export type SocialValues = Partial<Record<SocialId, string | null | undefined>>
  *
  *  WhatsApp is the only one built here: everything else was already normalised
  *  to a full URL by the API (controllers/input_types/socials.py). */
-export function hrefOf(
-  id: SocialId,
-  value: string | null | undefined
-): string | null {
+export function hrefOf(id: SocialId, value: string | null | undefined): string | null {
   const trimmed = value?.trim()
   if (!trimmed) return null
   if (id === 'socialWhatsapp') {
@@ -87,9 +80,7 @@ export function socialError(id: SocialId, raw: string): string | null {
 
   if (id === 'socialWhatsapp') {
     const digits = value.replace(/\D/g, '').replace(/^00/, '')
-    return digits.length >= 6 && digits.length <= 15
-      ? null
-      : 'social.error.phone'
+    return digits.length >= 6 && digits.length <= 15 ? null : 'social.error.phone'
   }
 
   // A bare handle is valid on the networks whose profile URL we can build.
@@ -109,7 +100,5 @@ export function activeSocials(values: SocialValues) {
   return SOCIALS.map((social) => ({
     ...social,
     href: hrefOf(social.id, values[social.id]),
-  })).filter(
-    (social): social is SocialDef & { href: string } => social.href !== null
-  )
+  })).filter((social): social is SocialDef & { href: string } => social.href !== null)
 }

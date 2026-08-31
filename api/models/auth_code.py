@@ -1,5 +1,4 @@
-from peewee import BooleanField, CharField, DateTimeField
-
+from peewee import CharField, DateTimeField, BooleanField
 from models.base import BaseModel
 
 

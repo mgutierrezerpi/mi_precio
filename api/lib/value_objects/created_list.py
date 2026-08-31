@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-
-from models import ListVersion, PriceList
+from models import PriceList, ListVersion
 
 
 @dataclass(frozen=True)

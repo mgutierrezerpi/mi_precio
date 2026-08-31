@@ -1,5 +1,4 @@
-from peewee import CharField, ForeignKeyField
-
+from peewee import ForeignKeyField, CharField
 from models.base import BaseModel
 from models.tenant import Tenant
 

@@ -1,114 +1,317 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useStoredQrColor } from '../../hooks/useStoredQrColor'
-import { useCatalogT } from '../../lib/i18nDictionaryCatalog'
-import { markQrShared } from '../../lib/onboardingTour'
-import { downloadQrPosterPng, downloadQrPosterSvg, type PosterRequest } from '../../lib/exportQrPoster'
-import { QR_COLOR_STORAGE_PREFIX } from '../../lib/qrRender'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
 import type { PriceList } from '../../types'
-import { CodesCustomizer } from './CodesCustomizer'
-import { CodesGrid } from './CodesGrid'
 import { CrmLayout } from './crm/CrmLayout'
+import { Icon } from './crm/ui'
+import { QrCode } from './crm/QrCode'
+import { gradient } from './crm/theme'
+import { useCatalogT } from '../../lib/i18nDictionaryCatalog'
+import { markQrShared } from '../../lib/onboardingTour'
+import {
+  downloadQrPosterPng,
+  downloadQrPosterSvg,
+  type PosterRequest,
+} from '../../lib/exportQrPoster'
+import { QR_COLOR_STORAGE_PREFIX, DEFAULT_QR_COLOR } from '../../lib/qrRender'
 
-const QR_COLORS = [
-  ['violet', '#7C3AED'], ['black', '#0F172A'], ['blue', '#2563EB'], ['green', '#059669'],
-  ['pink', '#DB2777'], ['amber', '#D97706'], ['sky', '#0EA5E9'], ['slate', '#475569'],
-].map(([key, value]) => ({ key, value }))
+/** The palette the shop picks from. Every swatch is dark enough to hold its
+ *  contrast against the white card a code always sits on, so none of them can
+ *  produce a sheet a scanner struggles with. */
+const QR_COLORS: { key: string; value: string }[] = [
+  { key: 'violet', value: DEFAULT_QR_COLOR },
+  { key: 'black', value: '#0F172A' },
+  { key: 'blue', value: '#2563EB' },
+  { key: 'green', value: '#059669' },
+  { key: 'pink', value: '#DB2777' },
+  { key: 'amber', value: '#D97706' },
+  { key: 'sky', value: '#0EA5E9' },
+  { key: 'slate', value: '#475569' },
+]
 
 export function CodesScreen() {
   const t = useCatalogT()
   const dispatch = useAppDispatch()
   const tenant = useAppSelector(selectTenant)
   const lists = useAppSelector(selectLists)
+
   const [search, setSearch] = useState('')
-  const [color, chooseColor] = useStoredQrColor(
-    tenant?.id ? `${QR_COLOR_STORAGE_PREFIX}${tenant.id}` : null
-  )
+  const [color, setColor] = useState(DEFAULT_QR_COLOR)
   const [busy, setBusy] = useState<'png' | 'svg' | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
+  const colorStorageKey = tenant?.id
+    ? `${QR_COLOR_STORAGE_PREFIX}${tenant.id}`
+    : null
+  const chooseColor = (value: string) => {
+    setColor(value)
+    if (colorStorageKey) localStorage.setItem(colorStorageKey, value)
+  }
+
+  useEffect(() => {
+    if (!colorStorageKey) return
+    const saved = localStorage.getItem(colorStorageKey)
+    if (saved && QR_COLORS.some((c) => c.value === saved)) setColor(saved)
+  }, [colorStorageKey])
+
   useEffect(() => {
     if (tenant?.id) dispatch(fetchLists(tenant.id))
   }, [dispatch, tenant?.id])
 
-  const subdomain = tenant?.subdomain || 'mi-negocio'
-  const urlOf = (list: PriceList) => `${window.location.origin}/p/${subdomain}/${list.slug || list.id}`
-  const qrUrlOf = (list: PriceList) => `${urlOf(list)}?src=qr`
+  const sub = tenant?.subdomain || 'mi-negocio'
+  const urlOf = (l: PriceList) =>
+    `${window.location.origin}/p/${sub}/${l.slug || l.id}`
+  // Codes embed ?src=qr so scans are tracked separately from shared/direct links.
+  const qrUrlOf = (l: PriceList) => `${urlOf(l)}?src=qr`
+
   const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return query ? lists.filter((list) => list.name.toLowerCase().includes(query)) : lists
+    const q = search.trim().toLowerCase()
+    return q ? lists.filter((l) => l.name.toLowerCase().includes(q)) : lists
   }, [lists, search])
+
   const previewUrl = filtered[0]
     ? qrUrlOf(filtered[0])
     : lists[0]
       ? qrUrlOf(lists[0])
-      : `${window.location.origin}/p/${subdomain}?src=qr`
-  const copy = (list: PriceList) => {
-    navigator.clipboard?.writeText(urlOf(list))
+      : `${window.location.origin}/p/${sub}?src=qr`
+
+  const copy = (l: PriceList) => {
+    navigator.clipboard?.writeText(urlOf(l))
     markQrShared(tenant?.id)
-    setCopied(list.id)
+    setCopied(l.id)
     setTimeout(() => setCopied(null), 1500)
   }
-  const posterFor = (list: PriceList): PosterRequest | null => {
+  const slugOf = (l: PriceList) =>
+    (l.slug || l.name)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || l.id
+  /** Every download is the poster now: a bare code is not what a shop tapes to
+   *  its counter. PNG and SVG are two ways to take the same sheet — the SVG is
+   *  the vector a print shop wants, the PNG is what goes into WhatsApp.
+   *
+   *  The sheet carries **our** brand and nothing of the shop's. It hangs at a
+   *  counter where strangers see it every day, so it works as advertising for
+   *  MiPrecio — the same reason a Mercado Pago sticker is Mercado Pago yellow.
+   *  Which list it opens lives in the code and in the file name, not on the
+   *  paper: the customer is already standing in the shop. */
+  const posterFor = (l: PriceList): PosterRequest | null => {
     if (!tenant) return null
-    const slug = (list.slug || list.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || list.id
-    return { value: qrUrlOf(list), headline: t('codes.posterHeadline'), footer: t('codes.posterFooter'), fileName: `qr-${slug}`, qrColor: color }
+    return {
+      value: qrUrlOf(l),
+      headline: t('codes.posterHeadline'),
+      footer: t('codes.posterFooter'),
+      fileName: `qr-${slugOf(l)}`,
+      qrColor: color,
+    }
   }
-  const download = (list: PriceList | null, as: 'png' | 'svg') => {
-    const request = list && posterFor(list)
+
+  const download = (l: PriceList | null, as: 'png' | 'svg') => {
+    const request = l && posterFor(l)
     if (!request) return
     markQrShared(tenant?.id)
     setBusy(as)
     const run = as === 'png' ? downloadQrPosterPng : downloadQrPosterSvg
-    void run(request).catch((error) => console.error('[qr-poster] export failed', error)).finally(() => setBusy(null))
+    void run(request)
+      .catch((err) => console.error('[qr-poster] export failed', err))
+      .finally(() => setBusy(null))
   }
+
   const previewList = filtered[0] ?? lists[0] ?? null
 
-  return <CrmLayout
-    active={t('codes.title')}
-    title={t('codes.title')}
-    subtitle={t('codes.subtitle')}
-    hideContext
-    searchPlaceholder={t('codes.search')}
-    searchValue={search}
-    onSearchChange={setSearch}
-  >
-    <main className="flex min-h-full flex-col gap-6 px-4 py-6 md:px-10 md:py-8 xl:min-w-[900px]">
-      <section className="flex min-h-[56px] items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">{t('codes.title')}</h1>
-          <p className="text-[13px] text-[#9694A6]">{t('codes.subtitle')}</p>
+  return (
+    <CrmLayout
+      active={t('codes.title')}
+      title={t('codes.title')}
+      subtitle={t('codes.subtitle')}
+      hideContext
+      searchPlaceholder={t('codes.search')}
+      searchValue={search}
+      onSearchChange={setSearch}
+    >
+      <main className="flex min-h-full flex-col gap-6 px-4 py-6 md:px-10 md:py-8 xl:min-w-[900px]">
+        <section className="flex min-h-[56px] items-end justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">
+              {t('codes.title')}
+            </h1>
+            <p className="text-[13px] text-[#9694A6]">
+              {t('codes.subtitle')}
+            </p>
+          </div>
+        </section>
+        <div className="flex w-full flex-col items-stretch gap-5 xl:flex-row xl:items-start">
+          {/* QR grid */}
+          <div className="flex w-full flex-1 flex-col gap-4">
+            {filtered.length === 0 ? (
+              <div className="flex min-h-[208px] flex-col items-center justify-center gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 text-center">
+                <span
+                  className="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--dash-link)]"
+                  style={{ backgroundColor: 'var(--tone-violet-bg)' }}
+                >
+                  <Icon name="qr-code" size={24} />
+                </span>
+                <p className="text-sm font-semibold text-[var(--dash-text)]">
+                  {lists.length === 0
+                    ? t('codes.createList')
+                    : t('codes.noResults')}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((l) => (
+                  <div
+                    key={l.id}
+                    className="flex min-w-0 flex-col gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-3"
+                  >
+                    <div className="flex min-w-0 items-center justify-center text-center">
+                      <span className="block w-full whitespace-normal break-words text-[14px] font-bold leading-snug text-[var(--dash-text)]">
+                        {l.name}
+                      </span>
+                    </div>
+                    <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-lg bg-white p-1">
+                      <QrCode
+                        value={qrUrlOf(l)}
+                        size={128}
+                        margin={2}
+                        fg={color}
+                        className="!h-full !w-full rounded-lg object-contain"
+                      />
+                    </div>
+                    <div className="flex min-w-0 flex-col items-center gap-0.5 text-center">
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                        style={{
+                          backgroundColor: l.published
+                            ? 'var(--tone-green-bg)'
+                            : 'var(--tone-amber-bg)',
+                          color: l.published
+                            ? 'var(--tone-green-fg)'
+                            : 'var(--tone-amber-fg)',
+                        }}
+                      >
+                        {l.published ? t('codes.active') : t('codes.draft')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                      <CardBtn
+                        icon="download"
+                        title={t('codes.downloadPng')}
+                        onClick={() => download(l, 'png')}
+                      />
+                      <CardBtn
+                        icon="share-2"
+                        title={t('codes.openList')}
+                        onClick={() => window.open(urlOf(l), '_blank')}
+                      />
+                      <CardBtn
+                        icon={copied === l.id ? 'circle-check' : 'copy'}
+                        title={t('codes.copyLink')}
+                        onClick={() => copy(l)}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Customization panel */}
+          <div className="flex w-full shrink-0 flex-col gap-4 self-start rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4 xl:mt-0 xl:sticky xl:top-6 xl:w-[300px]">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-lg font-extrabold text-[var(--dash-text)]">
+                {t('codes.posterTitle')}
+              </h3>
+              <p className="text-xs font-medium text-[var(--dash-muted)]">
+                {t('codes.posterHelp')}
+              </p>
+            </div>
+            <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-lg bg-white p-1">
+              <QrCode
+                value={previewUrl}
+                size={128}
+                margin={2}
+                fg={color}
+                className="!h-full !w-full rounded-lg object-contain"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-[var(--dash-text2)]">
+                {t('codes.color')}
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {QR_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => chooseColor(c.value)}
+                    aria-label={t(`codes.color.${c.key}`)}
+                    aria-pressed={color === c.value}
+                    title={t(`codes.color.${c.key}`)}
+                    className={`h-7 w-7 rounded-lg ${color === c.value ? 'ring-2 ring-offset-2 ring-offset-[var(--dash-surface)] ring-[var(--dash-link)]' : ''}`}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+                {t('codes.colorHelp')}
+              </span>
+            </div>
+            {/* Both downloads are the same A4 poster in two formats: the
+                SVG is the vector a print shop wants, the PNG is what goes into
+                a WhatsApp. Neither hands over a bare code any more. */}
+            <span
+              className="dash-tooltip block"
+              data-tooltip={lists.length === 0 ? t('codes.downloadDisabled') : ''}
+            >
+              <button
+                type="button"
+                disabled={lists.length === 0 || busy !== null}
+                onClick={() => download(previewList, 'png')}
+                className={`flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 ${gradient}`}
+              >
+                <Icon name="download" size={16} /> {busy === 'png' ? t('codes.posterWorking') : t('codes.downloadPng')}
+              </button>
+            </span>
+            <span
+              className="dash-tooltip block"
+              data-tooltip={lists.length === 0 ? t('codes.downloadDisabled') : ''}
+            >
+              <button
+                type="button"
+                disabled={lists.length === 0 || busy !== null}
+                onClick={() => download(previewList, 'svg')}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--dash-border)] bg-[var(--dash-surface)] text-sm font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Icon name="download" size={15} /> {busy === 'svg' ? t('codes.posterWorking') : t('codes.downloadSvg')}
+              </button>
+            </span>
+          </div>
         </div>
-      </section>
-      <div className="flex w-full flex-col items-stretch gap-5 xl:flex-row xl:items-start">
-        <div className="flex w-full flex-1 flex-col gap-4">
-          <CodesGrid
-            allCount={lists.length}
-            color={color}
-            copied={copied}
-            filtered={filtered}
-            t={t}
-            urlOf={urlOf}
-            qrUrlOf={qrUrlOf}
-            onCopy={copy}
-            onDownload={(list) => download(list, 'png')}
-          />
-        </div>
-        <CodesCustomizer
-          color={color}
-          colors={QR_COLORS}
-          busy={busy}
-          hasLists={lists.length > 0}
-          previewList={previewList}
-          previewUrl={previewUrl}
-          t={t}
-          onChooseColor={chooseColor}
-          onDownload={download}
-        />
-      </div>
-    </main>
-  </CrmLayout>
+      </main>
+    </CrmLayout>
+  )
+}
+
+function CardBtn({
+  icon,
+  title,
+  onClick,
+}: {
+  icon: Parameters<typeof Icon>[0]['name']
+  title: string
+  onClick?: () => void
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onClick={onClick}
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]"
+    >
+      <Icon name={icon} size={16} />
+    </button>
+  )
 }
 
 export default CodesScreen

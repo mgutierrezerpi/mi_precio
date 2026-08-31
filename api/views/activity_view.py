@@ -1,8 +1,6 @@
 import json
 from datetime import datetime
-
 from pydantic import field_validator
-
 from views.base_view import BaseView
 
 

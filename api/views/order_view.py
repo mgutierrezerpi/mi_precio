@@ -1,8 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-
-from pydantic import Field, field_serializer
-
+from pydantic import field_serializer
 from views.base_view import BaseView
 from views.order_item_view import OrderItemView
 
@@ -18,7 +16,7 @@ class OrderView(BaseView):
     note: str | None
     created_at: datetime
     updated_at: datetime
-    items: list[OrderItemView] = Field(default_factory=list)
+    items: list[OrderItemView] = []
 
     @field_serializer("total")
     def serialize_total(self, v):
