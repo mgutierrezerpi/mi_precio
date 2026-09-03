@@ -28,6 +28,7 @@ import {
   type CartTheme,
 } from './designs'
 import { lighten, readableOn } from '../../lib/designColors'
+import { parseUtc } from '../../lib/datetime'
 import { categoryIcon } from '../../lib/categoryIcon'
 import { PencilList } from './pencil'
 import { pencilCartThemeFor } from './pencil/cartTheme'
@@ -328,14 +329,6 @@ export function MenuScreen() {
       setCustomer((current) => ({ ...current, name, email, phone }))
       setViewerSubmitted(true)
     } else setViewerError(true)
-  }
-  // Backend stores naive UTC timestamps (datetime.utcnow, no offset). Tag them as UTC
-  // so the browser converts to the correct local date instead of treating UTC as local.
-  const parseUtc = (iso?: string | null) => {
-    if (!iso) return null
-    const hasTz = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(iso)
-    const d = new Date(hasTz ? iso : `${iso}Z`)
-    return Number.isNaN(d.getTime()) ? null : d
   }
   const vDate = parseUtc(list?.version?.updatedAt || list?.version?.createdAt)
   const updated = (vDate ?? new Date()).toLocaleDateString(locale, {
