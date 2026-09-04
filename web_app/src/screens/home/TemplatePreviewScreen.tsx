@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useEffect } from 'react'
 import { createDesignPreviewProps } from '../../components/appearance/ListAppearanceFields'
+import { localeForHostname } from '../../lib/domainLocale'
 import { PencilList } from '../menu/pencil'
 import type { PencilVariant } from '../menu/pencil/variants'
 
@@ -13,21 +14,27 @@ const variants: Record<string, PencilVariant> = {
 export function TemplatePreviewScreen() {
   const { variant = 'wild-stem-verano' } = useParams<{ variant?: string }>()
   const template = variants[variant] ?? variants['wild-stem-verano']
+  const english = localeForHostname() === 'en'
   const baseProps = createDesignPreviewProps(
-    template === 'pencil-obsidian-quarterly' ? '#D5B8FF' : '#A855F7'
+    template === 'pencil-obsidian-quarterly' ? '#D5B8FF' : '#A855F7',
+    english ? 'en' : 'es'
   )
   const props =
     template === 'pencil-obsidian-quarterly'
-      ? spanishObsidianPreview(baseProps)
+      ? obsidianPreview(baseProps, english)
       : {
           ...baseProps,
           content: {
             schemaVersion: 1 as const,
             blocks: [],
             hero: {
-              eyebrow: 'WILD STEM · VERANO',
-              title: 'Flores para la mesa de verano.',
-              body: 'Ramos frescos y colores cálidos para cada rincón.',
+              eyebrow: english ? 'WILD STEM · SUMMER' : 'WILD STEM · VERANO',
+              title: english
+                ? 'Flowers for your summer table.'
+                : 'Flores para la mesa de verano.',
+              body: english
+                ? 'Fresh bouquets and warm colors for every corner.'
+                : 'Ramos frescos y colores cálidos para cada rincón.',
             },
           },
         }
@@ -45,30 +52,37 @@ export function TemplatePreviewScreen() {
   )
 }
 
-function spanishObsidianPreview(
-  props: ReturnType<typeof createDesignPreviewProps>
+function obsidianPreview(
+  props: ReturnType<typeof createDesignPreviewProps>,
+  english: boolean
 ) {
   const items = [
     {
       ...props.allItems[0],
-      id: 'lavado-premium',
-      name: 'Lavado premium',
+      id: 'premium-wash',
+      name: english ? 'Premium wash' : 'Lavado premium',
       price: '1200',
-      description: 'Limpieza exterior e interior con terminación detallada.',
+      description: english
+        ? 'Exterior and interior cleaning with a detailed finish.'
+        : 'Limpieza exterior e interior con terminación detallada.',
     },
     {
       ...props.allItems[0],
-      id: 'pulido-proteccion',
-      name: 'Pulido y protección',
+      id: 'polish-protection',
+      name: english ? 'Polish and protection' : 'Pulido y protección',
       price: '1850',
-      description: 'Brillo profundo y protección para la pintura.',
+      description: english
+        ? 'Deep shine and paint protection.'
+        : 'Brillo profundo y protección para la pintura.',
     },
     {
       ...props.allItems[0],
-      id: 'interior-completo',
-      name: 'Interior completo',
+      id: 'full-interior',
+      name: english ? 'Full interior' : 'Interior completo',
       price: '980',
-      description: 'Tapizados, paneles y detalles renovados.',
+      description: english
+        ? 'Renewed upholstery, panels, and details.'
+        : 'Tapizados, paneles y detalles renovados.',
     },
   ]
 
@@ -76,12 +90,20 @@ function spanishObsidianPreview(
     ...props,
     tenant: {
       ...props.tenant,
-      name: 'Obsidiana Detailing',
-      description: 'Cuidado premium para tu vehículo.',
+      name: english ? 'Obsidian Detailing' : 'Obsidiana Detailing',
+      description: english
+        ? 'Premium care for your vehicle.'
+        : 'Cuidado premium para tu vehículo.',
     },
-    listName: 'Servicios de detailing',
+    listName: english ? 'Detailing services' : 'Servicios de detailing',
     sections: [
-      { ...props.sections[0], name: 'Servicios', items, min: 980, max: 1850 },
+      {
+        ...props.sections[0],
+        name: english ? 'Services' : 'Servicios',
+        items,
+        min: 980,
+        max: 1850,
+      },
     ],
     base: items,
     allItems: items,
@@ -89,9 +111,11 @@ function spanishObsidianPreview(
       schemaVersion: 1 as const,
       blocks: [],
       hero: {
-        eyebrow: 'OBSEDIANA · DETAILING',
-        title: 'Cuidamos cada detalle.',
-        body: 'Servicios premium para que tu auto se vea impecable todos los días.',
+        eyebrow: english ? 'OBSIDIAN · DETAILING' : 'OBSEDIANA · DETAILING',
+        title: english ? 'We care for every detail.' : 'Cuidamos cada detalle.',
+        body: english
+          ? 'Premium services to keep your car looking immaculate every day.'
+          : 'Servicios premium para que tu auto se vea impecable todos los días.',
       },
     },
   }

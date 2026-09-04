@@ -94,16 +94,30 @@ const previewItem = {
 } as Item
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function createDesignPreviewProps(accent: string): DesignProps {
+export function createDesignPreviewProps(
+  accent: string,
+  language: 'es' | 'en' = 'es'
+): DesignProps {
+  const english = language === 'en'
+  const item = english
+    ? {
+        ...previewItem,
+        name: 'Featured product',
+        description: 'A sample item for this layout.',
+        category: 'Featured',
+      }
+    : previewItem
   const tenant = {
     id: 'preview',
-    name: 'Casa MiPrecio',
+    name: english ? 'PricePanel Studio' : 'Casa MiPrecio',
     subdomain: 'preview',
-    currency: 'UYU',
-    description: 'Una selección para todos los días.',
+    currency: english ? 'USD' : 'UYU',
+    description: english
+      ? 'A thoughtfully curated selection for every day.'
+      : 'Una selección para todos los días.',
     brandColor: accent,
     listHeroColor: accent,
-    language: 'es',
+    language,
     taxId: null,
   } as Tenant
   const C = {
@@ -121,22 +135,22 @@ export function createDesignPreviewProps(accent: string): DesignProps {
     accent,
     heroColor: accent,
     brandGradient: `linear-gradient(135deg, ${accent}, #A855F7)`,
-    t: getT('es'),
+    t: getT(language),
     money: (value) => `$ ${value}`,
-    currency: 'UYU',
-    updated: 'Hoy',
-    monthYear: 'Junio 2026',
+    currency: english ? 'USD' : 'UYU',
+    updated: english ? 'Today' : 'Hoy',
+    monthYear: english ? 'June 2026' : 'Junio 2026',
     sections: [
       {
         key: 'featured',
-        name: 'Destacados',
-        items: [previewItem],
+        name: english ? 'Featured' : 'Destacados',
+        items: [item],
         min: 890,
         max: 890,
       },
     ],
-    base: [previewItem],
-    allItems: [previewItem],
+    base: [item],
+    allItems: [item],
     cat: 'all',
     setCat: () => {},
     q: '',
@@ -148,7 +162,7 @@ export function createDesignPreviewProps(accent: string): DesignProps {
     openCart: () => {},
     waHref: '#',
     isService: false,
-    listName: 'Selección',
+    listName: english ? 'Featured collection' : 'Selección',
     edition: '001',
     taxId: null,
     hasBg: false,
