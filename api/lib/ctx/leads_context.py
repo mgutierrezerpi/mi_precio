@@ -105,6 +105,15 @@ def list_customer_submissions(customer_id: str) -> list[Lead]:
     )
 
 
+def delete_lead(tenant_id: str, lead_id: str) -> bool:
+    """Permanently remove one submission owned by the requesting tenant."""
+    return bool(
+        Lead.delete()
+        .where((Lead.id == lead_id) & (Lead.tenant == tenant_id))
+        .execute()
+    )
+
+
 def set_status(lead_id: str, status: str) -> Lead | None:
     if status not in STATUSES:
         return None

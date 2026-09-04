@@ -132,3 +132,27 @@ class TestTheCrmRoutes:
         assert client.post(url, headers=headers).status_code == 201
         assert client.post(url, headers=headers).status_code == 409
         assert Lead.get_by_id(lead.id).status == "converted"
+
+    def test_an_editor_can_delete_a_submission_in_its_tenant(self, client, db):
+        shop = _plus_shop()
+        lead = leads.create_lead(shop.id, "Ana", phone="59899123456")
+
+        res = client.delete(
+            f"/api/v1/tenants/{shop.id}/leads/{lead.id}", headers=_auth(shop.id)
+        )
+
+        assert res.status_code == 200
+        assert res.json() == {"deleted": True}
+        assert Lead.get_or_none(Lead.id == lead.id) is None
+
+    def test_a_submission_cannot_be_deleted_from_another_tenant(self, client, db):
+        shop = _plus_shop()
+        other = _plus_shop()
+        lead = leads.create_lead(other.id, "Ana", phone="59899123456")
+
+        res = client.delete(
+            f"/api/v1/tenants/{shop.id}/leads/{lead.id}", headers=_auth(shop.id)
+        )
+
+        assert res.status_code == 404
+        assert Lead.get_or_none(Lead.id == lead.id) is not None

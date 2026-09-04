@@ -40,3 +40,12 @@ def list_viewers(tenant_id: str) -> list[PublicViewer]:
         .where(PublicViewer.tenant == tenant_id)
         .order_by(PublicViewer.last_seen_at.desc())
     )
+
+
+def delete_viewer(tenant_id: str, viewer_id: str) -> bool:
+    """Permanently remove one identified viewer from this tenant only."""
+    return bool(
+        PublicViewer.delete()
+        .where((PublicViewer.id == viewer_id) & (PublicViewer.tenant == tenant_id))
+        .execute()
+    )

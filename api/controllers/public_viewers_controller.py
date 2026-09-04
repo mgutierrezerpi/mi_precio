@@ -35,3 +35,14 @@ def promote_public_viewer(
     if not customer:
         raise HTTPException(status_code=404, detail="Viewer not found")
     return CustomerView.render(customer)
+
+
+@router.delete("/tenants/{tenant_id}/public-viewers/{viewer_id}")
+def delete_public_viewer(
+    tenant_id: str,
+    viewer_id: str,
+    current_user: Annotated[dict, Depends(require_editor)],
+):
+    if not public_viewers.delete_viewer(tenant_id, viewer_id):
+        raise HTTPException(status_code=404, detail="Viewer not found")
+    return {"deleted": True}

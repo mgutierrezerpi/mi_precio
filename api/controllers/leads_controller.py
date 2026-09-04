@@ -82,3 +82,12 @@ def link_lead_customer_endpoint(
     if not lead:
         raise HTTPException(status_code=404, detail="Lead or customer not found")
     return LeadView.render(lead)
+
+
+@router.delete("/tenants/{tenant_id}/leads/{lead_id}")
+def delete_lead_endpoint(
+    tenant_id: str, lead_id: str, current_user: dict = Depends(require_editor)
+):
+    if not leads.delete_lead(tenant_id, lead_id):
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return {"deleted": True}

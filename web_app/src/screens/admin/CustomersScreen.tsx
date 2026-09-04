@@ -151,6 +151,8 @@ export function CustomersScreen() {
   const [promotingViewerId, setPromotingViewerId] = useState<string | null>(
     null
   )
+  const [deletingSubmissionId, setDeletingSubmissionId] = useState<string | null>(null)
+  const [deletingViewerId, setDeletingViewerId] = useState<string | null>(null)
   const [viewerError, setViewerError] = useState<string | null>(null)
   const [customerEmailsCopied, setCustomerEmailsCopied] = useState(false)
   const [viewerEmailsCopied, setViewerEmailsCopied] = useState(false)
@@ -199,6 +201,17 @@ export function CustomersScreen() {
     if (!tenantId || !canEdit) return
     const response = await api.linkLeadCustomer(tenantId, leadId, customerId)
     if (response.data) setSubmissions((current) => current.map((lead) => lead.id === leadId ? response.data! : lead))
+  }
+
+  const deleteSubmission = async (lead: Lead) => {
+    if (!tenantId || !canEdit || deletingSubmissionId) return
+    if (!confirm(`¿Eliminar el envío de ${lead.name}?`)) return
+    setDeletingSubmissionId(lead.id)
+    const response = await api.deleteFormSubmission(tenantId, lead.id)
+    if (response.data) {
+      setSubmissions((current) => current.filter((item) => item.id !== lead.id))
+    }
+    setDeletingSubmissionId(null)
   }
 
   const filtered = useMemo(() => {
@@ -254,6 +267,17 @@ export function CustomersScreen() {
       setViewerError(t('viewers.promoteError'))
     }
     setPromotingViewerId(null)
+  }
+
+  const deleteViewer = async (viewer: PublicViewer) => {
+    if (!tenantId || !canEdit || deletingViewerId) return
+    if (!confirm(`¿Eliminar a ${viewer.name} de visitantes identificados?`)) return
+    setDeletingViewerId(viewer.id)
+    const response = await api.deletePublicViewer(tenantId, viewer.id)
+    if (response.data) {
+      setViewers((current) => current.filter((item) => item.id !== viewer.id))
+    }
+    setDeletingViewerId(null)
   }
 
   return (
@@ -452,7 +476,7 @@ export function CustomersScreen() {
           {submissions.length === 0 ? <p className="px-5 py-8 text-center text-sm font-medium text-[var(--dash-muted)]">Todavía no hay envíos de formulario.</p> : (
             <div className="overflow-x-auto">
               <div className="min-w-[760px]">
-                {submissions.map((lead, index) => <div key={lead.id} className={`grid grid-cols-[1fr_1.5fr_1fr_190px] items-center gap-4 px-5 py-4 text-xs ${index ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                {submissions.map((lead, index) => <div key={lead.id} className={`grid grid-cols-[1fr_1.5fr_1fr_190px_36px] items-center gap-4 px-5 py-4 text-xs ${index ? 'border-t border-[var(--dash-divider)]' : ''}`}>
                   <div><p className="font-bold text-[var(--dash-text)]">{lead.name}</p><p className="mt-1 text-[var(--dash-muted)]">{lead.email || lead.phone || 'Sin contacto'}</p></div>
                   <p className="line-clamp-2 text-[var(--dash-text2)]">{lead.message || '—'}</p>
                   <p className="text-[var(--dash-muted)]">{fullDate(lead.createdAt, localeOf(tenant?.language))}</p>
@@ -460,6 +484,7 @@ export function CustomersScreen() {
                     <option value="">Sin vincular</option>
                     {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
                   </select>
+                  {canEdit && <button type="button" onClick={() => void deleteSubmission(lead)} disabled={deletingSubmissionId !== null} title="Eliminar envío" aria-label="Eliminar envío" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--tone-red-bg)] hover:text-[var(--tone-red-fg)] disabled:cursor-wait disabled:opacity-60"><Icon name="circle-x" size={16} /></button>}
                 </div>)}
               </div>
             </div>
@@ -570,7 +595,7 @@ export function CustomersScreen() {
                     <div className="font-bold text-[var(--dash-text2)]">
                       {viewer.viewCount}
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
                       {viewer.customerId ? (
                         <button
                           type="button"
@@ -606,6 +631,18 @@ export function CustomersScreen() {
                         <span className="text-[11px] text-[var(--dash-muted)]">
                           —
                         </span>
+                      )}
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={() => void deleteViewer(viewer)}
+                          disabled={deletingViewerId !== null}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl text-[var(--dash-muted)] transition hover:bg-[var(--tone-red-bg)] hover:text-[var(--tone-red-fg)] disabled:cursor-wait disabled:opacity-60"
+                          title="Eliminar visitante"
+                          aria-label="Eliminar visitante"
+                        >
+                          <Icon name="circle-x" size={16} />
+                        </button>
                       )}
                     </div>
                   </div>

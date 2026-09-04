@@ -685,6 +685,15 @@ class ApiService {
     )
   }
 
+  async deletePublicViewer(
+    tenantId: string,
+    viewerId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/tenants/${tenantId}/public-viewers/${viewerId}`, {
+      method: 'DELETE',
+    })
+  }
+
   async recordPublicViewerDismissal(
     subdomain: string,
     listId: string
@@ -1263,6 +1272,15 @@ class ApiService {
     return this.request(`/tenants/${tenantId}/leads/${leadId}/customer`, {
       method: 'PATCH',
       body: JSON.stringify({ customer_id: customerId }),
+    })
+  }
+
+  async deleteFormSubmission(
+    tenantId: string,
+    leadId: string
+  ): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/tenants/${tenantId}/leads/${leadId}`, {
+      method: 'DELETE',
     })
   }
 

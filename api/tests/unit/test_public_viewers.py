@@ -101,6 +101,20 @@ def test_cookie_identifies_future_list_visits(db):
     assert PublicViewer.get_by_id(first.id).view_count == 2
 
 
+def test_delete_viewer_is_scoped_to_its_tenant(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    other = identity.create_tenant("Other Store", "other-store")
+    price_list = _published_list(tenant.id)
+    viewer = public_viewers.capture_viewer(
+        tenant.id, price_list.id, "Lucía", email="lucia@example.com"
+    )
+
+    assert not public_viewers.delete_viewer(other.id, viewer.id)
+    assert PublicViewer.get_or_none(PublicViewer.id == viewer.id) is not None
+    assert public_viewers.delete_viewer(tenant.id, viewer.id)
+    assert PublicViewer.get_or_none(PublicViewer.id == viewer.id) is None
+
+
 def test_anonymous_dismissal_is_aggregated_without_creating_a_viewer(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     price_list = _published_list(tenant.id)
