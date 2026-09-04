@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import type { Item, ListDesign, Tenant } from '../../types'
 import { getT, type TFn } from '../../lib/i18n'
 import { fileToDataUrl } from '../../lib/image'
@@ -46,9 +46,11 @@ const standardPreviewRenderers: Partial<
 export function DesignThumb({
   design,
   accent,
+  size = 'thumb',
 }: {
   design: ListDesign
   accent: string
+  size?: 'thumb' | 'preview'
 }) {
   const props = createDesignPreviewProps(accent)
   let preview: React.ReactNode
@@ -69,10 +71,12 @@ export function DesignThumb({
 
   return (
     <div
-      className="relative h-40 w-full overflow-hidden bg-white"
+      className={`relative w-full overflow-hidden bg-white ${size === 'preview' ? 'h-[min(64vh,38rem)]' : 'h-40'}`}
       aria-hidden="true"
     >
-      <div className="pointer-events-none absolute left-1/2 top-0 w-[960px] origin-top -translate-x-1/2 scale-[0.27]">
+      <div
+        className={`pointer-events-none absolute left-1/2 top-0 w-[960px] origin-top -translate-x-1/2 ${size === 'preview' ? 'scale-[0.62]' : 'scale-[0.27]'}`}
+      >
         {preview}
       </div>
     </div>
@@ -624,6 +628,7 @@ export function ListAppearanceFields({
 }: Props) {
   const bgFileRef = useRef<HTMLInputElement>(null)
   const designGalleryRef = useRef<HTMLDivElement>(null)
+  const [previewDesign, setPreviewDesign] = useState<ListDesign | null>(null)
   const canInherit = !!inherited
   const effectiveDesign = value.design ?? inherited?.design ?? 'store'
   const effectiveHero =
@@ -729,6 +734,14 @@ export function ListAppearanceFields({
           </span>
         )}
       </div>
+      <button
+        type="button"
+        onClick={() => setPreviewDesign(effectiveDesign)}
+        className="-mt-2 flex w-fit items-center gap-1.5 text-xs font-bold text-[var(--dash-link)] hover:underline"
+      >
+        <Icon name="eye" size={15} />
+        Vista previa de este tema
+      </button>
       <div className="relative">
         <div
           ref={designGalleryRef}
@@ -768,32 +781,46 @@ export function ListAppearanceFields({
           {LIST_DESIGNS.map((d) => {
             const on = canInherit ? value.design === d : effectiveDesign === d
             return (
-              <button
+              <div
                 key={d}
-                type="button"
-                disabled={disabled}
-                onClick={() => onChange({ design: d })}
                 className={`flex w-[min(18rem,calc(100vw-4rem))] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${on ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
               >
-                <DesignThumb design={d} accent={accent} />
-                <div className="flex items-start justify-between gap-2 border-t border-[var(--dash-border)] bg-[var(--dash-surface)] p-3">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[13px] font-bold text-[var(--dash-text)]">
-                      {t(`set.design.${d}.name`)}
-                    </span>
-                    <span className="text-[11px] font-medium leading-tight text-[var(--dash-muted)]">
-                      {t(`set.design.${d}.desc`)}
-                    </span>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onChange({ design: d })}
+                  className="text-left disabled:opacity-60"
+                  aria-label={`Elegir ${t(`set.design.${d}.name`)}`}
+                >
+                  <DesignThumb design={d} accent={accent} />
+                  <div className="flex items-start justify-between gap-2 border-t border-[var(--dash-border)] bg-[var(--dash-surface)] p-3">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[13px] font-bold text-[var(--dash-text)]">
+                        {t(`set.design.${d}.name`)}
+                      </span>
+                      <span className="text-[11px] font-medium leading-tight text-[var(--dash-muted)]">
+                        {t(`set.design.${d}.desc`)}
+                      </span>
+                    </div>
+                    {on && (
+                      <Icon
+                        name="circle-check"
+                        size={16}
+                        className="mt-0.5 shrink-0 text-[#7C3AED]"
+                      />
+                    )}
                   </div>
-                  {on && (
-                    <Icon
-                      name="circle-check"
-                      size={16}
-                      className="mt-0.5 shrink-0 text-[#7C3AED]"
-                    />
-                  )}
-                </div>
-              </button>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDesign(d)}
+                  className="flex items-center justify-center gap-1.5 border-t border-[var(--dash-divider)] bg-[var(--dash-soft)] px-3 py-2 text-xs font-bold text-[var(--dash-link)] transition hover:bg-[var(--dash-border)]"
+                  aria-label={`Vista previa de ${t(`set.design.${d}.name`)}`}
+                >
+                  <Icon name="eye" size={14} />
+                  Vista previa
+                </button>
+              </div>
             )
           })}
         </div>
@@ -816,6 +843,51 @@ export function ListAppearanceFields({
           </button>
         </div>
       </div>
+
+      {previewDesign && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#171521]/70 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Vista previa del tema"
+          onMouseDown={() => setPreviewDesign(null)}
+        >
+          <div
+            className="w-full max-w-4xl overflow-hidden rounded-2xl border border-white/15 bg-[var(--dash-surface)] shadow-2xl"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-4 border-b border-[var(--dash-divider)] px-4 py-3">
+              <div>
+                <p className="text-sm font-extrabold text-[var(--dash-text)]">
+                  {t(`set.design.${previewDesign}.name`)}
+                </p>
+                <p className="text-xs font-medium text-[var(--dash-muted)]">
+                  Vista previa con el color de tu marca
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewDesign(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--dash-muted)] hover:bg-[var(--dash-soft)] hover:text-[var(--dash-text)]"
+                aria-label="Cerrar vista previa"
+                title="Cerrar"
+              >
+                <Icon name="circle-x" size={18} />
+              </button>
+            </div>
+            <DesignThumb design={previewDesign} accent={accent} size="preview" />
+            <div className="flex justify-end border-t border-[var(--dash-divider)] p-3">
+              <button
+                type="button"
+                onClick={() => setPreviewDesign(null)}
+                className="rounded-lg bg-[var(--dash-soft)] px-3 py-2 text-xs font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-border)]"
+              >
+                Volver a los temas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Background image + brand-colour filter */}
       <div className="mt-1 flex items-center justify-between gap-2">
