@@ -749,10 +749,17 @@ export function ListAppearanceFields({
           aria-label={t('set.design.title')}
         >
           {canInherit && (
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onChange({ design: null })}
+            <div
+              role="button"
+              tabIndex={disabled ? -1 : 0}
+              aria-disabled={disabled}
+              onClick={() => !disabled && onChange({ design: null })}
+              onKeyDown={(event) => {
+                if (!disabled && (event.key === 'Enter' || event.key === ' ')) {
+                  event.preventDefault()
+                  onChange({ design: null })
+                }
+              }}
               className={`flex w-[min(18rem,calc(100vw-4rem))] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${value.design === null ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
             >
               <DesignThumb
@@ -776,7 +783,7 @@ export function ListAppearanceFields({
                   />
                 )}
               </div>
-            </button>
+            </div>
           )}
           {LIST_DESIGNS.map((d) => {
             const on = canInherit ? value.design === d : effectiveDesign === d
@@ -785,11 +792,18 @@ export function ListAppearanceFields({
                 key={d}
                 className={`flex w-[min(18rem,calc(100vw-4rem))] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${on ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
               >
-                <button
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => onChange({ design: d })}
-                  className="text-left disabled:opacity-60"
+                <div
+                  role="button"
+                  tabIndex={disabled ? -1 : 0}
+                  aria-disabled={disabled}
+                  onClick={() => !disabled && onChange({ design: d })}
+                  onKeyDown={(event) => {
+                    if (!disabled && (event.key === 'Enter' || event.key === ' ')) {
+                      event.preventDefault()
+                      onChange({ design: d })
+                    }
+                  }}
+                  className="text-left"
                   aria-label={`Elegir ${t(`set.design.${d}.name`)}`}
                 >
                   <DesignThumb design={d} accent={accent} />
@@ -810,7 +824,7 @@ export function ListAppearanceFields({
                       />
                     )}
                   </div>
-                </button>
+                </div>
                 <button
                   type="button"
                   onClick={() => setPreviewDesign(d)}
