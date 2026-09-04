@@ -421,12 +421,11 @@ function Navbar({
           onClick={() => setOpen(false)}
         >
           {isEnglishLanding ? (
-            <span className="flex items-center gap-2.5 text-[25px] font-extrabold tracking-[-0.05em] text-white" aria-label="PricePanel">
-              <span className="h-11 w-11 overflow-hidden" aria-hidden="true">
-                <img src="/miprecio-logo-white-pencil.webp" alt="" className="h-11 max-w-none w-auto" />
-              </span>
-              PricePanel
-            </span>
+            <img
+              src="/pricepanel-logo.svg"
+              alt="PricePanel"
+              className="h-11 w-auto"
+            />
           ) : (
             <span className="relative inline-flex h-11 overflow-hidden">
               <img
