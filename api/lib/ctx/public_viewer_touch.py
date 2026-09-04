@@ -39,7 +39,10 @@ def touch_viewer(
     price_list = PriceList.get_or_none(
         (PriceList.id == list_id) & (PriceList.tenant == tenant_id)
     )
-    if not price_list or not price_list.published or not price_list.capture_viewer_info:
+    is_customer_private = bool(price_list and price_list.is_private)
+    if not price_list or not price_list.published or (
+        not price_list.capture_viewer_info and not is_customer_private
+    ):
         return False
     identity = PublicViewer.get_or_none(
         (PublicViewer.tenant == tenant_id)

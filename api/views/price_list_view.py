@@ -74,6 +74,7 @@ class PriceListView(BaseView):
     bg_url: str | None = None
     bg_overlay: bool | None = None
     capture_viewer_info: bool = False
+    is_private: bool = False
     item_count: int = 0
     # Published says what the owner wants; live says what the plan actually
     # serves. They differ when a downgrade or an expired subscription leaves more

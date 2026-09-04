@@ -8,8 +8,8 @@ from controllers.input_types import (
     UpdateCustomer,
     UpdateOrder,
 )
-from lib.ctx import activity, customers
-from views import CustomerView, DeletedView, OrderView
+from lib.ctx import activity, customers, leads
+from views import CustomerView, DeletedView, LeadView, OrderView
 
 router = APIRouter(tags=["customers"])
 
@@ -58,6 +58,7 @@ def get_customer_endpoint(
     return {
         "customer": CustomerView.render(customer),
         "orders": OrderView.render_many(orders),
+        "submissions": LeadView.render_many(leads.list_customer_submissions(customer_id)),
     }
 
 

@@ -1,7 +1,7 @@
 """Tests for identified public-list viewers."""
 
-from lib.ctx import identity, lists, public_viewers, versions
-from models import Customer, PublicViewer, PublicViewerDismissal
+from lib.ctx import customers, identity, lists, public_viewers, versions
+from models import Customer, CustomerListAccess, PublicViewer, PublicViewerDismissal
 
 
 def _published_list(tenant_id: str):
@@ -147,3 +147,31 @@ def test_promote_viewer_reuses_matching_customer(db):
     assert customer is not None
     assert customer.id == existing.id
     assert Customer.select().where(Customer.tenant == tenant.id).count() == 1
+
+
+def test_customer_code_unlocks_each_private_list_granted_to_the_customer(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    customer = customers.create_customer(tenant.id, name="Acme", access_code="ACME2026")
+    first = lists.create_list(tenant.id, "Acme retail")
+    second = lists.create_list(tenant.id, "Acme wholesale")
+    for created in (first, second):
+        lists.update_list(created.price_list.id, published=True)
+        versions.update_version(created.version.id, published=True)
+        created.price_list.is_private = True
+        created.price_list.save()
+        CustomerListAccess.create(customer=customer, price_list=created.price_list)
+
+    viewer = public_viewers.unlock_list(
+        tenant.id, first.price_list.id, "ACME2026", visitor_token=None
+    )
+
+    assert viewer is not None
+    assert public_viewers.has_list_access(first.price_list, viewer.visitor_token)
+    assert public_viewers.has_list_access(second.price_list, viewer.visitor_token)
+    assert not public_viewers.has_list_access(second.price_list, None)
+    assert (
+        public_viewers.unlock_list(
+            tenant.id, second.price_list.id, "wrong-code", visitor_token=None
+        )
+        is None
+    )

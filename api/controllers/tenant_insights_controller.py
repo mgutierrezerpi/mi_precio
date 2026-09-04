@@ -25,9 +25,10 @@ def reports_endpoint(
     tenant_id: str,
     days: int = 30,
     list_id: str | None = None,
+    customer_id: str | None = None,
     current_user: dict = Depends(get_current_user),
 ):
-    return analytics.reports(tenant_id, days, list_id)
+    return analytics.reports(tenant_id, days, list_id, customer_id)
 
 
 @router.get("/{tenant_id}/activity")

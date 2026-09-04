@@ -50,6 +50,7 @@ export type VisitStats = VisitBucket & { qr: VisitBucket }
 export type ReportData = {
   days: number
   listId: string | null
+  customerId?: string | null
   kpis: { visits: number; qrScans: number; customers: number; revenue: string }
   series: { date: string; link: number; qr: number }[]
   channels: { link: number; qr: number }
@@ -636,6 +637,7 @@ class ApiService {
       bgUrl?: string | null
       bgOverlay?: boolean | null
       captureViewerInfo?: boolean
+      isPrivate?: boolean
     }
   ): Promise<ApiResponse<PriceList>> {
     // Only send the keys actually provided — the API distinguishes "absent"
@@ -647,6 +649,7 @@ class ApiService {
       bgUrl: 'bg_url',
       bgOverlay: 'bg_overlay',
       captureViewerInfo: 'capture_viewer_info',
+      isPrivate: 'is_private',
     }
     const body: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(data)) {
@@ -960,11 +963,15 @@ class ApiService {
   async getReports(
     tenantId: string,
     days = 30,
-    listId?: string
+    listId?: string,
+    customerId?: string
   ): Promise<ApiResponse<ReportData>> {
     const listFilter = listId ? `&list_id=${encodeURIComponent(listId)}` : ''
+    const customerFilter = customerId
+      ? `&customer_id=${encodeURIComponent(customerId)}`
+      : ''
     return this.request(
-      `/tenants/${tenantId}/stats/reports?days=${days}${listFilter}`
+      `/tenants/${tenantId}/stats/reports?days=${days}${listFilter}${customerFilter}`
     )
   }
 
@@ -1224,6 +1231,10 @@ class ApiService {
     return this.request(`/tenants/${tenantId}/leads${query}`)
   }
 
+  async getFormSubmissions(tenantId: string): Promise<ApiResponse<Lead[]>> {
+    return this.request(`/tenants/${tenantId}/media-kit-submissions`)
+  }
+
   async setLeadStatus(
     tenantId: string,
     leadId: string,
@@ -1241,6 +1252,17 @@ class ApiService {
   ): Promise<ApiResponse<Customer>> {
     return this.request(`/tenants/${tenantId}/leads/${leadId}/convert`, {
       method: 'POST',
+    })
+  }
+
+  async linkLeadCustomer(
+    tenantId: string,
+    leadId: string,
+    customerId: string | null
+  ): Promise<ApiResponse<Lead>> {
+    return this.request(`/tenants/${tenantId}/leads/${leadId}/customer`, {
+      method: 'PATCH',
+      body: JSON.stringify({ customer_id: customerId }),
     })
   }
 
@@ -1262,11 +1284,20 @@ class ApiService {
       email?: string | null
       phone?: string | null
       notes?: string | null
+      accessCode?: string | null
+      accessListIds?: string[]
     }
   ): Promise<ApiResponse<Customer>> {
+    const { accessCode, accessListIds, ...customer } = data
     return this.request(`/tenants/${tenantId}/customers`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...customer,
+        ...(accessCode !== undefined ? { access_code: accessCode } : {}),
+        ...(accessListIds !== undefined
+          ? { access_list_ids: accessListIds }
+          : {}),
+      }),
     })
   }
 
@@ -1284,11 +1315,17 @@ class ApiService {
       email?: string | null
       phone?: string | null
       notes?: string | null
+      accessCode?: string | null
+      accessListIds?: string[]
     }
   ): Promise<ApiResponse<Customer>> {
+    const body: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(data)) {
+      body[key === 'accessCode' ? 'access_code' : key === 'accessListIds' ? 'access_list_ids' : key] = value
+    }
     return this.request(`/customers/${customerId}`, {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      body: JSON.stringify(body),
     })
   }
 
@@ -1351,6 +1388,17 @@ class ApiService {
     return this.request(`/public/${subdomain}${listFilter}`)
   }
 
+  async unlockPublicList(
+    subdomain: string,
+    listId: string,
+    code: string
+  ): Promise<ApiResponse<{ ok: boolean }>> {
+    return this.request(`/public/${subdomain}/lists/${encodeURIComponent(listId)}/access`, {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    })
+  }
+
   async getPublicMagazine(
     subdomain: string,
     magazineId: string
@@ -1369,7 +1417,7 @@ class ApiService {
       message?: string
       listId?: string | null
       listName?: string | null
-      source?: 'form' | 'cart'
+      source?: 'form' | 'cart' | 'media_kit'
       website?: string
     }
   ): Promise<ApiResponse<{ ok: boolean }>> {

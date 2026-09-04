@@ -26,6 +26,7 @@ def _ensure_list_columns() -> None:
         ("customer_id", "customer_id VARCHAR(32)"), ("starts_at", "starts_at DATETIME"),
         ("ends_at", "ends_at DATETIME"),
         ("capture_viewer_info", "capture_viewer_info INTEGER NOT NULL DEFAULT 0"),
+        ("is_private", "is_private INTEGER NOT NULL DEFAULT 0"),
     ])
 
 
@@ -50,10 +51,15 @@ def _ensure_product_columns() -> None:
 
 def _ensure_optional_columns() -> None:
     add_missing_columns("page_views", [
-        ("source", "source VARCHAR(16) NOT NULL DEFAULT 'link'")
+        ("source", "source VARCHAR(16) NOT NULL DEFAULT 'link'"),
+        ("customer_id", "customer_id VARCHAR(32)"),
     ])
     add_missing_columns("activities", [("meta", "meta TEXT")])
-    add_missing_columns("customers", [("rut", "rut VARCHAR(32)")])
+    add_missing_columns("customers", [
+        ("rut", "rut VARCHAR(32)"),
+        ("access_code_hash", "access_code_hash VARCHAR(255)"),
+    ])
+    add_missing_columns("leads", [("customer_id", "customer_id VARCHAR(32)")])
     add_missing_columns("orders", [("reference", "reference VARCHAR(64)")])
     add_missing_columns("public_viewers", [
         ("customer_id", "customer_id VARCHAR(32)"),

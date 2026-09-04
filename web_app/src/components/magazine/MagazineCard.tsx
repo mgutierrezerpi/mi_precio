@@ -28,35 +28,44 @@ export function MagazineCard({
     (entry) => entry.id === magazine.design
   )
   const designLabel = template ? t(template.nameKey) : magazine.design
+  const firstPage = [...(magazine.pages ?? [])].sort(
+    (left, right) => left.position - right.position
+  )[0]
+  const previewImage = firstPage?.imageUrl || magazine.coverImageUrl
   const statusClassName = magazine.published
     ? 'bg-emerald-500/15 text-emerald-400'
     : 'bg-[var(--dash-soft)] text-[var(--dash-muted)]'
   return (
     <article className={MAGAZINE_CARD_CLASSES.card}>
-      <div className="relative flex h-28 items-end overflow-hidden bg-[#3A2A1D] p-4 text-[#F3EDE2]">
-        {magazine.coverImageUrl && (
+      <div className="relative h-32 overflow-hidden border-b border-[var(--dash-border)] bg-[var(--dash-soft)]">
+        {previewImage ? (
           <img
-            src={magazine.coverImageUrl}
+            src={previewImage}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-60"
+            className="h-full w-full object-cover object-top"
           />
+        ) : (
+          <div className="flex h-full w-full items-start justify-between bg-gradient-to-br from-[var(--dash-card)] to-[var(--dash-soft)] p-4">
+            <div className="max-w-[72%]">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--dash-muted)]">
+                {magazine.issue || t('magazines.pages')}
+              </span>
+              <h2 className="mt-1.5 line-clamp-2 text-base font-bold leading-tight text-[var(--dash-text)]">
+                {firstPage?.title || magazine.name}
+              </h2>
+            </div>
+            <Icon
+              name="book-open"
+              size={20}
+              className="shrink-0 text-[var(--dash-muted)]"
+            />
+          </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#241B15] via-[#3A2A1D]/40 to-transparent" />
-        <div className="relative flex min-w-0 items-center gap-2">
-          <Icon
-            name="book-open"
-            size={18}
-            className="shrink-0 text-[#D6B58B]"
-          />
-          <h2
-            className="truncate text-lg font-semibold"
-            style={{ fontFamily: 'Georgia, serif' }}
-          >
-            {magazine.name}
-          </h2>
-        </div>
       </div>
       <div className="flex flex-1 flex-col gap-3 p-4">
+        <h2 className="truncate text-base font-bold text-[var(--dash-text)]">
+          {magazine.name}
+        </h2>
         <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--dash-muted)]">
           {magazine.issue && <span>{magazine.issue}</span>}
           <span>·</span>

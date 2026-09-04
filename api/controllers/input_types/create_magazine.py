@@ -6,6 +6,7 @@ MAGAZINE_DESIGNS = {
     "aqua-objects",
     "editorial",
     "catalog",
+    "cafecitos-media-kit",
 }
 
 

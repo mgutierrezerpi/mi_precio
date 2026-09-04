@@ -11,6 +11,8 @@ class PageView(BaseModel):
     list_id = CharField(max_length=32, null=True)
     # How the visitor arrived: "qr" (scanned a code) or "link" (direct/shared link).
     source = CharField(max_length=16, default="link", index=True)
+    # Filled when a visit comes from a browser previously identified with a CRM client.
+    customer_id = CharField(max_length=32, null=True, index=True)
 
     class Meta:
         table_name = "page_views"

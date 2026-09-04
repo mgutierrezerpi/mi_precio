@@ -32,27 +32,29 @@ docker compose down
 Local URLs:
 
 - Landing: `http://localhost:8088`
-- Web app: `http://localhost:3000`
+- Web app: `http://localhost:3001`
 - API health: `http://localhost:8000/health`
 
 The Vite web app also has these useful routes:
 
-- `http://localhost:3000/login`
-- `http://localhost:3000/admin`
-- `http://localhost:3000/admin/lists`
-- `http://localhost:3000/admin/items`
-- `http://localhost:3000/admin/settings`
+- `http://localhost:3001/login`
+- `http://localhost:3001/admin`
+- `http://localhost:3001/admin/lists`
+- `http://localhost:3001/admin/items`
+- `http://localhost:3001/admin/settings`
 
 Ports can be overridden with `LANDING_PORT`, `WEB_APP_PORT`, and `API_PORT`.
 
-## Sentry Monitoring
+## Error monitoring
 
-The API and Huey worker send errors and structured logs to Sentry when the
-runtime `SENTRY_DSN` secret is configured. Get the DSN from the Sentry project
-settings, then set it on Fly (this also redeploys the app):
+The API and Huey worker use the Sentry SDK protocol for error tracking when the
+runtime `SENTRY_DSN` secret is configured. Production uses self-hosted Bugsink
+at `https://bugsink.miprecio.app`; create or retrieve the MiPrecio project DSN
+there, then set it on Fly (this also redeploys the app):
 
 ```bash
-fly secrets set --app mi-precio SENTRY_DSN="https://<public-key>@<sentry-host>/<project-id>"
+fly secrets set --app mi-precio SENTRY_DSN="https://<public-key>@bugsink.miprecio.app/<project-id>" \\
+  SENTRY_ENVIRONMENT=production
 ```
 
 Do not commit the DSN to `fly.toml` or an `.env` file.

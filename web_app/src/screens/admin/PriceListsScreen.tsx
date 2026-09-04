@@ -1476,6 +1476,7 @@ function ListModal({
   const [captureViewerInfo, setCaptureViewerInfo] = useState(
     list?.captureViewerInfo ?? false
   )
+  const [isPrivate, setIsPrivate] = useState(list?.isPrivate ?? false)
   const [parentListId, setParentListId] = useState(list?.parentListId ?? '')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [prodSearch, setProdSearch] = useState('')
@@ -1712,6 +1713,7 @@ function ListModal({
               published,
               showOnIndex: principal,
               captureViewerInfo,
+              isPrivate,
               kind,
               parentListId: parentListId || null,
               ...appearance,
@@ -1732,7 +1734,8 @@ function ListModal({
                 slug: slug.trim() || undefined,
                 published,
                 showOnIndex: principal,
-                captureViewerInfo,
+              captureViewerInfo,
+              isPrivate,
                 ...appearance,
               },
             })
@@ -1919,7 +1922,12 @@ function ListModal({
                 value={captureViewerInfo}
                 onToggle={() => setCaptureViewerInfo((v) => !v)}
               />
-
+              <ToggleRow
+                label="Lista privada"
+                desc="Oculta esta lista del catálogo. Solo los clientes con acceso asignado pueden abrir su link."
+                value={isPrivate}
+                onToggle={() => setIsPrivate((v) => !v)}
+              />
               {/* Appearance overrides, collapsed by default so creating a list
                   stays a two-field job. */}
               <button

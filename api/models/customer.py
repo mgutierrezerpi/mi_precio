@@ -13,6 +13,9 @@ class Customer(BaseModel):
     email = CharField(max_length=255, null=True)
     phone = CharField(max_length=50, null=True)
     notes = TextField(null=True)
+    # Private-list access is a customer property. Store only a salted verifier,
+    # never the code an administrator entered.
+    access_code_hash = CharField(max_length=255, null=True)
 
     class Meta:
         table_name = "customers"

@@ -3,10 +3,15 @@
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from controllers.input_types import PublicViewerCapture, PublicViewerDismissal
+from pydantic import BaseModel, Field
 from controllers.public_request import request_ip
 from lib.ctx import analytics, public, public_viewers
 
 router = APIRouter()
+
+
+class ListAccessCode(BaseModel):
+    code: str = Field(min_length=4, max_length=64)
 
 
 def _tenant(subdomain: str):
@@ -52,8 +57,45 @@ def record_public_viewer_dismissal(subdomain: str, data: PublicViewerDismissal):
     return {"ok": True}
 
 
-@router.post("/{subdomain}/view")
-def record_public_view(subdomain: str, list: str | None = None, source: str | None = None):
+@router.post("/{subdomain}/lists/{list_key}/access")
+def unlock_public_list(
+    subdomain: str, list_key: str, data: ListAccessCode, request: Request, response: Response
+):
     tenant = _tenant(subdomain)
-    analytics.record_view(str(tenant.id), list_id=list, source=source)
+    viewer = public_viewers.unlock_list(
+        str(tenant.id), list_key, data.code,
+        request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE), request_ip(request)
+    )
+    if not viewer or not viewer.visitor_token:
+        raise HTTPException(status_code=403, detail="Invalid access code")
+    response.set_cookie(
+        key=public_viewers.PUBLIC_VIEWER_COOKIE, value=viewer.visitor_token,
+        max_age=public_viewers.PUBLIC_VIEWER_COOKIE_MAX_AGE, httponly=True,
+        samesite="lax", secure=request.url.scheme == "https", path="/",
+    )
+    return {"ok": True}
+
+
+@router.post("/{subdomain}/view")
+def record_public_view(
+    subdomain: str,
+    request: Request,
+    list: str | None = None,
+    source: str | None = None,
+):
+    tenant = _tenant(subdomain)
+    viewer = None
+    token = request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE)
+    if list and token:
+        from models import PublicViewer
+
+        viewer = PublicViewer.get_or_none(
+            (PublicViewer.tenant == tenant.id)
+            & (PublicViewer.price_list == list)
+            & (PublicViewer.visitor_token == token)
+        )
+    analytics.record_view(
+        str(tenant.id), list_id=list, source=source,
+        customer_id=viewer.customer_id if viewer else None,
+    )
     return {"ok": True}

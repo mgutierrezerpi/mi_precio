@@ -38,6 +38,15 @@ def test_create_and_list_customer(tenant):
     assert result[0].last_order_at is None
 
 
+def test_customer_access_code_is_hashed_and_can_be_cleared(tenant):
+    customer = customers.create_customer(tenant.id, name="Lucía", access_code="LUCIA2026")
+    assert customer.access_code_hash is not None
+    assert "LUCIA2026" not in customer.access_code_hash
+
+    cleared = customers.update_customer(customer.id, access_code=None)
+    assert cleared.access_code_hash is None
+
+
 def test_create_order_computes_total_and_items(tenant):
     c = customers.create_customer(tenant.id, name="Martín")
     order = customers.create_order(

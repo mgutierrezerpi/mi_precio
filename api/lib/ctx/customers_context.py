@@ -2,6 +2,8 @@
 
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+import hashlib
+import secrets
 
 from peewee import fn
 
@@ -11,7 +13,7 @@ from lib.ctx.customer_orders import (
     list_orders,
     update_order,
 )
-from models import Customer, Order, Tenant
+from models import Customer, CustomerListAccess, Order, PriceList, Tenant
 
 __all__ = [
     "create_customer",
@@ -53,7 +55,15 @@ def create_customer(tenant_id: str, **attrs) -> Customer | None:
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant:
         return None
+    access_code = attrs.pop("access_code", None)
+    access_list_ids = attrs.pop("access_list_ids", None)
+    if access_list_ids is not None and not _private_list_ids_are_valid(tenant_id, access_list_ids):
+        return None
+    if access_code:
+        attrs["access_code_hash"] = _hash_access_code(access_code)
     customer = Customer.create(tenant=tenant, **attrs)
+    if access_list_ids is not None:
+        _replace_private_list_accesses(customer, access_list_ids)
     _annotate(customer)
     return customer
 
@@ -62,11 +72,54 @@ def update_customer(customer_id: str, **updates) -> Customer | None:
     customer = Customer.get_or_none(Customer.id == customer_id)
     if not customer:
         return None
+    if "access_code" in updates:
+        access_code = updates.pop("access_code")
+        updates["access_code_hash"] = (
+            _hash_access_code(access_code) if access_code else None
+        )
+    access_list_ids = updates.pop("access_list_ids", None)
+    if access_list_ids is not None and not _private_list_ids_are_valid(
+        customer.tenant_id, access_list_ids
+    ):
+        return None
     for key, value in updates.items():
         setattr(customer, key, value)
     customer.save()
+    if access_list_ids is not None:
+        _replace_private_list_accesses(customer, access_list_ids)
     _annotate(customer)
     return customer
+
+
+def _hash_access_code(code: str) -> str:
+    salt = secrets.token_bytes(16)
+    digest = hashlib.scrypt(code.encode("utf-8"), salt=salt, n=2**14, r=8, p=1).hex()
+    return f"{salt.hex()}${digest}"
+
+
+def _replace_private_list_accesses(customer: Customer, list_ids: list[str]) -> bool:
+    """Replace a customer's grants, accepting only private lists in its tenant."""
+    ids = list(dict.fromkeys(list_ids))
+    valid = list(PriceList.select(PriceList.id).where(PriceList.id << ids)) if ids else []
+    CustomerListAccess.delete().where(CustomerListAccess.customer == customer.id).execute()
+    CustomerListAccess.insert_many(
+        [{"customer": customer.id, "price_list": price_list.id} for price_list in valid]
+    ).execute() if valid else None
+    return True
+
+
+def _private_list_ids_are_valid(tenant_id: str, list_ids: list[str]) -> bool:
+    ids = list(dict.fromkeys(list_ids))
+    return not ids or (
+        PriceList.select()
+        .where(
+            (PriceList.id << ids)
+            & (PriceList.tenant == tenant_id)
+            & PriceList.is_private
+        )
+        .count()
+        == len(ids)
+    )
 
 
 def delete_customer(customer_id: str) -> bool:

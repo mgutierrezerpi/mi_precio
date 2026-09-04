@@ -1,6 +1,7 @@
 import { MagazineTemplate } from '../../components/magazine/MagazineTemplate'
 import type { Magazine } from '../../types'
 import { AquaObjectsJournal } from './aquaObjectsJournal'
+import { CafecitosMediaKit } from './CafecitosMediaKit'
 import type { DesignProps } from './designs'
 import { PencilJournal } from './pencilJournal'
 import { WildStemJournal } from './wildStemJournal'
@@ -12,6 +13,9 @@ interface MagazineDesignProps {
 
 /** Chooses the public rendering component for a persisted magazine design. */
 export function MagazineDesign({ designProps, magazine }: MagazineDesignProps) {
+  if (magazine.design === 'cafecitos-media-kit') {
+    return <CafecitosMediaKit magazine={magazine} tenant={designProps.tenant} />
+  }
   if (magazine.design === 'editorial' || magazine.design === 'catalog') {
     return <MagazineTemplate magazine={magazine} variant={magazine.design} />
   }

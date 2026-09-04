@@ -132,6 +132,10 @@ function emailHref(email: string) {
   return /^mailto:/i.test(email) ? email : `mailto:${email}`
 }
 
+function isMediaKitLink(link: LinkTreeLink) {
+  return link.icon === 'book-open' || /media[_ -]?kit/i.test(link.url)
+}
+
 function isDarkColor(hex: string) {
   const value = hex.replace('#', '')
   if (!/^[0-9a-f]{6}$/i.test(value)) return false
@@ -198,7 +202,9 @@ export function LinkTreeView({
       document.head.appendChild(icon)
     }
 
-    document.title = data.displayName || 'MiPrecio'
+    document.title = data.displayName
+      ? `Links · ${data.displayName}`
+      : 'Links · MiPrecio'
     icon.href = avatarUrl || '/miprecio-favicon.png'
     icon.removeAttribute('type')
 
@@ -219,7 +225,7 @@ export function LinkTreeView({
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl)
-      notify('Link copiado')
+      notify('Copiado')
     } catch {
       notify('Copiá el link desde la barra del navegador')
     }
@@ -308,7 +314,15 @@ export function LinkTreeView({
                   }}
                 >
                   <span className="link-card-icon">
-                    <LinkTreeIcon name={link.icon} size={24} />
+                    {isMediaKitLink(link) ? (
+                      <img
+                        src="/linktree/cafecitos-media-kit.svg"
+                        alt=""
+                        className="link-card-media-kit-icon"
+                      />
+                    ) : (
+                      <LinkTreeIcon name={link.icon} size={24} />
+                    )}
                   </span>
                   <span className="link-card-copy">
                     <strong>{link.title}</strong>

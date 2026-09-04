@@ -105,7 +105,7 @@ services:
       # Keep the container's Linux node_modules (don't let the host shadow it).
       - /app/node_modules
     ports:
-      - "${WEB_APP_PORT:-3000}:3000"
+      - "${WEB_APP_PORT:-3001}:3000"
     depends_on:
       - api
 

@@ -1,6 +1,7 @@
 """Unit tests for the analytics context: QR vs link source tracking and visit stats."""
 
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from peewee import SqliteDatabase
@@ -110,3 +111,27 @@ def test_reports_clamps_the_requested_window_and_preserves_empty_days(tenant):
     assert len(report["series"]) == 1
     assert report["series"][0]["link"] == 0
     assert report["series"][0]["qr"] == 0
+
+
+def test_daily_series_uses_the_tenants_timezone_for_date_buckets(tenant):
+    tenant.timezone = "America/Montevideo"
+    tenant.save()
+    # 01:30 UTC is still the previous calendar day in Montevideo (UTC-3).
+    PageView.create(
+        tenant=tenant,
+        source="link",
+        created_at=datetime(2026, 1, 2, 1, 30),
+    )
+    window_start = datetime(2026, 1, 1, 3, 0)  # Jan 1 local midnight in UTC.
+
+    series, _ = analytics._view_series(
+        [PageView.tenant == tenant.id, PageView.created_at >= window_start],
+        window_start,
+        2,
+        ZoneInfo(tenant.timezone),
+    )
+
+    assert series == [
+        {"date": "2026-01-01", "link": 1, "qr": 0},
+        {"date": "2026-01-02", "link": 0, "qr": 0},
+    ]

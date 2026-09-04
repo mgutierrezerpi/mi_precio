@@ -10,6 +10,7 @@ class LeadView(BaseView):
     phone: str | None
     email: str | None
     message: str | None
+    customer_id: str | None
     list_id: str | None
     list_name: str | None
     source: str

@@ -71,7 +71,11 @@ def get_published_lists(
         )
     else:
         conditions.extend(
-            [PriceList.id << allowed, PriceList.parent_list.is_null(True)]
+            [
+                PriceList.id << allowed,
+                PriceList.parent_list.is_null(True),
+                PriceList.is_private == False,  # noqa: E712
+            ]
         )
 
     result = []

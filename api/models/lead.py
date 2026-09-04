@@ -1,6 +1,7 @@
 from peewee import CharField, ForeignKeyField, TextField
 
 from models.base import BaseModel
+from models.customer import Customer
 from models.tenant import Tenant
 
 
@@ -19,6 +20,9 @@ class Lead(BaseModel):
     phone = CharField(max_length=50, null=True)
     email = CharField(max_length=255, null=True)
     message = TextField(null=True)
+    # A submission may be associated with an existing CRM customer without
+    # forcing a duplicate contact to be created.
+    customer = ForeignKeyField(Customer, null=True, backref="lead_submissions", on_delete="SET NULL")
 
     # Which list they were looking at. A plain id rather than a foreign key:
     # the lead outlives the list, and losing the contact because the shop

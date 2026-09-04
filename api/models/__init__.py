@@ -4,6 +4,7 @@ from models.base import BaseModel as BaseModel
 from models.base import db as db
 from models.category import Category as Category
 from models.customer import Customer as Customer
+from models.customer_list_access import CustomerListAccess as CustomerListAccess
 from models.feature_flag import FeatureFlag as FeatureFlag
 from models.feature_flag import FeatureFlagAssignment as FeatureFlagAssignment
 from models.invitation import Invitation as Invitation

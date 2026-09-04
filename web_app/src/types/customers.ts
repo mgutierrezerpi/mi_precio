@@ -8,6 +8,8 @@ export interface Customer {
   email: string | null
   phone: string | null
   notes: string | null
+  accessCodeEnabled: boolean
+  accessListIds: string[]
   createdAt: string
   updatedAt: string
   ordersCount: number
@@ -37,7 +39,7 @@ export interface Order {
 }
 
 export type LeadStatus = 'new' | 'contacted' | 'converted' | 'discarded'
-export type LeadSource = 'form' | 'cart'
+export type LeadSource = 'form' | 'cart' | 'media_kit'
 
 export interface Lead {
   id: string
@@ -46,6 +48,7 @@ export interface Lead {
   phone: string | null
   email: string | null
   message: string | null
+  customerId: string | null
   listId: string | null
   listName: string | null
   source: LeadSource
@@ -64,6 +67,7 @@ export interface CustomerStats {
 export interface CustomerDetail {
   customer: Customer
   orders: Order[]
+  submissions: Lead[]
 }
 
 export interface Activity {

@@ -62,7 +62,9 @@ class PriceList(BaseModel):
     bg_url = TextField(null=True)
     bg_overlay = BooleanField(null=True)
     capture_viewer_info = BooleanField(default=False)
-
+    # A private list is hidden from the catalog and requires an explicit
+    # customer-to-list grant before a customer's code can open it.
+    is_private = BooleanField(default=False)
     class Meta:
         table_name = "lists"
 

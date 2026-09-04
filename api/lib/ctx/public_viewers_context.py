@@ -3,6 +3,8 @@
 import ipaddress
 import re
 import secrets
+import hashlib
+import hmac
 
 from lib.ctx.public_viewer_management import (
     anonymous_dismissal_count,  # noqa: F401
@@ -12,6 +14,8 @@ from lib.ctx.public_viewer_management import (
 from lib.ctx.public_viewer_promotion import promote_viewer  # noqa: F401
 from lib.ctx.public_viewer_touch import touch_viewer  # noqa: F401
 from models import (
+    Customer,
+    CustomerListAccess,
     PriceList,
     PublicViewer,
     Tenant,
@@ -20,6 +24,93 @@ from models.base import utc_now
 
 PUBLIC_VIEWER_COOKIE = "miprecio_viewer"
 PUBLIC_VIEWER_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+
+
+def has_list_access(price_list: PriceList, visitor_token: str | None) -> bool:
+    """Whether this browser has a customer grant for this private list."""
+    if not price_list.is_private:
+        return True
+    token = _normalize_token(visitor_token)
+    if not token:
+        return False
+    return (
+        CustomerListAccess.select()
+        .join(PublicViewer, on=(CustomerListAccess.customer == PublicViewer.customer_id))
+        .where(
+            (CustomerListAccess.price_list == price_list.id)
+            & (PublicViewer.tenant == price_list.tenant_id)
+            & (PublicViewer.visitor_token == token)
+        )
+        .exists()
+    )
+
+
+def unlock_list(
+    tenant_id: str,
+    list_key: str,
+    code: str,
+    visitor_token: str | None,
+    ip_address: str | None = None,
+) -> PublicViewer | None:
+    price_list = PriceList.get_or_none(
+        (PriceList.tenant == tenant_id)
+        & PriceList.published
+        & ((PriceList.id == list_key) | (PriceList.slug == list_key))
+    )
+    if not price_list or not price_list.is_private:
+        return None
+    customer = next(
+        (
+            candidate.customer
+            for candidate in CustomerListAccess.select()
+            .join(Customer)
+            .where(CustomerListAccess.price_list == price_list.id)
+            if _verify_access_code(candidate.customer.access_code_hash, code)
+        ),
+        None,
+    )
+    if not customer:
+        return None
+    token = _normalize_token(visitor_token) or secrets.token_urlsafe(32)
+    viewer = PublicViewer.get_or_none(
+        (PublicViewer.tenant == tenant_id)
+        & (PublicViewer.price_list == price_list.id)
+        & (PublicViewer.visitor_token == token)
+    )
+    now = utc_now()
+    if viewer:
+        viewer.view_count += 1
+        viewer.last_seen_at = now
+        viewer.ip_address = _normalize_ip(ip_address) or viewer.ip_address
+        if customer:
+            viewer.customer_id = customer.id
+        viewer.save()
+        return viewer
+    return PublicViewer.create(
+        tenant_id=tenant_id,
+        price_list=price_list,
+        name=customer.name if customer else "Private access",
+        email=customer.email if customer else None,
+        phone=customer.phone if customer else None,
+        customer_id=customer.id if customer else None,
+        visitor_token=token,
+        ip_address=_normalize_ip(ip_address),
+        view_count=1,
+        last_seen_at=now,
+    )
+
+
+def _verify_access_code(stored: str | None, code: str) -> bool:
+    if not stored or not code:
+        return False
+    try:
+        salt_hex, expected = stored.split("$", 1)
+        actual = hashlib.scrypt(
+            code.strip().encode("utf-8"), salt=bytes.fromhex(salt_hex), n=2**14, r=8, p=1
+        ).hex()
+        return hmac.compare_digest(actual, expected)
+    except (ValueError, TypeError):
+        return False
 
 
 def capture_viewer(

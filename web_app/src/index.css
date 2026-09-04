@@ -1358,6 +1358,188 @@ a {
   display: none;
 }
 
+html:has(.miprecio-public-list[data-media-kit='true']),
+body:has(.miprecio-public-list[data-media-kit='true']) {
+  scrollbar-color: #007239 #eaf4ee;
+}
+
+html:has(.miprecio-public-list[data-media-kit='true'])::-webkit-scrollbar,
+body:has(.miprecio-public-list[data-media-kit='true'])::-webkit-scrollbar {
+  width: 10px;
+}
+
+html:has(.miprecio-public-list[data-media-kit='true'])::-webkit-scrollbar-track,
+body:has(.miprecio-public-list[data-media-kit='true'])::-webkit-scrollbar-track {
+  background: #eaf4ee;
+}
+
+html:has(.miprecio-public-list[data-media-kit='true'])::-webkit-scrollbar-thumb,
+body:has(.miprecio-public-list[data-media-kit='true'])::-webkit-scrollbar-thumb {
+  border: 2px solid #eaf4ee;
+  border-radius: 999px;
+  background: #007239;
+}
+
+.miprecio-public-list[data-media-kit='true'] .cafecitos-stories strong {
+  font-weight: 600;
+}
+
+/* Cafecitos carries its green and cream identity through the magazine viewer
+   chrome, while the default journal keeps its existing editorial palette. */
+[data-magazine-theme='cafecitos'] {
+  background: #00613e !important;
+  color: #f8faf7 !important;
+  font-family: 'Code Pro', 'DM Sans', Arial, sans-serif;
+}
+
+[data-magazine-theme='cafecitos'] > div:first-child {
+  border-color: rgb(201 226 213 / 34%) !important;
+  background: #00613e !important;
+}
+
+[data-magazine-theme='cafecitos'] > div:first-child p {
+  color: #ddf0e6 !important;
+  font-family: 'Code Pro', 'DM Sans', Arial, sans-serif !important;
+  font-weight: 600;
+}
+
+.cafecitos-media-kit-page {
+  scrollbar-width: none;
+}
+
+.cafecitos-media-kit-page::-webkit-scrollbar {
+  display: none;
+}
+
+/* The cover's phone uses the same interactive story player as Cafecitos'
+   public price list: timed progress, tap navigation, live metrics and sound. */
+.cafecitos-media-kit-page .cafecitos-story-phone {
+  position: relative;
+  width: 270px;
+  height: 480px;
+  overflow: visible;
+  border: 8px solid #0c1612;
+  border-radius: 36px;
+  background: #0c1612;
+  box-shadow:
+    0 28px 60px -24px rgba(0, 0, 0, 0.7),
+    inset 0 0 0 1px rgb(255 255 255 / 12%);
+}
+
+.cafecitos-media-kit-page .cafecitos-story-phone > article {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 28px;
+  background: #000;
+}
+
+.cafecitos-media-kit-page .cafecitos-story-phone video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cafecitos-media-kit-page button[aria-label='Historia anterior'],
+.cafecitos-media-kit-page button[aria-label='Historia siguiente'] {
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+
+[data-magazine-theme='cafecitos'] [aria-label^='Go to'] {
+  background: rgb(221 240 230 / 32%) !important;
+}
+
+[data-magazine-theme='cafecitos'] [aria-label^='Go to'][aria-current='page'] {
+  background: #007239 !important;
+}
+
+[data-magazine-theme='cafecitos'] button[aria-label='Previous page'],
+[data-magazine-theme='cafecitos'] button[aria-label='Next page'] {
+  border-color: rgb(221 240 230 / 40%) !important;
+  background: #00613e !important;
+  color: #ddf0e6 !important;
+  box-shadow: 0 16px 34px -22px rgb(0 20 12 / 70%);
+}
+
+[data-magazine-theme='cafecitos'] button[aria-label='Previous page']:hover,
+[data-magazine-theme='cafecitos'] button[aria-label='Next page']:hover {
+  background: #007239 !important;
+}
+
+[data-magazine-theme='cafecitos'] button[aria-label^='Turn'] {
+  border-color: rgb(221 240 230 / 40%) !important;
+  background: #00613e !important;
+  color: #ddf0e6 !important;
+}
+
+.magazine-swipe-onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 0;
+  background: rgb(0 76 48 / 94%);
+  backdrop-filter: blur(12px);
+  color: #f8faf7;
+  font-family: 'Code Pro', 'DM Sans', Arial, sans-serif;
+  text-align: center;
+  animation: magazine-onboarding-in 260ms ease-out;
+}
+
+.magazine-swipe-onboarding strong {
+  max-width: 18ch;
+  font-size: 22px;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.magazine-swipe-onboarding span:last-child {
+  color: #b6dcc8;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.magazine-swipe-onboarding__gesture {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  place-items: center;
+  border: 1px solid rgb(221 240 230 / 40%);
+  border-radius: 50%;
+  background: rgb(221 240 230 / 14%);
+  color: #b6dcc8;
+  font-size: 34px;
+  line-height: 1;
+}
+
+@media (max-width: 639px) {
+  [data-magazine-theme='cafecitos'] {
+    --magazine-page-width: 520px;
+    --magazine-page-height: 900px;
+  }
+
+  [data-magazine-theme='cafecitos'] > div:first-child {
+    padding: 12px 14px;
+  }
+}
+
+@media (min-width: 640px) {
+  .magazine-swipe-onboarding {
+    display: none;
+  }
+}
+
+@keyframes magazine-onboarding-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .miprecio-public-list .cafecitos-stories > div > article {
   width: 100% !important;
   height: 100%;

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { Provider } from 'react-redux'
 import { RouterProvider } from 'react-router-dom'
 import { store } from './store'
@@ -12,6 +12,7 @@ import { logout, setTenant } from './store/slices/authSlice'
 import { ToastContainer } from './components/Toast'
 import { trackEvent } from './lib/analytics'
 import { toast } from './lib/toast'
+import { activeDomain, subscribeToDomain } from './lib/domainLocale'
 
 let lastConnectionToastAt = 0
 
@@ -55,6 +56,23 @@ function pageDetails(pathname: string): { page_name: string; area: string } {
 }
 
 function App() {
+  // `window.domain` is a deliberate DevTools override for previewing the
+  // PricePanel experience on localhost. Remount routes so every screen gets a
+  // fresh domain-specific render when it changes.
+  const domain = useSyncExternalStore(
+    subscribeToDomain,
+    activeDomain,
+    () => 'miprecio.app'
+  )
+
+  useEffect(() => {
+    document.documentElement.lang = domain === 'pricepanel.app' ? 'en' : 'es'
+    document.title =
+      domain === 'pricepanel.app'
+        ? 'PricePanel - Your online catalog'
+        : 'MiPrecio - Tu catálogo online'
+  }, [domain])
+
   useEffect(() => {
     let lastPathname = ''
     const trackPageView = (pathname: string) => {
@@ -106,7 +124,7 @@ function App() {
 
   return (
     <Provider store={store}>
-      <RouterProvider router={router} />
+      <RouterProvider router={router} key={domain} />
       <ToastContainer />
     </Provider>
   )

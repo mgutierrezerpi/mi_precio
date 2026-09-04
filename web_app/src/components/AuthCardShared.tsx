@@ -6,8 +6,8 @@ export const AUTH_INPUT_CLASS_NAME = [
 ].join(' ')
 export const AUTH_SUBMIT_CLASS_NAME = [
   'mt-1 flex h-[52px] items-center justify-center gap-2 rounded-[14px] bg-gradient-to-br',
-  'from-[#7C3AED] to-[#A855F7] text-[15px] font-bold text-white',
-  'shadow-[0_12px_24px_-6px_rgba(124,58,237,0.4)] transition hover:brightness-105',
+  'from-[#4C1D95] to-[#6D28D9] text-[15px] font-bold text-white',
+  'shadow-[0_12px_24px_-6px_rgba(76,29,149,0.55)] transition hover:from-[#3B1675] hover:to-[#5B21B6]',
   'disabled:cursor-not-allowed disabled:opacity-60',
 ].join(' ')
 

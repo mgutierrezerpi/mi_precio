@@ -17,7 +17,7 @@ class UpdateList(BaseModel):
     bg_url: str | None = None
     bg_overlay: bool | None = None
     capture_viewer_info: bool | None = None
-
+    is_private: bool | None = None
     @field_validator("design")
     @classmethod
     def validate_list_design(cls, v: str | None) -> str | None:

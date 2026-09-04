@@ -49,7 +49,10 @@ def create_lead(
     form off mid-session should not produce an error page for someone who was
     already looking at it."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    if not leads_open(tenant):
+    # A published media kit is itself a lead-generation surface. It must keep
+    # accepting its contact form even when the optional price-list lead form is
+    # disabled for the tenant.
+    if not leads_open(tenant) and source != "media_kit":
         return None
 
     name = (name or "").strip()
@@ -93,6 +96,15 @@ def list_leads(tenant_id: str, status: str | None = None) -> list[Lead]:
     return list(query.order_by(Lead.created_at.desc()))
 
 
+def list_customer_submissions(customer_id: str) -> list[Lead]:
+    """Form submissions explicitly associated with one CRM customer."""
+    return list(
+        Lead.select()
+        .where(Lead.customer == customer_id)
+        .order_by(Lead.created_at.desc())
+    )
+
+
 def set_status(lead_id: str, status: str) -> Lead | None:
     if status not in STATUSES:
         return None
@@ -131,3 +143,19 @@ def convert_to_customer(lead_id: str) -> Customer | None:
         entity_id=customer.id,
     )
     return customer
+
+
+def link_to_customer(tenant_id: str, lead_id: str, customer_id: str | None) -> Lead | None:
+    lead = Lead.get_or_none(Lead.id == lead_id, Lead.tenant == tenant_id)
+    if not lead:
+        return None
+    if customer_id:
+        customer = Customer.get_or_none(Customer.id == customer_id, Customer.tenant == tenant_id)
+        if not customer:
+            return None
+        lead.customer = customer
+        lead.status = "contacted"
+    else:
+        lead.customer = None
+    lead.save()
+    return lead

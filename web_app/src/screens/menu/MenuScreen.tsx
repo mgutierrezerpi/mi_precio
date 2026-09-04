@@ -131,6 +131,9 @@ export function MenuScreen() {
   const [viewerSubmitted, setViewerSubmitted] = useState(false)
   const [viewerSaving, setViewerSaving] = useState(false)
   const [viewerError, setViewerError] = useState(false)
+  const [accessCode, setAccessCode] = useState('')
+  const [accessSaving, setAccessSaving] = useState(false)
+  const [accessError, setAccessError] = useState(false)
 
   const displayLists = listId
     ? lists.filter((l) => l.id === listId || l.slug === listId)
@@ -255,8 +258,7 @@ export function MenuScreen() {
       document.head.appendChild(icon)
     }
 
-    document.title =
-      [tenant.name, list?.name].filter(Boolean).join(' · ') || 'MiPrecio'
+    document.title = `${list?.name || 'Price list'} · ${tenant.name}`
     icon.href = tenant.logoUrl || '/miprecio-favicon.png'
     // Tenant logos may be PNG, JPEG, WebP, or an uploaded image URL; let the
     // browser infer the type rather than retaining the app favicon's PNG hint.
@@ -416,6 +418,34 @@ export function MenuScreen() {
   // shop, so it is the only one that may talk about MiPrecio.
   // `error` is the API's raw `detail` — English, written for us, not for someone
   // who just scanned a QR. It belongs in the console, never on screen.
+  if (error === 'Access code required' && subdomain && listId) {
+    const unlock = async (event: React.FormEvent) => {
+      event.preventDefault()
+      if (!accessCode.trim()) return
+      setAccessSaving(true)
+      setAccessError(false)
+      const response = await api.unlockPublicList(subdomain, listId, accessCode)
+      setAccessSaving(false)
+      if (response.data) window.location.reload()
+      else setAccessError(true)
+    }
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#0d3d30] px-5 font-sans">
+        <form onSubmit={unlock} className="w-full max-w-sm rounded-3xl border border-[#9bc6b7] bg-white p-7 text-center shadow-2xl">
+          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#07583f]">Lista privada</p>
+          <h1 className="mt-3 text-2xl font-extrabold text-[#062d20]">Ingresá tu código</h1>
+          <p className="mt-2 text-sm font-medium text-[#23483b]">Esta lista está disponible solo para personas invitadas.</p>
+          <input autoFocus value={accessCode} onChange={(e) => setAccessCode(e.target.value)}
+            className="mt-6 w-full rounded-xl border-2 border-[#5d9f89] bg-[#f5fbf8] px-4 py-3 text-center font-bold tracking-[0.08em] text-[#062d20] outline-none placeholder:text-[#527365] focus:border-[#07583f] focus:ring-4 focus:ring-[#07583f]/15"
+            placeholder="Código de acceso" />
+          {accessError && <p className="mt-2 text-xs font-semibold text-red-600">El código no es válido. Intentá de nuevo.</p>}
+          <button disabled={accessSaving} className="mt-4 w-full rounded-xl bg-[#07583f] py-3 text-sm font-extrabold text-white shadow-[0_4px_0_#043b2a] transition hover:bg-[#043b2a] active:translate-y-px disabled:opacity-60">
+            {accessSaving ? 'Verificando…' : 'Ver lista'}
+          </button>
+        </form>
+      </main>
+    )
+  }
   if (error || !tenant) {
     if (error) console.warn('[public] %s: %s', subdomain, error)
     // No shop to borrow an identity from, so this one is ours. It also doubles

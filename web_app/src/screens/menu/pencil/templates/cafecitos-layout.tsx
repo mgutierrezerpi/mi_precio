@@ -58,7 +58,8 @@ function StoryMetricIcon({ type }: { type: 'views' | 'likes' | 'comments' }) {
   )
 }
 
-function StoriesPhone({
+/** Interactive story player shared by the public price list and media-kit cover. */
+export function StoriesPhone({
   videos,
   metrics,
   profileImage,
@@ -107,19 +108,19 @@ function StoriesPhone({
           <div className="absolute bottom-4 left-4 flex items-center gap-1.5">
             <div className="flex h-9 items-center gap-1.5 rounded-full bg-[#DDF0E6] px-2.5 text-[#007239] shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
               <StoryMetricIcon type="views" />
-              <strong className="text-[14px] leading-none tracking-[-.04em]">
+              <strong className="text-[14px] font-medium leading-none tracking-[-.04em]">
                 {stats.views}
               </strong>
             </div>
             <div className="flex h-9 items-center gap-1.5 rounded-full bg-white px-2.5 text-[#16352A] shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
               <StoryMetricIcon type="likes" />
-              <strong className="text-[14px] leading-none tracking-[-.04em]">
+              <strong className="text-[14px] font-medium leading-none tracking-[-.04em]">
                 {stats.likes}
               </strong>
             </div>
             <div className="flex h-9 items-center gap-1.5 rounded-full bg-[#00613E] px-2.5 text-white shadow-[0_12px_25px_-18px_rgba(0,49,34,.7)]">
               <StoryMetricIcon type="comments" />
-              <strong className="text-[14px] leading-none tracking-[-.04em]">
+              <strong className="text-[14px] font-medium leading-none tracking-[-.04em]">
                 {stats.comments}
               </strong>
             </div>
@@ -205,9 +206,13 @@ function StoriesPhone({
 export function CafecitosTemplate({
   props,
   config,
+  showServices = true,
+  mediaKit = false,
 }: {
   props: DesignProps
   config: PencilConfig
+  showServices?: boolean
+  mediaKit?: boolean
 }) {
   const hero = props.content?.hero
   const template = props.content?.template
@@ -256,10 +261,15 @@ export function CafecitosTemplate({
       ? instagramHandle
         ? `https://ig.me/m/${instagramHandle}`
         : 'https://instagram.com'
-      : `https://wa.me/?text=${encodeURIComponent(contactMessage)}`
+      : (() => {
+          const phone = (props.tenant.socialWhatsapp || props.tenant.whatsappUrl || '').replace(/\D/g, '')
+          const recipient = phone ? `/${phone}` : ''
+          return `https://wa.me${recipient}?text=${encodeURIComponent(contactMessage)}`
+        })()
   return (
     <div
-      className="min-h-[100svh] overflow-x-clip bg-[#F8FAF7] px-5 py-3 text-[#16352A] sm:px-10 sm:py-10"
+      className="miprecio-public-list min-h-[100svh] overflow-x-clip bg-[#F8FAF7] px-5 py-3 text-[#16352A] sm:px-10 sm:py-10"
+      data-media-kit={mediaKit || undefined}
       style={{ fontFamily: CODE }}
     >
       <main className="mx-auto max-w-[1040px]">
@@ -288,7 +298,8 @@ export function CafecitosTemplate({
             </div>
           </div>
         </section>
-        <section className="border-y border-[#C9E2D5] py-10">
+        {showServices && services.length > 0 && (
+          <section className="border-y border-[#C9E2D5] py-10">
           <p className="mb-5 text-[16px] font-bold uppercase tracking-[1.2px] text-[#007239]">
             {collaborationHeading}
           </p>
@@ -342,10 +353,11 @@ export function CafecitosTemplate({
                 : 'Enviar consulta por WhatsApp'}
             </a>
           )}
-        </section>
+          </section>
+        )}
         <section
           aria-label={storiesHeading}
-          className="cafecitos-stories py-11"
+          className={`cafecitos-stories py-11 ${mediaKit ? 'border-t border-[#C9E2D5]' : ''}`}
         >
           <p className="mb-5 text-[12px] font-bold uppercase tracking-[1.6px] text-[#007239]">
             {storiesHeading}
@@ -359,6 +371,32 @@ export function CafecitosTemplate({
             />
           </div>
         </section>
+        {mediaKit && (
+          <a
+            href="https://miprecio.app"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Powered by MiPrecio"
+            className="mx-auto flex w-fit items-center gap-2 px-5 py-7 text-[9px] font-bold uppercase tracking-[0.12em] no-underline"
+            style={{ color: '#5E7067' }}
+          >
+            <span>Powered by</span>
+            <span
+              className="relative block h-6 w-[94px] overflow-hidden"
+              aria-hidden="true"
+            >
+              <span
+                className="absolute inset-0"
+                style={{
+                  background: '#007239',
+                  WebkitMask:
+                    "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
+                  mask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
+                }}
+              />
+            </span>
+          </a>
+        )}
       </main>
     </div>
   )

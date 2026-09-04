@@ -38,6 +38,37 @@ export function MagazineScreen() {
 
   const t = getT(tenant?.language)
   const accent = tenant?.brandColor || BASE.accent
+
+  useEffect(() => {
+    if (!tenant || !magazine) return
+
+    const previousTitle = document.title
+    const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    const previousHref = favicon?.getAttribute('href') ?? null
+    const previousType = favicon?.getAttribute('type') ?? null
+    const icon = favicon ?? document.createElement('link')
+
+    if (!favicon) {
+      icon.rel = 'icon'
+      document.head.appendChild(icon)
+    }
+
+    const surface =
+      magazine.design === 'cafecitos-media-kit' ? 'Media kit' : magazine.name
+    document.title = `${surface} · ${tenant.name}`
+    icon.href = tenant.logoUrl || '/miprecio-favicon.png'
+    icon.removeAttribute('type')
+
+    return () => {
+      document.title = previousTitle
+      if (previousHref) icon.href = previousHref
+      else icon.removeAttribute('href')
+      if (previousType) icon.type = previousType
+      else icon.removeAttribute('type')
+      if (!favicon) icon.remove()
+    }
+  }, [magazine, tenant])
+
   const designProps = useMemo<DesignProps>(() => {
     const C = { ...BASE, accent, accent2: accent }
     const currency = tenant?.currency || 'UYU'

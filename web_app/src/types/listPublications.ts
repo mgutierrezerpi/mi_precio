@@ -14,6 +14,7 @@ export const MAGAZINE_DESIGNS = [
   'aqua-objects',
   'editorial',
   'catalog',
+  'cafecitos-media-kit',
 ] as const
 
 export type MagazineDesign = (typeof MAGAZINE_DESIGNS)[number]
@@ -52,4 +53,3 @@ export interface PublicViewer {
 export interface PublicViewerStats {
   anonymousDismissals: number
 }
-

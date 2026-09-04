@@ -6,9 +6,10 @@ kill_timeout = "30s"
 [build]
   dockerfile = "Dockerfile.fly"
 
-  # Browser ingestion keys are public and embedded by Vite at image build time.
+  # Umami's tracker URL and website ID are public and embedded by Vite at build time.
   [build.args]
-    VITE_AMPLITUDE_API_KEY = "bb1466eed32f3121fa400c3cc1a110c9"
+    VITE_UMAMI_SCRIPT_URL = "https://analytics.miprecio.app/script.js"
+    VITE_UMAMI_WEBSITE_ID = "e31112f5-1abb-4420-a0e2-597aaa33dbea"
 
 [env]
   APP_NAME = "Mi Precio API"

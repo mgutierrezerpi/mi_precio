@@ -66,13 +66,17 @@ def get_public_menu(
     tenant = public.get_tenant_by_subdomain(subdomain)
     if not tenant:
         raise HTTPException(status_code=404, detail="Not found")
+    viewer_token = request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE)
     published_lists = public.get_published_lists(tenant, list)
+    if list and published_lists and not public_viewers.has_list_access(
+        published_lists[0].price_list, viewer_token
+    ):
+        raise HTTPException(status_code=403, detail="Access code required")
     published_magazines = (
         public.get_published_magazines(tenant, magazine)
         if feature_flags.magazines_enabled(tenant.id)
         else []
     )
-    viewer_token = request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE)
     selected_list_id = (
         published_lists[0].price_list.id if list and published_lists else None
     )

@@ -12,6 +12,10 @@ class UpdateLeadStatus(BaseModel):
     status: str
 
 
+class LinkLeadCustomer(BaseModel):
+    customer_id: str | None = None
+
+
 def _assert_tier(tenant_id: str) -> None:
     """Leads is a Plus/Pro feature. The screen hides itself on cheaper tiers,
     but the endpoints have to say no too — the UI is not the enforcement."""
@@ -30,6 +34,16 @@ def list_leads_endpoint(
 ):
     _assert_tier(tenant_id)
     return LeadView.render_many(leads.list_leads(tenant_id, status))
+
+
+@router.get("/tenants/{tenant_id}/media-kit-submissions")
+def list_media_kit_submissions_endpoint(
+    tenant_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Media-kit enquiries live beside customers and are not plan-gated."""
+    return LeadView.render_many(
+        [lead for lead in leads.list_leads(tenant_id) if lead.source == "media_kit"]
+    )
 
 
 @router.patch("/tenants/{tenant_id}/leads/{lead_id}")
@@ -57,3 +71,14 @@ def convert_lead_endpoint(
     if not customer:
         raise HTTPException(status_code=409, detail="Ese lead ya es un cliente.")
     return CustomerView.render(customer)
+
+
+@router.patch("/tenants/{tenant_id}/leads/{lead_id}/customer")
+def link_lead_customer_endpoint(
+    tenant_id: str, lead_id: str, data: LinkLeadCustomer,
+    current_user: dict = Depends(require_editor),
+):
+    lead = leads.link_to_customer(tenant_id, lead_id, data.customer_id)
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead or customer not found")
+    return LeadView.render(lead)

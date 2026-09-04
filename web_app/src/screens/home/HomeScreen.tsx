@@ -129,7 +129,7 @@ const Plus = ({ className, size = 20 }: IcoProps) =>
   )
 
 /* ── Data ─────────────────────────────────────────────────────── */
-const features = [
+const features = () => [
   {
     Icon: Package,
     color: '#7C3AED',
@@ -160,7 +160,7 @@ const features = [
   },
 ]
 
-const steps = [
+const steps = () => [
   [
     '1',
     landingText('Cargá tus productos', 'Add your products'),
@@ -179,9 +179,9 @@ const steps = [
 ]
 
 // Plan content is shared with the in-app billing cards (see lib/plans).
-const PLAN_CTA = landingText('Probar 14 días gratis', 'Start 14-day free trial')
+const planCta = () => landingText('Probar 14 días gratis', 'Start 14-day free trial')
 
-const faqs = [
+const faqs = () => [
   [
     landingText('¿Necesito instalar algo en mi computadora?', 'Do I need to install anything?'),
     landingText('No. MiPrecio funciona 100% en el navegador y en el celular. Solo creás tu cuenta y empezás a cargar productos.', 'No. PricePanel runs entirely in your browser and on your phone. Create an account and start adding products.'),
@@ -208,6 +208,7 @@ const faqs = [
 export function HomeScreen() {
   // Keep the public route on the same active theme token set as /admin.
   useTheme()
+  const domainLocale = localeForHostname()
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const needsPlan = useAppSelector(selectNeedsPlan)
   const navigate = useNavigate()
@@ -230,12 +231,12 @@ export function HomeScreen() {
     const prev = root.style.scrollBehavior
     const prevLanguage = root.lang
     root.style.scrollBehavior = 'smooth'
-    root.lang = localeForHostname()
+    root.lang = domainLocale
     return () => {
       root.style.scrollBehavior = prev
       root.lang = prevLanguage
     }
-  }, [])
+  }, [domainLocale])
 
   // Already-logged-in users hitting /login (e.g. from the static landing's
   // "Iniciar sesión" link, which can't know the session) go straight to the panel.
@@ -373,7 +374,7 @@ function SectionHead({
   )
 }
 
-const navLinks = [
+const navLinks = () => [
   ['#funciones', landingText('Funciones', 'Features')],
   ['#precios', landingText('Precios', 'Pricing')],
   ['#faq', landingText('Recursos', 'Resources')],
@@ -438,7 +439,7 @@ function Navbar({
         {/* Desktop nav */}
         <div className="hidden items-center gap-7 lg:flex">
           <nav className="flex items-center gap-6 text-sm font-medium text-[#475569]">
-            {navLinks.map(([href, label]) => (
+            {navLinks().map(([href, label]) => (
               <a key={href} href={href} className="hover:text-[#7C3AED]">
                 {label}
               </a>
@@ -524,7 +525,7 @@ function Navbar({
                 {landingText('Navegación', 'Navigation')}
               </p>
               <div className="flex flex-col gap-0.5">
-                {navLinks.map(([href, label]) => (
+                {navLinks().map(([href, label]) => (
                   <a
                     key={href}
                     href={href}
@@ -626,7 +627,7 @@ function HeroMockup() {
   )
 }
 
-type Feature = (typeof features)[number]
+type Feature = ReturnType<typeof features>[number]
 
 function FeatureCard({ Icon, color, bg, title, desc }: Feature) {
   return (
@@ -657,14 +658,14 @@ function Features() {
 
         {/* Desktop: 2-column grid */}
         <Reveal className="hidden gap-6 md:grid md:grid-cols-2">
-          {features.map((f) => (
+          {features().map((f) => (
             <FeatureCard key={f.title} {...f} />
           ))}
         </Reveal>
 
         {/* Mobile: auto-advancing carousel */}
         <MobileCarousel>
-          {features.map((f) => (
+          {features().map((f) => (
             <FeatureCard key={f.title} {...f} />
           ))}
         </MobileCarousel>
@@ -789,14 +790,14 @@ function HowItWorks() {
 
         {/* Desktop: 3-column grid */}
         <Reveal className="hidden gap-6 md:grid md:grid-cols-3">
-          {steps.map(([number, title, desc]) => (
+          {steps().map(([number, title, desc]) => (
             <StepCard key={number} number={number} title={title} desc={desc} />
           ))}
         </Reveal>
 
         {/* Mobile: auto-advancing carousel */}
         <MobileCarousel>
-          {steps.map(([number, title, desc]) => (
+          {steps().map(([number, title, desc]) => (
             <StepCard key={number} number={number} title={title} desc={desc} />
           ))}
         </MobileCarousel>
@@ -964,7 +965,7 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
                   onClick={onAuth}
                   className={`mt-auto flex h-12 items-center justify-center rounded-xl text-[0.88rem] font-bold ${dark ? 'bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] text-white hover:brightness-110' : 'border border-[#0F172A] bg-white text-[#0F172A] hover:bg-[#0F172A] hover:text-white'}`}
                 >
-                  {PLAN_CTA}
+                  {planCta()}
                 </button>
               </article>
             )
@@ -985,7 +986,7 @@ function Faq() {
           title={landingText('Todo lo que necesitás saber.', 'Everything you need to know.')}
         />
         <Reveal className="mx-auto flex w-full max-w-[800px] flex-col gap-3.5">
-          {faqs.map(([q, a], i) => {
+          {faqs().map(([q, a], i) => {
             const isOpen = open === i
             return (
               <div

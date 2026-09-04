@@ -8,7 +8,7 @@ import {
 import { useSearchParams } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
-import type { Customer, Order, Product, PublicViewer } from '../../types'
+import type { Customer, Lead, Order, PriceList, Product, PublicViewer } from '../../types'
 import api from '../../services/api'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon, type IconName } from './crm/ui'
@@ -134,7 +134,9 @@ export function CustomersScreen() {
 
   const [customers, setCustomers] = useState<Customer[]>([])
   const [viewers, setViewers] = useState<PublicViewer[]>([])
+  const [submissions, setSubmissions] = useState<Lead[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [priceLists, setPriceLists] = useState<PriceList[]>([])
   const [loading, setLoading] = useState(true)
   const [viewersLoading, setViewersLoading] = useState(true)
   const [anonymousDismissals, setAnonymousDismissals] = useState(0)
@@ -168,12 +170,14 @@ export function CustomersScreen() {
       api.getCustomers(tenantId),
       api.getPublicViewers(tenantId),
       api.getProducts(tenantId),
+      api.getLists(tenantId),
       api.getPublicViewerStats(tenantId),
-    ]).then(([cs, vs, ps, stats]) => {
+    ]).then(([cs, vs, ps, ls, stats]) => {
       if (cancelled) return
       if (cs.data) setCustomers(cs.data)
       if (vs.data) setViewers(vs.data)
       if (ps.data) setProducts(ps.data)
+      if (ls.data) setPriceLists(ls.data)
       if (stats.data) setAnonymousDismissals(stats.data.anonymousDismissals)
       setLoading(false)
       setViewersLoading(false)
@@ -183,6 +187,19 @@ export function CustomersScreen() {
       cancelled = true
     }
   }, [tenantId])
+
+  useEffect(() => {
+    if (!tenantId) return
+    void api.getFormSubmissions(tenantId).then((response) => {
+      if (response.data) setSubmissions(response.data)
+    })
+  }, [tenantId])
+
+  const linkSubmission = async (leadId: string, customerId: string | null) => {
+    if (!tenantId || !canEdit) return
+    const response = await api.linkLeadCustomer(tenantId, leadId, customerId)
+    if (response.data) setSubmissions((current) => current.map((lead) => lead.id === leadId ? response.data! : lead))
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -428,6 +445,28 @@ export function CustomersScreen() {
         </div>
 
         <section className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
+          <div className="border-b border-[var(--dash-divider)] px-5 py-4">
+            <h2 className="text-base font-extrabold text-[var(--dash-text)]">Envíos de formulario</h2>
+            <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">Consultas enviadas desde formularios públicos.</p>
+          </div>
+          {submissions.length === 0 ? <p className="px-5 py-8 text-center text-sm font-medium text-[var(--dash-muted)]">Todavía no hay envíos de formulario.</p> : (
+            <div className="overflow-x-auto">
+              <div className="min-w-[760px]">
+                {submissions.map((lead, index) => <div key={lead.id} className={`grid grid-cols-[1fr_1.5fr_1fr_190px] items-center gap-4 px-5 py-4 text-xs ${index ? 'border-t border-[var(--dash-divider)]' : ''}`}>
+                  <div><p className="font-bold text-[var(--dash-text)]">{lead.name}</p><p className="mt-1 text-[var(--dash-muted)]">{lead.email || lead.phone || 'Sin contacto'}</p></div>
+                  <p className="line-clamp-2 text-[var(--dash-text2)]">{lead.message || '—'}</p>
+                  <p className="text-[var(--dash-muted)]">{fullDate(lead.createdAt, localeOf(tenant?.language))}</p>
+                  <select value={lead.customerId || ''} disabled={!canEdit} onChange={(event) => void linkSubmission(lead.id, event.target.value || null)} className="h-9 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-bg)] px-2 font-semibold text-[var(--dash-text)]">
+                    <option value="">Sin vincular</option>
+                    {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
+                  </select>
+                </div>)}
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
           <div className="flex items-start justify-between gap-4 border-b border-[var(--dash-divider)] px-5 py-4">
             <div className="min-w-0">
               <h2 className="text-base font-extrabold text-[var(--dash-text)]">
@@ -607,6 +646,7 @@ export function CustomersScreen() {
       {showNew && tenant?.id && (
         <CustomerModal
           tenantId={tenant.id}
+          priceLists={priceLists}
           onClose={() => setShowNew(false)}
           onSaved={(id) => {
             setShowNew(false)
@@ -618,6 +658,7 @@ export function CustomersScreen() {
       {editCustomer && (
         <CustomerModal
           customer={editCustomer}
+          priceLists={priceLists}
           onClose={() => setEditCustomer(null)}
           onSaved={() => {
             setEditCustomer(null)
@@ -629,6 +670,7 @@ export function CustomersScreen() {
         <CustomerDrawer
           customerId={openId}
           products={products}
+          priceLists={priceLists}
           money={money}
           canEdit={canEdit}
           onClose={() => setOpenId(null)}
@@ -677,11 +719,13 @@ function CopyableContact({
 function CustomerModal({
   tenantId,
   customer,
+  priceLists,
   onClose,
   onSaved,
 }: {
   tenantId?: string
   customer?: Customer
+  priceLists: PriceList[]
   onClose: () => void
   onSaved: (id: string) => void
 }) {
@@ -692,13 +736,22 @@ function CustomerModal({
   const [email, setEmail] = useState(customer?.email ?? '')
   const [phone, setPhone] = useState(customer?.phone ?? '')
   const [notes, setNotes] = useState(customer?.notes ?? '')
+  const [accessCode, setAccessCode] = useState('')
+  const [removeAccessCode, setRemoveAccessCode] = useState(false)
+  const [accessListIds, setAccessListIds] = useState<string[]>(
+    customer?.accessListIds ?? []
+  )
   const [saving, setSaving] = useState(false)
 
   // Only the name is required. Email and phone are optional, but if an email is
   // entered it must be a valid shape (keeps out values like "correo-sin-arroba").
   const emailError =
     email.trim() !== '' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())
-  const valid = name.trim() !== '' && !emailError
+  const accessCodeError =
+    !removeAccessCode &&
+    accessCode.trim() !== '' &&
+    (accessCode.trim().length < 4 || accessCode.trim().length > 64)
+  const valid = name.trim() !== '' && !emailError && !accessCodeError
 
   const save = async () => {
     if (!valid || saving) return
@@ -709,6 +762,8 @@ function CustomerModal({
       email: email.trim() || null,
       phone: phone.trim() || null,
       notes: notes.trim() || null,
+      accessCode: removeAccessCode ? null : accessCode.trim() || undefined,
+      accessListIds,
     }
     const res = isEdit
       ? await api.updateCustomer(customer.id, body)
@@ -732,6 +787,15 @@ function CustomerModal({
           name={name}
           notes={notes}
           onEmailChange={setEmail}
+          accessCode={accessCode}
+          accessCodeError={accessCodeError}
+          accessCodeEnabled={customer?.accessCodeEnabled ?? false}
+          accessListIds={accessListIds}
+          privateLists={priceLists.filter((list) => list.isPrivate)}
+          onAccessCodeChange={setAccessCode}
+          onAccessListIdsChange={setAccessListIds}
+          removeAccessCode={removeAccessCode}
+          onRemoveAccessCodeChange={setRemoveAccessCode}
           onNameChange={setName}
           onNotesChange={setNotes}
           onPhoneChange={setPhone}
@@ -766,28 +830,46 @@ function CustomerModal({
 }
 
 function CustomerFormFields({
+  accessCode,
+  accessCodeError,
+  accessCodeEnabled,
+  accessListIds,
   email,
   emailError,
   name,
   notes,
   onEmailChange,
+  onAccessCodeChange,
+  onAccessListIdsChange,
   onNameChange,
   onNotesChange,
   onPhoneChange,
   onRutChange,
+  onRemoveAccessCodeChange,
   phone,
+  privateLists,
+  removeAccessCode,
   rut,
 }: {
+  accessCode: string
+  accessCodeError: boolean
+  accessCodeEnabled: boolean
+  accessListIds: string[]
   email: string
   emailError: boolean
   name: string
   notes: string
   onEmailChange: (value: string) => void
+  onAccessCodeChange: (value: string) => void
+  onAccessListIdsChange: (value: string[]) => void
   onNameChange: (value: string) => void
   onNotesChange: (value: string) => void
   onPhoneChange: (value: string) => void
   onRutChange: (value: string) => void
+  onRemoveAccessCodeChange: (value: boolean) => void
   phone: string
+  privateLists: PriceList[]
+  removeAccessCode: boolean
   rut: string
 }) {
   const t = useOperationsT()
@@ -801,6 +883,11 @@ function CustomerFormFields({
           className={inputCls}
           placeholder={t('customers.namePlaceholder')}
         />
+        {accessCodeError && (
+          <p className="mt-1 text-xs font-semibold text-[#EF4444]">
+            El código debe tener entre 4 y 64 caracteres.
+          </p>
+        )}
       </Field>
       <Field label={t('customers.rut')}>
         <input
@@ -842,6 +929,58 @@ function CustomerFormFields({
           placeholder={t('customers.notesPlaceholder')}
         />
       </Field>
+      <Field label="Código de acceso privado">
+        <p className="mb-1 text-xs font-medium text-[var(--dash-muted)]">
+          Este código abre todas las listas privadas asignadas a este cliente. No se puede volver a ver después de guardarlo.
+        </p>
+        <input
+          value={accessCode}
+          disabled={removeAccessCode}
+          onChange={(e) => onAccessCodeChange(e.target.value)}
+          className={inputCls}
+          placeholder={accessCodeEnabled ? 'Ingresá uno nuevo para reemplazarlo' : 'Ej. CLIENTE2026'}
+        />
+        {accessCodeEnabled && (
+          <label className="mt-2 flex items-center gap-2 text-xs font-semibold text-red-600">
+            <input
+              type="checkbox"
+              checked={removeAccessCode}
+              onChange={(e) => onRemoveAccessCodeChange(e.target.checked)}
+            />
+            Quitar código de acceso
+          </label>
+        )}
+      </Field>
+      <Field label="Listas privadas con acceso">
+        <p className="mb-1 text-xs font-medium text-[var(--dash-muted)]">
+          Elegí las listas privadas que este cliente puede abrir con su código.
+        </p>
+        {privateLists.length === 0 ? (
+          <p className="rounded-lg bg-[var(--dash-soft)] p-3 text-xs font-medium text-[var(--dash-muted)]">
+            Primero marcá una lista como privada desde su configuración.
+          </p>
+        ) : (
+          <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-[var(--dash-border)] p-2">
+            {privateLists.map((list) => {
+              const checked = accessListIds.includes(list.id)
+              return (
+                <label key={list.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-[var(--dash-text)] hover:bg-[var(--dash-soft)]">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => onAccessListIdsChange(
+                      checked
+                        ? accessListIds.filter((id) => id !== list.id)
+                        : [...accessListIds, list.id]
+                    )}
+                  />
+                  {list.name}
+                </label>
+              )
+            })}
+          </div>
+        )}
+      </Field>
     </div>
   )
 }
@@ -850,6 +989,7 @@ function CustomerFormFields({
 function CustomerDrawer({
   customerId,
   products,
+  priceLists,
   money,
   canEdit,
   onClose,
@@ -857,6 +997,7 @@ function CustomerDrawer({
 }: {
   customerId: string
   products: Product[]
+  priceLists: PriceList[]
   money: (v: string | number) => string
   canEdit: boolean
   onClose: () => void
@@ -865,6 +1006,7 @@ function CustomerDrawer({
   const t = useOperationsT()
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
+  const [submissions, setSubmissions] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -875,6 +1017,7 @@ function CustomerDrawer({
     if (res.data) {
       setCustomer(res.data.customer)
       setOrders(res.data.orders)
+      setSubmissions(res.data.submissions)
     }
     setLoading(false)
   }, [customerId])
@@ -885,6 +1028,7 @@ function CustomerDrawer({
       if (cancelled || !res.data) return
       setCustomer(res.data.customer)
       setOrders(res.data.orders)
+      setSubmissions(res.data.submissions)
       setLoading(false)
     })
     return () => {
@@ -997,6 +1141,31 @@ function CustomerDrawer({
                 />
               </div>
 
+              {/* Public form submissions assigned to this customer. */}
+              <div className="flex flex-col gap-3">
+                <h4 className="text-sm font-extrabold text-[var(--dash-text)]">
+                  Envíos de formulario
+                </h4>
+                {submissions.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed border-[var(--dash-border)] px-4 py-5 text-center text-xs font-medium text-[var(--dash-muted)]">
+                    No hay envíos de formulario asignados a este cliente.
+                  </p>
+                ) : (
+                  submissions.map((submission) => (
+                    <article key={submission.id} className="rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-bold text-[var(--dash-text)]">{submission.listName || 'Formulario público'}</p>
+                          <p className="mt-0.5 text-xs text-[var(--dash-muted)]">{fullDate(submission.createdAt)}</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-[var(--dash-soft)] px-2 py-0.5 text-[10px] font-bold uppercase text-[var(--dash-text2)]">{submission.source === 'media_kit' ? 'Media kit' : 'Formulario'}</span>
+                      </div>
+                      {submission.message && <p className="mt-3 text-sm leading-relaxed text-[var(--dash-text2)]">{submission.message}</p>}
+                    </article>
+                  ))
+                )}
+              </div>
+
               {/* Purchase history */}
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
@@ -1107,6 +1276,7 @@ function CustomerDrawer({
       {editingCustomer && customer && (
         <CustomerModal
           customer={customer}
+          priceLists={priceLists}
           onClose={() => setEditingCustomer(false)}
           onSaved={async () => {
             setEditingCustomer(false)

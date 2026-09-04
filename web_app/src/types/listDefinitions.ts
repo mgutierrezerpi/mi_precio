@@ -69,6 +69,7 @@ export interface PriceList {
   bgUrl: string | null
   bgOverlay: boolean | null
   captureViewerInfo?: boolean
+  isPrivate?: boolean
   itemCount: number
   /** `published` is intent; `live` is what the plan actually serves. A published
    *  list goes `live: false` when the plan allows fewer lists than are published
@@ -79,4 +80,3 @@ export interface PriceList {
   updatedAt: string
   versions?: ListVersion[]
 }
-

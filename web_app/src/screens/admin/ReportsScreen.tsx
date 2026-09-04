@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
-import type { Activity, PriceList } from '../../types'
+import type { Activity, Customer, PriceList } from '../../types'
 import api, { type ReportData } from '../../services/api'
 import { formatPrice } from './crm/productFormat'
 import { CrmLayout } from './crm/CrmLayout'
@@ -53,10 +53,12 @@ export function ReportsScreen() {
   const [days, setDays] = useState(30)
   const [tab, setTab] = useState<'rendimiento' | 'auditoria'>('rendimiento')
   const [data, setData] = useState<ReportData | null>(null)
+  const [customers, setCustomers] = useState<Customer[]>([])
   const selectedList = lists.find(
     (list) => list.id === searchParams.get('list')
   )
   const selectedListId = selectedList?.id
+  const selectedCustomerId = searchParams.get('customer') ?? undefined
 
   useEffect(() => {
     if (tenant?.id) dispatch(fetchLists(tenant.id))
@@ -64,24 +66,39 @@ export function ReportsScreen() {
 
   useEffect(() => {
     if (!tenant?.id) return
+    void api.getCustomers(tenant.id).then((response) =>
+      setCustomers(response.data ?? [])
+    )
+  }, [tenant?.id])
+
+  useEffect(() => {
+    if (!tenant?.id) return
     let cancelled = false
-    api.getReports(tenant.id, days, selectedListId).then((res) => {
+    api.getReports(tenant.id, days, selectedListId, selectedCustomerId).then((res) => {
       if (!cancelled && res.data) setData(res.data)
     })
     return () => {
       cancelled = true
     }
-  }, [tenant?.id, days, selectedListId])
+  }, [tenant?.id, days, selectedListId, selectedCustomerId])
 
   // Derived: we're loading until the data we hold matches the requested range
   // (avoids a synchronous setState in the effect, and shows the spinner on range switch).
   const loading =
-    data?.days !== days || data?.listId !== (selectedListId ?? null)
+    data?.days !== days || data?.listId !== (selectedListId ?? null) ||
+    data?.customerId !== (selectedCustomerId ?? null)
 
   const selectList = (listId: string) => {
     setSearchParams((current) => {
       if (listId) current.set('list', listId)
       else current.delete('list')
+      return current
+    })
+  }
+  const selectCustomer = (customerId: string) => {
+    setSearchParams((current) => {
+      if (customerId) current.set('customer', customerId)
+      else current.delete('customer')
       return current
     })
   }
@@ -119,6 +136,9 @@ export function ReportsScreen() {
             lists={lists}
             selectedListId={selectedListId}
             onSelectList={selectList}
+            customers={customers}
+            selectedCustomerId={selectedCustomerId}
+            onSelectCustomer={selectCustomer}
           />
         ) : (
           <ActivityLog tenantId={tenant?.id} audit />
@@ -187,6 +207,9 @@ function PerformanceReport({
   lists,
   selectedListId,
   onSelectList,
+  customers,
+  selectedCustomerId,
+  onSelectCustomer,
 }: {
   data: ReportData | null
   days: number
@@ -196,6 +219,9 @@ function PerformanceReport({
   lists: PriceList[]
   selectedListId?: string
   onSelectList: (listId: string) => void
+  customers: Customer[]
+  selectedCustomerId?: string
+  onSelectCustomer: (customerId: string) => void
 }) {
   const { locale, t } = useAnalyticsI18n()
   return (
@@ -210,6 +236,9 @@ function PerformanceReport({
           lists={lists}
           selectedListId={selectedListId}
           onSelectList={onSelectList}
+          customers={customers}
+          selectedCustomerId={selectedCustomerId}
+          onSelectCustomer={onSelectCustomer}
         />
         <VisitChart data={data} loading={loading} t={t} locale={locale} />
       </section>
@@ -232,6 +261,9 @@ function PerformanceHeader({
   lists,
   selectedListId,
   onSelectList,
+  customers,
+  selectedCustomerId,
+  onSelectCustomer,
 }: {
   days: number
   periodVisits: number
@@ -241,6 +273,9 @@ function PerformanceHeader({
   lists: PriceList[]
   selectedListId?: string
   onSelectList: (listId: string) => void
+  customers: Customer[]
+  selectedCustomerId?: string
+  onSelectCustomer: (customerId: string) => void
 }) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -267,6 +302,21 @@ function PerformanceHeader({
             {lists.map((list) => (
               <option key={list.id} value={list.id}>
                 {list.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex w-full items-center gap-2 text-xs font-semibold text-[var(--dash-text2)] sm:w-auto">
+          <span className="shrink-0">Cliente</span>
+          <select
+            value={selectedCustomerId ?? ''}
+            onChange={(event) => onSelectCustomer(event.target.value)}
+            className="min-w-0 flex-1 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2.5 py-1.5 text-xs font-semibold text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)] sm:w-52"
+          >
+            <option value="">Todos los clientes</option>
+            {customers.map((customer) => (
+              <option key={customer.id} value={customer.id}>
+                {customer.name}
               </option>
             ))}
           </select>

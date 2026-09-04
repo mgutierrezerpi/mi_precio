@@ -513,6 +513,16 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.38);
 }
 
+.link-card-media-kit-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.link-card--dark .link-card-media-kit-icon {
+  filter: invert(1);
+}
+
 .link-card--dark .link-card-icon {
   background: rgba(245, 244, 237, 0.12);
 }
@@ -1166,18 +1176,19 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   z-index: 30;
   top: calc(100% + 8px);
   right: 0;
-  left: 20px;
-  width: fit-content;
-  max-width: calc(100% - 40px);
-  margin: auto;
-  padding: 12px 17px;
+  left: auto;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 9px 12px;
   border-radius: 100px;
   background: var(--ink);
   color: var(--cream);
   box-shadow: 0 11px 26px rgba(31, 39, 24, 0.22);
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
   animation: toast-in 0.3s ease both;
 }
 

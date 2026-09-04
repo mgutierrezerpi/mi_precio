@@ -903,10 +903,12 @@ function MagazineArrow({
   direction,
   disabled,
   onClick,
+  hideOnMobile = false,
 }: {
   direction: 'previous' | 'next'
   disabled: boolean
   onClick: () => void
+  hideOnMobile?: boolean
 }) {
   return (
     <button
@@ -914,13 +916,28 @@ function MagazineArrow({
       aria-label={direction === 'previous' ? 'Previous page' : 'Next page'}
       disabled={disabled}
       onClick={onClick}
-      className="absolute top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[#F3EDE2]/20 bg-[#3A2A1D]/85 text-3xl font-light text-[#F3EDE2] shadow-lg transition hover:bg-[#3A2A1D] disabled:pointer-events-none disabled:opacity-20 sm:h-14 sm:w-14"
+      className={`absolute top-1/2 z-10 h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[#F3EDE2]/20 bg-[#3A2A1D]/85 text-[#F3EDE2] shadow-lg transition hover:bg-[#3A2A1D] disabled:pointer-events-none disabled:opacity-20 sm:flex sm:h-14 sm:w-14 ${hideOnMobile ? 'hidden' : 'flex'}`}
       style={{
         [direction === 'previous' ? 'left' : 'right']:
           'max(12px, calc((100% - 820px) / 2))',
       }}
     >
-      {direction === 'previous' ? '‹' : '›'}
+      <svg
+        className="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        {direction === 'previous' ? (
+          <path d="m14.5 5-7 7 7 7" />
+        ) : (
+          <path d="m9.5 5 7 7-7 7" />
+        )}
+      </svg>
     </button>
   )
 }
@@ -1117,6 +1134,10 @@ function EditableEditorialPage({
 export function MagazineViewer({
   pages,
   title,
+  footer,
+  theme,
+  hideArrowsOnMobile = false,
+  mobileSwipeHint = false,
   pageIndex,
   editorMode = false,
   embedded = false,
@@ -1129,6 +1150,10 @@ export function MagazineViewer({
 }: {
   pages: JournalPage[]
   title: string
+  footer?: React.ReactNode
+  theme?: 'cafecitos'
+  hideArrowsOnMobile?: boolean
+  mobileSwipeHint?: boolean
   pageIndex?: number
   editorMode?: boolean
   embedded?: boolean
@@ -1144,6 +1169,9 @@ export function MagazineViewer({
   const [pageWidth, setPageWidth] = useState(700)
   const [pageScale, setPageScale] = useState(1)
   const [lensActive, setLensActive] = useState(false)
+  const [showSwipeOnboarding, setShowSwipeOnboarding] = useState(
+    mobileSwipeHint
+  )
   const [lensPosition, setLensPosition] = useState<{
     x: number
     y: number
@@ -1167,6 +1195,12 @@ export function MagazineViewer({
     color: string
     textAlign: CSSProperties['textAlign']
   } | null>(null)
+
+  useEffect(() => {
+    if (!mobileSwipeHint) return
+    const timer = window.setTimeout(() => setShowSwipeOnboarding(false), 3400)
+    return () => window.clearTimeout(timer)
+  }, [mobileSwipeHint])
 
   // The embedded admin preview controls the viewer page from its header dots.
   useEffect(() => {
@@ -1390,6 +1424,7 @@ export function MagazineViewer({
   return (
     <div
       className={`flex ${embedded ? 'h-full min-h-[640px] rounded-2xl' : 'h-[100dvh]'} flex-col overflow-hidden bg-[#241B15] text-[#F3EDE2]`}
+      data-magazine-theme={theme}
     >
       {!embedded && (
         <div className="z-20 shrink-0 border-b border-[#F3EDE2]/10 bg-[#241B15] px-5 py-4 sm:px-8">
@@ -1441,6 +1476,7 @@ export function MagazineViewer({
           touchStartX.current = null
           if (start === null || end === undefined || Math.abs(end - start) < 48)
             return
+          setShowSwipeOnboarding(false)
           goTo(currentPage + (end < start ? 1 : -1))
         }}
       >
@@ -1448,8 +1484,9 @@ export function MagazineViewer({
           direction="previous"
           disabled={currentPage === 0}
           onClick={() => goTo(currentPage - 1)}
+          hideOnMobile={hideArrowsOnMobile}
         />
-        <div className="flex h-full w-full items-start justify-center">
+        <div className="flex h-full w-full items-center justify-center">
           <div
             className="relative w-full max-w-[700px]"
             style={{
@@ -1475,8 +1512,11 @@ export function MagazineViewer({
           >
             <div
               ref={pageRef}
-              className="origin-top-left w-[700px] shadow-[0_25px_80px_rgba(0,0,0,.35)]"
-              style={{ transform: `scale(${pageScale})` }}
+              className="origin-top-left shadow-[0_12px_32px_rgba(0,0,0,.16)]"
+              style={{
+                width: 'var(--magazine-page-width, 700px)',
+                transform: `scale(${pageScale})`,
+              }}
             >
               <div
                 ref={canvasRef}
@@ -1582,6 +1622,7 @@ export function MagazineViewer({
           direction="next"
           disabled={currentPage === pages.length - 1}
           onClick={() => goTo(currentPage + 1)}
+          hideOnMobile={hideArrowsOnMobile}
         />
         {!editorMode && (
           <div className="pointer-events-auto fixed bottom-3 right-3 z-30 sm:bottom-4 sm:right-4">
@@ -1595,6 +1636,19 @@ export function MagazineViewer({
           </div>
         )}
       </div>
+      {showSwipeOnboarding && (
+        <button
+          type="button"
+          className="magazine-swipe-onboarding sm:hidden"
+          onClick={() => setShowSwipeOnboarding(false)}
+          aria-label="Cerrar ayuda de navegación"
+        >
+          <span className="magazine-swipe-onboarding__gesture" aria-hidden="true">↔</span>
+          <strong>Deslizá para pasar de página</strong>
+          <span>Explorá el media kit con un gesto</span>
+        </button>
+      )}
+      {footer}
     </div>
   )
 }

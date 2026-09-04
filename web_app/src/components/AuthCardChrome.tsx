@@ -3,11 +3,19 @@ import { ShieldCheck, XIcon } from './AuthCardIcons'
 export function AuthHeader({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex items-center justify-between">
-      <img
-        src="/miprecio-logo-pencil.webp"
-        alt="Mi Precio"
-        className="h-10 w-auto"
-      />
+      <div className="relative h-[34px] w-[155px] shrink-0 overflow-hidden">
+        <img
+          src="/miprecio-logo-pencil.webp"
+          alt="MiPrecio"
+          className="h-[34px] w-auto max-w-[155px] object-contain object-left"
+        />
+        {/* Match the compact admin-sidebar lockup: keep the mark and wordmark,
+            while hiding the small tagline built into the source artwork. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 left-[30%] right-0 h-[25%] bg-white"
+        />
+      </div>
       <button
         type="button"
         onClick={onClose}

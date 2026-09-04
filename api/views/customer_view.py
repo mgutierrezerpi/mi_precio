@@ -14,6 +14,8 @@ class CustomerView(BaseView):
     email: str | None
     phone: str | None
     notes: str | None
+    access_code_enabled: bool = False
+    access_list_ids: list[str] = []
     created_at: datetime
     updated_at: datetime
     # Aggregates attached by the context (default to empty for un-annotated instances).
@@ -27,7 +29,16 @@ class CustomerView(BaseView):
 
     @classmethod
     def render(cls, customer):
-        return cls.model_validate(customer)
+        view = cls.model_validate(customer)
+        view.access_code_enabled = bool(getattr(customer, "access_code_hash", None))
+        from models import CustomerListAccess
+        view.access_list_ids = [
+            grant.price_list_id
+            for grant in CustomerListAccess.select().where(
+                CustomerListAccess.customer == customer.id
+            )
+        ]
+        return view
 
     @classmethod
     def render_many(cls, customers):
