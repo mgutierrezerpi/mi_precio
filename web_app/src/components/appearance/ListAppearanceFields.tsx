@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Item, ListDesign, Tenant } from '../../types'
 import { getT, type TFn } from '../../lib/i18n'
 import { fileToDataUrl } from '../../lib/image'
@@ -790,7 +791,7 @@ export function ListAppearanceFields({
             return (
               <div
                 key={d}
-                className={`flex w-[min(18rem,calc(100vw-4rem))] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${on ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
+                className={`relative flex w-[min(18rem,calc(100vw-4rem))] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border text-left transition disabled:opacity-60 ${on ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/20' : 'border-[var(--dash-border)] hover:border-[var(--dash-link)]'}`}
               >
                 <div
                   role="button"
@@ -828,7 +829,7 @@ export function ListAppearanceFields({
                 <button
                   type="button"
                   onClick={() => setPreviewDesign(d)}
-                  className="flex items-center justify-center gap-1.5 border-t border-[var(--dash-divider)] bg-[var(--dash-soft)] px-3 py-2 text-xs font-bold text-[var(--dash-link)] transition hover:bg-[var(--dash-border)]"
+                  className="absolute right-2 top-2 flex h-8 items-center gap-1.5 rounded-full border border-white/30 bg-[#171521]/80 px-3 text-xs font-bold text-white shadow-sm backdrop-blur transition hover:scale-105 hover:bg-[#171521] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                   aria-label={`Vista previa de ${t(`set.design.${d}.name`)}`}
                 >
                   <Icon name="eye" size={14} />
@@ -858,9 +859,9 @@ export function ListAppearanceFields({
         </div>
       </div>
 
-      {previewDesign && (
+      {previewDesign && createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#171521]/70 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#171521]/70 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="Vista previa del tema"
@@ -900,7 +901,8 @@ export function ListAppearanceFields({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Background image + brand-colour filter */}
