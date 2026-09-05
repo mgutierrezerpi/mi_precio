@@ -1,0 +1,37 @@
+services:
+  bugsink:
+    image: bugsink/bugsink:latest
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      CREATE_SUPERUSER: ${CREATE_SUPERUSER}
+      BASE_URL: https://bugsink.miprecio.app
+      # Enables secure cookies and validates X-Forwarded-Proto from Nginx.
+      BEHIND_HTTPS_PROXY: "True"
+      SITE_TITLE: MiPrecio Bugsink
+      SINGLE_USER: "True"
+      USER_REGISTRATION: CB_NOBODY
+      DATABASE_PATH: /data/db.sqlite3
+      PORT: "8000"
+      EMAIL_HOST: smtp.sendgrid.net
+      # Port 2525 is SendGrid's TLS submission port and is reachable from the farm.
+      EMAIL_PORT: "2525"
+      EMAIL_HOST_USER: apikey
+      EMAIL_HOST_PASSWORD: ${SENDGRID_API_KEY}
+      EMAIL_USE_TLS: "True"
+      EMAIL_USE_SSL: "False"
+      DEFAULT_FROM_EMAIL: Bugsink <alerts@miprecio.app>
+      EMAIL_TIMEOUT: "10"
+    volumes:
+      - bugsink-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  bugsink-data:
