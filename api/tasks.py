@@ -13,12 +13,19 @@ from urllib.parse import urlencode
 from huey import SqliteHuey, crontab
 
 from config import settings
+from infra.sentry import init_sentry
 from infra.mailer import mailer
 from lib.ctx import auth
 from lib.ctx import billing_context as billing
 from models import db
 
 logger = logging.getLogger(__name__)
+
+# `huey_consumer` imports this module directly rather than `app`, so it does
+# not otherwise run the API's Sentry initialization. Initializing here enables
+# the Huey integration in the worker: it consumes trace headers before task
+# execution and reports uncaught task errors to Bugsink.
+init_sentry()
 
 HUEY_DB_PATH = os.environ.get("HUEY_DB_PATH", "huey.db")
 _huey_db_parent = Path(HUEY_DB_PATH).parent
@@ -102,9 +109,20 @@ def notify_subscription_expired(tenant_id: str) -> bool:
 
 
 @huey.task(retries=2, retry_delay=30)
-def send_invitation_email(email: str, role: str, tenant_name: str) -> bool:
-    """Send the invitation with a one-time login link."""
+def send_invitation_email(
+    email: str,
+    role: str,
+    tenant_name: str,
+    sentry_headers: dict[str, str] | None = None,
+) -> bool:
+    """Send the invitation with a one-time login link.
 
+    Sentry attaches trace-propagation headers to queued Huey jobs. They are
+    intentionally accepted here (but need no task-body handling) so the worker
+    can execute both newly enqueued and already-persisted invitation jobs.
+    """
+
+    del sentry_headers
     code = _with_db(lambda: auth.create_code(email))
     invite_url = f"{settings.public_app_url.rstrip('/')}/login?{urlencode({'email': email, 'code': code})}"
     body = (

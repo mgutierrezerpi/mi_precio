@@ -43,7 +43,12 @@ def test_send_invitation_email_uses_login_link(monkeypatch, db):
     )
 
     assert (
-        send_invitation_email.call_local("Editor@Shop.com", "editor", "Ferretería")
+        send_invitation_email.call_local(
+            "Editor@Shop.com",
+            "editor",
+            "Ferretería",
+            sentry_headers={"sentry-trace": "trace-id"},
+        )
         is True
     )
 
