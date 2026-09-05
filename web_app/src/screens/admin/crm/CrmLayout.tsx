@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CrmSidebar } from './CrmSidebar'
 import { CrmTopbar } from './CrmTopbar'
+import { OnboardingTour } from './OnboardingTour'
 
 interface CrmLayoutProps {
   active: string
@@ -45,6 +46,7 @@ export function CrmLayout({
   }
   return (
     <div className="dash flex h-screen overflow-hidden bg-[var(--dash-bg)] font-sans text-[var(--dash-text)]">
+      <OnboardingTour />
       <CrmSidebar
         active={active}
         open={navOpen}

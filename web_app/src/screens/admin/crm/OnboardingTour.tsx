@@ -6,6 +6,7 @@ import {
   markTourSeen,
   type TourStep,
 } from '../../../lib/onboardingTour'
+import api from '../../../services/api'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { selectTenant, selectUser } from '../../../store/slices/authSlice'
 import { selectTourOpen, setTourOpen } from '../../../store/slices/uiSlice'
@@ -21,7 +22,16 @@ export function OnboardingTour() {
   const t = useT()
   const [index, setIndex] = useState(0)
   useEffect(() => {
-    if (user?.id && !isTourSeen(user.id)) dispatch(setTourOpen(true))
+    if (!user?.id || isTourSeen(user.id)) return
+    let active = true
+    void api.getTenants().then((response) => {
+      // This is onboarding for a person's first business, not a walkthrough
+      // every time an established user creates or switches to another one.
+      if (active && response.data?.length === 1) dispatch(setTourOpen(true))
+    })
+    return () => {
+      active = false
+    }
   }, [dispatch, user?.id])
   const close = useCallback(() => {
     markTourSeen(user?.id)
