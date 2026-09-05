@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from controllers.deps import get_current_user, require_active_plan, require_admin
 from controllers.input_types import InviteMember, UpdateMember
-from lib.ctx import activity, plans, team
+from lib.ctx import activity, identity, plans, team
 from lib.ctx.plans_context import PlanLimitError
 from lib.ctx.team_context import TeamError
 from models import User
@@ -23,7 +23,14 @@ plan_gated = [Depends(require_active_plan)]
 @router.get("/users/me")
 def get_current_user_endpoint(current_user: dict = Depends(get_current_user)):
     user = User.get_or_none(User.id == current_user.get("sub"))
-    if not user or str(user.tenant_id) != str(current_user.get("tenant_id")):
+    # `User.tenant` is the original business a user signed up with. A user can
+    # later own or join additional businesses, and switching businesses issues
+    # a token scoped to that membership. Validate the active membership instead
+    # of the legacy primary-tenant field.
+    membership = identity.membership(
+        current_user.get("sub"), current_user.get("tenant_id")
+    )
+    if not user or not membership:
         raise HTTPException(
             status_code=401, detail="Ya no tenés acceso a este espacio de trabajo"
         )

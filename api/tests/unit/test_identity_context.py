@@ -9,6 +9,7 @@ def test_create_tenant(db):
     assert tenant is not None
     assert tenant.name == "Test Store"
     assert tenant.subdomain == "test-store"
+    assert tenant.plan_gate is True
 
 
 def test_create_tenant_lowercases_subdomain(db):

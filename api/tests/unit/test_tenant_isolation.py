@@ -3,7 +3,7 @@
 Guards the middleware in app.py (enforce_tenant_isolation)."""
 
 from lib import encode_token
-from models import PriceList, Tenant
+from models import PriceList, Tenant, TenantMembership, User
 
 
 def _auth(tenant_id: str, user_id: str = "u1", role: str = "owner") -> dict:
@@ -39,3 +39,25 @@ def test_invalid_token_is_unauthorized(client):
         headers={"Authorization": "Bearer not-a-real-token"},
     )
     assert res.status_code == 401
+
+
+def test_switching_to_another_business_keeps_the_session_authenticated(client):
+    original_tenant = Tenant.create(name="Original", subdomain="original", currency="UYU")
+    other_tenant = Tenant.create(name="Other", subdomain="other", currency="UYU")
+    user = User.create(email="owner@shop.com", tenant=original_tenant, role="owner")
+    TenantMembership.create(user=user, tenant=original_tenant, role="owner")
+    TenantMembership.create(user=user, tenant=other_tenant, role="owner")
+
+    switched = client.post(
+        f"/api/v1/tenants/{other_tenant.id}/switch", headers=_auth(original_tenant.id, user.id)
+    )
+
+    assert switched.status_code == 200
+    assert switched.json()["tenant"]["plan_gate"] is True
+    persisted_tenant = Tenant.get_by_id(other_tenant.id)
+    assert persisted_tenant.plan_gate is True
+    new_token = switched.json()["token"]
+    current_user = client.get(
+        "/api/v1/users/me", headers={"Authorization": f"Bearer {new_token}"}
+    )
+    assert current_user.status_code == 200

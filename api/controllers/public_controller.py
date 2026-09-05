@@ -68,6 +68,11 @@ def get_public_menu(
         raise HTTPException(status_code=404, detail="Not found")
     viewer_token = request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE)
     published_lists = public.get_published_lists(tenant, list)
+    # The business-level catalog URL is only valid when there is an actual
+    # public list to show. Otherwise a Linktree catalog card led to an empty
+    # storefront instead of behaving like an unavailable public page.
+    if not list and not published_lists:
+        raise HTTPException(status_code=404, detail="No published lists found")
     if list and published_lists and not public_viewers.has_list_access(
         published_lists[0].price_list, viewer_token
     ):

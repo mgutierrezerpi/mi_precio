@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import UpdateLinkTree
-from lib.ctx import activity, brand_assets, linktrees
+from lib.ctx import activity, brand_assets, linktrees, public
 from views import LinkTreeView
 
 router = APIRouter(tags=["linktrees"])
@@ -128,7 +128,11 @@ def get_public_linktree_endpoint(subdomain: str):
     tenant = tree.tenant if tree else None
     if not tenant or not tree or not tree.published:
         raise HTTPException(status_code=404, detail="Linktree not found")
+    view = LinkTreeView.render(tree)
+    if not public.get_published_lists(tenant):
+        catalog_url = f"/p/{tenant.subdomain}"
+        view.links = [link for link in view.links if link.get("url") != catalog_url]
     return {
         "tenant": {"name": tenant.name, "subdomain": tenant.subdomain},
-        "linktree": LinkTreeView.render(tree),
+        "linktree": view,
     }

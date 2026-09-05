@@ -37,7 +37,9 @@ def create_tenant(
         return None
     if Tenant.select().where(Tenant.subdomain == subdomain).exists():
         return None
-    tenant = Tenant.create(name=name, subdomain=subdomain)
+    # Additional businesses follow the same paid onboarding as new signups.
+    # Existing tenants retain their persisted gate state.
+    tenant = Tenant.create(name=name, subdomain=subdomain, plan_gate=True)
     if owner_user_id:
         user = User.get_or_none(User.id == owner_user_id)
         if user:

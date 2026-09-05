@@ -85,6 +85,12 @@ def switch_tenant_endpoint(
     user = User.get_or_none(User.id == current_user.get("sub"))
     if not member or not tenant or not user:
         raise HTTPException(status_code=403, detail="No tenés acceso a este negocio")
+    # A legacy free business may predate paid onboarding. Once its owner opens
+    # it again, require a plan before CRM access instead of exposing a
+    # subscription-less workspace.
+    if plans.normalize_plan(tenant.plan) == "free" and not tenant.plan_gate:
+        tenant.plan_gate = True
+        tenant.save()
     token = encode_token(str(user.id), user.email, tenant.id, member.role)
     return AuthTokenView.render(AuthResult(token, user, tenant, member.role))
 

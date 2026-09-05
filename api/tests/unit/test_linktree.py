@@ -55,3 +55,19 @@ def test_linktree_public_lookup_does_not_create_drafts(db):
     tenant = Tenant.create(name="Draft Shop", subdomain="draft-shop")
 
     assert linktrees.get_linktree(str(tenant.id), create=False) is None
+
+
+def test_public_linktree_hides_catalog_when_no_public_list_exists(client, db):
+    tenant = Tenant.create(name="Empty Shop", subdomain="empty-shop")
+    tree = linktrees.get_linktree(str(tenant.id))
+    tree.published = True
+    tree.save()
+
+    linktree_response = client.get("/api/v1/public/empty-shop/linktree")
+    catalog_response = client.get("/api/v1/public/empty-shop")
+
+    assert linktree_response.status_code == 200
+    assert "/p/empty-shop" not in {
+        link["url"] for link in linktree_response.json()["linktree"]["links"]
+    }
+    assert catalog_response.status_code == 404
