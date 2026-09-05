@@ -26,6 +26,7 @@ def create_checkout_endpoint(
             email=current_user.get("email"),
             name=current_user.get("name"),
             redirect_url=data.redirect_url,
+            locale=data.locale,
         )
     except billing.BillingError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

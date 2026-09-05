@@ -36,6 +36,7 @@ def create_checkout(
     email: str | None = None,
     name: str | None = None,
     redirect_url: str | None = None,
+    locale: str = "es",
 ) -> dict[str, str]:
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant:
@@ -52,6 +53,7 @@ def create_checkout(
     product_options: dict[str, Any] = {"enabled_variants": [int(variant_id)]}
     if redirect_url:
         product_options["redirect_url"] = redirect_url
+    checkout_options = {"locale": "en" if locale == "en" else "es"}
     checkout_data: dict[str, Any] = {"custom": {"tenant_id": tenant_id, "plan": plan}}
     if email:
         checkout_data["email"] = email
@@ -63,6 +65,7 @@ def create_checkout(
             "type": "checkouts",
             "attributes": {
                 "checkout_data": checkout_data,
+                "checkout_options": checkout_options,
                 "product_options": product_options,
             },
             "relationships": {

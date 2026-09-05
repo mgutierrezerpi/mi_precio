@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -7,6 +8,7 @@ class CreateCheckout(BaseModel):
     tenant_id: str
     plan: str
     redirect_url: str | None = None
+    locale: Literal["es", "en"] = "es"
 
 
 class SubscriptionAction(BaseModel):

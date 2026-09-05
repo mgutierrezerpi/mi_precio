@@ -422,7 +422,7 @@ function Navbar({
         >
           {isEnglishLanding ? (
             <img
-              src="/pricepanel-logo.svg"
+              src="/pricepanel-logo.png"
               alt="PricePanel"
               className="h-11 w-auto"
             />

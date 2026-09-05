@@ -32,6 +32,7 @@ import type {
   LinkTree,
   FeatureFlag,
 } from '../types'
+import { localeForHostname } from '../lib/domainLocale'
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
@@ -541,6 +542,7 @@ class ApiService {
         tenant_id: tenantId,
         plan,
         redirect_url: redirectUrl,
+        locale: localeForHostname(),
       }),
     })
   }
