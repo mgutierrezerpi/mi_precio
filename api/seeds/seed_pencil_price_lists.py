@@ -1,6 +1,7 @@
 """Seed the price-list and magazine definitions shown in the Pretty Lists Pencil file.
 
-Requires demo/tok.json and a running API at localhost:8000. This script is
+Requires ``DEMO_TOKEN``/``DEMO_TENANT_ID`` (or ``seeds/tok.json`` when run
+locally) and a running API at localhost:8000. This script is
 additive: it does not delete existing data. It updates the versioned public
 content for the exact named lists, creates the Cheese Factory Journal as a
 magazine, and adds sample items only to empty lists.
@@ -27,7 +28,7 @@ SUBDOMAIN = os.environ.get("DEMO_SUBDOMAIN") or (TOKEN_DATA or {}).get(
     "tenant", {}
 ).get("subdomain")
 if not TOKEN or not TENANT_ID:
-    raise RuntimeError("Set DEMO_TOKEN and DEMO_TENANT_ID or create demo/tok.json")
+    raise RuntimeError("Set DEMO_TOKEN and DEMO_TENANT_ID or create seeds/tok.json")
 HEADERS = {"Content-Type": "application/json", "Authorization": f"Bearer {TOKEN}"}
 
 
