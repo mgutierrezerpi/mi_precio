@@ -1,11 +1,9 @@
 """API routes registration."""
 
-from fastapi import APIRouter, Depends
-
 from controllers import (
     auth_router,
-    billing_router,
     billing_actions_router,
+    billing_router,
     categories_router,
     customers_router,
     designs_router,
@@ -27,6 +25,7 @@ from controllers import (
     versions_router,
 )
 from controllers.deps import require_active_plan
+from fastapi import APIRouter, Depends
 
 
 def register_routes(app):

@@ -1,0 +1,20 @@
+{
+  "include": ["api"],
+  "exclude": [
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/.mypy_cache",
+    "**/.ruff_cache"
+  ],
+  "pythonVersion": "3.14",
+  "venvPath": "api",
+  "venv": ".venv",
+  "typeCheckingMode": "off",
+  "reportMissingTypeStubs": "none",
+  "executionEnvironments": [
+    {
+      "root": "api",
+      "extraPaths": ["api"]
+    }
+  ]
+}

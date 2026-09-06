@@ -3,17 +3,24 @@ set -e
 
 cd "$(dirname "$0")/.."
 
+echo "Syncing development dependencies..."
+PIPENV_VENV_IN_PROJECT=1 pipenv sync --dev
+
 echo "Running linter..."
-pipenv run ruff check .
+PIPENV_VENV_IN_PROJECT=1 pipenv run ruff check .
 
 echo ""
-echo "Running type checker..."
-pipenv run mypy .
+echo "Running editor diagnostics..."
+npx --yes pyright@1.1.408 --project ../pyrightconfig.json
+
+echo ""
+echo "Running static type checker..."
+PIPENV_VENV_IN_PROJECT=1 pipenv run mypy .
 
 echo ""
 echo "Running tests..."
 # Exit code 5 means no tests collected, which is ok
-pipenv run pytest || test $? -eq 5
+PIPENV_VENV_IN_PROJECT=1 pipenv run pytest || test $? -eq 5
 
 echo ""
 echo "All checks passed!"

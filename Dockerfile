@@ -15,7 +15,7 @@ ENV VITE_API_URL=$VITE_API_URL \
 RUN yarn build
 RUN yarn test:prod-api-url
 
-FROM python:3.11-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

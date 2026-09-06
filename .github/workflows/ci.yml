@@ -23,13 +23,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.14"
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
 
       - name: Install backend dependencies
         working-directory: api
         run: |
           python -m pip install --upgrade pip pipenv
-          pipenv install --dev --deploy
+          PIPENV_VENV_IN_PROJECT=1 pipenv sync --dev
 
       - name: Lint backend
         working-directory: api
@@ -37,11 +42,18 @@ jobs:
           # Ruff 0.16 enables a large new rule set by default. Keep CI on the
           # established project baseline until that migration is deliberate.
           pipenv run python -m pip install "ruff==0.15.20"
-          pipenv run ruff check .
+          PIPENV_VENV_IN_PROJECT=1 pipenv run ruff check .
+
+      - name: Check backend editor diagnostics
+        run: npx --yes pyright@1.1.408 --project pyrightconfig.json
+
+      - name: Type-check backend
+        working-directory: api
+        run: PIPENV_VENV_IN_PROJECT=1 pipenv run mypy .
 
       - name: Test backend
         working-directory: api
-        run: pipenv run pytest -q
+        run: PIPENV_VENV_IN_PROJECT=1 pipenv run pytest -q
 
   frontend:
     runs-on: ubuntu-latest
