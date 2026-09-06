@@ -1056,9 +1056,7 @@ function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
   )
 }
 
-// Footer brand/nav/socials are intentionally omitted for now — those pages don't
-// exist yet. The full markup lives in the static landing (landing/index.html) and
-// git history; restore from there when the links are ready.
+// Footer brand/nav/socials are intentionally omitted until those pages exist.
 function Footer() {
   return (
     <footer className="bg-[#2E1065] px-5 py-8 text-white md:px-[120px]">

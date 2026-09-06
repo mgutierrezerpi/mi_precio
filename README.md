@@ -4,14 +4,13 @@ Monorepo for MiPrecio projects.
 
 ## Projects
 
-- `landing/` - public landing page for `miprecio.app`, served with Nginx in Docker.
 - `api/` - Python API for the MiPrecio product.
-- `web_app/` - React/Vite web application for the MiPrecio product.
+- `web_app/` - React/Vite web application, including the public landing page.
 - `bin/` - local development scripts.
 
 ## Local Full Stack
 
-Run the landing page, API, and web app together from the repository root:
+Run the API and web app together from the repository root:
 
 ```bash
 bin/dev
@@ -31,8 +30,7 @@ docker compose down
 
 Local URLs:
 
-- Landing: `http://localhost:8088`
-- Web app: `http://localhost:3001`
+- Web app and landing: `http://localhost:3001`
 - API health: `http://localhost:8000/health`
 
 The Vite web app also has these useful routes:
@@ -43,7 +41,7 @@ The Vite web app also has these useful routes:
 - `http://localhost:3001/admin/items`
 - `http://localhost:3001/admin/settings`
 
-Ports can be overridden with `LANDING_PORT`, `WEB_APP_PORT`, and `API_PORT`.
+Ports can be overridden with `WEB_APP_PORT` and `API_PORT`.
 
 ## Error monitoring
 
@@ -74,11 +72,10 @@ The `magazines` flag is disabled by default. The API enforces the flag for
 admin magazine endpoints and public magazine pages; hiding the sidebar item is
 only a frontend convenience.
 
-## Current Production Deploy
+## Production deploy
 
-The production landing page is deployed from `landing/` on `main`.
+Fly builds the top-level `Dockerfile`, which packages the API and React app.
 
 ```bash
-cd landing
-MIPRECIO_PORT=8088 docker compose up -d --build
+fly deploy
 ```

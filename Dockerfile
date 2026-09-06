@@ -38,9 +38,6 @@ RUN pip install --no-cache-dir pipenv \
 
 WORKDIR /app
 COPY api/ /app/api/
-COPY landing/index.html /usr/share/nginx/landing/index.html
-COPY landing/assets /usr/share/nginx/landing/assets
-COPY landing/images /usr/share/nginx/landing/images
 COPY --from=web-build /app/web_app/dist /usr/share/nginx/web_app
 COPY .fly/nginx.conf /etc/nginx/conf.d/default.conf
 COPY .fly/litefs.yml /etc/litefs.yml
