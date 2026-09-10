@@ -5,6 +5,40 @@ from models import Magazine, MagazinePage, Tenant
 from models.magazine import unique_magazine_slug
 
 CHEESE_FACTORY_JOURNAL_SLUG = "the_cheese_factory_journal"
+CONTACT_MAGAZINE_SLUG = "contacto"
+
+
+def create_default_contact_magazine(tenant_id: str) -> Magazine | None:
+    """Create the published contact page included with a new business."""
+    tenant = get_tenant(tenant_id)
+    if not tenant:
+        return None
+    existing = Magazine.get_or_none(
+        (Magazine.tenant == tenant.id) & (Magazine.slug == CONTACT_MAGAZINE_SLUG)
+    )
+    if existing:
+        return existing
+
+    magazine = Magazine.create(
+        tenant=tenant,
+        name="Contacto",
+        slug=CONTACT_MAGAZINE_SLUG,
+        description="Dejanos tus datos y nos comunicamos contigo.",
+        design="contact-form",
+        published=True,
+        show_on_index=False,
+    )
+    create_page(
+        magazine.id,
+        position=0,
+        page_type="contact",
+        title="Contactanos",
+        content={
+            "heading": "¿Cómo podemos ayudarte?",
+            "body": "Dejanos tus datos y te respondemos a la brevedad.",
+        },
+    )
+    return magazine
 
 
 def list_magazines(tenant_id: str) -> list[Magazine]:

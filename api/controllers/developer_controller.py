@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Depends, HTTPException
 
 from controllers.deps import require_super_admin
 from controllers.input_types import UpdateFeatureFlag
+from controllers.router import ControllerRouter
 from lib.ctx import feature_flags
 
-router = APIRouter(prefix="/developer", tags=["developer"])
+router = ControllerRouter(prefix="/developer", tags=["developer"])
 
 
 @router.get("/access")

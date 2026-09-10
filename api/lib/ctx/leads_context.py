@@ -49,10 +49,10 @@ def create_lead(
     form off mid-session should not produce an error page for someone who was
     already looking at it."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    # A published media kit is itself a lead-generation surface. It must keep
-    # accepting its contact form even when the optional price-list lead form is
-    # disabled for the tenant.
-    if not leads_open(tenant) and source != "media_kit":
+    # Published contact magazines and media kits are lead-generation surfaces.
+    # They must keep accepting their own contact forms even when the optional
+    # price-list lead form is disabled for the tenant.
+    if not leads_open(tenant) and source not in {"media_kit", "contact"}:
         return None
 
     name = (name or "").strip()

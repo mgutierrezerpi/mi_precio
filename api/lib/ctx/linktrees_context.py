@@ -20,6 +20,15 @@ def _default_links(subdomain: str) -> list[dict[str, object]]:
         },
         {
             "id": uuid4().hex,
+            "title": "Contacto",
+            "description": "Dejanos tu consulta",
+            "url": f"/m/{subdomain}/contacto",
+            "icon": "mail",
+            "style": "light",
+            "enabled": True,
+        },
+        {
+            "id": uuid4().hex,
             "title": "Escribinos por WhatsApp",
             "description": "Respondemos tus consultas",
             "url": "",
@@ -42,8 +51,8 @@ def get_linktree(tenant_id: str, create: bool = True) -> LinkTree | None:
     if not tenant:
         return None
     defaults = _default_links(tenant.subdomain)
-    defaults[1]["url"] = tenant.whatsapp_url or ""
-    defaults[1]["enabled"] = bool(tenant.whatsapp_url)
+    defaults[2]["url"] = tenant.whatsapp_url or ""
+    defaults[2]["enabled"] = bool(tenant.whatsapp_url)
     return LinkTree.create(
         tenant=tenant,
         public_slug=tenant.subdomain,

@@ -8,6 +8,7 @@ class AuthTokenView(BaseView):
     token: str
     user: UserView
     tenant: TenantView
+    is_new_user: bool
 
     @classmethod
     def render(cls, result: AuthResult):
@@ -15,4 +16,5 @@ class AuthTokenView(BaseView):
             token=result.token,
             user=UserView.render(result.user, result.role),
             tenant=TenantView.render(result.tenant),
+            is_new_user=result.is_new_user,
         )

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Depends, HTTPException
 
 from controllers import ownership
 from controllers.deps import get_current_user, require_editor
@@ -8,10 +8,11 @@ from controllers.input_types import (
     UpdateMagazine,
     UpdateMagazinePage,
 )
+from controllers.router import ControllerRouter
 from lib.ctx import activity, feature_flags, magazines
 from views import DeletedView, MagazinePageView, MagazineView
 
-router = APIRouter(tags=["magazines"])
+router = ControllerRouter(tags=["magazines"], plan_gated=True)
 
 
 def _require_magazines(tenant_id: str) -> None:

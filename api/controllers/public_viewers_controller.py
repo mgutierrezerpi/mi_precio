@@ -2,13 +2,14 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Depends, HTTPException
 
 from controllers.deps import get_current_user, require_editor
+from controllers.router import ControllerRouter
 from lib.ctx import public_viewers
 from views import CustomerView, PublicViewerView
 
-router = APIRouter(tags=["public-viewers"])
+router = ControllerRouter(tags=["public-viewers"], plan_gated=True)
 
 
 @router.get("/tenants/{tenant_id}/public-viewers")

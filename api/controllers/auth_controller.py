@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import HTTPException, Request
 
 from controllers.input_types import CreateCode, VerifyCode
+from controllers.router import ControllerRouter
 from lib.ctx import auth
 from views import AuthTokenView, CodeSentView
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = ControllerRouter(prefix="/auth", tags=["auth"])
 
 
 def language_for_request(request: Request) -> str:

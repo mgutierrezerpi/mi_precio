@@ -1,6 +1,8 @@
 """Tests for identity context."""
 
 from lib.ctx import identity
+from lib.ctx import feature_flags
+from models import Magazine, MagazinePage
 
 
 def test_create_tenant(db):
@@ -10,6 +12,16 @@ def test_create_tenant(db):
     assert tenant.name == "Test Store"
     assert tenant.subdomain == "test-store"
     assert tenant.plan_gate is True
+    assert feature_flags.magazines_enabled(tenant.id) is True
+
+    contact = Magazine.get(
+        (Magazine.tenant == tenant.id) & (Magazine.slug == "contacto")
+    )
+    assert contact.name == "Contacto"
+    assert contact.design == "contact-form"
+    assert contact.published is True
+    assert contact.show_on_index is False
+    assert MagazinePage.get(MagazinePage.magazine == contact.id).page_type == "contact"
 
 
 def test_create_tenant_lowercases_subdomain(db):

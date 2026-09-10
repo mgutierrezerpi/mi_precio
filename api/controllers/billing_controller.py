@@ -1,14 +1,15 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import Depends, Header, HTTPException, Request
 
 from config import settings
 from controllers.deps import require_owner
 from controllers.input_types import CreateCheckout, ManualSubscriptionSync
+from controllers.router import ControllerRouter
 from lib.ctx import activity
 from lib.ctx import billing_context as billing
 from tasks import check_pending_billing, notify_subscription_expired
 from views import TenantView
 
-router = APIRouter(prefix="/billing", tags=["billing"])
+router = ControllerRouter(prefix="/billing", tags=["billing"])
 
 
 @router.post("/checkouts")

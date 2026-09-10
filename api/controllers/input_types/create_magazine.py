@@ -7,6 +7,7 @@ MAGAZINE_DESIGNS = {
     "editorial",
     "catalog",
     "cafecitos-media-kit",
+    "contact-form",
 }
 
 

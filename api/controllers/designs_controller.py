@@ -1,8 +1,7 @@
-from fastapi import APIRouter
-
+from controllers.router import ControllerRouter
 from lib.list_designs import public_design_specs
 
-router = APIRouter(tags=["list-designs"])
+router = ControllerRouter(tags=["list-designs"], plan_gated=True)
 
 
 @router.get("/list-designs")

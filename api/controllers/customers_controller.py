@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Depends, HTTPException
 
 from controllers import ownership
 from controllers.deps import get_current_user, require_editor
@@ -8,10 +8,11 @@ from controllers.input_types import (
     UpdateCustomer,
     UpdateOrder,
 )
+from controllers.router import ControllerRouter
 from lib.ctx import activity, customers, leads
 from views import CustomerView, DeletedView, LeadView, OrderView
 
-router = APIRouter(tags=["customers"])
+router = ControllerRouter(tags=["customers"], plan_gated=True)
 
 
 @router.get("/tenants/{tenant_id}/customers")

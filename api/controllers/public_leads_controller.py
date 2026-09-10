@@ -6,6 +6,7 @@ from controllers.input_types import CreateLead
 from lib import rate_limit
 from lib.ctx import leads, public
 from lib.ctx.leads_context import LeadRejected
+from tasks import send_contact_submission_email
 
 LEADS_PER_WINDOW = 5
 LEADS_WINDOW_SECONDS = 600
@@ -26,7 +27,9 @@ def create_public_lead(subdomain: str, data: CreateLead, request: Request):
     ):
         raise HTTPException(status_code=429, detail="Probá de nuevo en un rato.")
     try:
-        leads.create_lead(tenant.id, **data.model_dump(exclude={"website"}))
+        lead = leads.create_lead(tenant.id, **data.model_dump(exclude={"website"}))
     except LeadRejected as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if lead and lead.source == "contact":
+        send_contact_submission_email(lead.id)
     return {"ok": True}

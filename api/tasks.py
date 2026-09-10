@@ -17,9 +17,12 @@ from infra.sentry import init_sentry
 from infra.mailer import mailer
 from lib.ctx import auth
 from lib.ctx import billing_context as billing
-from models import db
+from models import Lead, TenantMembership, User, db
 
 logger = logging.getLogger(__name__)
+ContactSubmission = tuple[
+    list[str], str, str, str | None, str | None, str | None
+]
 
 # `huey_consumer` imports this module directly rather than `app`, so it does
 # not otherwise run the API's Sentry initialization. Initializing here enables
@@ -137,6 +140,65 @@ def send_invitation_email(
         body=body,
     )
     return True
+
+
+@huey.task(retries=2, retry_delay=30)
+def send_contact_submission_email(
+    lead_id: str,
+    sentry_headers: dict[str, str] | None = None,
+) -> int:
+    """Notify tenant owners and admins about a Contacto submission."""
+
+    del sentry_headers
+
+    def submission() -> ContactSubmission | None:
+        lead = Lead.get_or_none(Lead.id == lead_id)
+        if not lead:
+            return None
+        recipients = sorted(
+            {
+                membership.user.email
+                for membership in TenantMembership.select(TenantMembership, User)
+                .join(User)
+                .where(
+                    (TenantMembership.tenant == lead.tenant_id)
+                    & (TenantMembership.role.in_(("owner", "admin")))
+                )
+                if membership.user.email
+            }
+        )
+        return (
+            recipients,
+            lead.tenant.name,
+            lead.name,
+            lead.email,
+            lead.phone,
+            lead.message,
+        )
+
+    result = _with_db(submission)
+    if not result:
+        return 0
+    recipients, tenant_name, name, email, phone, message = result
+    contact_details = "\n".join(
+        detail
+        for detail in (
+            f"Email: {email}" if email else None,
+            f"Teléfono: {phone}" if phone else None,
+            f"Mensaje: {message}" if message else None,
+        )
+        if detail
+    )
+    body = f"Nuevo contacto para {tenant_name}.\n\nNombre: {name}"
+    if contact_details:
+        body = f"{body}\n{contact_details}"
+    for recipient in recipients:
+        mailer.send(
+            to=recipient,
+            subject=f"Nuevo contacto para {tenant_name}",
+            body=body,
+        )
+    return len(recipients)
 
 
 @huey.periodic_task(crontab(minute="*/5"), retries=2, retry_delay=30)

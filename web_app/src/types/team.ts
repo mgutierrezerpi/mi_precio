@@ -45,5 +45,6 @@ export interface AuthToken {
   token: string
   user: User
   tenant: Tenant
+  /** Whether this successful sign-in created the account. */
+  isNewUser: boolean
 }
-

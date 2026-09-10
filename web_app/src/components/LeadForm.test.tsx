@@ -40,6 +40,28 @@ describe('LeadForm', () => {
     expect(container.innerHTML).toBe('')
   })
 
+  it('keeps the Contacto form open and labels its submission as contact', async () => {
+    render(
+      <LeadForm
+        tenant={{ ...tenant, leadsEnabled: false }}
+        listName="Contacto"
+        ink="#111111"
+        accent="#7C3AED"
+        alwaysOpen
+        source="contact"
+      />
+    )
+    fill('Tu nombre', 'Ana')
+    fill('Teléfono o WhatsApp', '099 123 456')
+    fireEvent.click(screen.getByText('Enviar'))
+
+    await waitFor(() => expect(createLead).toHaveBeenCalledTimes(1))
+    expect(createLead).toHaveBeenCalledWith(
+      'cafe',
+      expect.objectContaining({ listName: 'Contacto', source: 'contact' })
+    )
+  })
+
   it('sends the contact along with the list they were reading', async () => {
     paint()
     fill('Tu nombre', 'Ana')

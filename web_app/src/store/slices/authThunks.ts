@@ -23,7 +23,11 @@ export const verifyCode = createAsyncThunk(
     }
     api.setToken(response.data.token)
     saveAuthState(response.data.user, response.data.tenant)
-    return { user: response.data.user, tenant: response.data.tenant }
+    return {
+      user: response.data.user,
+      tenant: response.data.tenant,
+      isNewUser: response.data.isNewUser,
+    }
   }
 )
 

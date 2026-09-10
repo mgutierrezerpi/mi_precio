@@ -26,6 +26,9 @@ export interface LeadFormProps {
   accentInk?: string
   /** Set on dark templates so the card lifts off the page instead of sinking. */
   dark?: boolean
+  /** Contact magazines accept messages even when the optional list form is off. */
+  alwaysOpen?: boolean
+  source?: 'form' | 'contact'
 }
 
 /** "Dejanos tus datos" at the foot of a public list.
@@ -44,6 +47,8 @@ export function LeadForm({
   accent,
   accentInk = '#FFFFFF',
   dark,
+  alwaysOpen = false,
+  source = 'form',
 }: LeadFormProps) {
   const t = getT(tenant.language)
   const [form, setForm] = useState<LeadValues>({
@@ -59,7 +64,7 @@ export function LeadForm({
   )
   const [error, setError] = useState<string | null>(null)
 
-  if (!tenant.leadsEnabled) return null
+  if (!tenant.leadsEnabled && !alwaysOpen) return null
 
   const setField = (key: keyof LeadValues, value: string) =>
     setForm((current) => ({ ...current, [key]: value }))
@@ -74,7 +79,7 @@ export function LeadForm({
       ...form,
       listId,
       listName,
-      source: 'form',
+      source,
       website,
     })
 

@@ -5,6 +5,14 @@ from lib.ctx.identity_presence import touch_last_seen
 from models import Invitation, Tenant, TenantMembership, User
 
 
+def _provision_default_contact_magazine(tenant: Tenant) -> None:
+    """Give every new business a published Contacto page in its link tree."""
+    from lib.ctx import feature_flags_context, magazines_context
+
+    feature_flags_context.set_tenant_flag("magazines", tenant.id, True)
+    magazines_context.create_default_contact_magazine(tenant.id)
+
+
 def list_tenants(user_id: str | None = None) -> list[Tenant]:
     if not user_id:
         return list(Tenant.select())
@@ -40,6 +48,7 @@ def create_tenant(
     # Additional businesses follow the same paid onboarding as new signups.
     # Existing tenants retain their persisted gate state.
     tenant = Tenant.create(name=name, subdomain=subdomain, plan_gate=True)
+    _provision_default_contact_magazine(tenant)
     if owner_user_id:
         user = User.get_or_none(User.id == owner_user_id)
         if user:
@@ -141,6 +150,7 @@ def get_or_create_user(email: str, language: str = "es") -> UserResult:
         language="en" if language == "en" else "es",
         plan_gate=True,
     )
+    _provision_default_contact_magazine(tenant)
     # First user of a brand-new tenant owns it.
     user = User.create(email=email, tenant=tenant, name=name, role="owner")
     TenantMembership.create(user=user, tenant=tenant, role="owner")

@@ -1,12 +1,13 @@
 """Plan-gated tenant reporting and activity endpoints."""
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import Depends, Query
 
 from controllers.deps import get_current_user, require_active_plan
+from controllers.router import ControllerRouter
 from lib.ctx import activity, analytics
 from views import ActivityView
 
-router = APIRouter(
+router = ControllerRouter(
     prefix="/tenants",
     tags=["tenants"],
     dependencies=[Depends(require_active_plan)],

@@ -1,6 +1,6 @@
 from controllers.auth_controller import router as auth_router
-from controllers.billing_controller import router as billing_router
 from controllers.billing_actions_controller import router as billing_actions_router
+from controllers.billing_controller import router as billing_router
 from controllers.categories_controller import router as categories_router
 from controllers.customers_controller import router as customers_router
 from controllers.designs_controller import router as designs_router
@@ -21,26 +21,27 @@ from controllers.tenant_insights_controller import router as tenant_insights_rou
 from controllers.tenants_controller import router as tenants_router
 from controllers.versions_controller import router as versions_router
 
-# Explicit re-exports
-auth_router = auth_router
-tenants_router = tenants_router
-tenant_insights_router = tenant_insights_router
-lists_router = lists_router
-versions_router = versions_router
-items_router = items_router
-products_router = products_router
-categories_router = categories_router
-public_router = public_router
-public_viewers_router = public_viewers_router
-import_router = import_router
-customers_router = customers_router
-leads_router = leads_router
-team_router = team_router
-notifications_router = notifications_router
-billing_router = billing_router
-billing_actions_router = billing_actions_router
-support_router = support_router
-designs_router = designs_router
-magazines_router = magazines_router
-developer_router = developer_router
-link_trees_router = link_trees_router
+CONTROLLER_ROUTERS = (
+    auth_router,
+    tenants_router,
+    tenant_insights_router,
+    lists_router,
+    versions_router,
+    items_router,
+    products_router,
+    categories_router,
+    public_router,
+    import_router,
+    customers_router,
+    public_viewers_router,
+    leads_router,
+    team_router,
+    notifications_router,
+    billing_router,
+    billing_actions_router,
+    support_router,
+    designs_router,
+    magazines_router,
+    developer_router,
+    link_trees_router,
+)

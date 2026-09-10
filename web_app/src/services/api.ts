@@ -1437,7 +1437,7 @@ class ApiService {
       message?: string
       listId?: string | null
       listName?: string | null
-      source?: 'form' | 'cart' | 'media_kit'
+      source?: 'form' | 'cart' | 'media_kit' | 'contact'
       website?: string
     }
   ): Promise<ApiResponse<{ ok: boolean }>> {

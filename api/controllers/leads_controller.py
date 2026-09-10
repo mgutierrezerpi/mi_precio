@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from controllers.deps import get_current_user, require_editor
+from controllers.router import ControllerRouter
 from lib.ctx import leads, plans
 from views import CustomerView, LeadView
 
-router = APIRouter(tags=["leads"])
+router = ControllerRouter(tags=["leads"], plan_gated=True)
 
 
 class UpdateLeadStatus(BaseModel):

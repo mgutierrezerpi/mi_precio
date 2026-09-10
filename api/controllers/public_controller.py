@@ -1,16 +1,17 @@
 """Public marketplace and catalog rendering endpoints."""
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import HTTPException, Query, Request
 
 from controllers.public_interactions_controller import (
     router as public_interactions_router,
 )
 from controllers.public_leads_controller import public_leads_router
 from controllers.public_request import request_ip
+from controllers.router import ControllerRouter
 from lib.ctx import feature_flags, public, public_viewers
 from views import PublicMagazineView, PublicMenuView, PublicTenantView
 
-router = APIRouter(prefix="/public", tags=["public"])
+router = ControllerRouter(prefix="/public", tags=["public"])
 router.include_router(public_interactions_router)
 router.include_router(public_leads_router)
 

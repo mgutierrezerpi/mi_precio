@@ -1,14 +1,15 @@
 """Owner-initiated subscription action endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Depends, HTTPException
 
 from controllers.deps import require_owner
 from controllers.input_types import ReconcileCheckout, SubscriptionAction
+from controllers.router import ControllerRouter
 from lib.ctx import activity
 from lib.ctx import billing_context as billing
 from views import TenantView
 
-router = APIRouter(prefix="/billing", tags=["billing"])
+router = ControllerRouter(prefix="/billing", tags=["billing"])
 
 
 def _require_own_tenant(tenant_id: str, current_user: dict) -> None:

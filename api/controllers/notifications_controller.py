@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends
+from fastapi import Depends
 
 from config import settings
 from controllers.deps import get_current_user
 from controllers.input_types import PushSubscribe, PushUnsubscribe, UpdateNotifPrefs
+from controllers.router import ControllerRouter
 from lib.ctx import identity, notifications, push
 from views import ActivityView
 
-router = APIRouter(tags=["notifications"])
+router = ControllerRouter(tags=["notifications"], plan_gated=True)
 
 
 @router.get("/tenants/{tenant_id}/notifications")

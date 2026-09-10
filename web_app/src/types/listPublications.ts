@@ -15,6 +15,7 @@ export const MAGAZINE_DESIGNS = [
   'editorial',
   'catalog',
   'cafecitos-media-kit',
+  'contact-form',
 ] as const
 
 export type MagazineDesign = (typeof MAGAZINE_DESIGNS)[number]

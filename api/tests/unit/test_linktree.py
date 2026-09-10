@@ -12,6 +12,9 @@ def test_linktree_is_created_per_tenant_and_can_be_updated(db):
     assert tree.display_name == "Studio"
     assert tree.template == "botanical"
     assert LinkTree.select().where(LinkTree.tenant == tenant.id).count() == 1
+    assert "/m/studio/contacto" in {
+        link["url"] for link in LinkTreeView.render(tree).links
+    }
 
     updated = linktrees.update_linktree(
         tree.id,

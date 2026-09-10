@@ -9,3 +9,4 @@ class AuthResult:
     user: User
     tenant: Tenant
     role: str | None = None
+    is_new_user: bool = False

@@ -1,9 +1,10 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Depends, HTTPException
 
 from controllers.deps import get_current_user, require_active_plan, require_admin
 from controllers.input_types import InviteMember, UpdateMember
+from controllers.router import ControllerRouter
 from lib.ctx import activity, identity, plans, team
 from lib.ctx.plans_context import PlanLimitError
 from lib.ctx.team_context import TeamError
@@ -11,7 +12,7 @@ from models import User
 from tasks import send_invitation_email
 from views import DeletedView, InvitationView, UserView
 
-router = APIRouter(tags=["team"])
+router = ControllerRouter(tags=["team"])
 logger = logging.getLogger(__name__)
 
 # Team management is CRM data, so it's closed while the tenant owes us a plan.

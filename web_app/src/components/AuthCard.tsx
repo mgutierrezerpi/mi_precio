@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { trackEvent } from '../lib/analytics'
+import { trackCompletedLogin } from '../lib/analytics'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import {
   clearAuthError,
@@ -47,7 +47,12 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
     inviteAttempted.current = true
     void dispatch(verifyCode({ email: inviteEmail, code: inviteCode })).then(
       (result) => {
-        if (verifyCode.fulfilled.match(result)) trackEvent('Completed Login')
+        if (verifyCode.fulfilled.match(result)) {
+          void trackCompletedLogin(
+            result.payload.user.id,
+            result.payload.isNewUser
+          )
+        }
       }
     )
   }, [codeSent, dispatch, inviteEmail, isAuthenticated, searchParams])
@@ -67,7 +72,10 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
     dispatch(clearAuthError())
     const result = await dispatch(verifyCode({ email: pendingEmail!, code }))
     if (verifyCode.fulfilled.match(result)) {
-      trackEvent('Completed Login')
+      void trackCompletedLogin(
+        result.payload.user.id,
+        result.payload.isNewUser
+      )
       navigate(tenantNeedsPlan(result.payload.tenant) ? '/plans' : '/admin')
     }
   }

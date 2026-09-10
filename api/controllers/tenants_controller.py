@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import Depends, File, HTTPException, UploadFile
 
 from config import settings
 from controllers.deps import (
@@ -8,13 +8,14 @@ from controllers.deps import (
     require_owner,
 )
 from controllers.input_types import CreateTenant, UpdatePlan, UpdateTenant
+from controllers.router import ControllerRouter
 from lib import encode_token
 from lib.ctx import activity, brand_assets, identity, plans
 from lib.value_objects import AuthResult
 from models import User
 from views import AuthTokenView, DeletedView, TenantView
 
-router = APIRouter(prefix="/tenants", tags=["tenants"])
+router = ControllerRouter(prefix="/tenants", tags=["tenants"])
 
 # CRM data on this router, closed while the tenant owes us a plan. Reading the
 # tenant, reading/changing the plan and deleting the account stay open so a

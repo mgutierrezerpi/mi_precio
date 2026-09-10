@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Depends, HTTPException
 
 from controllers.deps import require_editor
 from controllers.input_types.import_from_images import ImportFromImages
 from controllers.input_types.import_from_url import ImportFromUrl
+from controllers.router import ControllerRouter
 from lib.services import extract_menu_from_images, extract_menu_items
 from views.extracted_items_view import ExtractedItemsView
 
-router = APIRouter(prefix="/import", tags=["import"])
+router = ControllerRouter(prefix="/import", tags=["import"], plan_gated=True)
 
 
 @router.post("/from-url")
@@ -25,7 +26,8 @@ def import_from_url_endpoint(
         return ExtractedItemsView.render(items)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+    # This is the boundary for failures from external extraction providers.
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(
             status_code=500, detail=f"Failed to extract items: {e!s}"
         )
@@ -48,7 +50,8 @@ def import_from_images_endpoint(
         return ExtractedItemsView.render(items)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+    # This is the boundary for failures from external extraction providers.
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(
             status_code=500, detail=f"Failed to extract items: {e!s}"
         )

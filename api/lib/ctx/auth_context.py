@@ -84,8 +84,8 @@ def authenticate(email: str, code: str, language: str = "es") -> AuthResult | No
     if not verify_code(email, code):
         return None
 
-    result = get_or_create_user(email, language)
-    user = result.user
+    user_result = get_or_create_user(email, language)
+    user = user_result.user
     tenant = user.tenant
 
     # Track sign-in so the team screen can show who's active.
@@ -100,4 +100,10 @@ def authenticate(email: str, code: str, language: str = "es") -> AuthResult | No
         bool(getattr(user, "is_super_admin", False)),
     )
 
-    return AuthResult(token, user, tenant, user.role)
+    return AuthResult(
+        token,
+        user,
+        tenant,
+        user.role,
+        is_new_user=user_result.created,
+    )

@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Depends, HTTPException
 
 from controllers import ownership
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateItem, ReorderItems, UpdateItem
+from controllers.router import ControllerRouter
 from lib.ctx import items
 from views import DeletedView, ItemView, ReorderedView
 
-router = APIRouter(tags=["items"])
+router = ControllerRouter(tags=["items"], plan_gated=True)
 
 
 @router.get("/versions/{version_id}/items")

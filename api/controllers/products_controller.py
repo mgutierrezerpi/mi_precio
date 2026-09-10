@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import Depends, File, HTTPException, UploadFile
 
 from controllers import ownership
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateProduct, UpdateProduct
+from controllers.router import ControllerRouter
 from lib.ctx import activity, plans, products
 from lib.ctx.plans_context import PlanLimitError
 from views import DeletedView, ProductImageView, ProductView
 
-router = APIRouter(tags=["products"])
+router = ControllerRouter(tags=["products"], plan_gated=True)
 
 MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024
 SUPPORTED_PRODUCT_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}

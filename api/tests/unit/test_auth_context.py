@@ -129,6 +129,18 @@ def test_authenticate_success(db):
     assert result.token is not None
     assert result.user.email == "test@example.com"
     assert result.tenant is not None
+    assert result.is_new_user is True
+
+
+def test_authenticate_marks_returning_user_as_existing(db):
+    first_code = auth.send_code("test@example.com")
+    auth.authenticate("test@example.com", first_code)
+
+    second_code = auth.send_code("test@example.com")
+    result = auth.authenticate("test@example.com", second_code)
+
+    assert result is not None
+    assert result.is_new_user is False
 
 
 def test_authenticate_returns_valid_token(db):

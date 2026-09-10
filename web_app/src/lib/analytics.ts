@@ -50,3 +50,28 @@ export function trackEvent(
     queuedEvents.push([eventName, properties])
   }
 }
+
+/**
+ * Records a completed sign-in without sending an email address or other direct
+ * identifier to Umami. The opaque account ID is hashed in the browser so
+ * returning-user logins can be grouped in Umami's activity dashboard.
+ */
+export async function trackCompletedLogin(
+  userId: string,
+  isNewUser: boolean
+): Promise<void> {
+  let userIdHash: string | undefined
+
+  if (window.crypto?.subtle) {
+    const bytes = new TextEncoder().encode(userId)
+    const digest = await window.crypto.subtle.digest('SHA-256', bytes)
+    userIdHash = Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, '0')
+    ).join('').slice(0, 16)
+  }
+
+  trackEvent('Completed Login', {
+    account_status: isNewUser ? 'new' : 'existing',
+    ...(userIdHash ? { user_id_hash: userIdHash } : {}),
+  })
+}

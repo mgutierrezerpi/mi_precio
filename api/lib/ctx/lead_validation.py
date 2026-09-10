@@ -3,7 +3,7 @@
 import re
 
 STATUSES = ("new", "contacted", "converted", "discarded")
-SOURCES = ("form", "cart", "media_kit")
+SOURCES = ("form", "cart", "media_kit", "contact")
 MAX_MESSAGE = 2000
 
 

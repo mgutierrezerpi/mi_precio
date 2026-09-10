@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import Depends, File, HTTPException, UploadFile
 
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import UpdateLinkTree
+from controllers.router import ControllerRouter
 from lib.ctx import activity, brand_assets, linktrees, public
 from views import LinkTreeView
 
-router = APIRouter(tags=["linktrees"])
+router = ControllerRouter(tags=["linktrees"])
 
 
 @router.post("/tenants/{tenant_id}/list-template/image", status_code=201)

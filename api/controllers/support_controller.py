@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Depends, HTTPException
 
 from controllers.deps import get_current_user
 from controllers.input_types import CreateSupportTicket
+from controllers.router import ControllerRouter
 from infra.zohodesk import ZohoDeskError
 from lib.ctx import activity
 from lib.ctx import support_context as support
 
-router = APIRouter(prefix="/support", tags=["support"])
+router = ControllerRouter(prefix="/support", tags=["support"], plan_gated=True)
 
 
 @router.post("/tickets")

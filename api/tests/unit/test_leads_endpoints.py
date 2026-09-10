@@ -64,6 +64,29 @@ class TestThePublicForm:
         assert res.status_code == 201
         assert leads.list_leads(shop.id) == []
 
+    def test_contacto_stores_and_queues_a_submission_without_leads(self, client, db, monkeypatch):
+        shop = _shop(plan="micro", enabled=False)
+        queued: list[str] = []
+        monkeypatch.setattr(
+            "controllers.public_leads_controller.send_contact_submission_email",
+            lambda lead_id: queued.append(lead_id),
+        )
+
+        res = client.post(
+            f"/api/v1/public/{shop.subdomain}/leads",
+            json={
+                "name": "Ana",
+                "phone": "59899123456",
+                "source": "contact",
+            },
+        )
+
+        stored = leads.list_leads(shop.id)
+        assert res.status_code == 201
+        assert len(stored) == 1
+        assert stored[0].source == "contact"
+        assert queued == [stored[0].id]
+
     def test_a_missing_shop_is_a_404(self, client, db):
         res = client.post(
             "/api/v1/public/no-such-shop/leads",
