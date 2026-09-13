@@ -7,14 +7,26 @@ import pytest
 from peewee import SqliteDatabase
 
 from lib.ctx import customers
-from models import Customer, Order, OrderItem, PriceList, Tenant
+from models import (
+    Customer,
+    CustomerListAccess,
+    Lead,
+    Order,
+    OrderItem,
+    PriceList,
+    Tenant,
+)
 
 customers_db = SqliteDatabase(":memory:", pragmas={"foreign_keys": 1})
 
 
 @pytest.fixture(scope="function")
 def db():
-    models = [Tenant, Customer, PriceList, Order, OrderItem]
+    # Every model with a foreign key to Customer has to be here: deleting a
+    # customer cascades through all of them, so one missing table turns into
+    # "no such table" mid-delete. Lead and CustomerListAccess gained that key
+    # after this focused list was first written.
+    models = [Tenant, Customer, PriceList, Order, OrderItem, Lead, CustomerListAccess]
     customers_db.bind(models)
     customers_db.connect()
     customers_db.create_tables(models)
