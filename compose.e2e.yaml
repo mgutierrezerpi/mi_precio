@@ -1,0 +1,29 @@
+services:
+  api:
+    environment:
+      DEBUG: "true"
+      DATABASE_PATH: /tmp/mi_precio-e2e.db
+      E2E_AUTH_CODE: "${E2E_AUTH_CODE:-424242}"
+      CORS_ORIGINS: '["http://localhost:${E2E_WEB_PORT:-43117}"]'
+      BILLING_ENABLED: "${E2E_LEMONSQUEEZY:-false}"
+      LEMONSQUEEZY_API_KEY: "${LEMONSQUEEZY_API_KEY:-}"
+      LEMONSQUEEZY_STORE_ID: "${LEMONSQUEEZY_STORE_ID:-}"
+      LEMONSQUEEZY_WEBHOOK_SECRET: "${LEMONSQUEEZY_WEBHOOK_SECRET:-}"
+      LEMONSQUEEZY_VARIANT_MICRO: "${LEMONSQUEEZY_VARIANT_MICRO:-}"
+      LEMONSQUEEZY_VARIANT_PLUS: "${LEMONSQUEEZY_VARIANT_PLUS:-}"
+      LEMONSQUEEZY_VARIANT_PRO: "${LEMONSQUEEZY_VARIANT_PRO:-}"
+    ports:
+      - "${E2E_API_PORT:-43118}:8000"
+    tmpfs:
+      - /tmp
+
+  storage:
+    ports:
+      - "${E2E_STORAGE_PORT:-43119}:9000"
+      - "127.0.0.1:${E2E_STORAGE_CONSOLE_PORT:-43120}:9001"
+
+  web_app:
+    environment:
+      VITE_API_URL: "http://localhost:${E2E_API_PORT:-43118}/api/v1"
+    ports:
+      - "${E2E_WEB_PORT:-43117}:3000"

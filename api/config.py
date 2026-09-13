@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     sendgrid_api_key: str = ""
     mailer_enabled: bool = False
     log_auth_codes: bool = True
+    # A fixed code is useful for black-box browser tests. It is honored only
+    # while DEBUG is enabled (see auth_context), so production cannot opt into
+    # this behavior accidentally.
+    e2e_auth_code: str = ""
 
     # Error monitoring is opt-in. The DSN is supplied as a runtime secret in
     # deployed environments and remains disabled for local development.

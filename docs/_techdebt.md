@@ -1,1 +1,2 @@
-- [ ]
+- [ ] dead code like the duckduck go and a bunch of stuff in the services section needs to go
+- [ ] unused imports and contexts that can be grouped under a folder, for example instead of billing_checkout and billing_common do billing/checkout billing/common

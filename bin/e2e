@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
+mode="headed"
+use_lemon=false
+playwright_args=()
+
+usage() {
+  cat <<'EOF'
+Usage: bin/e2e [options] [-- PLAYWRIGHT_ARGS...]
+
+Runs the complete containerized stack and Playwright browser journey.
+The browser is visible by default.
+
+Options:
+  --lemon      Use the real Lemon Squeezy test-mode checkout and signed webhook
+  --ui         Open Playwright's interactive test UI
+  --debug      Open Playwright Inspector and step through the test
+  --headless   Run without a visible browser
+  -h, --help   Show this help
+
+Examples:
+  bin/e2e
+  bin/e2e --lemon
+  bin/e2e --ui
+  bin/e2e --debug --lemon
+  bin/e2e -- --grep "signed Lemon"
+
+Ports can be overridden with E2E_WEB_PORT, E2E_API_PORT,
+E2E_STORAGE_PORT, and E2E_STORAGE_CONSOLE_PORT.
+EOF
+}
+
+while (($#)); do
+  case "$1" in
+    --lemon)
+      use_lemon=true
+      ;;
+    --ui)
+      mode="ui"
+      ;;
+    --debug)
+      mode="debug"
+      ;;
+    --headless)
+      mode="headless"
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      playwright_args+=("$@")
+      break
+      ;;
+    *)
+      playwright_args+=("$1")
+      ;;
+  esac
+  shift
+done
+
+if [[ "$use_lemon" == true ]]; then
+  if [[ ! -f "$repo_dir/api/.env" ]]; then
+    echo "Lemon Squeezy mode requires $repo_dir/api/.env" >&2
+    exit 1
+  fi
+  set -a
+  # shellcheck disable=SC1091
+  source "$repo_dir/api/.env"
+  set +a
+  export E2E_LEMONSQUEEZY=true
+fi
+
+cd "$repo_dir/web_app"
+
+case "$mode" in
+  ui)
+    exec yarn playwright test --ui "${playwright_args[@]}"
+    ;;
+  debug)
+    exec yarn playwright test --debug "${playwright_args[@]}"
+    ;;
+  headless)
+    exec yarn playwright test "${playwright_args[@]}"
+    ;;
+  headed)
+    exec yarn playwright test --headed "${playwright_args[@]}"
+    ;;
+esac

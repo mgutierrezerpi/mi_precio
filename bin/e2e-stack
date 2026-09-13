@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-mi_precio_e2e}"
+export API_PORT="${E2E_API_PORT:-43118}"
+export WEB_APP_PORT="${E2E_WEB_PORT:-43117}"
+export STORAGE_PORT="${E2E_STORAGE_PORT:-43119}"
+export STORAGE_CONSOLE_PORT="${E2E_STORAGE_CONSOLE_PORT:-43120}"
+
+cleanup() {
+  docker compose -f compose.yaml -f compose.e2e.yaml down --volumes --remove-orphans
+}
+cleanup
+docker compose -f compose.yaml -f compose.e2e.yaml up --detach --build --force-recreate
+docker compose -f compose.yaml -f compose.e2e.yaml logs --follow

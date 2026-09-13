@@ -22,7 +22,11 @@ def create_code(email: str) -> str:
     """Generate and store a one-time verification code for the email."""
     email = email.lower()
     AuthCode.delete().where(AuthCode.email == email).execute()
-    code = generate_verification_code()
+    code = (
+        settings.e2e_auth_code
+        if settings.debug and settings.e2e_auth_code
+        else generate_verification_code()
+    )
     AuthCode.create(
         email=email,
         code=code,

@@ -44,6 +44,12 @@ export default defineConfig({
     // Reliable HMR file watching inside Docker on Windows/macOS.
     watch: { usePolling: true },
   },
+  // Pre-bundle the Workbox imports before Vite announces that the dev server
+  // is ready. Otherwise its first-page discovery triggers a forced reload that
+  // can abort browser automation (and briefly flashes a blank page for humans).
+  optimizeDeps: {
+    include: ['workbox-precaching', 'workbox-window'],
+  },
   build: {
     assetsDir: 'app_assets',
   },
