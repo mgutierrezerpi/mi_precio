@@ -864,11 +864,11 @@ function UnionBarber({
       style={{ background: config.background }}
     >
       <div
-        className="mx-auto w-full min-w-0 max-w-[650px] overflow-hidden"
+        className="mx-auto w-full min-w-0 max-w-[650px] overflow-hidden md:max-w-[920px]"
         style={{ color: config.ink }}
       >
         <div
-          className="p-6 sm:p-7"
+          className="p-6 sm:p-7 md:p-10"
           style={{
             background: 'linear-gradient(175deg,#283B97 0 75%,#D9232E 75%)',
             color: '#FFFFFF',
@@ -881,13 +881,15 @@ function UnionBarber({
             body={hero?.body}
           />
         </div>
-        <div className="mx-auto -mt-2 w-full min-w-0 max-w-[560px] bg-white p-6 shadow-lg sm:p-7">
+        {/* The card stays a narrow ticket on phones; from md it widens to the
+            920px house width and lets Rows split the sections into two columns,
+            so a short service list doesn't read as a thin ribbon on desktop. */}
+        <div className="mx-auto -mt-2 w-full min-w-0 max-w-[560px] bg-white p-6 shadow-lg sm:p-7 md:max-w-[830px] md:p-10">
           <Rows
             sections={props.sections}
             config={config}
             props={props}
             compact
-            singleColumn
           />
         </div>
         <div
