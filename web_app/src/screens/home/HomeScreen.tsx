@@ -1044,12 +1044,6 @@ function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
           >
             {landingText('Probar 14 días gratis', 'Start 14-day free trial')} <ArrowRight size={18} />
           </button>
-          <a
-            href="mailto:hola@miprecio.app"
-            className="landing-final-secondary flex h-[52px] items-center rounded-[14px] border border-white/40 px-7 text-[15px] font-bold text-white hover:bg-white/10"
-          >
-            {landingText('Hablar con ventas', 'Talk to sales')}
-          </a>
         </div>
       </Reveal>
     </section>
