@@ -1,6 +1,7 @@
 """Price-list variant behavior."""
 
 from lib.ctx import identity, items, lists, public, versions
+from tests.conftest import subscribed_tenant
 from models import Customer
 
 
@@ -62,7 +63,7 @@ def test_variant_requires_a_root_list_from_the_same_tenant(db):
 
 
 def test_variants_are_hidden_from_the_public_catalog_index(db):
-    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant = subscribed_tenant("Test Store", "test-store")
     parent = lists.create_list(tenant.id, "Retail")
     variant = lists.create_list(
         tenant.id,
