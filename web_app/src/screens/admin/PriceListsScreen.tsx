@@ -1756,12 +1756,15 @@ function ListModal({
     }
   }
 
+  // Step 1 stays a single narrow column on phones; from md it widens to the
+  // same 720px the appearance block already uses and lays its short fields out
+  // in two columns, so a settings form doesn't read as a phone strip on desktop.
   const panelWidth =
     step === 2
       ? 'max-w-[560px]'
       : showAppearance || showTemplateContent
         ? 'max-w-[720px]'
-        : 'max-w-[440px]'
+        : 'max-w-[440px] md:max-w-[720px]'
   const activeTemplateContent =
     templateContent ?? starterTemplateContent(list?.name ?? 'Mi lista')
   const selectedDesign = appearance.design ?? tenant?.listDesign
@@ -1808,7 +1811,7 @@ function ListModal({
 
         {step === 1 ? (
           <form onSubmit={goNext}>
-            <div className="flex flex-col gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-bold text-[var(--dash-text2)]">
                   {t('pl.name')}
@@ -1822,7 +1825,19 @@ function ListModal({
                   required
                 />
               </label>
-              <div className="flex flex-col gap-1.5">
+              {/* Paired with the name: both are the list's identity. */}
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-bold text-[var(--dash-text2)]">
+                  {t('pl.slug')}
+                </span>
+                <input
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  placeholder={t('pl.slugPlaceholder')}
+                  className={inputCls}
+                />
+              </label>
+              <div className="flex flex-col gap-1.5 md:col-span-2">
                 <span className="text-xs font-bold text-[var(--dash-text2)]">
                   {t('pl.type')}
                 </span>
@@ -1867,7 +1882,7 @@ function ListModal({
                 </div>
               </div>
               {editing && (
-                <label className="flex flex-col gap-1.5">
+                <label className="flex flex-col gap-1.5 md:col-span-2">
                   <span className="text-xs font-bold text-[var(--dash-text2)]">
                     {t('pl.baseList')}
                   </span>
@@ -1893,17 +1908,6 @@ function ListModal({
                   </span>
                 </label>
               )}
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-[var(--dash-text2)]">
-                  {t('pl.slug')}
-                </span>
-                <input
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  placeholder={t('pl.slugPlaceholder')}
-                  className={inputCls}
-                />
-              </label>
               <ToggleRow
                 label={t('pl.publish')}
                 desc={t('pl.publishDesc')}
@@ -1933,7 +1937,7 @@ function ListModal({
               <button
                 type="button"
                 onClick={() => setShowAppearance((v) => !v)}
-                className="flex items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] p-3.5 text-left hover:bg-[var(--dash-soft)]"
+                className="flex items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] p-3.5 text-left hover:bg-[var(--dash-soft)] md:col-span-2"
               >
                 <span className="flex flex-col gap-0.5">
                   <span className="text-[13px] font-bold text-[var(--dash-text)]">
@@ -1953,7 +1957,7 @@ function ListModal({
               </button>
 
               {showAppearance && (
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4 md:col-span-2">
                   <p className="text-[11px] font-medium text-[var(--dash-muted)]">
                     {t('list.appearance.subtitle')}
                   </p>
@@ -1980,7 +1984,7 @@ function ListModal({
                     <button
                       type="button"
                       onClick={() => setShowTemplateContent((value) => !value)}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] p-3.5 text-left hover:bg-[var(--dash-soft)]"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] p-3.5 text-left hover:bg-[var(--dash-soft)] md:col-span-2"
                     >
                       <span className="flex flex-col gap-0.5">
                         <span className="text-[13px] font-bold text-[var(--dash-text)]">
@@ -2000,7 +2004,7 @@ function ListModal({
 
                   {showTemplateContent && (
                     <div
-                      className={`flex flex-col gap-4 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-4 ${initialCustomize ? 'order-first' : ''}`}
+                      className={`flex flex-col gap-4 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-4 md:col-span-2 ${initialCustomize ? 'order-first' : ''}`}
                     >
                       {initialCustomize && (
                         <div className="flex items-start justify-between gap-3 border-b border-[var(--dash-border)] pb-4">
