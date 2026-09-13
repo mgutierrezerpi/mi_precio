@@ -169,10 +169,13 @@ def test_customer_code_unlocks_each_private_list_granted_to_the_customer(db):
     first = lists.create_list(tenant.id, "Acme retail")
     second = lists.create_list(tenant.id, "Acme wholesale")
     for created in (first, second):
-        lists.update_list(created.price_list.id, published=True)
-        versions.update_version(created.version.id, published=True)
+        # Mark it private first: `created.price_list` is the instance from
+        # creation time, so saving it after update_list writes back its stale
+        # published=False and the list stops being served at all.
         created.price_list.is_private = True
         created.price_list.save()
+        lists.update_list(created.price_list.id, published=True)
+        versions.update_version(created.version.id, published=True)
         CustomerListAccess.create(customer=customer, price_list=created.price_list)
 
     viewer = public_viewers.unlock_list(
