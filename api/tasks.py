@@ -38,6 +38,12 @@ if str(_huey_db_parent) not in ("", "."):
 huey = SqliteHuey(
     "mi_precio",
     filename=HUEY_DB_PATH,
+    # Huey defaults to WAL, but production stores this database on LiteFS's
+    # FUSE mount. LiteFS supports SQLite rollback journals, not WAL sidecars;
+    # attempting a periodic enqueue in WAL mode eventually fails with
+    # ``sqlite3.OperationalError: disk I/O error``. DELETE mode keeps the queue
+    # persistent and uses LiteFS-compatible exclusive transactions.
+    journal_mode="delete",
 )
 
 

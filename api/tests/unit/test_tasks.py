@@ -1,13 +1,33 @@
 """Unit tests for Huey task bodies."""
 
+import sqlite3
 from datetime import datetime, timedelta
 
+from huey import SqliteHuey
 from models import AuthCode, Lead, Tenant, TenantMembership, User
 from tasks import (
+    huey,
     run_billing_maintenance,
     send_contact_submission_email,
     send_invitation_email,
 )
+
+
+def test_huey_queue_uses_litefs_compatible_rollback_journal(tmp_path):
+    assert huey.storage._journal_mode == "delete"
+
+    queue_path = tmp_path / "huey.db"
+    queue = SqliteHuey(
+        "test",
+        filename=str(queue_path),
+        journal_mode=huey.storage._journal_mode,
+    )
+    queue.storage.enqueue(b"periodic-job")
+
+    assert queue.storage.dequeue() == b"periodic-job"
+    with sqlite3.connect(queue_path) as connection:
+        mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
+    assert mode == "delete"
 
 
 def test_run_billing_maintenance_expires_billing_and_prunes_auth_codes(db):
