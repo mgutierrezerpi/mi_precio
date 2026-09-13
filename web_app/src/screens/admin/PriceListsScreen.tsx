@@ -1500,8 +1500,15 @@ function ListModal({
   const [savingTemplateContent, setSavingTemplateContent] = useState(false)
   const versionId = useRef<string | undefined>(undefined)
   const [loadedItems, setLoadedItems] = useState<
-    { id: string; name: string; productId: string | null }[]
+    { id: string; name: string; productId: string | null; price: string }[]
   >([])
+  // Per-list price, keyed by product id. An item keeps its own price: the public
+  // page overlays the catalog's name/description/images onto it but never the
+  // price (api/lib/ctx/public_catalog.py), so the same product can cost
+  // something different in each list. Empty/absent means "use the catalog price".
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, string>>(
+    {}
+  )
 
   // The product an item came from: by stable product id, else (legacy items with no
   // product_id) by name. Renaming a product no longer detaches it from the list.
@@ -1547,6 +1554,7 @@ function ListModal({
           id: i.id,
           name: i.name,
           productId: i.productId,
+          price: i.price,
         }))
       )
     })()
@@ -1565,6 +1573,13 @@ function ListModal({
     setSelected(
       new Set(products.filter((p) => inList.has(p.id)).map((p) => p.id))
     )
+    // Seed the inputs with what this list actually charges, not the catalog price.
+    const saved: Record<string, string> = {}
+    for (const item of loadedItems) {
+      const product = productForItem(item)
+      if (product) saved[product.id] = item.price
+    }
+    setPriceOverrides(saved)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadedItems, products])
 
@@ -1663,6 +1678,15 @@ function ListModal({
   // Add the selected products as items / remove the ones deselected. Membership is
   // keyed off the product id (stable across renames); items store product_id and copy
   // the product's image so the public list shows the real photo, not a category icon.
+  // What this list charges for a product: the edited value when it parses,
+  // otherwise the catalog price. A blank or broken input never becomes a 0.
+  const priceFor = (product: Product) => {
+    const edited = Number(priceOverrides[product.id])
+    return priceOverrides[product.id]?.trim() && Number.isFinite(edited)
+      ? edited
+      : parseFloat(product.price) || 0
+  }
+
   const syncItems = async (vid: string) => {
     const chosenIds = new Set(
       products.filter((p) => selected.has(p.id)).map((p) => p.id)
@@ -1679,7 +1703,7 @@ function ListModal({
           versionId: vid,
           data: {
             name: p.name,
-            price: parseFloat(p.price) || 0,
+            price: priceFor(p),
             description: p.description || undefined,
             category: p.category || undefined,
             imageUrl: p.imageUrl || undefined,
@@ -1688,6 +1712,16 @@ function ListModal({
           },
         })
       )
+    }
+    // Repricing an item already in the list. Only the ones actually edited are
+    // sent, so reopening the modal and saving does not rewrite every row.
+    for (const it of loadedItems) {
+      const p = productForItem(it)
+      if (!p || !chosenIds.has(p.id)) continue
+      const next = priceFor(p)
+      if (next !== parseFloat(it.price)) {
+        await api.updateItem(it.id, { price: next })
+      }
     }
     // Remove items whose product was deselected. Orphan/manual items (no matching
     // product) are left untouched.
@@ -2322,48 +2356,86 @@ function ListModal({
               ) : (
                 filteredProducts.map((p) => {
                   const on = selected.has(p.id)
+                  const priced = priceFor(p) !== (parseFloat(p.price) || 0)
                   return (
-                    <button
+                    // A row, not a button: the price is editable once the product
+                    // is in the list, and an input cannot live inside a button.
+                    <div
                       key={p.id}
-                      type="button"
-                      onClick={() => toggleSel(p.id)}
-                      className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${on ? 'border-[#7C3AED] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)] bg-[var(--dash-surface)] hover:bg-[var(--dash-soft)]'}`}
+                      className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition ${on ? 'border-[#7C3AED] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)] bg-[var(--dash-surface)] hover:bg-[var(--dash-soft)]'}`}
                     >
-                      <span
-                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${on ? `border-transparent text-white ${gradient}` : 'border-[#CBD5E1]'}`}
+                      <button
+                        type="button"
+                        onClick={() => toggleSel(p.id)}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       >
-                        {on && <Icon name="circle-check" size={13} />}
-                      </span>
-                      {p.imageUrl ? (
-                        <img
-                          src={p.imageThumbUrl || p.imageUrl}
-                          alt=""
-                          className="h-9 w-9 shrink-0 rounded-lg object-cover"
-                        />
-                      ) : (
                         <span
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                          style={tone(catTone(p.category))}
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${on ? `border-transparent text-white ${gradient}` : 'border-[#CBD5E1]'}`}
                         >
-                          <Icon name={catIcon(p.category)} size={18} />
+                          {on && <Icon name="circle-check" size={13} />}
+                        </span>
+                        {p.imageUrl ? (
+                          <img
+                            src={p.imageThumbUrl || p.imageUrl}
+                            alt=""
+                            className="h-9 w-9 shrink-0 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <span
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                            style={tone(catTone(p.category))}
+                          >
+                            <Icon name={catIcon(p.category)} size={18} />
+                          </span>
+                        )}
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">
+                            {p.name}
+                          </span>
+                          <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">
+                            {p.category || t('pl.noCategory')}
+                          </span>
+                        </div>
+                      </button>
+                      {on ? (
+                        <span className="flex shrink-0 items-center gap-1.5">
+                          {priced && (
+                            <span
+                              className="text-[10px] font-bold text-[var(--dash-link)]"
+                              title={t('pl.priceOverrideHint')}
+                            >
+                              ●
+                            </span>
+                          )}
+                          <span className="text-[11px] font-bold text-[var(--dash-muted)]">
+                            {p.currency}
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            inputMode="decimal"
+                            aria-label={t('pl.priceInList', { name: p.name })}
+                            value={priceOverrides[p.id] ?? p.price}
+                            onChange={(event) =>
+                              setPriceOverrides((current) => ({
+                                ...current,
+                                [p.id]: event.target.value,
+                              }))
+                            }
+                            className="h-9 w-24 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-right text-[13px] font-extrabold text-[var(--dash-text)] outline-none focus:border-[#7C3AED]"
+                          />
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-[13px] font-extrabold text-[var(--dash-text)]">
+                          {formatListPrice(
+                            p.price,
+                            p.currency,
+                            localeOf(tenant?.language)
+                          )}
                         </span>
                       )}
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate text-[13px] font-bold text-[var(--dash-text)]">
-                          {p.name}
-                        </span>
-                        <span className="truncate text-[11px] font-medium text-[var(--dash-muted)]">
-                          {p.category || t('pl.noCategory')}
-                        </span>
-                      </div>
-                      <span className="shrink-0 text-[13px] font-extrabold text-[var(--dash-text)]">
-                        {formatListPrice(
-                          p.price,
-                          p.currency,
-                          localeOf(tenant?.language)
-                        )}
-                      </span>
-                    </button>
+                    </div>
                   )
                 })
               )}
