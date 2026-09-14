@@ -1,7 +1,7 @@
-import { render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { DesignProps } from '../designs'
-import { PencilList } from './index'
+import { PencilList, pencilTemplateDefaults } from './index'
 import { pencilCartThemeFor } from './cartTheme'
 import type { PencilVariant } from './variants'
 
@@ -125,6 +125,165 @@ describe('Pencil price-list templates', () => {
       'Flowers for the darker hours.'
     )
     expect(view.container.textContent).not.toContain('order by Thursday')
+    view.unmount()
+  })
+
+  it('renders a selected divider icon and per-list palette', () => {
+    const view = render(
+      <PencilList
+        variant="pencil-flower-summer"
+        {...props}
+        content={{
+          schemaVersion: 1,
+          blocks: [],
+          template: {
+            dividerIcon: 'leaf',
+            backgroundColor: '#F7FAF5',
+            textColor: '#153D2E',
+            mutedColor: '#557064',
+            accentColor: '#176B45',
+            darkPanelColor: '#0F4D32',
+          },
+        }}
+      />
+    )
+
+    expect(view.container.querySelector('img[src$="/leaf.svg"]')).toBeTruthy()
+    expect(view.container.firstElementChild?.getAttribute('style')).toContain(
+      'background: #F7FAF5'
+    )
+    view.unmount()
+  })
+
+  it('portals a clicked product image above storefront chrome', () => {
+    const imageItems = [
+      {
+        ...props.sections[0].items[0],
+        imageUrl: '/plant.jpg',
+        imageThumbUrl: '/plant-thumb.jpg',
+      },
+      {
+        ...props.sections[0].items[0],
+        id: 'item-2',
+        name: 'Second plant',
+        imageUrl: '/plant-2.jpg',
+        imageThumbUrl: '/plant-2-thumb.jpg',
+      },
+    ]
+    const view = render(
+      <PencilList
+        variant="pencil-flower-summer"
+        {...props}
+        allItems={imageItems}
+        sections={[
+          {
+            ...props.sections[0],
+            items: imageItems,
+          },
+        ]}
+      />
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Ver foto de Signature service',
+      })
+    )
+    const dialog = screen.getByRole('dialog', { name: /foto de/i })
+    expect(dialog.parentElement).toBe(document.body)
+    expect(dialog.className).toContain('z-[9999]')
+    expect(document.body.style.overflow).toBe('hidden')
+    fireEvent.click(screen.getByRole('button', { name: 'Foto siguiente' }))
+    expect(screen.getByAltText('Second plant')).toBeTruthy()
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+    expect(screen.getByAltText('Signature service')).toBeTruthy()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.body.style.overflow).toBe('')
+    view.unmount()
+  })
+
+  it('makes every visible Casa Services label authorable', () => {
+    const view = render(
+      <PencilList
+        variant="pencil-casa-services"
+        {...props}
+        sections={[
+          {
+            ...props.sections[0],
+            key: 'otros',
+            name: 'Otros',
+          },
+        ]}
+        content={{
+          schemaVersion: 1,
+          blocks: [],
+          template: {
+            masthead: 'CONSULTORÍA',
+            brandLabel: 'Acme Software',
+            editionLabel: 'EDICIÓN 04',
+            uncategorizedLabel: 'Servicios técnicos',
+            footerLeft: 'Construimos productos digitales.',
+          },
+        }}
+      />
+    )
+
+    expect(view.container.textContent).toContain('CONSULTORÍA')
+    expect(view.container.textContent).toContain('Acme Software')
+    expect(view.container.textContent).toContain('EDICIÓN 04')
+    expect(view.container.textContent).toContain('Servicios técnicos')
+    expect(view.container.textContent).toContain(
+      'Construimos productos digitales.'
+    )
+    expect(view.container.textContent).not.toContain('Casa Férrea')
+    expect(view.container.textContent).not.toContain('AUG 2026')
+    view.unmount()
+  })
+
+  it('provides Casa Services defaults to the customization form', () => {
+    expect(pencilTemplateDefaults('pencil-casa-services')).toMatchObject({
+      masthead: 'SERVICIOS',
+      brandLabel: 'Casa Férrea',
+      uncategorizedLabel: 'Otros',
+      footerLeft: 'Un servicio pensado para acompañar cada proyecto.',
+    })
+  })
+
+  it('removes empty Casa Services chrome instead of restoring defaults', () => {
+    const view = render(
+      <PencilList
+        variant="pencil-casa-services"
+        {...props}
+        sections={[
+          {
+            ...props.sections[0],
+            key: 'otros',
+            name: 'Otros',
+          },
+        ]}
+        content={{
+          schemaVersion: 1,
+          blocks: [],
+          template: {
+            masthead: '',
+            brandLabel: '',
+            editionLabel: '',
+            uncategorizedLabel: '',
+            footerLeft: '',
+          },
+        }}
+      />
+    )
+
+    expect(view.container.textContent).toContain('Signature service')
+    expect(view.container.textContent).not.toContain('SERVICIOS')
+    expect(view.container.textContent).not.toContain('Casa Férrea')
+    expect(view.container.textContent).not.toContain('AUG 2026')
+    expect(view.container.textContent).not.toContain('Otros')
+    expect(view.container.textContent).not.toContain(
+      'Un servicio pensado para acompañar cada proyecto.'
+    )
     view.unmount()
   })
 })

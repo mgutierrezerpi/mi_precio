@@ -41,6 +41,50 @@ export type ListDesign =
   | 'pencil-cafecitos'
   | 'pencil-journal'
 
+export type ListTemplateField =
+  | 'hero.eyebrow'
+  | 'hero.title'
+  | 'hero.body'
+  | 'template.font'
+  | 'template.checkout_channel'
+  | 'template.instagram_handle'
+  | 'template.price_format'
+  | 'template.divider_icon'
+  | 'template.background_color'
+  | 'template.text_color'
+  | 'template.muted_color'
+  | 'template.accent_color'
+  | 'template.dark_panel_color'
+  | 'template.image'
+  | 'template.logo'
+  | 'template.profile_name'
+  | 'template.profile_image'
+  | 'template.story_videos'
+  | 'template.story_metrics'
+  | 'template.film_images'
+  | 'template.collaboration_heading'
+  | 'template.stories_heading'
+  | 'template.masthead'
+  | 'template.brand_label'
+  | 'template.edition_label'
+  | 'template.uncategorized_label'
+  | 'template.image_label'
+  | 'template.image_title'
+  | 'template.promo_eyebrow'
+  | 'template.promo_title'
+  | 'template.promo_body'
+  | 'template.promo_price'
+  | 'template.promo_note'
+  | 'template.footer_left'
+  | 'template.footer_right'
+
+export interface ListDesignDefinition {
+  id: ListDesign
+  schemaVersion: 1
+  blocks: string[]
+  fields: ListTemplateField[]
+}
+
 export type ListKind = 'product' | 'service'
 export type PriceListVariantType =
   | 'customer'

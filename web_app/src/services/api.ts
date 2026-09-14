@@ -4,6 +4,7 @@ import type {
   PriceList,
   PriceListVariantType,
   ListDesign,
+  ListDesignDefinition,
   ListVersion,
   Item,
   Product,
@@ -136,6 +137,24 @@ function listContentBody(content: NonNullable<ListVersion['content']>) {
             ...(content.template.priceFormat !== undefined
               ? { price_format: content.template.priceFormat }
               : {}),
+            ...(content.template.dividerIcon !== undefined
+              ? { divider_icon: content.template.dividerIcon }
+              : {}),
+            ...(content.template.backgroundColor !== undefined
+              ? { background_color: content.template.backgroundColor }
+              : {}),
+            ...(content.template.textColor !== undefined
+              ? { text_color: content.template.textColor }
+              : {}),
+            ...(content.template.mutedColor !== undefined
+              ? { muted_color: content.template.mutedColor }
+              : {}),
+            ...(content.template.accentColor !== undefined
+              ? { accent_color: content.template.accentColor }
+              : {}),
+            ...(content.template.darkPanelColor !== undefined
+              ? { dark_panel_color: content.template.darkPanelColor }
+              : {}),
             ...(content.template.image !== undefined
               ? { image: content.template.image }
               : {}),
@@ -162,6 +181,18 @@ function listContentBody(content: NonNullable<ListVersion['content']>) {
               : {}),
             ...(content.template.storiesHeading !== undefined
               ? { stories_heading: content.template.storiesHeading }
+              : {}),
+            ...(content.template.masthead !== undefined
+              ? { masthead: content.template.masthead }
+              : {}),
+            ...(content.template.brandLabel !== undefined
+              ? { brand_label: content.template.brandLabel }
+              : {}),
+            ...(content.template.editionLabel !== undefined
+              ? { edition_label: content.template.editionLabel }
+              : {}),
+            ...(content.template.uncategorizedLabel !== undefined
+              ? { uncategorized_label: content.template.uncategorizedLabel }
               : {}),
             ...(content.template.imageLabel !== undefined
               ? { image_label: content.template.imageLabel }
@@ -878,7 +909,7 @@ class ApiService {
   }
 
   async getListDesigns(): Promise<
-    ApiResponse<{ id: ListDesign; blocks: string[] }[]>
+    ApiResponse<ListDesignDefinition[]>
   > {
     return this.request('/list-designs')
   }
@@ -1484,6 +1515,7 @@ class ApiService {
       body: JSON.stringify({ image_urls: imageUrls }),
     })
   }
+
 }
 
 export const api = new ApiService(API_URL)

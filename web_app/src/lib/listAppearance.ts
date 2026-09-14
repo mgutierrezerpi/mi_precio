@@ -39,7 +39,6 @@ export const LIST_DESIGNS: ListDesign[] = [
   'pencil-studio-mono',
   'pencil-beauty-issue',
   'pencil-obsidian-quarterly',
-  'pencil-cafecitos',
 ]
 
 export const BRAND_SWATCHES = [

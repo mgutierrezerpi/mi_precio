@@ -7,5 +7,9 @@ export const pencilCasaServices = defineSpecialTemplate({
   accent: '#FFFFFF',
   darkPanel: '#050505',
   image: '',
+  masthead: 'SERVICIOS',
+  brandLabel: 'Casa Férrea',
+  uncategorizedLabel: 'Otros',
+  footerLeft: 'Un servicio pensado para acompañar cada proyecto.',
   layout: 'casa-services',
 })

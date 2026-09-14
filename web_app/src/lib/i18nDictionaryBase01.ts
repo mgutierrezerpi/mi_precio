@@ -15,6 +15,7 @@ export const DICT_BASE_01: Record<string, TranslationEntry> = {
   },
   'common.done': { es: 'Listo', en: 'Done', pt: 'Concluído' },
   'common.cancel': { es: 'Cancelar', en: 'Cancel', pt: 'Cancelar' },
+  'common.close': { es: 'Cerrar', en: 'Close', pt: 'Fechar' },
   'gate.logout': { es: 'Salir', en: 'Log out', pt: 'Sair' },
 
   'set.delete.subtitle': {
@@ -122,6 +123,81 @@ export const DICT_BASE_01: Record<string, TranslationEntry> = {
     es: 'Pedir por WhatsApp',
     en: 'Order via WhatsApp',
     pt: 'Pedir por WhatsApp',
+  },
+  'pub.askWhatsApp': {
+    es: 'Hacer una pregunta',
+    en: 'Ask a question',
+    pt: 'Fazer uma pergunta',
+  },
+  'pub.whatsappQuestionMessage': {
+    es: 'Hola, tengo una consulta.',
+    en: 'Hi, I have a question.',
+    pt: 'Olá, tenho uma dúvida.',
+  },
+  'pub.catalogUnavailable': {
+    es: 'Este catálogo no está disponible en este momento.',
+    en: 'This catalog is not available right now.',
+    pt: 'Este catálogo não está disponível no momento.',
+  },
+  'pub.catalogUnavailableHint': {
+    es: 'Volvé a intentarlo más tarde o contactá directamente al negocio.',
+    en: 'Try again later or contact the business directly.',
+    pt: 'Tente novamente mais tarde ou entre em contato diretamente com a empresa.',
+  },
+  'pub.listGone': {
+    es: 'Esta lista ya no está disponible.',
+    en: 'This price list is no longer available.',
+    pt: 'Esta lista de preços não está mais disponível.',
+  },
+  'pub.listGoneOthers': {
+    es: 'Podés visitar estas otras listas',
+    en: 'You can browse these other lists',
+    pt: 'Você pode visitar estas outras listas',
+  },
+  'pub.seeCatalog': {
+    es: 'Ver catálogo completo',
+    en: 'View full catalog',
+    pt: 'Ver catálogo completo',
+  },
+  'pub.shopNotFound': {
+    es: 'No encontramos este negocio.',
+    en: 'We could not find this business.',
+    pt: 'Não encontramos esta empresa.',
+  },
+  'pub.shopNotFoundHint': {
+    es: 'Revisá el enlace o descubrí cómo crear tu propio catálogo.',
+    en: 'Check the link or discover how to create your own catalog.',
+    pt: 'Confira o link ou descubra como criar seu próprio catálogo.',
+  },
+  'pub.lpHeadline': {
+    es: 'Tu catálogo, siempre listo para compartir.',
+    en: 'Your catalog, always ready to share.',
+    pt: 'Seu catálogo, sempre pronto para compartilhar.',
+  },
+  'pub.lpSub': {
+    es: 'Creá una lista de precios atractiva, actualizala en minutos y compartila con un solo enlace.',
+    en: 'Create an attractive price list, update it in minutes, and share it with one link.',
+    pt: 'Crie uma lista de preços atraente, atualize em minutos e compartilhe com um único link.',
+  },
+  'pub.lpFeat1': {
+    es: 'Precios y productos siempre actualizados',
+    en: 'Prices and products always up to date',
+    pt: 'Preços e produtos sempre atualizados',
+  },
+  'pub.lpFeat2': {
+    es: 'Un enlace fácil de compartir',
+    en: 'One easy-to-share link',
+    pt: 'Um link fácil de compartilhar',
+  },
+  'pub.lpFeat3': {
+    es: 'Diseños que se adaptan a tu marca',
+    en: 'Designs that fit your brand',
+    pt: 'Designs que combinam com a sua marca',
+  },
+  'pub.lpCta': {
+    es: 'Crear mi catálogo',
+    en: 'Create my catalog',
+    pt: 'Criar meu catálogo',
   },
   'pub.cartClear': { es: 'Vaciar', en: 'Clear', pt: 'Limpar' },
   'pub.cartHeading': {
