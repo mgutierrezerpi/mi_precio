@@ -44,7 +44,9 @@ export function PencilActionBar({ props }: { props: DesignProps }) {
           <SIco name="message-circle" size={18} color="#fff" />
           {checkoutChannel === 'instagram'
             ? 'Copiar pedido · Instagram'
-            : t('pub.cartWhatsApp')}
+            : cartCount > 0
+              ? t('pub.cartWhatsApp')
+              : t('pub.askWhatsApp')}
         </a>
         <button
           type="button"

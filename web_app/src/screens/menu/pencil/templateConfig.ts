@@ -30,6 +30,7 @@ const SPECIAL_BASE: PencilConfig = {
   promoBody: 'Thoughtful details, made for a slower and better day.',
   promoPrice: '$48',
   promoNote: 'available now',
+  dividerIcon: 'coffee',
   footerLeft: 'OPEN DAILY · BY APPOINTMENT',
   footerRight: 'ASK US ABOUT THE DETAILS',
   layout: 'alternating',

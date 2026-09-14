@@ -365,6 +365,7 @@ export function MenuScreen() {
     const lines = allItems
       .filter((it) => cart[it.id])
       .map((it) => `• ${cart[it.id]}× ${it.name} — ${money(it.price)}`)
+    if (lines.length === 0) return t('pub.whatsappQuestionMessage')
     const datos = [
       customer.name && `Nombre: ${customer.name}`,
       customer.phone && `Tel: ${customer.phone}`,
@@ -557,13 +558,16 @@ export function MenuScreen() {
       : isPencilVariant(design)
         ? pencilCartThemeFor(design)
         : cartThemeFor(design)
+  const listAccent = content?.template?.accentColor || accent
   const cartT = isPencilCartDesign
-    ? { ...baseCartT, accent, actionAccent: accent }
+    ? { ...baseCartT, accent: listAccent, actionAccent: listAccent }
     : baseCartT
   const cartAccent = cartT.accent || accent
   const cartActionAccent = cartT.actionAccent || cartAccent
   const cartGradient = `linear-gradient(135deg, ${cartActionAccent} 0%, ${lighten(cartActionAccent, 0.22)} 100%)`
-  const listSurface = isPencilCartDesign ? cartT.bg : C.bg
+  const listSurface = isPencilCartDesign
+    ? content?.template?.backgroundColor || cartT.bg
+    : C.bg
   const bgUrl = skin?.bgUrl ?? tenant.listBgUrl
   const bgOverlay = skin?.bgUrl ? !!skin.bgOverlay : !!tenant.listBgOverlay
   const hasBg = !!bgUrl
@@ -572,7 +576,7 @@ export function MenuScreen() {
   const designProps: DesignProps = {
     tenant,
     C,
-    accent,
+    accent: listAccent,
     brandGradient,
     heroColor,
     t,
@@ -662,7 +666,7 @@ export function MenuScreen() {
             </div>
           )}
           <div
-            className={`relative flex-1 ${isPencilCartDesign && !isService ? 'pb-24' : ''}`}
+            className="relative flex-1"
             style={{ zIndex: 1 }}
           >
             {!listId && magazines.length > 0 && (
@@ -732,7 +736,7 @@ export function MenuScreen() {
             target="_blank"
             rel="noreferrer"
             aria-label="Powered by MiPrecio"
-            className="relative z-10 mx-auto flex w-fit items-center gap-2 px-5 py-7 text-[9px] font-bold uppercase tracking-[0.12em] no-underline"
+            className={`relative z-10 mx-auto flex w-fit items-center gap-2 px-5 text-[9px] font-bold uppercase tracking-[0.12em] no-underline ${isPencilCartDesign && !isService ? 'h-24 items-start pt-3' : 'py-7'}`}
             style={{ color: C.muted, background: listSurface }}
           >
             <span>Powered by</span>

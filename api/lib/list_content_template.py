@@ -1,5 +1,6 @@
 """Validation for template-specific public-list content overrides."""
 
+import re
 from typing import Any
 
 
@@ -22,6 +23,12 @@ def validate_template(template: Any) -> None:
         "checkout_channel",
         "instagram_handle",
         "price_format",
+        "divider_icon",
+        "background_color",
+        "text_color",
+        "muted_color",
+        "accent_color",
+        "dark_panel_color",
         "logo",
         "profile_name",
         "profile_image",
@@ -30,6 +37,10 @@ def validate_template(template: Any) -> None:
         "film_images",
         "collaboration_heading",
         "stories_heading",
+        "masthead",
+        "brand_label",
+        "edition_label",
+        "uncategorized_label",
     }
     if not isinstance(template, dict) or set(template) - allowed:
         raise ValueError("content.template has unknown fields")
@@ -52,6 +63,24 @@ def validate_template(template: Any) -> None:
         "USD",
     }:
         raise ValueError("content.template.price_format is not supported")
+    if "divider_icon" in template and template["divider_icon"] not in {
+        "coffee",
+        "flower",
+        "leaf",
+        "none",
+    }:
+        raise ValueError("content.template.divider_icon is not supported")
+    for key in (
+        "background_color",
+        "text_color",
+        "muted_color",
+        "accent_color",
+        "dark_panel_color",
+    ):
+        if key in template:
+            value = template[key]
+            if not isinstance(value, str) or not re.fullmatch(r"#[0-9a-fA-F]{6}", value):
+                raise ValueError(f"content.template.{key} must be a hex color")
     if "story_videos" in template:
         if (
             not isinstance(template["story_videos"], list)
@@ -90,6 +119,12 @@ def validate_template(template: Any) -> None:
             "font",
             "checkout_channel",
             "price_format",
+            "divider_icon",
+            "background_color",
+            "text_color",
+            "muted_color",
+            "accent_color",
+            "dark_panel_color",
             "story_videos",
             "story_metrics",
             "film_images",

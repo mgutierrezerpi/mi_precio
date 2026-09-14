@@ -1,4 +1,5 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { CartControl, type DesignProps, type Section } from '../designs'
 import type { ListContent, ListDesign } from '../../../types'
 import { SpecialPencilList } from '../pencilSpecialDesigns'
@@ -24,6 +25,16 @@ export function pencilTemplateDefaults(
     promoNote: config.promoNote,
     footerLeft: config.footerLeft,
     footerRight: config.footerRight,
+    dividerIcon: config.dividerIcon,
+    backgroundColor: config.background,
+    textColor: config.ink,
+    mutedColor: config.muted,
+    accentColor: config.accent,
+    darkPanelColor: config.darkPanel,
+    masthead: config.masthead,
+    brandLabel: config.brandLabel,
+    editionLabel: config.editionLabel,
+    uncategorizedLabel: config.uncategorizedLabel,
   }
 }
 
@@ -43,8 +54,13 @@ export type PencilConfig = {
   promoNote: string
   footerLeft: string
   footerRight: string
+  masthead?: string
+  brandLabel?: string
+  editionLabel?: string
+  uncategorizedLabel?: string
   font?: 'sans' | 'editorial' | 'serif' | 'mono' | 'code-pro'
   priceFormat?: '$' | 'U$D' | 'USD'
+  dividerIcon?: 'coffee' | 'flower' | 'leaf' | 'none'
   layout:
     | 'left-image'
     | 'top-image'
@@ -115,9 +131,37 @@ const withTemplateOverrides = (
     ...(template.footerRight !== undefined
       ? { footerRight: template.footerRight }
       : {}),
+    ...(template.masthead !== undefined
+      ? { masthead: template.masthead }
+      : {}),
+    ...(template.brandLabel !== undefined
+      ? { brandLabel: template.brandLabel }
+      : {}),
+    ...(template.editionLabel !== undefined
+      ? { editionLabel: template.editionLabel }
+      : {}),
+    ...(template.uncategorizedLabel !== undefined
+      ? { uncategorizedLabel: template.uncategorizedLabel }
+      : {}),
     ...(template.font !== undefined ? { font: template.font } : {}),
     ...(template.priceFormat !== undefined
       ? { priceFormat: template.priceFormat }
+      : {}),
+    ...(template.dividerIcon !== undefined
+      ? { dividerIcon: template.dividerIcon }
+      : {}),
+    ...(template.backgroundColor !== undefined
+      ? { background: template.backgroundColor }
+      : {}),
+    ...(template.textColor !== undefined ? { ink: template.textColor } : {}),
+    ...(template.mutedColor !== undefined
+      ? { muted: template.mutedColor }
+      : {}),
+    ...(template.accentColor !== undefined
+      ? { accent: template.accentColor }
+      : {}),
+    ...(template.darkPanelColor !== undefined
+      ? { darkPanel: template.darkPanelColor }
       : {}),
   }
 }
@@ -132,11 +176,11 @@ const price = (value: string | number, prefix = '$') => {
 function Rule({
   color,
   background,
-  flower = false,
+  icon = 'coffee',
 }: {
   color: string
   background: string
-  flower?: boolean
+  icon?: 'coffee' | 'flower' | 'leaf' | 'none'
 }) {
   return (
     <div className="relative my-7 h-px" style={{ background: color }}>
@@ -144,19 +188,19 @@ function Rule({
         className="absolute left-1/2 top-1/2 flex h-10 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
         style={{ background }}
       >
-        {flower ? (
-          <img
-            src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/flower.svg"
-            alt=""
-            aria-hidden="true"
-            className="h-[25px] w-[25px] object-contain"
-          />
-        ) : (
+        {icon === 'none' ? null : icon === 'coffee' ? (
           <img
             src="/coffee-divider-icon.jpg"
             alt=""
             aria-hidden="true"
             className="h-[26px] w-[26px] object-contain"
+          />
+        ) : (
+          <img
+            src={`https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/${icon}.svg`}
+            alt=""
+            aria-hidden="true"
+            className="h-[25px] w-[25px] object-contain"
           />
         )}
       </span>
@@ -264,8 +308,8 @@ function PencilPromo({ config }: { config: PencilConfig }) {
     >
       <div className="flex flex-col gap-2">
         <span
-          className="text-[10px] uppercase tracking-[1.6px]"
-          style={{ color: config.accent, fontFamily: fontFor(config, 'label') }}
+          className="text-[10px] font-bold uppercase tracking-[1.6px]"
+          style={{ color: '#F4EEDC', fontFamily: fontFor(config, 'label') }}
         >
           {config.promoEyebrow}
         </span>
@@ -290,8 +334,8 @@ function PencilPromo({ config }: { config: PencilConfig }) {
           {config.promoPrice}
         </span>
         <span
-          className="text-right text-[10px] uppercase tracking-[1px]"
-          style={{ color: config.accent, fontFamily: fontFor(config, 'label') }}
+          className="max-w-[18ch] text-right text-[11px] font-bold uppercase leading-snug tracking-[1px]"
+          style={{ color: '#F4EEDC', fontFamily: fontFor(config, 'label') }}
         >
           {config.promoNote}
         </span>
@@ -309,15 +353,58 @@ function PencilItem({
   color: PencilConfig
   props: DesignProps
 }) {
+  const galleryItems = (props.allItems || props.sections.flatMap((section) => section.items)).filter(
+    (candidate) => candidate.imageUrl || candidate.imageThumbUrl
+  )
+  const itemImageIndex = galleryItems.findIndex(
+    (candidate) => candidate.id === item.id
+  )
+  const [imageIndex, setImageIndex] = useState<number | null>(null)
+  const image = item.imageUrl || item.imageThumbUrl
+  const activeImage = imageIndex === null ? null : galleryItems[imageIndex]
+  const moveImage = (direction: -1 | 1) =>
+    setImageIndex((current) =>
+      current === null
+        ? null
+        : (current + direction + galleryItems.length) % galleryItems.length
+    )
+
+  useEffect(() => {
+    if (imageIndex === null) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setImageIndex(null)
+      if (event.key === 'ArrowLeft') moveImage(-1)
+      if (event.key === 'ArrowRight') moveImage(1)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [imageIndex, galleryItems.length])
   return (
-    <div className="flex min-w-0 items-start justify-between gap-4">
+    <div className="group relative flex min-w-0 items-start justify-between gap-4">
       <div className="min-w-0 flex-1">
-        <p
-          className="break-words text-[18px] leading-[1.08] sm:text-[20px]"
-          style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
-        >
-          {item.name}
-        </p>
+        {image ? (
+          <button
+            type="button"
+            className="cursor-zoom-in break-words text-left text-[18px] leading-[1.08] underline decoration-transparent underline-offset-4 transition group-hover:decoration-current sm:text-[20px]"
+            style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
+            onClick={() => setImageIndex(Math.max(itemImageIndex, 0))}
+            aria-label={`Ver foto de ${item.name}`}
+          >
+            {item.name}
+          </button>
+        ) : (
+          <p
+            className="break-words text-[18px] leading-[1.08] sm:text-[20px]"
+            style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
+          >
+            {item.name}
+          </p>
+        )}
         {item.description && (
           <p
             className="mt-0.5 break-words text-[11px] leading-[1.25] sm:text-[12px]"
@@ -345,6 +432,74 @@ function PencilItem({
           {price(item.price, color.priceFormat)}
         </span>
       </div>
+      {image && (
+        <>
+          <div
+            className="pointer-events-none absolute bottom-full left-0 z-20 mb-3 hidden w-52 overflow-hidden rounded-sm border-4 bg-white p-1 opacity-0 shadow-2xl transition-opacity group-hover:opacity-100 md:block"
+            style={{ borderColor: color.background }}
+          >
+            <img src={image} alt="" className="aspect-[4/3] w-full object-cover" />
+          </div>
+          {activeImage && createPortal(
+            <div
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-5"
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Foto de ${activeImage.name}`}
+              onClick={() => setImageIndex(null)}
+            >
+              <button
+                type="button"
+                className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-2xl text-black shadow-lg"
+                onClick={() => setImageIndex(null)}
+                aria-label="Cerrar foto"
+              >
+                ×
+              </button>
+              {galleryItems.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    className="absolute left-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg sm:left-6"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      moveImage(-1)
+                    }}
+                    aria-label="Foto anterior"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg sm:right-6"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      moveImage(1)
+                    }}
+                    aria-label="Foto siguiente"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
+              <figure
+                className="max-w-3xl"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <img
+                  src={activeImage.imageUrl || activeImage.imageThumbUrl || ''}
+                  alt={activeImage.name}
+                  className="max-h-[78vh] w-auto rounded-sm object-contain shadow-2xl"
+                />
+                <figcaption className="bg-white px-4 py-3 text-center text-sm font-semibold text-black">
+                  {activeImage.name}
+                </figcaption>
+              </figure>
+            </div>,
+            document.body
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -412,6 +567,113 @@ function PencilCatalog({
   )
 }
 
+function PencilGallery({
+  items,
+  config,
+  props,
+}: {
+  items: Section['items']
+  config: PencilConfig
+  props: DesignProps
+}) {
+  return (
+    <section>
+      <p
+        className="text-[10px] uppercase tracking-[1.8px]"
+        style={{ color: config.accent, fontFamily: fontFor(config, 'label') }}
+      >
+        Segunda página
+      </p>
+      <h2
+        className="mb-6 mt-1 text-[36px] leading-none sm:text-[46px]"
+        style={{ color: config.ink, fontFamily: fontFor(config, 'heading') }}
+      >
+        Galería
+      </h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {items.map((item, index) => (
+          <figure
+            key={item.id}
+            className={`${index % 5 === 0 ? 'col-span-2 row-span-2' : ''} group overflow-hidden`}
+          >
+            <img
+              src={item.imageUrl || item.imageThumbUrl || ''}
+              alt={item.name}
+              className="aspect-square h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            />
+            <figcaption
+              className="border-x border-b px-3 py-3 text-[11px] font-semibold"
+              style={{ borderColor: `${config.accent}44`, color: config.ink }}
+            >
+              <span className="block">{item.name}</span>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <span
+                  className="text-[12px] tabular-nums"
+                  style={{ fontFamily: fontFor(config, 'label') }}
+                >
+                  {price(item.price, config.priceFormat)}
+                </span>
+                {(props.cart[item.id] ?? 0) > 0 ? (
+                  <CartControl
+                    qty={props.cart[item.id] ?? 0}
+                    id={item.id}
+                    addToCart={props.addToCart}
+                    decFromCart={props.decFromCart}
+                    accent={config.accent}
+                    ink={config.ink}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => props.addToCart(item.id)}
+                    className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.8px] text-white transition hover:opacity-85"
+                    style={{ background: config.accent }}
+                  >
+                    {props.t('pub.add')}
+                  </button>
+                )}
+              </div>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function PencilPageNav({
+  page,
+  setPage,
+  config,
+}: {
+  page: 'catalog' | 'gallery'
+  setPage: (page: 'catalog' | 'gallery') => void
+  config: PencilConfig
+}) {
+  return (
+    <nav className="mb-7 flex gap-2" aria-label="Páginas de la lista">
+      {([['catalog', 'Productos'], ['gallery', 'Galería']] as const).map(
+        ([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setPage(value)}
+            className="border px-4 py-2 text-[10px] font-semibold uppercase tracking-[1.3px] transition"
+            style={{
+              borderColor: config.accent,
+              background: page === value ? config.accent : 'transparent',
+              color: page === value ? config.background : config.ink,
+              fontFamily: fontFor(config, 'label'),
+            }}
+          >
+            {label}
+          </button>
+        )
+      )}
+    </nav>
+  )
+}
+
 function PencilFooter({ config }: { config: PencilConfig }) {
   return (
     <footer
@@ -459,13 +721,11 @@ export function PencilList({
   variant,
   ...props
 }: DesignProps & { variant: PencilVariant }) {
-  const config = {
-    ...withTemplateOverrides(
-      PENCIL_TEMPLATE_CONFIG[variant],
-      props.content?.template
-    ),
-    accent: props.accent,
-  }
+  const [page, setPage] = useState<'catalog' | 'gallery'>('catalog')
+  const config = withTemplateOverrides(
+    { ...PENCIL_TEMPLATE_CONFIG[variant], accent: props.accent },
+    props.content?.template
+  )
   if (
     !['left-image', 'top-image', 'full-image', 'top-promo'].includes(
       config.layout
@@ -478,6 +738,9 @@ export function PencilList({
   const eyebrow = hero?.eyebrow
   const body = hero?.body
   const layout = config.layout
+  const galleryItems = props.sections
+    .flatMap((section) => section.items)
+    .filter((item) => item.imageUrl || item.imageThumbUrl)
   const masthead = (
     <>
       <Masthead
@@ -491,11 +754,16 @@ export function PencilList({
       <Rule
         color={config.accent}
         background={config.background}
-        flower={variant === 'pencil-flower-summer'}
+        icon={config.dividerIcon ?? (variant === 'pencil-flower-summer' ? 'flower' : 'coffee')}
       />
     </>
   )
-  const catalog = (
+  const pageNav = galleryItems.length > 0 && (
+    <PencilPageNav page={page} setPage={setPage} config={config} />
+  )
+  const catalog = page === 'gallery' ? (
+    <PencilGallery items={galleryItems} config={config} props={props} />
+  ) : (
     <PencilCatalog
       sections={props.sections}
       config={config}
@@ -509,6 +777,7 @@ export function PencilList({
     return (
       <PencilShell config={config}>
         {masthead}
+        {pageNav}
         {catalog}
         <div className="mt-10 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
           <PencilImage config={config} className="min-h-[220px]" />
@@ -539,8 +808,9 @@ export function PencilList({
         <Rule
           color={config.accent}
           background={config.background}
-          flower={variant === 'pencil-flower-summer'}
+          icon={config.dividerIcon ?? (variant === 'pencil-flower-summer' ? 'flower' : 'coffee')}
         />
+        {pageNav}
         <div className="grid min-w-0 grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_268px] md:items-start">
           <div>{catalog}</div>
           {promo}
@@ -557,6 +827,7 @@ export function PencilList({
       <PencilShell config={config}>
         <div className="mb-8">{promo}</div>
         {masthead}
+        {pageNav}
         {catalog}
         <div className="mt-8">
           <PencilImage config={config} className="h-[96px]" />
@@ -575,6 +846,7 @@ export function PencilList({
         className="-mx-4 -mt-6 h-[220px] sm:-mx-8 sm:-mt-8 lg:-mx-12 lg:-mt-10"
       />
       <div className="mt-8">{masthead}</div>
+      {pageNav}
       {catalog}
       <div className="mt-8">{promo}</div>
       <div className="mt-8">

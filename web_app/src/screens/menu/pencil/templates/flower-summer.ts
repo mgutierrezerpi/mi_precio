@@ -13,5 +13,6 @@ export const pencilFlowerSummer = defineSpecialTemplate({
   promoBody: 'Flores de estación y tallos luminosos para compartir.',
   promoPrice: '$72',
   promoNote: 'reservá con 48 h',
+  dividerIcon: 'flower',
   layout: 'top-image',
 })

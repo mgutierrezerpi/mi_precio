@@ -10,7 +10,12 @@ import { Link, useParams } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectCanEdit, selectTenant } from '../../store/slices/authSlice'
 import api from '../../services/api'
-import type { ListContent, PriceList } from '../../types'
+import type {
+  ListContent,
+  ListDesignDefinition,
+  ListTemplateField,
+  PriceList,
+} from '../../types'
 import { CrmLayout } from './crm/CrmLayout'
 import { Icon } from './crm/ui'
 import { pencilTemplateDefaults } from '../menu/pencil'
@@ -18,6 +23,45 @@ import { pencilTemplateDefaults } from '../menu/pencil'
 const inputClass =
   'mt-1 h-10 w-full rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-sm text-[var(--dash-text)] outline-none transition focus:border-[var(--dash-link)] focus:ring-2 focus:ring-[var(--dash-link)]/20 disabled:opacity-50'
 const textareaClass = `${inputClass} h-auto min-h-20 py-2.5`
+
+const EDITORIAL_FIELDS: ListTemplateField[] = [
+  'template.image',
+  'template.image_label',
+  'template.image_title',
+  'template.promo_eyebrow',
+  'template.promo_title',
+  'template.promo_body',
+  'template.promo_price',
+  'template.promo_note',
+]
+const FOOTER_FIELDS: ListTemplateField[] = [
+  'template.footer_left',
+  'template.footer_right',
+]
+const TEMPLATE_CHROME_FIELDS: ListTemplateField[] = [
+  'template.masthead',
+  'template.brand_label',
+  'template.edition_label',
+  'template.uncategorized_label',
+]
+const STORIES_FIELDS: ListTemplateField[] = [
+  'template.logo',
+  'template.profile_name',
+  'template.profile_image',
+  'template.story_videos',
+  'template.story_metrics',
+  'template.film_images',
+  'template.collaboration_heading',
+  'template.stories_heading',
+]
+const STYLE_FIELDS: ListTemplateField[] = [
+  'template.divider_icon',
+  'template.background_color',
+  'template.text_color',
+  'template.muted_color',
+  'template.accent_color',
+  'template.dark_panel_color',
+]
 
 const starterContent = (name: string): ListContent => ({
   schemaVersion: 1,
@@ -28,13 +72,20 @@ const starterContent = (name: string): ListContent => ({
 const contentWithTemplateDefaults = (
   content: ListContent,
   list: PriceList,
-  tenantDesign?: PriceList['design']
+  tenantDesign?: PriceList['design'],
+  locale?: string
 ): ListContent => {
-  const defaults = pencilTemplateDefaults(
-    list.design || tenantDesign || 'store'
-  )
+  const design = list.design || tenantDesign || 'store'
+  const defaults = pencilTemplateDefaults(design)
   if (!defaults) return content
-  return { ...content, template: { ...defaults, ...content.template } }
+  const template = { ...defaults, ...content.template }
+  if (design === 'pencil-casa-services' && template.editionLabel === undefined) {
+    template.editionLabel = new Date().toLocaleDateString(locale, {
+      month: 'short',
+      year: 'numeric',
+    })
+  }
+  return { ...content, template }
 }
 
 function Field({
@@ -198,9 +249,11 @@ export function ListCustomizeScreen() {
   const tenant = useAppSelector(selectTenant)
   const canEdit = useAppSelector(selectCanEdit)
   const [list, setList] = useState<PriceList | null>(null)
+  const [designs, setDesigns] = useState<ListDesignDefinition[]>([])
   const [versionId, setVersionId] = useState('')
   const [revision, setRevision] = useState(0)
   const [content, setContent] = useState<ListContent | null>(null)
+  const [filmImagesDraft, setFilmImagesDraft] = useState('')
   const [snapshot, setSnapshot] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -216,11 +269,18 @@ export function ListCustomizeScreen() {
   useEffect(() => {
     if (!id) return
     let cancelled = false
-    void api.getList(id).then((response) => {
+    void Promise.all([api.getList(id), api.getListDesigns()]).then(
+      ([response, designsResponse]) => {
       if (cancelled) return
       setLoading(false)
       if (!response.data) {
         setError(response.error || 'No pudimos cargar esta lista')
+        return
+      }
+      if (!designsResponse.data) {
+        setError(
+          designsResponse.error || 'No pudimos cargar la definición de la plantilla'
+        )
         return
       }
       const version = response.data.versions?.[0]
@@ -231,18 +291,22 @@ export function ListCustomizeScreen() {
       const next = contentWithTemplateDefaults(
         version.content || starterContent(response.data.name),
         response.data,
-        tenant?.listDesign
+        tenant?.listDesign,
+        tenant?.language
       )
       setList(response.data)
+      setDesigns(designsResponse.data)
       setVersionId(version.id)
       setRevision(version.contentRevision || 0)
       setContent(next)
+      setFilmImagesDraft((next.template?.filmImages || []).join('\n'))
       setSnapshot(JSON.stringify(next))
-    })
+      }
+    )
     return () => {
       cancelled = true
     }
-  }, [id, tenant?.listDesign])
+  }, [id, tenant?.language, tenant?.listDesign])
 
   const publicUrl = useMemo(
     () =>
@@ -251,9 +315,21 @@ export function ListCustomizeScreen() {
         : '',
     [list, tenant]
   )
-  const currentDesign = list?.design || tenant?.listDesign || ''
-  const isStoriesTemplate = currentDesign === 'pencil-cafecitos'
-  const isEditorial = currentDesign.startsWith('pencil-') && !isStoriesTemplate
+  const currentDesign = list?.design || tenant?.listDesign || 'store'
+  const defaultTemplateImage = pencilTemplateDefaults(currentDesign)?.image
+  const designDefinition = designs.find((design) => design.id === currentDesign)
+  const supportedFields = useMemo(
+    () => new Set<ListTemplateField>(designDefinition?.fields || []),
+    [designDefinition]
+  )
+  const hasField = (field: ListTemplateField) => supportedFields.has(field)
+  const hasAnyField = (fields: ListTemplateField[]) =>
+    fields.some((field) => supportedFields.has(field))
+  const hasEditorialFields = hasAnyField(EDITORIAL_FIELDS)
+  const hasFooterFields = hasAnyField(FOOTER_FIELDS)
+  const hasTemplateChromeFields = hasAnyField(TEMPLATE_CHROME_FIELDS)
+  const hasStoriesFields = hasAnyField(STORIES_FIELDS)
+  const hasStyleFields = hasAnyField(STYLE_FIELDS)
   const dirty = !!content && snapshot !== JSON.stringify(content)
   const update = (patch: Partial<ListContent>) =>
     setContent((current) => ({
@@ -266,7 +342,9 @@ export function ListCustomizeScreen() {
   }
   const updateTemplate = (
     key: keyof NonNullable<ListContent['template']>,
-    value: string
+    value: NonNullable<ListContent['template']>[keyof NonNullable<
+      ListContent['template']
+    >]
   ) => {
     const current = content || starterContent(list?.name || 'Mi lista')
     update({ template: { ...current.template, [key]: value } })
@@ -357,7 +435,7 @@ export function ListCustomizeScreen() {
       subtitle="Personalizá tu catálogo público"
       hideContext
     >
-      <main className="mx-auto flex min-h-full w-full max-w-[1320px] flex-col gap-5 overflow-x-hidden px-4 py-6 md:px-10 md:py-8">
+      <main className="mx-auto flex min-h-full w-full max-w-[1320px] flex-col gap-5 overflow-x-clip px-4 py-6 md:px-10 md:py-8">
         <header className="flex flex-col gap-4 border-b border-[var(--dash-border)] pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Link
@@ -433,7 +511,7 @@ export function ListCustomizeScreen() {
                   </p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Antetítulo">
+                  {hasField('hero.eyebrow') && <Field label="Antetítulo">
                     <input
                       disabled={!canEdit}
                       className={inputClass}
@@ -441,16 +519,16 @@ export function ListCustomizeScreen() {
                       onChange={(e) => updateHero('eyebrow', e.target.value)}
                       placeholder="NOVEDADES"
                     />
-                  </Field>
-                  <Field label="Título">
+                  </Field>}
+                  {hasField('hero.title') && <Field label="Título">
                     <input
                       disabled={!canEdit}
                       className={inputClass}
                       value={content.hero?.title || ''}
                       onChange={(e) => updateHero('title', e.target.value)}
                     />
-                  </Field>
-                  <Field wide label="Descripción">
+                  </Field>}
+                  {hasField('hero.body') && <Field wide label="Descripción">
                     <textarea
                       disabled={!canEdit}
                       className={textareaClass}
@@ -458,8 +536,8 @@ export function ListCustomizeScreen() {
                       onChange={(e) => updateHero('body', e.target.value)}
                       placeholder="Una breve introducción a la lista."
                     />
-                  </Field>
-                  <Field label="Tipografía">
+                  </Field>}
+                  {hasField('template.font') && <Field label="Tipografía">
                     <select
                       disabled={!canEdit}
                       className={inputClass}
@@ -472,8 +550,8 @@ export function ListCustomizeScreen() {
                       <option value="mono">Mono · técnica</option>
                       <option value="code-pro">Code Pro</option>
                     </select>
-                  </Field>
-                  <Field label="Canal para pedidos">
+                  </Field>}
+                  {hasField('template.checkout_channel') && <Field label="Canal para pedidos">
                     <select
                       disabled={!canEdit}
                       className={inputClass}
@@ -489,8 +567,9 @@ export function ListCustomizeScreen() {
                         Instagram · copiar pedido y abrir DM
                       </option>
                     </select>
-                  </Field>
-                  {content.template?.checkoutChannel === 'instagram' && (
+                  </Field>}
+                  {hasField('template.instagram_handle') &&
+                    content.template?.checkoutChannel === 'instagram' && (
                     <Field label="Usuario de Instagram">
                       <input
                         disabled={!canEdit}
@@ -513,55 +592,167 @@ export function ListCustomizeScreen() {
                   )}
                 </div>
               </article>
-              {isEditorial && (
+              {hasTemplateChromeFields && (
                 <article className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5">
-                  <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="mb-4">
+                    <h2 className="text-base font-extrabold text-[var(--dash-text)]">
+                      Textos de la plantilla
+                    </h2>
+                    <p className="mt-1 text-xs text-[var(--dash-muted)]">
+                      Cada campo corresponde a un texto visible de este diseño.
+                    </p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {hasField('template.masthead') && (
+                      <Field label="Título lateral">
+                        <input
+                          disabled={!canEdit}
+                          className={inputClass}
+                          value={content.template?.masthead || ''}
+                          onChange={(event) =>
+                            updateTemplate('masthead', event.target.value)
+                          }
+                        />
+                      </Field>
+                    )}
+                    {hasField('template.brand_label') && (
+                      <Field label="Marca del encabezado">
+                        <input
+                          disabled={!canEdit}
+                          className={inputClass}
+                          value={content.template?.brandLabel || ''}
+                          onChange={(event) =>
+                            updateTemplate('brandLabel', event.target.value)
+                          }
+                        />
+                      </Field>
+                    )}
+                    {hasField('template.edition_label') && (
+                      <Field label="Fecha o edición">
+                        <input
+                          disabled={!canEdit}
+                          className={inputClass}
+                          value={content.template?.editionLabel || ''}
+                          onChange={(event) =>
+                            updateTemplate('editionLabel', event.target.value)
+                          }
+                          placeholder={`Automático: ${new Date().toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`}
+                        />
+                      </Field>
+                    )}
+                    {hasField('template.uncategorized_label') && (
+                      <Field label="Categoría sin nombre">
+                        <input
+                          disabled={!canEdit}
+                          className={inputClass}
+                          value={content.template?.uncategorizedLabel || ''}
+                          onChange={(event) =>
+                            updateTemplate(
+                              'uncategorizedLabel',
+                              event.target.value
+                            )
+                          }
+                        />
+                      </Field>
+                    )}
+                    {hasField('template.footer_left') && (
+                      <Field wide label="Texto del pie">
+                        <input
+                          disabled={!canEdit}
+                          className={inputClass}
+                          value={content.template?.footerLeft || ''}
+                          onChange={(event) =>
+                            updateTemplate('footerLeft', event.target.value)
+                          }
+                        />
+                      </Field>
+                    )}
+                  </div>
+                </article>
+              )}
+              {hasEditorialFields && (
+                <article className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5">
+                  <div className="mb-4">
                     <div>
                       <h2 className="text-base font-extrabold text-[var(--dash-text)]">
-                        Contenido editorial
+                        Imagen y promoción
                       </h2>
                       <p className="mt-1 text-xs text-[var(--dash-muted)]">
-                        Esta plantilla tiene imagen, promoción y textos de pie
-                        propios.
+                        Elegí la foto principal y el mensaje destacado de la
+                        lista.
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      disabled={!canEdit || uploadingImage}
-                      onClick={() => imageRef.current?.click()}
-                      className="btn btn-sm inline-flex h-9 items-center gap-1 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-link)] disabled:opacity-50"
-                    >
-                      <Icon name="upload" size={14} />{' '}
-                      {uploadingImage ? 'Subiendo…' : 'Subir imagen'}
-                    </button>
-                    <input
+                    {hasField('template.image') && <input
                       ref={imageRef}
                       type="file"
                       accept="image/png,image/jpeg,image/webp,image/gif"
                       className="hidden"
                       onChange={(e) => void uploadImage(e)}
-                    />
+                    />}
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field wide label="Imagen editorial">
-                      <input
-                        disabled={!canEdit}
-                        className={inputClass}
-                        value={content.template?.image || ''}
-                        onChange={(e) =>
-                          updateTemplate('image', e.target.value)
-                        }
-                        placeholder="https://…"
-                      />
-                    </Field>
-                    {content.template?.image && (
-                      <img
-                        src={content.template.image}
-                        alt="Vista previa editorial"
-                        className="h-44 w-full rounded-xl object-cover sm:col-span-2"
-                      />
+                    {hasField('template.image') && content.template?.image && (
+                      <div className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] sm:col-span-2">
+                        <div className="relative">
+                          <img
+                            src={content.template.image}
+                            alt="Foto principal de la lista"
+                            className="h-56 w-full object-cover sm:h-72"
+                          />
+                          <span className="absolute bottom-3 left-3 rounded-full bg-black/65 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur">
+                            Foto principal
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 p-3">
+                          <button
+                            type="button"
+                            disabled={!canEdit || uploadingImage}
+                            onClick={() => imageRef.current?.click()}
+                            className="btn btn-sm inline-flex h-9 items-center gap-1 rounded-lg bg-[var(--dash-text)] px-3 text-xs font-bold text-[var(--dash-surface)] disabled:opacity-50"
+                          >
+                            <Icon name="upload" size={14} />{' '}
+                            {uploadingImage ? 'Subiendo…' : 'Cambiar imagen'}
+                          </button>
+                          {defaultTemplateImage &&
+                            content.template.image !== defaultTemplateImage && (
+                              <button
+                                type="button"
+                                disabled={!canEdit || uploadingImage}
+                                onClick={() =>
+                                  updateTemplate('image', defaultTemplateImage)
+                                }
+                                className="btn btn-sm h-9 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-link)] disabled:opacity-50"
+                              >
+                                Usar imagen original
+                              </button>
+                            )}
+                          <span className="ml-auto text-[11px] text-[var(--dash-muted)]">
+                            PNG, JPG, WebP o GIF
+                          </span>
+                        </div>
+                      </div>
                     )}
-                    <Field label="Etiqueta de imagen">
+                    {hasField('template.image') && !content.template?.image && (
+                      <button
+                        type="button"
+                        disabled={!canEdit || uploadingImage}
+                        onClick={() => imageRef.current?.click()}
+                        className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--dash-border)] bg-[var(--dash-soft)] text-sm font-bold text-[var(--dash-link)] disabled:opacity-50 sm:col-span-2"
+                      >
+                        <Icon name="upload" size={20} />
+                        {uploadingImage ? 'Subiendo imagen…' : 'Elegir imagen principal'}
+                        <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+                          PNG, JPG, WebP o GIF
+                        </span>
+                      </button>
+                    )}
+                    {(hasField('template.image_label') ||
+                      hasField('template.image_title')) && (
+                      <h3 className="mt-1 text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--dash-text2)] sm:col-span-2">
+                        Texto sobre la imagen
+                      </h3>
+                    )}
+                    {hasField('template.image_label') && <Field label="Etiqueta de imagen">
                       <input
                         disabled={!canEdit}
                         className={inputClass}
@@ -570,8 +761,8 @@ export function ListCustomizeScreen() {
                           updateTemplate('imageLabel', e.target.value)
                         }
                       />
-                    </Field>
-                    <Field label="Título de imagen">
+                    </Field>}
+                    {hasField('template.image_title') && <Field label="Título de imagen">
                       <input
                         disabled={!canEdit}
                         className={inputClass}
@@ -580,8 +771,14 @@ export function ListCustomizeScreen() {
                           updateTemplate('imageTitle', e.target.value)
                         }
                       />
-                    </Field>
-                    <Field label="Antetítulo de promoción">
+                    </Field>}
+                    {(hasField('template.promo_eyebrow') ||
+                      hasField('template.promo_title')) && (
+                      <h3 className="mt-3 border-t border-[var(--dash-border)] pt-4 text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--dash-text2)] sm:col-span-2">
+                        Promoción destacada
+                      </h3>
+                    )}
+                    {hasField('template.promo_eyebrow') && <Field label="Antetítulo de promoción">
                       <input
                         disabled={!canEdit}
                         className={inputClass}
@@ -590,8 +787,8 @@ export function ListCustomizeScreen() {
                           updateTemplate('promoEyebrow', e.target.value)
                         }
                       />
-                    </Field>
-                    <Field label="Título de promoción">
+                    </Field>}
+                    {hasField('template.promo_title') && <Field label="Título de promoción">
                       <input
                         disabled={!canEdit}
                         className={inputClass}
@@ -600,8 +797,8 @@ export function ListCustomizeScreen() {
                           updateTemplate('promoTitle', e.target.value)
                         }
                       />
-                    </Field>
-                    <Field wide label="Texto de promoción">
+                    </Field>}
+                    {hasField('template.promo_body') && <Field wide label="Texto de promoción">
                       <textarea
                         disabled={!canEdit}
                         className={textareaClass}
@@ -610,8 +807,8 @@ export function ListCustomizeScreen() {
                           updateTemplate('promoBody', e.target.value)
                         }
                       />
-                    </Field>
-                    <Field label="Precio o llamada">
+                    </Field>}
+                    {hasField('template.promo_price') && <Field label="Precio o llamada">
                       <input
                         disabled={!canEdit}
                         className={inputClass}
@@ -620,8 +817,8 @@ export function ListCustomizeScreen() {
                           updateTemplate('promoPrice', e.target.value)
                         }
                       />
-                    </Field>
-                    <Field label="Nota de promoción">
+                    </Field>}
+                    {hasField('template.promo_note') && <Field label="Nota de promoción">
                       <input
                         disabled={!canEdit}
                         className={inputClass}
@@ -630,31 +827,44 @@ export function ListCustomizeScreen() {
                           updateTemplate('promoNote', e.target.value)
                         }
                       />
-                    </Field>
-                    <Field label="Pie izquierdo">
-                      <input
-                        disabled={!canEdit}
-                        className={inputClass}
-                        value={content.template?.footerLeft || ''}
-                        onChange={(e) =>
-                          updateTemplate('footerLeft', e.target.value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Pie derecho">
-                      <input
-                        disabled={!canEdit}
-                        className={inputClass}
-                        value={content.template?.footerRight || ''}
-                        onChange={(e) =>
-                          updateTemplate('footerRight', e.target.value)
-                        }
-                      />
-                    </Field>
+                    </Field>}
                   </div>
                 </article>
               )}
-              {isStoriesTemplate && (
+              {hasFooterFields && !hasTemplateChromeFields && (
+                <article className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5">
+                  <h2 className="text-base font-extrabold text-[var(--dash-text)]">
+                    Pie de la plantilla
+                  </h2>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    {hasField('template.footer_left') && (
+                      <Field label="Pie izquierdo">
+                        <input
+                          disabled={!canEdit}
+                          className={inputClass}
+                          value={content.template?.footerLeft || ''}
+                          onChange={(event) =>
+                            updateTemplate('footerLeft', event.target.value)
+                          }
+                        />
+                      </Field>
+                    )}
+                    {hasField('template.footer_right') && (
+                      <Field label="Pie derecho">
+                        <input
+                          disabled={!canEdit}
+                          className={inputClass}
+                          value={content.template?.footerRight || ''}
+                          onChange={(event) =>
+                            updateTemplate('footerRight', event.target.value)
+                          }
+                        />
+                      </Field>
+                    )}
+                  </div>
+                </article>
+              )}
+              {hasStoriesFields && (
                 <article className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5">
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div>
@@ -666,7 +876,7 @@ export function ListCustomizeScreen() {
                         elemento independiente.
                       </p>
                     </div>
-                    <button
+                    {hasField('template.profile_image') && <button
                       type="button"
                       disabled={!canEdit || uploadingImage}
                       onClick={() => imageRef.current?.click()}
@@ -674,17 +884,17 @@ export function ListCustomizeScreen() {
                     >
                       <Icon name="upload" size={14} />{' '}
                       {uploadingImage ? 'Subiendo…' : 'Subir portada'}
-                    </button>
-                    <input
+                    </button>}
+                    {hasField('template.profile_image') && <input
                       ref={imageRef}
                       type="file"
                       accept="image/png,image/jpeg,image/webp,image/gif"
                       className="hidden"
                       onChange={(e) => void uploadImage(e, 'profileImage')}
-                    />
+                    />}
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Nombre del perfil">
+                    {hasField('template.profile_name') && <Field label="Nombre del perfil">
                       <input
                         disabled={!canEdit}
                         className={inputClass}
@@ -694,8 +904,8 @@ export function ListCustomizeScreen() {
                         }
                         placeholder="Dani"
                       />
-                    </Field>
-                    <Field label="Logo (URL opcional)">
+                    </Field>}
+                    {hasField('template.logo') && <Field label="Logo (URL opcional)">
                       <input
                         disabled={!canEdit}
                         className={inputClass}
@@ -703,8 +913,8 @@ export function ListCustomizeScreen() {
                         onChange={(e) => updateTemplate('logo', e.target.value)}
                         placeholder="https://…"
                       />
-                    </Field>
-                    <Field wide label="Foto de perfil y portada">
+                    </Field>}
+                    {hasField('template.profile_image') && <Field wide label="Foto de perfil y portada">
                       <input
                         disabled={!canEdit}
                         className={inputClass}
@@ -714,15 +924,15 @@ export function ListCustomizeScreen() {
                         }
                         placeholder="https://…"
                       />
-                    </Field>
-                    {content.template?.profileImage && (
+                    </Field>}
+                    {hasField('template.profile_image') && content.template?.profileImage && (
                       <img
                         src={content.template.profileImage}
                         alt="Vista previa de portada"
                         className="h-44 w-full rounded-xl object-cover sm:col-span-2"
                       />
                     )}
-                    <Field label="Título de opciones">
+                    {hasField('template.collaboration_heading') && <Field label="Título de opciones">
                       <input
                         disabled={!canEdit}
                         className={inputClass}
@@ -732,8 +942,8 @@ export function ListCustomizeScreen() {
                         }
                         placeholder="Promocioná tu marca conmigo"
                       />
-                    </Field>
-                    <Field label="Título de historias">
+                    </Field>}
+                    {hasField('template.stories_heading') && <Field label="Título de historias">
                       <input
                         disabled={!canEdit}
                         className={inputClass}
@@ -743,8 +953,31 @@ export function ListCustomizeScreen() {
                         }
                         placeholder="Historias destacadas"
                       />
-                    </Field>
+                    </Field>}
+                    {hasField('template.film_images') && (
+                      <Field wide label="Imágenes de presentación">
+                        <textarea
+                          disabled={!canEdit}
+                          className={textareaClass}
+                          value={filmImagesDraft}
+                          onChange={(event) => {
+                            setFilmImagesDraft(event.target.value)
+                            updateTemplate(
+                              'filmImages',
+                              event.target.value
+                                .split('\n')
+                                .map((value) => value.trim())
+                                .filter(Boolean)
+                                .slice(0, 8)
+                            )
+                          }}
+                          placeholder={'Una URL por línea (máximo 8)'}
+                        />
+                      </Field>
+                    )}
                   </div>
+                  {(hasField('template.story_videos') ||
+                    hasField('template.story_metrics')) && (
                   <div className="mt-6 border-t border-[var(--dash-border)] pt-5">
                     <div className="mb-4 flex items-end justify-between gap-3">
                       <div>
@@ -830,9 +1063,65 @@ export function ListCustomizeScreen() {
                       ))}
                     </div>
                   </div>
+                  )}
                 </article>
               )}
-              <article className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5">
+              {hasStyleFields && (
+                <article className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5">
+                  <h2 className="text-base font-extrabold text-[var(--dash-text)]">
+                    Estilo visual
+                  </h2>
+                  <p className="mt-1 text-xs text-[var(--dash-muted)]">
+                    Personalizá el separador y la paleta de esta lista.
+                  </p>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    {hasField('template.divider_icon') && (
+                      <Field label="Ícono separador">
+                        <select
+                          disabled={!canEdit}
+                          className={inputClass}
+                          value={content.template?.dividerIcon || 'coffee'}
+                          onChange={(event) =>
+                            updateTemplate('dividerIcon', event.target.value)
+                          }
+                        >
+                          <option value="coffee">Café</option>
+                          <option value="flower">Flor</option>
+                          <option value="leaf">Hoja</option>
+                          <option value="none">Sin ícono</option>
+                        </select>
+                      </Field>
+                    )}
+                    {([
+                      ['template.background_color', 'Fondo', 'backgroundColor'],
+                      ['template.text_color', 'Texto principal', 'textColor'],
+                      ['template.muted_color', 'Texto secundario', 'mutedColor'],
+                      ['template.accent_color', 'Acento', 'accentColor'],
+                      ['template.dark_panel_color', 'Panel oscuro', 'darkPanelColor'],
+                    ] as const).map(([field, label, key]) =>
+                      hasField(field) ? (
+                        <Field key={field} label={label}>
+                          <div className="mt-1 flex h-10 items-center gap-2 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2">
+                            <input
+                              disabled={!canEdit}
+                              type="color"
+                              className="h-7 w-9 cursor-pointer rounded border-0 bg-transparent p-0 disabled:opacity-50"
+                              value={content.template?.[key] || '#000000'}
+                              onChange={(event) =>
+                                updateTemplate(key, event.target.value.toUpperCase())
+                              }
+                            />
+                            <span className="font-mono text-xs text-[var(--dash-text2)]">
+                              {content.template?.[key] || '#000000'}
+                            </span>
+                          </div>
+                        </Field>
+                      ) : null
+                    )}
+                  </div>
+                </article>
+              )}
+              {hasField('template.price_format') && <article className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5">
                 <h2 className="text-base font-extrabold text-[var(--dash-text)]">
                   Formato de precios
                 </h2>
@@ -855,7 +1144,7 @@ export function ListCustomizeScreen() {
                     </select>
                   </Field>
                 </div>
-              </article>
+              </article>}
             </section>
             <aside
               className={`order-first min-w-0 xl:sticky xl:top-5 xl:order-none ${previewOpen ? 'max-sm:fixed max-sm:inset-0 max-sm:z-40 max-sm:overflow-y-auto max-sm:bg-[var(--dash-bg)]' : 'hidden'}`}

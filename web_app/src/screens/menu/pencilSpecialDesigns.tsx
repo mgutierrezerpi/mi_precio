@@ -199,12 +199,14 @@ function Rows({
           key={section.key}
           className={`flex min-w-0 flex-col ${sectionGap}`}
         >
-          <h2
-            className={`${labelSize} uppercase tracking-[1.8px]`}
-            style={{ color: config.accent, fontFamily: MONO }}
-          >
-            {section.name}
-          </h2>
+          {section.name && (
+            <h2
+              className={`${labelSize} uppercase tracking-[1.8px]`}
+              style={{ color: config.accent, fontFamily: MONO }}
+            >
+              {section.name}
+            </h2>
+          )}
           <div className={`flex min-w-0 flex-col ${itemGap}`}>
             {section.items.map((item) => (
               <div
@@ -499,6 +501,34 @@ function CasaServices({
   config: PencilConfig
 }) {
   const hero = props.content?.hero
+  const template = props.content?.template
+  const masthead =
+    template?.masthead !== undefined
+      ? template.masthead
+      : hero?.title || config.masthead || 'SERVICIOS'
+  const brandLabel =
+    template?.brandLabel !== undefined
+      ? template.brandLabel
+      : hero?.eyebrow || config.brandLabel || 'Casa Férrea'
+  const editionLabel =
+    template?.editionLabel !== undefined
+      ? template.editionLabel
+      : config.editionLabel || props.monthYear
+  const uncategorizedLabel =
+    template?.uncategorizedLabel !== undefined
+      ? template.uncategorizedLabel
+      : config.uncategorizedLabel || 'Otros'
+  const footer =
+    template?.footerLeft !== undefined
+      ? template.footerLeft
+      : hero?.body ||
+        config.footerLeft ||
+        'Un servicio pensado para acompañar cada proyecto.'
+  const sections = props.sections.map((section) =>
+    section.key === 'otros'
+      ? { ...section, name: uncategorizedLabel }
+      : section
+  )
   return (
     <div
       className="min-h-[100svh] w-full min-w-0 overflow-x-clip px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10"
@@ -508,8 +538,10 @@ function CasaServices({
         fontFamily: SANS,
       }}
     >
-      <div className="mx-auto grid min-w-0 w-full max-w-[920px] grid-cols-[38px_minmax(0,1fr)] gap-4 sm:grid-cols-[70px_minmax(0,1fr)] sm:gap-8">
-        <div className="flex items-start justify-center">
+      <div
+        className={`mx-auto grid min-w-0 w-full max-w-[920px] ${masthead ? 'grid-cols-[38px_minmax(0,1fr)] gap-4 sm:grid-cols-[70px_minmax(0,1fr)] sm:gap-8' : 'grid-cols-1'}`}
+      >
+        {masthead && <div className="flex items-start justify-center">
           <span
             className="text-[36px] font-bold leading-none sm:text-[52px]"
             style={{
@@ -518,29 +550,27 @@ function CasaServices({
               fontFamily: SANS,
             }}
           >
-            SERVICIOS
+            {masthead}
           </span>
-        </div>
+        </div>}
         <div className="min-w-0">
-          <div
+          {(brandLabel || editionLabel) && <div
             className="flex flex-wrap justify-between gap-2 border-b pb-4 text-[10px] uppercase tracking-[1.5px] sm:text-[11px]"
             style={{ borderColor: '#FFFFFF66', fontFamily: MONO }}
           >
-            <span className="break-words">
-              {hero?.eyebrow || 'Casa Férrea'}
-            </span>
-            <span>{props.monthYear}</span>
-          </div>
+            {brandLabel && <span className="break-words">{brandLabel}</span>}
+            {editionLabel && <span>{editionLabel}</span>}
+          </div>}
           <div className="mt-7">
             <Rows
-              sections={props.sections}
+              sections={sections}
               config={config}
               props={props}
               dark
               compact
             />
           </div>
-          <div
+          {footer && <div
             className="mt-8 border-t pt-6 text-[10px] uppercase tracking-[1.5px] sm:text-[11px]"
             style={{
               borderColor: '#FFFFFF66',
@@ -548,8 +578,8 @@ function CasaServices({
               fontFamily: MONO,
             }}
           >
-            {hero?.body || 'Un servicio pensado para acompañar cada proyecto.'}
-          </div>
+            {footer}
+          </div>}
         </div>
       </div>
     </div>
