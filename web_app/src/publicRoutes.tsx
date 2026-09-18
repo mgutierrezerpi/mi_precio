@@ -9,6 +9,7 @@ import { LinkTreePublicScreen } from './screens/menu/LinkTreePublicScreen'
 import { MagazineScreen } from './screens/menu/MagazineScreen'
 import { MenuScreen } from './screens/menu/MenuScreen'
 import { ChoosePlanScreen } from './screens/onboarding/ChoosePlanScreen'
+import { LegalScreen } from './screens/legal/LegalScreen'
 
 export const publicRoutes: RouteObject[] = [
   { path: '/', element: <HomeScreen /> },
@@ -24,5 +25,10 @@ export const publicRoutes: RouteObject[] = [
   { path: '/plans', element: <ChoosePlanScreen /> },
   { path: '/planes', element: <Navigate to="/plans" replace /> },
   { path: '/reports', element: <Navigate to="/admin/reports" replace /> },
+  { path: '/terminos', element: <LegalScreen slug="terminos" /> },
+  { path: '/privacidad', element: <LegalScreen slug="privacidad" /> },
+  { path: '/cookies', element: <LegalScreen slug="cookies" /> },
+  { path: '/terms', element: <Navigate to="/terminos" replace /> },
+  { path: '/privacy', element: <Navigate to="/privacidad" replace /> },
   { path: '*', element: <Navigate to="/" replace /> },
 ]

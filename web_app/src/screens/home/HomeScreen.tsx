@@ -9,6 +9,7 @@ import { AuthModal } from '../../components/AuthModal'
 import { PLANS } from '../../lib/plans'
 import { useTheme } from '../../hooks/useTheme'
 import { localeForHostname } from '../../lib/domainLocale'
+import { LandingFooter } from './LandingFooter'
 
 type OpenAuth = () => void
 
@@ -254,7 +255,7 @@ export function HomeScreen() {
       <Pricing onAuth={openAuth} />
       <Faq />
       <FinalCta onAuth={openAuth} />
-      <Footer />
+      <LandingFooter />
       <BackToTop />
       <AuthModal
         open={authOpen}
@@ -1047,21 +1048,6 @@ function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
         </div>
       </Reveal>
     </section>
-  )
-}
-
-// Footer brand/nav/socials are intentionally omitted for now — those pages don't
-// exist yet. The full markup lives in the static landing (landing/index.html) and
-// git history; restore from there when the links are ready.
-function Footer() {
-  return (
-    <footer className="bg-[#2E1065] px-5 py-8 text-white md:px-[120px]">
-      <div className="mx-auto max-w-[1200px]">
-        <p className="text-center text-xs font-medium text-[#64748B]">
-          {landingText('© 2026 MiPrecio. Todos los derechos reservados.', '© 2026 PricePanel. All rights reserved.')}
-        </p>
-      </div>
-    </footer>
   )
 }
 
