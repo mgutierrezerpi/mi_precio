@@ -15,3 +15,21 @@ openapi.json
 
 # Verification renders produced by vcap.js / verify_tour.js
 shots/tour_*.png
+
+# Seed de Malvin: queda local, igual que ventas/ y marketing/ en la raiz.
+# Los veinte comercios son reales y no nos dieron sus datos: nombre, direccion
+# y telefono se relevaron a pie, y los precios y colores los inventamos
+# nosotros. Es material de venta, no codigo del producto, y no va al historial
+# del repo. Los archivos viven en demo/ y se corren desde ahi.
+malvin_api.py
+malvin_catalogos.py
+malvin_comercios.py
+malvin_fotos.py
+malvin_logo.py
+seed_malvin.py
+revisar_fotos.py
+elegir_fotos.py
+
+# Fotos y logos bajados, y los tokens de las cuentas demo del seed de Malvin.
+# Se regeneran solos con `python seed_malvin.py` (las fotos, desde Commons).
+.malvin_cache/

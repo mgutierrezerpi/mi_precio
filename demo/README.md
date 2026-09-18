@@ -38,6 +38,13 @@ grabá la pantalla (Xbox Game Bar `Win+Alt+R`, o Loom) mientras corre (~2,6 min)
 | `seed_*.py` | Seeders del dataset demo (productos, clientes, órdenes, visitas) |
 | `vcap.js`, `verify_tour.js` | Utilidades para verificar placas del tour |
 
+El **seed de Malvín** (`malvin_*.py`, `seed_malvin.py`, `revisar_fotos.py`,
+`elegir_fotos.py`) arma una cuenta demo por cada comercio de una recorrida de
+venta. Está gitignoreado y vive sólo en las máquinas de quien sale a vender:
+lleva nombre, dirección y teléfono de comercios reales que no nos dieron esos
+datos, más precios y colores que inventamos nosotros. Es material de venta,
+como `ventas/` y `marketing/` en la raíz, no código del producto.
+
 ## Regenerar `tour.html`
 
 Solo hace falta si cambian las capturas o los textos.
