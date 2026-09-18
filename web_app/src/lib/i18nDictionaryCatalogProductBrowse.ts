@@ -3,8 +3,8 @@ import type { TranslationEntry } from './i18nDictionary'
 export const DICT_CATALOG_PRODUCT_BROWSE: Record<string, TranslationEntry> = {
   'products.title': { es: 'Productos', en: 'Products', pt: 'Produtos' },
   'products.subtitle': {
-    es: 'Gestioná tu catálogo, precios y stock.',
-    en: 'Manage your catalog, prices, and stock.',
+    es: 'Gestioná tu catálogo y tus precios.',
+    en: 'Manage your catalog and prices.',
     pt: 'Gerencie seu catálogo, preços e estoque.',
   },
   'products.search': {
