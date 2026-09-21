@@ -2034,3 +2034,62 @@ div:has(> img[alt='Dani, Cafecitos con Dani'])::after {
     transform: none !important;
   }
 }
+
+/*
+ * Slow ambient light behind a dark Pencil panel: two soft glows drifting in
+ * opposite directions, one in the shop's accent (`--glow`), one faint white.
+ * Only `transform` animates, so the blurred layers are rasterised once and
+ * moved by the compositor. Holds still under prefers-reduced-motion.
+ */
+.pencil-glow {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.pencil-glow::before,
+.pencil-glow::after {
+  content: '';
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 9999px;
+  filter: blur(60px);
+  will-change: transform;
+}
+.pencil-glow::before {
+  top: -35%;
+  left: -30%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--glow, #0ea5e9) 30%, transparent) 0%,
+    transparent 62%
+  );
+  animation: pencil-glow-a 24s ease-in-out infinite alternate;
+}
+.pencil-glow::after {
+  bottom: -40%;
+  right: -35%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.07) 0%,
+    transparent 60%
+  );
+  animation: pencil-glow-b 31s ease-in-out infinite alternate;
+}
+@keyframes pencil-glow-a {
+  to {
+    transform: translate(28%, 34%) scale(1.18);
+  }
+}
+@keyframes pencil-glow-b {
+  to {
+    transform: translate(-32%, -26%) scale(1.12);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pencil-glow::before,
+  .pencil-glow::after {
+    animation: none;
+  }
+}

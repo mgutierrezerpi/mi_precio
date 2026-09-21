@@ -574,8 +574,17 @@ export function MenuScreen() {
         ? pencilCartThemeFor(design)
         : cartThemeFor(design)
   const listAccent = content?.template?.accentColor || accent
+  // The Pencil cart theme derives its borders from the template's own accent
+  // too (Obsidian's red), so swapping only `accent` left a red frame around
+  // the shop's blue action bar. Re-derive them from the list's accent.
   const cartT = isPencilCartDesign
-    ? { ...baseCartT, accent: listAccent, actionAccent: listAccent }
+    ? {
+        ...baseCartT,
+        accent: listAccent,
+        actionAccent: listAccent,
+        divider: `${listAccent}33`,
+        line: `${listAccent}88`,
+      }
     : baseCartT
   const cartAccent = cartT.accent || accent
   const cartActionAccent = cartT.actionAccent || cartAccent

@@ -383,3 +383,53 @@ describe('pencilHasDesktopCover', () => {
     expect(pencilHasDesktopCover('store')).toBe(false)
   })
 })
+
+describe('branded templates without a hero of their own', () => {
+  // The branded templates — offered in the picker, or hidden from it but
+  // still rendering for lists that already use them (Blush & Bloom).
+  const branded: PencilVariant[] = [
+    'pencil-auto-detail',
+    'pencil-blush-bloom',
+    'pencil-nova',
+    'pencil-beardy',
+    'pencil-calm-spa',
+    'pencil-union-barber',
+    'pencil-studio-mono',
+    'pencil-beauty-issue',
+    'pencil-obsidian-quarterly',
+  ]
+  // What they used to print instead of the shop: another business, in English.
+  const sampleCopy = [
+    'PRICE LIST',
+    'Price List',
+    'Price list',
+    'SERVICES LIST',
+    'SERVICES & PACKAGES',
+    'THE CALM SPA',
+    'OBSIDIAN',
+    'CAR DETAILING',
+    'Care for the drive',
+    'BEARDY',
+    'Beauty studio',
+    'Cut, colour and craft',
+    "UNION'S Barber Shop",
+  ]
+  const shop = {
+    ...props,
+    tenant: {
+      name: 'Café Aurora',
+      description: 'Café de especialidad',
+      address: 'Bvar. Artigas 1234',
+    },
+    listName: 'Carta de otoño',
+    content: { schemaVersion: 1, blocks: [] },
+  } as unknown as DesignProps
+
+  it.each(branded)('%s shows the shop, not sample copy', (variant) => {
+    const view = render(<PencilList variant={variant} {...shop} />)
+    const text = view.container.textContent ?? ''
+    expect(text).toContain('Carta de otoño')
+    for (const sample of sampleCopy) expect(text).not.toContain(sample)
+    view.unmount()
+  })
+})

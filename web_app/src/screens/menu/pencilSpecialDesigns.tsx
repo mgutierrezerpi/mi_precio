@@ -2,6 +2,10 @@ import { useEffect } from 'react'
 import { CartControl, type DesignProps, type Section } from './designs'
 import type { PencilConfig } from './pencil'
 import { CafecitosTemplate } from './pencil/templates/cafecitos-layout'
+import { footerLines, heroCopy } from './pencil/copy'
+import { PoweredByMark, ProductShowcase, ShopLogo } from './pencil/shared'
+import { PencilActionBar } from './pencilActions'
+import { useIsDesktop } from '../../hooks/useMediaQuery'
 
 const SERIF = '"Playfair Display", Georgia, serif'
 const MONO = '"IBM Plex Mono", "Courier New", monospace'
@@ -28,6 +32,7 @@ function Heading({
   body,
   align = 'left',
   large = false,
+  sans = false,
 }: {
   config: PencilConfig
   eyebrow?: string
@@ -35,6 +40,8 @@ function Heading({
   body?: string
   align?: 'left' | 'center'
   large?: boolean
+  /** A heavy, tightly tracked Inter instead of the serif display face. */
+  sans?: boolean
 }) {
   return (
     <div
@@ -50,7 +57,12 @@ function Heading({
       )}
       <h1
         className={`${large ? 'text-[40px] sm:text-[68px]' : 'text-[40px] sm:text-[60px]'} max-w-full break-words text-balance leading-[0.94]`}
-        style={{ color: config.ink, fontFamily: SERIF, fontWeight: 400 }}
+        style={{
+          color: config.ink,
+          fontFamily: sans ? SANS : SERIF,
+          fontWeight: sans ? 800 : 400,
+          letterSpacing: sans ? '-0.035em' : undefined,
+        }}
       >
         {title}
       </h1>
@@ -66,7 +78,22 @@ function Heading({
   )
 }
 
-function Footer({ config }: { config: PencilConfig }) {
+function Footer({
+  config,
+  props,
+  signed = false,
+}: {
+  config: PencilConfig
+  props: DesignProps
+  /** MiPrecio's badge sits right below, so the stock line drops its credit. */
+  signed?: boolean
+}) {
+  const lines = footerLines(config, props)
+  const left = lines.left
+  const right =
+    signed && !config.footerRight
+      ? props.t('pub.pricesIn', { currency: props.currency })
+      : lines.right
   return (
     <footer
       className="flex flex-col gap-2 border-t pt-5 sm:flex-row sm:items-center sm:justify-between"
@@ -76,35 +103,50 @@ function Footer({ config }: { config: PencilConfig }) {
         className="text-[10px] uppercase tracking-[1.5px] sm:text-[11px]"
         style={{ color: config.muted, fontFamily: MONO }}
       >
-        {config.footerLeft}
+        {left}
       </span>
       <span
         className="text-[10px] uppercase tracking-[1.5px] sm:text-right sm:text-[11px]"
         style={{ color: config.accent, fontFamily: MONO }}
       >
-        {config.footerRight}
+        {right}
       </span>
     </footer>
+  )
+}
+
+/** Ambient light drifting behind a dark panel; see `.pencil-glow` in index.css. */
+function Glow({ accent }: { accent: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="pencil-glow"
+      style={{ '--glow': accent } as React.CSSProperties}
+    />
   )
 }
 
 function Shell({
   config,
   children,
+  glow,
 }: {
   config: PencilConfig
   children: React.ReactNode
+  /** Accent colour for an ambient `Glow` behind the content. */
+  glow?: string
 }) {
   return (
     <div
-      className="min-h-[100svh] w-full min-w-0 overflow-x-clip px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10"
+      className={`min-h-[100svh] w-full min-w-0 overflow-x-clip px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 ${glow ? 'relative' : ''}`}
       style={{
         background: config.background,
         color: config.ink,
         fontFamily: SANS,
       }}
     >
-      <div className="mx-auto flex min-w-0 w-full max-w-[920px]">
+      {glow && <Glow accent={glow} />}
+      <div className="relative mx-auto flex min-w-0 w-full max-w-[920px]">
         <div className="flex min-w-0 w-full flex-col">{children}</div>
       </div>
     </div>
@@ -160,6 +202,7 @@ function Rows({
   large = false,
   singleColumn = false,
   alignedActions = true,
+  sans = false,
 }: {
   sections: Section[]
   config: PencilConfig
@@ -169,6 +212,8 @@ function Rows({
   large?: boolean
   singleColumn?: boolean
   alignedActions?: boolean
+  /** Set item names in Inter, matching a sans `Heading`. */
+  sans?: boolean
 }) {
   const sectionGap = large ? 'gap-4' : 'gap-3.5'
   const itemGap = large ? 'gap-3' : 'gap-2.5'
@@ -219,7 +264,9 @@ function Rows({
                     className={`break-words ${nameSize}`}
                     style={{
                       color: dark ? '#FFFFFF' : config.ink,
-                      fontFamily: SERIF,
+                      fontFamily: sans ? SANS : SERIF,
+                      fontWeight: sans ? 600 : undefined,
+                      letterSpacing: sans ? '-0.01em' : undefined,
                     }}
                   >
                     {item.name}
@@ -339,7 +386,7 @@ function Alternating({
         ))}
       </div>
       <div className="mt-8">
-        <Footer config={config} />
+        <Footer config={config} props={props} />
       </div>
     </Shell>
   )
@@ -363,7 +410,7 @@ function CasaRitual({
           <Heading
             config={{ ...config, ink: '#FFFFFF', muted: '#C7C7C7' }}
             eyebrow={hero?.eyebrow}
-            title={hero?.title || 'El baño, como un ritual.'}
+            title={heroCopy(props).title}
             body={hero?.body}
           />
         </div>
@@ -384,7 +431,7 @@ function CasaRitual({
         <Rows sections={props.sections} config={config} props={props} compact />
       </div>
       <div className="mt-8">
-        <Footer config={config} />
+        <Footer config={config} props={props} />
       </div>
     </Shell>
   )
@@ -408,7 +455,7 @@ function CasaBath({
         <Heading
           config={config}
           eyebrow={hero?.eyebrow}
-          title={hero?.title || 'BAÑO EQUIPAR'}
+          title={heroCopy(props).title}
           body={hero?.body}
           large
         />
@@ -417,7 +464,7 @@ function CasaBath({
         <Rows sections={props.sections} config={config} props={props} compact />
       </div>
       <div className="mt-8">
-        <Footer config={config} />
+        <Footer config={config} props={props} />
       </div>
     </Shell>
   )
@@ -447,7 +494,7 @@ function CasaSignature({
         <Heading
           config={config}
           eyebrow={hero?.eyebrow}
-          title={hero?.title || 'Casa Férrea'}
+          title={heroCopy(props).title}
           body={hero?.body}
           align="center"
         />
@@ -487,7 +534,7 @@ function CasaSignature({
         ))}
       </div>
       <div className="mt-8">
-        <Footer config={config} />
+        <Footer config={config} props={props} />
       </div>
     </Shell>
   )
@@ -586,6 +633,17 @@ function CasaServices({
   )
 }
 
+/**
+ * Obsidian · Auto Detail. The template's composition — type and menu on the
+ * left, a big picture on the right — kept, but filled with the shop: its logo,
+ * name and description instead of "OBSIDIAN AUTO DETAIL / CAR DETAILING /
+ * Price list", and its own product photos instead of a stock car, which is
+ * what a café using this template was showing.
+ *
+ * From lg the picture becomes a sticky full-height showcase and the left side
+ * carries everything else, actions and MiPrecio's signature included, so
+ * `MenuScreen` drops its floating bar and closing band (`pencilHasDesktopCover`).
+ */
 function AutoDetail({
   props,
   config,
@@ -593,32 +651,108 @@ function AutoDetail({
   props: DesignProps
   config: PencilConfig
 }) {
-  const hero = props.content?.hero
+  const isDesktop = useIsDesktop()
+  const copy = heroCopy(props)
+  const items = props.sections.flatMap((section) => section.items)
+  const showcase = (className: string) => (
+    <ProductShowcase
+      items={items}
+      caption={{
+        background: config.background,
+        ink: config.ink,
+        headingFont: SANS,
+        labelFont: MONO,
+      }}
+      priceFormat={config.priceFormat}
+      className={className}
+      fallback={<Image config={config} className={className} />}
+    />
+  )
+  const heading = (
+    <div className="flex min-w-0 flex-col gap-5">
+      <ShopLogo
+        name={props.tenant.name}
+        logoUrl={props.tenant.logoUrl}
+        tile="h-24 w-24 lg:h-32 lg:w-32"
+        bare="h-16 max-w-[300px] lg:h-24 lg:max-w-[400px]"
+      />
+      <Heading
+        config={config}
+        // The shop's name only stands in for a missing eyebrow; with a logo
+        // right above, it would say the same thing twice.
+        eyebrow={
+          props.tenant.logoUrl ? props.content?.hero?.eyebrow : copy.eyebrow
+        }
+        title={copy.title}
+        body={copy.body}
+        large
+        sans
+      />
+    </div>
+  )
+  const menu = (
+    <Rows
+      sections={props.sections}
+      config={config}
+      props={props}
+      dark
+      compact
+      singleColumn
+      sans
+    />
+  )
+
+  if (isDesktop)
+    return (
+      <div
+        className="grid min-h-[100dvh] w-full grid-cols-[minmax(0,1fr)_minmax(420px,44%)]"
+        style={{
+          background: config.background,
+          color: config.ink,
+          fontFamily: SANS,
+        }}
+      >
+        <main className="relative min-w-0 px-12 py-14 xl:px-20 xl:py-16">
+          <Glow accent={config.accent} />
+          <div className="relative mx-auto flex max-w-[680px] flex-col">
+            {heading}
+            {!props.isService && (
+              <div className="mt-8 max-w-[440px]">
+                <PencilActionBar props={props} docked />
+              </div>
+            )}
+            <div
+              className="my-10 h-px"
+              style={{ background: `${config.accent}66` }}
+            />
+            {menu}
+            <div className="mt-14 flex flex-col gap-5">
+              <Footer config={config} props={props} signed />
+              <PoweredByMark
+                ink={config.ink}
+                muted={config.muted}
+                background={config.background}
+              />
+            </div>
+          </div>
+        </main>
+        <aside className="sticky top-0 h-[100dvh] min-w-0">
+          {showcase('h-full')}
+        </aside>
+      </div>
+    )
+
   return (
-    <Shell config={config}>
+    <Shell config={config} glow={config.accent}>
       <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="min-w-0">
-          <Heading
-            config={config}
-            eyebrow={hero?.eyebrow || 'OBSIDIAN AUTO DETAIL'}
-            title={hero?.title || 'CAR DETAILING'}
-            body={hero?.body || 'Price list'}
-          />
-          <div className="mt-8">
-            <Rows
-              sections={props.sections}
-              config={config}
-              props={props}
-              dark
-              compact
-              singleColumn
-            />
-          </div>
+          {heading}
+          <div className="mt-8">{menu}</div>
         </div>
-        <Image config={config} className="min-h-[360px] md:min-h-[420px]" />
+        {showcase('min-h-[360px] md:min-h-[420px]')}
       </div>
       <div className="mt-8">
-        <Footer config={config} />
+        <Footer config={config} props={props} />
       </div>
     </Shell>
   )
@@ -644,7 +778,7 @@ function BlushBloom({
         <Heading
           config={config}
           eyebrow={hero?.eyebrow}
-          title={hero?.title || 'Price List'}
+          title={heroCopy(props).title}
           body={hero?.body}
           align="center"
         />
@@ -687,8 +821,8 @@ function Nova({ props, config }: { props: DesignProps; config: PencilConfig }) {
       <div className="mx-auto w-full min-w-0 max-w-[560px]">
         <Heading
           config={config}
-          eyebrow={hero?.eyebrow || 'SERVICES & PACKAGES'}
-          title={hero?.title || 'PRICE LIST'}
+          eyebrow={heroCopy(props).eyebrow}
+          title={heroCopy(props).title}
           body={hero?.body}
           align="center"
         />
@@ -777,31 +911,34 @@ function Beardy({
             <Heading
               config={{ ...config, ink: '#FFFFFF', muted: '#BDBDBD' }}
               eyebrow={hero?.eyebrow}
-              title="BEARDY"
-              body={hero?.body}
+              title={props.tenant.name}
               align="center"
               large
             />
-            <p
-              className="mt-5 text-center text-[10px] uppercase tracking-[3px] sm:text-[11px]"
-              style={{ color: '#BDBDBD', fontFamily: MONO }}
-            >
-              Beauty studio
-            </p>
           </div>
+          {/* The cover used to print another studio: "BEARDY / Beauty studio /
+              Cut, colour and craft… / Cut · Colour · Craft". Same shape, filled
+              with the shop's description and its own first sections. */}
           <div className="mx-auto max-w-[24ch] text-center">
-            <p
-              className="text-[14px] italic leading-relaxed sm:text-[16px]"
-              style={{ color: '#D6D1CA', fontFamily: SERIF }}
-            >
-              Cut, colour and craft for the considered everyday.
-            </p>
-            <p
-              className="mt-8 text-[10px] uppercase tracking-[2px] sm:text-[11px]"
-              style={{ color: '#FFFFFF', fontFamily: MONO }}
-            >
-              Cut · Colour · Craft
-            </p>
+            {props.tenant.description && (
+              <p
+                className="text-[14px] italic leading-relaxed sm:text-[16px]"
+                style={{ color: '#D6D1CA', fontFamily: SERIF }}
+              >
+                {props.tenant.description}
+              </p>
+            )}
+            {props.sections.length > 0 && (
+              <p
+                className="mt-8 text-[10px] uppercase tracking-[2px] sm:text-[11px]"
+                style={{ color: '#FFFFFF', fontFamily: MONO }}
+              >
+                {props.sections
+                  .slice(0, 3)
+                  .map((section) => section.name)
+                  .join(' · ')}
+              </p>
+            )}
           </div>
         </div>
         <div
@@ -810,8 +947,8 @@ function Beardy({
         >
           <Heading
             config={{ ...config, ink: '#171313', muted: '#6C655D' }}
-            eyebrow="BEARDY BEAUTY STUDIO"
-            title={hero?.title || 'SERVICES LIST'}
+            eyebrow={props.tenant.name}
+            title={heroCopy(props).title}
             body={hero?.body}
             align="center"
             large
@@ -829,9 +966,9 @@ function Beardy({
           <Footer
             config={{
               ...config,
-              footerLeft: 'BEARDY BEAUTY STUDIO',
-              footerRight: props.monthYear,
+              footerRight: config.footerRight || props.monthYear,
             }}
+            props={props}
           />
         </div>
       </div>
@@ -858,8 +995,8 @@ function CalmSpa({
       >
         <Heading
           config={config}
-          eyebrow={hero?.eyebrow || 'THE CALM SPA'}
-          title={hero?.title || 'PRICE LIST'}
+          eyebrow={heroCopy(props).eyebrow}
+          title={heroCopy(props).title}
           body={hero?.body}
         />
         <Rows
@@ -906,8 +1043,8 @@ function UnionBarber({
         >
           <Heading
             config={{ ...config, ink: '#FFFFFF', muted: '#FFFFFF' }}
-            eyebrow={hero?.eyebrow}
-            title={hero?.title || "UNION'S Barber Shop"}
+            eyebrow={heroCopy(props).eyebrow}
+            title={heroCopy(props).title}
             body={hero?.body}
           />
         </div>
@@ -950,7 +1087,7 @@ function StudioMono({
       <Heading
         config={config}
         eyebrow={hero?.eyebrow}
-        title={hero?.title || 'PRICE LIST'}
+        title={heroCopy(props).title}
         body={hero?.body}
         align="center"
       />
@@ -1015,7 +1152,7 @@ function BeautyIssue({
           <Heading
             config={{ ...config, ink: '#FFFFFF', muted: '#BDB6B0' }}
             eyebrow={hero?.eyebrow}
-            title={hero?.title || 'The Beauty Issue'}
+            title={heroCopy(props).title}
             body={hero?.body}
           />
           <span
@@ -1061,8 +1198,8 @@ function ObsidianQuarterly({
         <div className="min-w-0 p-6 sm:p-10">
           <Heading
             config={config}
-            eyebrow={hero?.eyebrow || 'OBSIDIAN QUARTERLY · DETAILING'}
-            title={hero?.title || 'Care for the drive.'}
+            eyebrow={heroCopy(props).eyebrow}
+            title={heroCopy(props).title}
             body={hero?.body}
           />
           <div className="mt-8">
@@ -1078,7 +1215,7 @@ function ObsidianQuarterly({
         </div>
       </div>
       <div className="mx-auto mt-8 w-full min-w-0 max-w-[900px]">
-        <Footer config={config} />
+        <Footer config={config} props={props} />
       </div>
     </div>
   )

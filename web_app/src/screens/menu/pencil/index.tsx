@@ -4,7 +4,9 @@ import { CartControl, type DesignProps, type Section } from '../designs'
 import type { ListContent, ListDesign } from '../../../types'
 import { SpecialPencilList } from '../pencilSpecialDesigns'
 import { PencilActionBar } from '../pencilActions'
-import { useIsDesktop, useMediaQuery } from '../../../hooks/useMediaQuery'
+import { useIsDesktop } from '../../../hooks/useMediaQuery'
+import { footerLines, pencilPrice } from './copy'
+import { PoweredByMark, ProductShowcase, ShopLogo } from './shared'
 import { PENCIL_TEMPLATE_CONFIG } from './templates'
 import { isPencilVariant, type PencilVariant } from './variants'
 
@@ -13,11 +15,16 @@ import { isPencilVariant, type PencilVariant } from './variants'
  * "Powered by MiPrecio" signature, so the page-level floating bar and closing
  * band both stand aside from `lg` up.
  */
+const COVER_LAYOUTS: ReadonlySet<PencilConfig['layout']> = new Set([
+  'left-image',
+  'auto-detail',
+])
+
 // eslint-disable-next-line react-refresh/only-export-components
 export function pencilHasDesktopCover(design: ListDesign): boolean {
   return (
     isPencilVariant(design) &&
-    PENCIL_TEMPLATE_CONFIG[design].layout === 'left-image'
+    COVER_LAYOUTS.has(PENCIL_TEMPLATE_CONFIG[design].layout)
   )
 }
 
@@ -179,13 +186,6 @@ const withTemplateOverrides = (
   }
 }
 
-const price = (value: string | number, prefix = '$') => {
-  const amount = typeof value === 'number' ? value : Number.parseFloat(value)
-  if (Number.isNaN(amount)) return '$—'
-  const display = amount.toFixed(2).replace(/\.00$/, '')
-  return prefix === '$' ? `$${display}` : `${prefix} ${display}`
-}
-
 function Rule({
   color,
   background,
@@ -319,17 +319,7 @@ function PencilImage({
   )
 }
 
-const SHOWCASE_INTERVAL_MS = 5000
-
-/**
- * The shop's own product photos, cycling on their own, each captioned with
- * the product's name and price. It stands where the template's stock photo
- * stood, and replaces the separate "Galería" page: the pictures now sell from
- * the page itself instead of from behind a tab.
- *
- * With no product photos it falls back to the template's image, so a shop
- * that has not uploaded any is not left with an empty frame.
- */
+/** The shared product showcase, in this template's colours and type. */
 function PencilShowcase({
   config,
   items,
@@ -339,82 +329,19 @@ function PencilShowcase({
   items: Section['items']
   className?: string
 }) {
-  const photos = items.filter((item) => item.imageUrl || item.imageThumbUrl)
-  const [index, setIndex] = useState(0)
-  const [paused, setPaused] = useState(false)
-  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
-  const count = photos.length
-
-  useEffect(() => {
-    if (count < 2 || paused || reduceMotion) return
-    const timer = window.setInterval(
-      () => setIndex((current) => (current + 1) % count),
-      SHOWCASE_INTERVAL_MS
-    )
-    return () => window.clearInterval(timer)
-  }, [count, paused, reduceMotion])
-
-  if (count === 0) return <PencilImage config={config} className={className} />
-  // The list can shrink under a running index (a filter, a refetch).
-  const active = index % count
-  const current = photos[active]
-
   return (
-    <div
-      className={`relative overflow-hidden ${className ?? ''}`}
-      role="region"
-      aria-roledescription="carrusel"
-      aria-label="Fotos de productos"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      {photos.map((photo, i) => (
-        <img
-          key={photo.id}
-          src={photo.imageUrl || photo.imageThumbUrl || ''}
-          alt={i === active ? photo.name : ''}
-          aria-hidden={i !== active}
-          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
-          style={{ opacity: i === active ? 1 : 0 }}
-        />
-      ))}
-      <div
-        className="absolute bottom-3 left-3 flex max-w-[calc(100%-1.5rem)] items-baseline gap-4 px-3 py-2"
-        style={{ background: `${config.background}e8`, color: config.ink }}
-        aria-live={paused ? 'polite' : 'off'}
-      >
-        <span
-          className="min-w-0 truncate text-[17px] italic leading-none sm:text-[18px]"
-          style={{ fontFamily: fontFor(config, 'heading') }}
-        >
-          {current.name}
-        </span>
-        <span
-          className="shrink-0 text-[13px] tabular-nums"
-          style={{ fontFamily: fontFor(config, 'label') }}
-        >
-          {price(current.price, config.priceFormat)}
-        </span>
-      </div>
-      {count > 1 && (
-        <div className="absolute bottom-4 right-4 flex gap-1.5">
-          {photos.map((photo, i) => (
-            <button
-              key={photo.id}
-              type="button"
-              onClick={() => setIndex(i)}
-              aria-label={`Ver ${photo.name}`}
-              aria-current={i === active}
-              className="h-1.5 rounded-full transition-all"
-              style={{
-                width: i === active ? 18 : 6,
-                background: i === active ? '#FFFFFF' : '#FFFFFF80',
-              }}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+    <ProductShowcase
+      items={items}
+      caption={{
+        background: config.background,
+        ink: config.ink,
+        headingFont: fontFor(config, 'heading'),
+        labelFont: fontFor(config, 'label'),
+      }}
+      priceFormat={config.priceFormat}
+      className={className}
+      fallback={<PencilImage config={config} className={className} />}
+    />
   )
 }
 
@@ -552,7 +479,7 @@ function PencilItem({
       className="text-right text-[14px] tabular-nums sm:text-[15px]"
       style={{ color: color.ink, fontFamily: fontFor(color, 'label') }}
     >
-      {price(item.price, color.priceFormat)}
+      {pencilPrice(item.price, color.priceFormat)}
     </span>
   )
   const cartControl = !props.isService && (
@@ -799,7 +726,7 @@ function PencilGallery({
                   className="text-[12px] tabular-nums"
                   style={{ fontFamily: fontFor(config, 'label') }}
                 >
-                  {price(item.price, config.priceFormat)}
+                  {pencilPrice(item.price, config.priceFormat)}
                 </span>
                 {(props.cart[item.id] ?? 0) > 0 ? (
                   <CartControl
@@ -865,19 +792,6 @@ function PencilPageNav({
   )
 }
 
-/**
- * The shop's own words win. With nothing authored we show the shop's real
- * details — never the sample address the template shipped with, which put a
- * street in Paris on the page of a café in Montevideo.
- */
-function footerLines(config: PencilConfig, props: DesignProps) {
-  return {
-    left: config.footerLeft || props.tenant.address || props.tenant.name,
-    right:
-      config.footerRight || props.t('pub.footer', { currency: props.currency }),
-  }
-}
-
 function PencilFooter({
   config,
   props,
@@ -931,39 +845,11 @@ function PencilShell({
 /**
  * MiPrecio's signature, set inside the cover rather than in the page-wide
  * band under it: on this layout the band would sit beneath a dark panel and a
- * light column at once and match neither. Same mark and mask as the band in
- * `MenuScreen`, in the panel's light ink.
+ * light column at once and match neither.
  */
 function CoverPoweredBy({ background }: { background: string }) {
   return (
-    <a
-      href="https://miprecio.app"
-      target="_blank"
-      rel="noreferrer"
-      aria-label="Powered by MiPrecio"
-      className="flex w-fit items-center gap-2 text-[9px] font-bold uppercase tracking-[0.12em] no-underline"
-      style={{ color: PANEL_MUTED }}
-    >
-      <span>Powered by</span>
-      <span
-        className="relative block h-6 w-[94px] overflow-hidden"
-        aria-hidden="true"
-      >
-        <span
-          className="absolute inset-0"
-          style={{
-            background: PANEL_INK,
-            WebkitMask:
-              "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
-            mask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
-          }}
-        />
-        <span
-          className="absolute bottom-0 left-[30%] right-0 h-[25%]"
-          style={{ background }}
-        />
-      </span>
-    </a>
+    <PoweredByMark ink={PANEL_INK} muted={PANEL_MUTED} background={background} />
   )
 }
 
@@ -1030,17 +916,13 @@ function PencilCoverSpread({
           className="min-h-0 flex-1"
         />
         <div className="flex flex-col gap-5 px-10 py-9 xl:px-14 xl:py-11">
-          <div className="flex items-center gap-4">
-            {tenant.logoUrl && (
-              <img
-                src={tenant.logoUrl}
-                alt={`Logo de ${tenant.name}`}
-                // The white tile is what keeps a dark-ink logo legible on the
-                // dark panel. It cannot rescue a logo with white lettering;
-                // that one needs a version made for light backgrounds.
-                className="h-14 w-14 shrink-0 rounded-xl bg-white object-contain p-1.5"
-              />
-            )}
+          <div className="flex flex-col items-start gap-4">
+            <ShopLogo
+              name={tenant.name}
+              logoUrl={tenant.logoUrl}
+              tile="h-16 w-16"
+              bare="h-14 max-w-[260px]"
+            />
             <h1
               className="min-w-0 break-words text-[40px] leading-[0.95] xl:text-[52px]"
               style={{

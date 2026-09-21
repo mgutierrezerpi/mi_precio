@@ -251,10 +251,10 @@ The picker offers `pickableListDesigns()` (`lib/listAppearance.ts`), not
 `LIST_DESIGNS` itself: designs in `HIDDEN_LIST_DESIGNS` are left out of new
 choices but stay valid everywhere else, and the one a list already uses is
 always listed so its selection still shows. Hiding never touches a live page.
-Today that set is eighteen Pencil editions, listed with their picker names in
+Today that set is nineteen Pencil editions, listed with their picker names in
 the source: three of the four "Maison Étoile" (only "Diario", `pencil-bakery`,
-is offered) and the whole of Northline, Wild Stem, Casa Férrea, Fromage & Co.
-and Parchment Cellar.
+is offered), the whole of Northline, Wild Stem, Casa Férrea, Fromage & Co. and
+Parchment Cellar, and Blush & Bloom.
 
 ### Server errors reach the panel as errors
 
@@ -358,6 +358,32 @@ template's picture. The cover's footer line uses `pub.pricesIn` rather than
 
 Tests run on happy-dom, whose window starts 1024px wide — so `lg` matches by
 default there. Tests that care about the layout pin `matchMedia` explicitly.
+
+#### Branded templates speak for the shop
+
+The special layouts in `pencilSpecialDesigns.tsx` used to fall back to their
+own sample copy whenever a list had no hero — "PRICE LIST", "THE CALM SPA",
+"CAR DETAILING", a whole "BEARDY" cover — so a café opened on another
+business's name, in English. `heroCopy(props)` (`pencil/copy.ts`) is the one
+fallback now: the list's name under the shop's, over the shop's description.
+The layout `Footer` goes through `footerLines` like the Pencil one. A test in
+`pencil/index.test.tsx` renders every branded template without a hero and
+fails on any of the old sample strings.
+
+Shared pieces live in `pencil/shared.tsx` (components: `ProductShowcase`,
+`PoweredByMark`, `ShopLogo`) and `pencil/copy.ts` (plain helpers), split so
+both stay fast-refresh friendly and so the special layouts can use them
+without importing `pencil/index.tsx`, which imports them.
+
+`ShopLogo` reads the logo before choosing its treatment (`useLogoInk`,
+`lib/logoInk.ts`): light ink on transparency goes straight onto a dark panel
+at its own shape; anything else, or a logo it cannot read, sits on the white
+tile. The tile used to be unconditional and swallowed white wordmarks whole.
+
+Obsidian · Auto Detail is the second cover layout (`pencilHasDesktopCover`):
+type, actions and menu on the left, a sticky product showcase on the right,
+set in heavy Inter over a slow ambient glow (`.pencil-glow` in `index.css`,
+transform-only, still under reduced motion).
 
 ### Leads
 
