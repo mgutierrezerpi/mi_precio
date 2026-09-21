@@ -251,8 +251,10 @@ The picker offers `pickableListDesigns()` (`lib/listAppearance.ts`), not
 `LIST_DESIGNS` itself: designs in `HIDDEN_LIST_DESIGNS` are left out of new
 choices but stay valid everywhere else, and the one a list already uses is
 always listed so its selection still shows. Hiding never touches a live page.
-Today that set is three of the four "Maison Étoile" editions (`pencil-garden`,
-`pencil-market`, `pencil-evening`); only "Diario" (`pencil-bakery`) is offered.
+Today that set is eighteen Pencil editions, listed with their picker names in
+the source: three of the four "Maison Étoile" (only "Diario", `pencil-bakery`,
+is offered) and the whole of Northline, Wild Stem, Casa Férrea, Fromage & Co.
+and Parchment Cellar.
 
 ### Server errors reach the panel as errors
 
