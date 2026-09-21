@@ -394,7 +394,10 @@ Three more templates rebuilt, each to be unlike the others:
 - **Nova Studio** used to be a teaser — `sections.slice(0, 4)` and, per card,
   three names and the *first* item's price and `+`. Every section and item now
   shows, in frosted cards over `AmbientSky` (fixed, drifting colour fields and
-  rising motes, `.pencil-sky` in `index.css`), darkened by its `veil`.
+  rising motes, `.pencil-sky` in `index.css`), darkened by its `veil`. The
+  page is a full-height flex column and its footer is `mt-auto`, so the
+  address line and the MiPrecio mark sit on the bottom edge even when the menu
+  is a couple of items long, instead of floating mid-screen under them.
 - **The Calm Spa** was one `rounded-[48%]` box that grew into an ellipse and
   cut its own rows off. Now soft-cornered panels over a pale moving sky, all
   Inter by weight, with a `story` variant of `ProductShowcase` (progress
