@@ -20,9 +20,13 @@ const CART_ROUNDED_VARIANTS = new Set<PencilVariant>([
   'pencil-calm-spa',
 ])
 
-const isSolidHex = (value: string) => /^#[\da-f]{6}$/i.test(value)
+/** Lists set wholly in Inter, by weight; their cart follows suit. */
+const ALL_SANS_VARIANTS = new Set<PencilVariant>(['pencil-calm-spa'])
+const SANS = 'Inter, system-ui, sans-serif'
 
-const hexLuminance = (value: string) => {
+const isSolidHex =(value: string) => /^#[\da-f]{6}$/i.test(value)
+
+export const hexLuminance = (value: string) => {
   if (!isSolidHex(value)) return 1
   const channels = [1, 3, 5].map(
     (offset) => Number.parseInt(value.slice(offset, offset + 2), 16) / 255
@@ -56,6 +60,15 @@ export function pencilCartThemeFor(
   const rounded = CART_ROUNDED_VARIANTS.has(variant)
   const radius = sharp ? '4px' : rounded ? '28px' : '14px'
   const controlRadius = sharp ? '2px' : rounded ? '16px' : '8px'
+  // Calm Spa's cards are dark but its page is pale yellow: the cards' cream
+  // ink laid straight on the page made the title and breadcrumb vanish.
+  const pageInk =
+    isDark && hexLuminance(config.background) > 0.5
+      ? isSolidHex(config.darkPanel) && hexLuminance(config.darkPanel) < 0.32
+        ? config.darkPanel
+        : '#1A1A1A'
+      : undefined
+  const allSans = ALL_SANS_VARIANTS.has(variant)
   const footerBg = config.darkPanel.startsWith('#')
     ? config.darkPanel
     : isDark
@@ -72,6 +85,8 @@ export function pencilCartThemeFor(
     ink: config.ink,
     body: config.muted,
     muted: config.muted,
+    pageInk,
+    pageMuted: pageInk && `${pageInk}B3`,
     footerBg,
     footerText: isDark ? '#D7D7D7' : config.muted,
     accent: config.accent,
@@ -81,8 +96,9 @@ export function pencilCartThemeFor(
     buttonRadius: sharp ? '2px' : rounded ? '999px' : '8px',
     barRadius: sharp ? '0px' : rounded ? '24px' : '12px',
     bodyFamily: 'Inter, system-ui, sans-serif',
-    headingFamily: '"Playfair Display", Georgia, serif',
-    labelFamily: '"IBM Plex Mono", "Courier New", monospace',
+    // An all-Inter list shouldn't open onto a serif-and-mono cart.
+    headingFamily: allSans ? SANS : '"Playfair Display", Georgia, serif',
+    labelFamily: allSans ? SANS : '"IBM Plex Mono", "Courier New", monospace',
     headingTracking: sharp ? '0.02em' : '-0.03em',
     cardShadow: sharp
       ? '0 12px 30px -20px rgba(0,0,0,0.5)'

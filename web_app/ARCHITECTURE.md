@@ -402,6 +402,16 @@ Three more templates rebuilt, each to be unlike the others:
   cut its own rows off. Now soft-cornered panels over a pale moving sky, all
   Inter by weight, with a `story` variant of `ProductShowcase` (progress
   segments, photo fading into the panel colour) so its carousel is its own.
+  Its cart (`pencilCartThemeFor`) has dark cards on the pale page, so the
+  theme carries `pageInk`/`pageMuted` for text laid straight on the page
+  (breadcrumb, title, empty state) — the cards' cream ink vanished there. The
+  cart is all Inter too (`ALL_SANS_VARIANTS`), not serif and mono.
+
+The cart's "Enviar pedido" button always wears the channel's colour — WhatsApp
+green, or Instagram's gradient — never the shop's accent, same as the ask
+button in `PencilActionBar`. **Auto Detail** paints its rows white only when
+its background is actually dark (`hexLuminance`): a list whose
+`content.template` brings a light ground keeps its own ink.
 - **Union Barber Shop** lives in `pencil/unionBarber.tsx`: a navy sign in
   Oswald (loaded on demand by `useWebFont`, not for every page), a featured
   service, a running red-white-blue ribbon, a marquee of work photos, category
