@@ -33,6 +33,10 @@ describe('pickableListDesigns', () => {
       'pencil-cheese-alternating',
       'pencil-wine',
       'pencil-blush-bloom',
+      'pencil-beardy',
+      'pencil-studio-mono',
+      'pencil-beauty-issue',
+      'pencil-obsidian-quarterly',
     ] as const)
       expect(offered).not.toContain(design)
     // Not part of any request: the base designs and the other Pencil ones stay.

@@ -74,6 +74,10 @@ export const HIDDEN_LIST_DESIGNS: ReadonlySet<ListDesign> = new Set([
   'pencil-wine', // Vinos
   // Standalone branded templates
   'pencil-blush-bloom', // Blush & Bloom
+  'pencil-beardy', // Beardy Beauty Studio
+  'pencil-studio-mono', // Studio Mono
+  'pencil-beauty-issue', // The Beauty Issue
+  'pencil-obsidian-quarterly', // Obsidian Quarterly
 ])
 
 /**
