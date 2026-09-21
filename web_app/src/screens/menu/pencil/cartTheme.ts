@@ -1,4 +1,4 @@
-import { cartThemeFor, type CartTheme } from '../designs'
+import { cartThemeFor, type CartTheme, type DesignProps } from '../designs'
 import { PENCIL_TEMPLATE_CONFIG } from './templates'
 import type { PencilConfig } from './index'
 import type { PencilVariant } from './variants'
@@ -21,10 +21,20 @@ const CART_ROUNDED_VARIANTS = new Set<PencilVariant>([
 ])
 
 /** Lists set wholly in Inter, by weight; their cart follows suit. */
-const ALL_SANS_VARIANTS = new Set<PencilVariant>(['pencil-calm-spa'])
+const ALL_SANS_VARIANTS = new Set<PencilVariant>([
+  'pencil-calm-spa',
+  'pencil-auto-detail',
+])
+/**
+ * Lists whose cart takes the list's own colours (`content.template`) rather
+ * than the template's stock palette, so it reads as the same page.
+ */
+const LIST_COLOR_VARIANTS = new Set<PencilVariant>(['pencil-auto-detail'])
+
+type ListTemplate = NonNullable<DesignProps['content']>['template']
 const SANS = 'Inter, system-ui, sans-serif'
 
-const isSolidHex =(value: string) => /^#[\da-f]{6}$/i.test(value)
+const isSolidHex = (value: string) => /^#[\da-f]{6}$/i.test(value)
 
 export const hexLuminance = (value: string) => {
   if (!isSolidHex(value)) return 1
@@ -45,17 +55,25 @@ const actionAccentFor = (config: PencilConfig) => {
   return config.ink
 }
 
-/** Build cart tokens from the same visual config used by each Pencil list. */
+/**
+ * Build cart tokens from the same visual config used by each Pencil list. For
+ * `LIST_COLOR_VARIANTS` that includes the list's own colours on top.
+ */
 export function pencilCartThemeFor(
-  variant: PencilVariant | 'pencil-journal'
+  variant: PencilVariant | 'pencil-journal',
+  template?: ListTemplate
 ): CartTheme {
   if (variant === 'pencil-journal') return cartThemeFor('pencil-journal')
-  const config = PENCIL_TEMPLATE_CONFIG[variant]
-  const isDark =
-    config.ink === '#FFFFFF' ||
-    config.background === '#050505' ||
-    variant === 'pencil-calm-spa' ||
-    variant === 'pencil-auto-detail'
+  const stock = PENCIL_TEMPLATE_CONFIG[variant]
+  const ownColors = LIST_COLOR_VARIANTS.has(variant)
+  const config = ownColors ? withListColors(stock, template) : stock
+  // Auto Detail's stock ground is black, but a shop's list may bring a pale
+  // one: judge the ground actually painted, or the cart turns black behind it.
+  const isDark = ownColors
+    ? hexLuminance(config.background) < 0.32
+    : config.ink === '#FFFFFF' ||
+      config.background === '#050505' ||
+      variant === 'pencil-calm-spa'
   const sharp = CART_SHARP_VARIANTS.has(variant)
   const rounded = CART_ROUNDED_VARIANTS.has(variant)
   const radius = sharp ? '4px' : rounded ? '28px' : '14px'
@@ -103,5 +121,21 @@ export function pencilCartThemeFor(
     cardShadow: sharp
       ? '0 12px 30px -20px rgba(0,0,0,0.5)'
       : '0 18px 50px -20px rgba(15,13,26,0.30)',
+  }
+}
+
+/** The colour half of the list's template overrides; copy stays with the list. */
+function withListColors(
+  config: PencilConfig,
+  template: ListTemplate
+): PencilConfig {
+  if (!template) return config
+  return {
+    ...config,
+    ...(template.backgroundColor ? { background: template.backgroundColor } : {}),
+    ...(template.textColor ? { ink: template.textColor } : {}),
+    ...(template.mutedColor ? { muted: template.mutedColor } : {}),
+    ...(template.accentColor ? { accent: template.accentColor } : {}),
+    ...(template.darkPanelColor ? { darkPanel: template.darkPanelColor } : {}),
   }
 }

@@ -576,7 +576,7 @@ export function MenuScreen() {
     design === 'pencil-journal'
       ? pencilCartThemeFor('pencil-journal')
       : isPencilVariant(design)
-        ? pencilCartThemeFor(design)
+        ? pencilCartThemeFor(design, content?.template)
         : cartThemeFor(design)
   const listAccent = content?.template?.accentColor || accent
   // The Pencil cart theme derives its borders from the template's own accent
