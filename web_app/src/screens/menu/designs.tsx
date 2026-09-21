@@ -250,6 +250,13 @@ export interface CartTheme {
   ink: string // headings
   body: string // body text
   muted: string // muted text
+  /**
+   * Text set straight on `bg` (breadcrumb, page title, empty state) rather
+   * than inside a card. Only differs from ink/muted when the cards and the
+   * page sit on opposite sides of light and dark.
+   */
+  pageInk?: string
+  pageMuted?: string
   footerBg: string
   footerText: string
   /** Optional template-specific visual tokens used by the cart surface. */

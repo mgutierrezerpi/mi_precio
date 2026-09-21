@@ -1930,6 +1930,9 @@ function CartView(p: CartProps) {
     borderRadius: T.controlRadius,
     fontFamily: T.bodyFamily,
   }
+  // Text laid straight on the page, not inside a card (see CartTheme.pageInk).
+  const pageInk = T.pageInk ?? T.ink
+  const pageMuted = T.pageMuted ?? T.muted
   const labelCls = 'text-[12px] font-bold'
   const cardCls = 'border p-5 md:p-7'
   const cardStyle = {
@@ -2014,12 +2017,12 @@ function CartView(p: CartProps) {
             type="button"
             onClick={onBack}
             className="text-[12px] font-medium hover:underline"
-            style={{ color: T.muted }}
+            style={{ color: pageMuted }}
           >
             {t('store.catalog')}
           </button>
-          <SIco name="chevron-right" size={14} color={T.muted} />
-          <span className="text-[12px] font-bold" style={{ color: T.body }}>
+          <SIco name="chevron-right" size={14} color={pageMuted} />
+          <span className="text-[12px] font-bold" style={{ color: pageInk }}>
             {t('store.yourCart')}
           </span>
         </div>
@@ -2037,10 +2040,10 @@ function CartView(p: CartProps) {
             <SIco name="shopping-cart" size={36} color={cartAccent} />
           </span>
           <div className="flex flex-col gap-1">
-            <p className="text-[20px] font-extrabold" style={{ color: T.ink }}>
+            <p className="text-[20px] font-extrabold" style={{ color: pageInk }}>
               {t('store.cartEmptyTitle')}
             </p>
-            <p className="text-[14px] font-medium" style={{ color: T.muted }}>
+            <p className="text-[14px] font-medium" style={{ color: pageMuted }}>
               {t('store.cartEmptySub')}
             </p>
           </div>
@@ -2064,7 +2067,7 @@ function CartView(p: CartProps) {
                 <h1
                   className="text-[28px] font-black md:text-[32px]"
                   style={{
-                    color: T.ink,
+                    color: pageInk,
                     fontFamily: T.headingFamily,
                     letterSpacing: T.headingTracking,
                   }}
@@ -2073,7 +2076,7 @@ function CartView(p: CartProps) {
                 </h1>
                 <p
                   className="text-[14px] font-medium"
-                  style={{ color: T.muted }}
+                  style={{ color: pageMuted }}
                 >
                   {t('store.cartReview')}
                 </p>
@@ -2353,6 +2356,8 @@ function CartView(p: CartProps) {
                         borderColor: T.line,
                         color: T.ink,
                         background: T.divider,
+                        borderRadius: T.controlRadius,
+                        fontFamily: T.bodyFamily,
                       }}
                     >
                       {t('store.cartPickup')}
@@ -2457,7 +2462,15 @@ function CartView(p: CartProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-14 items-center justify-center gap-2 text-[16px] font-extrabold text-white"
-                style={{ ...grad, borderRadius: T.buttonRadius }}
+                // The channel's own colour, not the shop's: it has to read as
+                // "this opens WhatsApp" on every design, like the ask button.
+                style={{
+                  background:
+                    checkoutChannel === 'instagram'
+                      ? 'linear-gradient(135deg, #833AB4, #E1306C, #FCAF45)'
+                      : '#25D366',
+                  borderRadius: T.buttonRadius,
+                }}
               >
                 <SIco name="message-circle" size={22} color="#fff" />{' '}
                 {checkoutChannel === 'instagram'

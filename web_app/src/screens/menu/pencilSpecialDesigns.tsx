@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { CartControl, type DesignProps, type Section } from './designs'
 import type { PencilConfig } from './pencil'
+import { hexLuminance } from './pencil/cartTheme'
 import { CafecitosTemplate } from './pencil/templates/cafecitos-layout'
 import { footerLines, heroCopy } from './pencil/copy'
 import {
@@ -710,7 +711,9 @@ function AutoDetail({
       sections={props.sections}
       config={config}
       props={props}
-      dark
+      // White rows only on the stock black ground. A list that brings its own
+      // light background (content.template) keeps its ink, or the items vanish.
+      dark={hexLuminance(config.background) < 0.32}
       compact
       singleColumn
       sans
