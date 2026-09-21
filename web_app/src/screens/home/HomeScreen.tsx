@@ -174,7 +174,7 @@ const steps = () => [
   [
     '3',
     landingText('Compartí con tus clientes', 'Share with your customers'),
-    landingText('Tus precios y stock siempre actualizados, sin reimprimir nada.', 'Keep prices and stock current without reprinting anything.'),
+    landingText('Tus precios siempre actualizados, sin reimprimir nada.', 'Keep prices current without reprinting anything.'),
   ],
 ]
 
@@ -195,7 +195,7 @@ const faqs = () => [
     landingText('Sí. Podés manejar listas por cliente, mayorista, minorista o canal de venta, cada una con sus precios.', 'Yes. Create lists by customer, wholesale, retail, or sales channel, each with its own prices.'),
   ],
   [
-    landingText('¿Cómo se actualizan los precios y el stock?', 'How do I update prices and stock?'),
+    landingText('¿Cómo se actualizan los precios?', 'How do I update prices?'),
     landingText('Actualizás desde tu panel y el cambio se refleja inmediatamente en el link y el QR que ya compartiste.', 'Update them in your dashboard and the shared link and QR code reflect the changes immediately.'),
   ],
   [
@@ -600,7 +600,7 @@ function Hero({ onAuth }: { onAuth: OpenAuth }) {
             {landingText('Tu catálogo online, listo para compartir.', 'Your online catalog, ready to share.')}
           </h1>
           <p className="max-w-xl text-lg leading-relaxed text-[#DDD6FE]">
-            {landingText('Cargá tus productos, controlá tu stock y compartí tu lista de precios con un link o un código QR. Sin planillas, sin PDFs desactualizados, sin complicarte.', 'Add products, manage stock, and share your price list with a link or QR code. No spreadsheets, outdated PDFs, or extra work.')}
+            {landingText('Cargá tus productos, armá tu lista de precios y compartila con un link o un código QR. Sin planillas, sin PDFs desactualizados, sin complicarte.', 'Add products, build your price list, and share it with a link or QR code. No spreadsheets, outdated PDFs, or extra work.')}
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -829,7 +829,7 @@ function ProductPreview() {
             {landingText('Tus clientes ven una lista profesional, siempre actualizada.', 'Your customers see a professional list that is always current.')}
           </h2>
           <p className="text-base leading-relaxed text-[#475569]">
-            {landingText('Compartí tu catálogo con un link o un QR y olvidate de mandar PDFs desactualizados por WhatsApp. Tus precios y tu stock siempre al día, vean de donde te vean.', 'Share your catalog with a link or QR code and stop sending outdated PDFs over WhatsApp. Your prices and stock stay current everywhere.')}
+            {landingText('Compartí tu catálogo con un link o un QR y olvidate de mandar PDFs desactualizados por WhatsApp. Tus precios siempre al día, vean de donde te vean.', 'Share your catalog with a link or QR code and stop sending outdated PDFs over WhatsApp. Your prices stay current everywhere.')}
           </p>
           <div className="mt-2 flex flex-col gap-3">
             {checks.map((item) => (
@@ -898,7 +898,7 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
         <SectionHead
           eyebrow={landingText('Precios', 'Pricing')}
           title={landingText('Planes simples para vender mejor.', 'Simple plans to help you sell better.')}
-          subtitle={landingText('Probá MiPrecio 14 días gratis antes de pagar. Sin tarjeta de crédito.', 'Try PricePanel free for 14 days before you pay. No credit card required.')}
+          subtitle={landingText('Probá MiPrecio 14 días gratis antes de pagar.', 'Try PricePanel free for 14 days before you pay.')}
         />
         <Reveal className="grid items-stretch gap-6 lg:grid-cols-3">
           {PLANS.map((plan) => {
@@ -1044,12 +1044,6 @@ function FinalCta({ onAuth }: { onAuth: OpenAuth }) {
           >
             {landingText('Probar 14 días gratis', 'Start 14-day free trial')} <ArrowRight size={18} />
           </button>
-          <a
-            href="mailto:hola@miprecio.app"
-            className="landing-final-secondary flex h-[52px] items-center rounded-[14px] border border-white/40 px-7 text-[15px] font-bold text-white hover:bg-white/10"
-          >
-            {landingText('Hablar con ventas', 'Talk to sales')}
-          </a>
         </div>
       </Reveal>
     </section>

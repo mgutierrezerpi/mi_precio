@@ -1,6 +1,7 @@
 """Tests for public context."""
 
 from lib.ctx import identity, items, lists, products, public, versions
+from tests.conftest import subscribed_tenant
 from views.price_list_view import PriceListView
 from views.public_tenant_view import PublicTenantView
 
@@ -68,7 +69,7 @@ def test_public_tenant_view_does_not_expose_marketplace_coordinates(db):
 
 
 def test_get_published_lists(db):
-    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant = subscribed_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
     items.create_item(created.version.id, name="Pizza", price=150.0)
     lists.update_list(created.price_list.id, published=True)
@@ -83,7 +84,7 @@ def test_get_published_lists(db):
 
 
 def test_get_published_lists_falls_back_to_product_image(db):
-    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant = subscribed_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
     items.create_item(created.version.id, name="Pizza", price=150.0)
     products.create_product(
@@ -103,7 +104,7 @@ def test_get_published_lists_falls_back_to_product_image(db):
 
 
 def test_get_published_lists_uses_global_product_image(db):
-    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant = subscribed_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
     items.create_item(
         created.version.id, name="Pizza", price=150.0, image_url="http://img/item.jpg"
@@ -120,7 +121,7 @@ def test_get_published_lists_uses_global_product_image(db):
 
 
 def test_get_published_lists_excludes_unavailable_catalog_items(db):
-    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant = subscribed_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
     unavailable = products.create_product(
         tenant.id, name="Pizza", price=150.0, available=False
@@ -142,7 +143,7 @@ def test_get_published_lists_excludes_unavailable_catalog_items(db):
 
 
 def test_get_published_lists_excludes_legacy_items_by_unavailable_product_name(db):
-    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant = subscribed_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
     products.create_product(tenant.id, name="Pizza", price=150.0, available=False)
     items.create_item(created.version.id, name="Pizza", price=150.0)
@@ -155,7 +156,7 @@ def test_get_published_lists_excludes_legacy_items_by_unavailable_product_name(d
 
 
 def test_get_published_lists_uses_global_product_images(db):
-    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant = subscribed_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
     items.create_item(
         created.version.id, name="Pizza", price=150.0, image_url="http://img/item.webp"
@@ -177,7 +178,7 @@ def test_get_published_lists_uses_global_product_images(db):
 
 
 def test_get_published_lists_excludes_unpublished(db):
-    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant = subscribed_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
     items.create_item(created.version.id, name="Pizza", price=150.0)
 

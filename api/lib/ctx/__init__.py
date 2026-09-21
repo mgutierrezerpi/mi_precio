@@ -8,6 +8,7 @@ from lib.ctx import categories_context as categories
 from lib.ctx import customers_context as customers
 from lib.ctx import feature_flags_context as feature_flags
 from lib.ctx import identity_context as identity
+from lib.ctx import identity_presence as presence
 from lib.ctx import items_context as items
 from lib.ctx import leads_context as leads
 from lib.ctx import linktrees_context as linktrees
@@ -24,6 +25,7 @@ from lib.ctx import versions_context as versions
 
 # Explicit re-exports
 identity = identity
+presence = presence
 auth = auth
 lists = lists
 versions = versions

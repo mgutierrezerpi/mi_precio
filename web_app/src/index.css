@@ -1213,17 +1213,6 @@ a {
   box-shadow: 0 14px 28px -12px rgb(108 67 232 / 85%);
 }
 
-.landing-page .landing-final-secondary {
-  border-color: var(--dash-soft-border) !important;
-  background: var(--dash-soft) !important;
-  color: #fff !important;
-}
-
-.landing-page .landing-final-secondary:hover {
-  border-color: var(--dash-link) !important;
-  background: var(--dash-sidebar-active) !important;
-}
-
 .landing-list-preview {
   container-type: inline-size;
   box-shadow: 0 24px 54px -32px rgb(0 0 0 / 85%);

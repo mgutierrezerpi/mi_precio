@@ -560,7 +560,7 @@ export function UserMenu() {
 
       <div
         role="menu"
-        className={`absolute right-0 top-[calc(100%+8px)] z-50 w-64 origin-top-right rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-2.5 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.3)] transition-all duration-200 ease-out ${open ? 'scale-100 opacity-100 translate-y-0' : 'pointer-events-none -translate-y-1 scale-95 opacity-0'}`}
+        className={`absolute right-0 top-[calc(100%+8px)] z-50 max-h-[calc(100dvh-5rem)] w-64 origin-top-right overflow-y-auto overscroll-contain rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-2.5 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.3)] transition-all duration-200 ease-out ${open ? 'scale-100 opacity-100 translate-y-0' : 'pointer-events-none -translate-y-1 scale-95 opacity-0'}`}
       >
         <UserMenuAccount
           initials={initials}
@@ -727,7 +727,7 @@ function TenantSwitcher({
       <p className="px-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-wide text-[var(--dash-muted)]">
         Mis negocios
       </p>
-      <div className="flex flex-col gap-0.5">
+      <div className="flex max-h-64 flex-col gap-0.5 overflow-y-auto overscroll-contain pr-1">
         {tenants.map((tenant) => (
           <button
             key={tenant.id}

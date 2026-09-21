@@ -5,10 +5,18 @@ on:
   pull_request:
     branches:
       - main
+  # Also on push, because a commit that lands on main without a pull request
+  # used to reach production untested: only Deploy runs on push, and Deploy
+  # runs no tests. Three such commits broke the backend suite unnoticed.
+  push:
+    branches:
+      - main
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseded pull-request runs are noise, but every commit on main has to be
+  # judged on its own — cancelling one hides whether main was ever green.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read

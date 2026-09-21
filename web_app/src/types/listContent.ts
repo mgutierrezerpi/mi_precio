@@ -27,6 +27,12 @@ export interface ListContent {
     checkoutChannel?: 'whatsapp' | 'instagram'
     instagramHandle?: string
     priceFormat?: '$' | 'U$D' | 'USD'
+    dividerIcon?: 'coffee' | 'flower' | 'leaf' | 'none'
+    backgroundColor?: string
+    textColor?: string
+    mutedColor?: string
+    accentColor?: string
+    darkPanelColor?: string
     image?: string
     /** Optional identity and story media for the stories-style collaboration template. */
     logo?: string
@@ -37,6 +43,11 @@ export interface ListContent {
     filmImages?: string[]
     collaborationHeading?: string
     storiesHeading?: string
+    /** Visible template chrome used by layouts with authored mastheads/editions. */
+    masthead?: string
+    brandLabel?: string
+    editionLabel?: string
+    uncategorizedLabel?: string
     imageLabel?: string
     imageTitle?: string
     promoEyebrow?: string

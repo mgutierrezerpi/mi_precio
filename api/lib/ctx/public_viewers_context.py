@@ -8,6 +8,7 @@ import hmac
 
 from lib.ctx.public_viewer_management import (
     anonymous_dismissal_count,  # noqa: F401
+    delete_viewer,  # noqa: F401
     list_viewers,  # noqa: F401
     record_anonymous_dismissal,  # noqa: F401
 )

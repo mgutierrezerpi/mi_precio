@@ -91,6 +91,16 @@ export const DICT_LIST_WIZARD: Record<string, TranslationEntry> = {
   en: 'Uncategorized',
   pt: 'Sem categoria',
 },
+'pl.priceInList': {
+  es: 'Precio de {name} en esta lista',
+  en: 'Price of {name} in this list',
+  pt: 'Preço de {name} nesta lista',
+},
+'pl.priceOverrideHint': {
+  es: 'Precio propio de esta lista, distinto al del catálogo.',
+  en: "This list's own price, different from the catalog one.",
+  pt: 'Preço próprio desta lista, diferente do catálogo.',
+},
 'pl.selected': {
   es: '{count} seleccionado',
   en: '{count} selected',
