@@ -7,7 +7,7 @@ export const pencilHardwareShelf = defineSpecialTemplate({
   accent: '#809589',
   darkPanel: '#20322C',
   image: pencilImages.workshop,
-  imageLabel: 'NORTHLINE HARDWARE · OBJECTS FOR WORK',
-  imageTitle: 'the workshop shelf',
+  imageLabel: 'PARA EL TRABAJO',
+  imageTitle: 'el estante del taller',
   layout: 'hardware-shelf',
 })

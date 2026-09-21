@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { DesignProps } from '../designs'
+import { getT } from '../../../lib/i18n'
 import { PencilList, pencilTemplateDefaults } from './index'
 import { pencilCartThemeFor } from './cartTheme'
 import type { PencilVariant } from './variants'
@@ -72,6 +73,10 @@ const props = {
   },
   listName: 'Demo price list',
   monthYear: 'AUG 2026',
+  // The footer falls back to the shop's real details, so it needs the same
+  // translator and currency every real caller passes.
+  t: getT('es'),
+  currency: 'UYU',
 } as unknown as DesignProps
 
 describe('Pencil price-list templates', () => {

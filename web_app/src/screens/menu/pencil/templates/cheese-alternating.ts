@@ -6,7 +6,7 @@ export const pencilCheeseAlternating = defineSpecialTemplate({
   muted: '#7A695C',
   accent: '#B67C55',
   image: '/pencil/templates/UED6s.png',
-  imageLabel: 'FROMAGE & CO. · THE DAILY EDIT',
-  imageTitle: 'a few good pieces',
+  imageLabel: 'SELECCIÓN DEL DÍA',
+  imageTitle: 'unas pocas piezas buenas',
   layout: 'alternating',
 })

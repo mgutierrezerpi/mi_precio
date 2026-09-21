@@ -131,9 +131,7 @@ const withTemplateOverrides = (
     ...(template.footerRight !== undefined
       ? { footerRight: template.footerRight }
       : {}),
-    ...(template.masthead !== undefined
-      ? { masthead: template.masthead }
-      : {}),
+    ...(template.masthead !== undefined ? { masthead: template.masthead } : {}),
     ...(template.brandLabel !== undefined
       ? { brandLabel: template.brandLabel }
       : {}),
@@ -223,12 +221,17 @@ function Masthead({
   color: PencilConfig
   logoUrl?: string | null
   brandName: string
-  align?: 'left' | 'center'
+  /** `rail` is the desktop spread: centered on a phone, left in the side rail. */
+  align?: 'left' | 'center' | 'rail'
 }) {
+  const alignment =
+    align === 'center'
+      ? 'items-center text-center'
+      : align === 'left'
+        ? 'items-start text-left'
+        : 'items-center text-center lg:items-start lg:text-left'
   return (
-    <header
-      className={`flex flex-col gap-1 ${align === 'center' ? 'items-center text-center' : 'items-start text-left'}`}
-    >
+    <header className={`flex flex-col gap-1 ${alignment}`}>
       {logoUrl && (
         <img
           src={logoUrl}
@@ -246,7 +249,7 @@ function Masthead({
         </p>
       )}
       <h1
-        className="max-w-full break-words text-balance text-[44px] leading-none sm:text-[60px]"
+        className={`max-w-full break-words text-balance text-[44px] leading-none sm:text-[60px] ${align === 'rail' ? 'lg:text-[46px]' : ''}`}
         style={{
           color: color.ink,
           fontFamily: fontFor(color, 'heading'),
@@ -279,28 +282,44 @@ function PencilImage({
       className={`relative overflow-hidden bg-cover bg-center ${className ?? ''}`}
       style={{ backgroundImage: `url("${config.image}")` }}
     >
-      <div
-        className="absolute bottom-3 left-3 flex flex-col gap-0.5 px-3 py-2"
-        style={{ background: `${config.background}e8`, color: config.ink }}
-      >
-        <span
-          className="text-[9px] uppercase tracking-[1.6px] sm:text-[10px]"
-          style={{ fontFamily: fontFor(config, 'label') }}
+      {(config.imageLabel || config.imageTitle) && (
+        <div
+          className="absolute bottom-3 left-3 flex flex-col gap-0.5 px-3 py-2"
+          style={{ background: `${config.background}e8`, color: config.ink }}
         >
-          {config.imageLabel}
-        </span>
-        <span
-          className="text-[17px] italic leading-none sm:text-[18px]"
-          style={{ fontFamily: fontFor(config, 'heading') }}
-        >
-          {config.imageTitle}
-        </span>
-      </div>
+          {config.imageLabel && (
+            <span
+              className="text-[9px] uppercase tracking-[1.6px] sm:text-[10px]"
+              style={{ fontFamily: fontFor(config, 'label') }}
+            >
+              {config.imageLabel}
+            </span>
+          )}
+          {config.imageTitle && (
+            <span
+              className="text-[17px] italic leading-none sm:text-[18px]"
+              style={{ fontFamily: fontFor(config, 'heading') }}
+            >
+              {config.imageTitle}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 function PencilPromo({ config }: { config: PencilConfig }) {
+  // The panel advertises an offer at a price. With nothing authored it used to
+  // fall back to the template's sample combo, so a shop that never opened the
+  // editor published a product it does not sell. Better to show nothing.
+  const authored =
+    config.promoEyebrow ||
+    config.promoTitle ||
+    config.promoBody ||
+    config.promoPrice ||
+    config.promoNote
+  if (!authored) return null
   return (
     <aside
       className="flex min-h-[190px] min-w-0 w-full flex-col justify-between p-5 sm:p-8"
@@ -353,9 +372,9 @@ function PencilItem({
   color: PencilConfig
   props: DesignProps
 }) {
-  const galleryItems = (props.allItems || props.sections.flatMap((section) => section.items)).filter(
-    (candidate) => candidate.imageUrl || candidate.imageThumbUrl
-  )
+  const galleryItems = (
+    props.allItems || props.sections.flatMap((section) => section.items)
+  ).filter((candidate) => candidate.imageUrl || candidate.imageThumbUrl)
   const itemImageIndex = galleryItems.findIndex(
     (candidate) => candidate.id === item.id
   )
@@ -438,66 +457,73 @@ function PencilItem({
             className="pointer-events-none absolute bottom-full left-0 z-20 mb-3 hidden w-52 overflow-hidden rounded-sm border-4 bg-white p-1 opacity-0 shadow-2xl transition-opacity group-hover:opacity-100 md:block"
             style={{ borderColor: color.background }}
           >
-            <img src={image} alt="" className="aspect-[4/3] w-full object-cover" />
+            <img
+              src={image}
+              alt=""
+              className="aspect-[4/3] w-full object-cover"
+            />
           </div>
-          {activeImage && createPortal(
-            <div
-              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-5"
-              role="dialog"
-              aria-modal="true"
-              aria-label={`Foto de ${activeImage.name}`}
-              onClick={() => setImageIndex(null)}
-            >
-              <button
-                type="button"
-                className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-2xl text-black shadow-lg"
+          {activeImage &&
+            createPortal(
+              <div
+                className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-5"
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Foto de ${activeImage.name}`}
                 onClick={() => setImageIndex(null)}
-                aria-label="Cerrar foto"
               >
-                ×
-              </button>
-              {galleryItems.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    className="absolute left-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg sm:left-6"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      moveImage(-1)
-                    }}
-                    aria-label="Foto anterior"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg sm:right-6"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      moveImage(1)
-                    }}
-                    aria-label="Foto siguiente"
-                  >
-                    ›
-                  </button>
-                </>
-              )}
-              <figure
-                className="max-w-3xl"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <img
-                  src={activeImage.imageUrl || activeImage.imageThumbUrl || ''}
-                  alt={activeImage.name}
-                  className="max-h-[78vh] w-auto rounded-sm object-contain shadow-2xl"
-                />
-                <figcaption className="bg-white px-4 py-3 text-center text-sm font-semibold text-black">
-                  {activeImage.name}
-                </figcaption>
-              </figure>
-            </div>,
-            document.body
-          )}
+                <button
+                  type="button"
+                  className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-2xl text-black shadow-lg"
+                  onClick={() => setImageIndex(null)}
+                  aria-label="Cerrar foto"
+                >
+                  ×
+                </button>
+                {galleryItems.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="absolute left-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg sm:left-6"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        moveImage(-1)
+                      }}
+                      aria-label="Foto anterior"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg sm:right-6"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        moveImage(1)
+                      }}
+                      aria-label="Foto siguiente"
+                    >
+                      ›
+                    </button>
+                  </>
+                )}
+                <figure
+                  className="max-w-3xl"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <img
+                    src={
+                      activeImage.imageUrl || activeImage.imageThumbUrl || ''
+                    }
+                    alt={activeImage.name}
+                    className="max-h-[78vh] w-auto rounded-sm object-contain shadow-2xl"
+                  />
+                  <figcaption className="bg-white px-4 py-3 text-center text-sm font-semibold text-black">
+                    {activeImage.name}
+                  </figcaption>
+                </figure>
+              </div>,
+              document.body
+            )}
         </>
       )}
     </div>
@@ -652,29 +678,44 @@ function PencilPageNav({
 }) {
   return (
     <nav className="mb-7 flex gap-2" aria-label="Páginas de la lista">
-      {([['catalog', 'Productos'], ['gallery', 'Galería']] as const).map(
-        ([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setPage(value)}
-            className="border px-4 py-2 text-[10px] font-semibold uppercase tracking-[1.3px] transition"
-            style={{
-              borderColor: config.accent,
-              background: page === value ? config.accent : 'transparent',
-              color: page === value ? config.background : config.ink,
-              fontFamily: fontFor(config, 'label'),
-            }}
-          >
-            {label}
-          </button>
-        )
-      )}
+      {(
+        [
+          ['catalog', 'Productos'],
+          ['gallery', 'Galería'],
+        ] as const
+      ).map(([value, label]) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setPage(value)}
+          className="border px-4 py-2 text-[10px] font-semibold uppercase tracking-[1.3px] transition"
+          style={{
+            borderColor: config.accent,
+            background: page === value ? config.accent : 'transparent',
+            color: page === value ? config.background : config.ink,
+            fontFamily: fontFor(config, 'label'),
+          }}
+        >
+          {label}
+        </button>
+      ))}
     </nav>
   )
 }
 
-function PencilFooter({ config }: { config: PencilConfig }) {
+function PencilFooter({
+  config,
+  props,
+}: {
+  config: PencilConfig
+  props: DesignProps
+}) {
+  // The shop's own words win. With nothing authored we show the shop's real
+  // details — never the sample address the template shipped with, which put a
+  // street in Paris on the page of a café in Montevideo.
+  const left = config.footerLeft || props.tenant.address || props.tenant.name
+  const right =
+    config.footerRight || props.t('pub.footer', { currency: props.currency })
   return (
     <footer
       className="flex min-w-0 flex-col gap-2 border-t pt-5 sm:flex-row sm:items-center sm:justify-between"
@@ -684,13 +725,13 @@ function PencilFooter({ config }: { config: PencilConfig }) {
         className="break-words text-[10px] uppercase tracking-[1.5px] sm:text-[11px]"
         style={{ color: config.muted, fontFamily: fontFor(config, 'label') }}
       >
-        {config.footerLeft}
+        {left}
       </span>
       <span
         className="break-words text-[10px] uppercase tracking-[1.5px] sm:text-right sm:text-[11px]"
         style={{ color: config.accent, fontFamily: fontFor(config, 'label') }}
       >
-        {config.footerRight}
+        {right}
       </span>
     </footer>
   )
@@ -699,9 +740,16 @@ function PencilFooter({ config }: { config: PencilConfig }) {
 function PencilShell({
   config,
   children,
+  /**
+   * Opens the measure up for layouts that lay out as a desktop spread. The
+   * default 920px is a phone column stretched onto a monitor: on a 1900px
+   * screen it leaves roughly 490px dead on either side.
+   */
+  wide = false,
 }: {
   config: PencilConfig
   children: React.ReactNode
+  wide?: boolean
 }) {
   const style: CSSProperties = {
     background: config.background,
@@ -710,7 +758,13 @@ function PencilShell({
   }
   return (
     <div className="min-h-0 w-full min-w-0 overflow-x-clip" style={style}>
-      <div className="mx-auto flex min-w-0 w-full max-w-[920px] flex-col px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
+      <div
+        className={`mx-auto flex min-w-0 w-full flex-col px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 ${
+          wide
+            ? 'max-w-[920px] lg:max-w-[1180px] xl:max-w-[1360px]'
+            : 'max-w-[920px]'
+        }`}
+      >
         {children}
       </div>
     </div>
@@ -754,37 +808,66 @@ export function PencilList({
       <Rule
         color={config.accent}
         background={config.background}
-        icon={config.dividerIcon ?? (variant === 'pencil-flower-summer' ? 'flower' : 'coffee')}
+        icon={
+          config.dividerIcon ??
+          (variant === 'pencil-flower-summer' ? 'flower' : 'coffee')
+        }
       />
     </>
   )
   const pageNav = galleryItems.length > 0 && (
     <PencilPageNav page={page} setPage={setPage} config={config} />
   )
-  const catalog = page === 'gallery' ? (
-    <PencilGallery items={galleryItems} config={config} props={props} />
-  ) : (
-    <PencilCatalog
-      sections={props.sections}
-      config={config}
-      props={props}
-      fullWidth={variant === 'pencil-flower-winter'}
-    />
-  )
+  const catalog =
+    page === 'gallery' ? (
+      <PencilGallery items={galleryItems} config={config} props={props} />
+    ) : (
+      <PencilCatalog
+        sections={props.sections}
+        config={config}
+        props={props}
+        fullWidth={variant === 'pencil-flower-winter'}
+      />
+    )
   const promo = <PencilPromo config={config} />
 
   if (layout === 'left-image') {
     return (
-      <PencilShell config={config}>
-        {masthead}
-        {pageNav}
-        {catalog}
-        <div className="mt-10 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
-          <PencilImage config={config} className="min-h-[220px]" />
-          {promo}
-        </div>
-        <div className="mt-8">
-          <PencilFooter config={config} />
+      <PencilShell config={config} wide>
+        {/*
+          Phones keep the single column, in source order. From `lg` the very
+          same nodes re-place themselves as a desktop spread: the shop's
+          identity, picture, offer and details hold a left rail, and the menu
+          itself — the thing people came to read — takes the wide side.
+        */}
+        <div className="flex flex-col lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-x-12 xl:grid-cols-[400px_minmax(0,1fr)] xl:gap-x-16">
+          <div className="lg:col-start-1 lg:row-start-1">
+            <Masthead
+              eyebrow={eyebrow}
+              title={title}
+              body={body}
+              color={config}
+              logoUrl={props.tenant.logoUrl}
+              brandName={props.tenant.name}
+              align="rail"
+            />
+            <Rule
+              color={config.accent}
+              background={config.background}
+              icon={config.dividerIcon ?? 'coffee'}
+            />
+          </div>
+          <div className="lg:col-start-2 lg:row-start-1">{pageNav}</div>
+          <div className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-2">
+            {catalog}
+          </div>
+          <div className="mt-10 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:col-start-1 lg:row-start-2 lg:mt-0 lg:grid-cols-1 lg:gap-6">
+            <PencilImage config={config} className="min-h-[220px]" />
+            {promo}
+          </div>
+          <div className="mt-8 lg:col-start-1 lg:row-start-3">
+            <PencilFooter config={config} props={props} />
+          </div>
         </div>
       </PencilShell>
     )
@@ -808,7 +891,10 @@ export function PencilList({
         <Rule
           color={config.accent}
           background={config.background}
-          icon={config.dividerIcon ?? (variant === 'pencil-flower-summer' ? 'flower' : 'coffee')}
+          icon={
+            config.dividerIcon ??
+            (variant === 'pencil-flower-summer' ? 'flower' : 'coffee')
+          }
         />
         {pageNav}
         <div className="grid min-w-0 grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_268px] md:items-start">
@@ -816,7 +902,7 @@ export function PencilList({
           {promo}
         </div>
         <div className="mt-8">
-          <PencilFooter config={config} />
+          <PencilFooter config={config} props={props} />
         </div>
       </PencilShell>
     )
@@ -833,7 +919,7 @@ export function PencilList({
           <PencilImage config={config} className="h-[96px]" />
         </div>
         <div className="mt-8">
-          <PencilFooter config={config} />
+          <PencilFooter config={config} props={props} />
         </div>
       </PencilShell>
     )
@@ -850,7 +936,7 @@ export function PencilList({
       {catalog}
       <div className="mt-8">{promo}</div>
       <div className="mt-8">
-        <PencilFooter config={config} />
+        <PencilFooter config={config} props={props} />
       </div>
     </PencilShell>
   )

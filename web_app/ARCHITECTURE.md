@@ -278,6 +278,31 @@ details on the left and the icons on the right, while the three editorial
 templates (`classic`, `nordic`, `fine`) and the cart keep everything centred,
 because centring is what those designs are.
 
+#### The MiPrecio bar under the footer
+
+The bar that closes a public list has to sit on the same surface as whatever
+ends above it, or it reads as a stray band. `listBarSurface()` in `designs.tsx`
+is the single answer, in three layers: the footer's own band (`store`,
+`modern`, and `catalog`, which tints with the hero), else the design root's
+surface (`DESIGN_SURFACES`), else the page background for `classic` and any
+design that paints neither. It returns `{ base, texture }` — `base` for the
+contrast maths behind the bar's ink, `texture` so a patterned surface such as
+`nordic`'s paper grain carries through instead of stopping at the seam. The
+design roots read their colour from the same `DESIGN_SURFACES` map, so the two
+cannot drift apart.
+
+### Pencil templates: defaults are not sample data
+
+The Pencil layouts take their copy from `pencil/templates/*.ts`, overridden per
+list by `content.template`. Those defaults render **live on a shop's public
+page** when nobody opens the editor, so they may not assert anything that is
+not true: no invented addresses, no offers at prices the shop does not charge,
+no other business's name. `PencilPromo` returns `null` when nothing is
+authored, `PencilFooter` falls back to the shop's own `tenant.address` and the
+standard `pub.footer` line, and `PencilImage` drops its caption box when empty.
+Decorative captions may stay as sample copy, but in Spanish — this is a
+Uruguayan product and the public page is the shop's customer's view of it.
+
 ### Leads
 
 A contact form at the foot of a public list, and an inbox for what it catches.

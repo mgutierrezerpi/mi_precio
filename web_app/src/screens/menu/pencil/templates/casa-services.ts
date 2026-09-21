@@ -10,6 +10,7 @@ export const pencilCasaServices = defineSpecialTemplate({
   masthead: 'SERVICIOS',
   brandLabel: 'Casa Férrea',
   uncategorizedLabel: 'Otros',
+  // A tagline, not a made-up address — it stays.
   footerLeft: 'Un servicio pensado para acompañar cada proyecto.',
   layout: 'casa-services',
 })

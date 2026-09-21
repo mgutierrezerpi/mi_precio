@@ -11,6 +11,9 @@ export function PencilActionBar({ props }: { props: DesignProps }) {
   const barClassName = [
     'fixed inset-x-4 bottom-4 z-40 mx-auto max-w-[680px] border p-2',
     'shadow-[0_18px_50px_-16px_rgba(15,13,26,0.45)] backdrop-blur sm:inset-x-6 sm:p-2.5',
+    // Centered across the bottom is a thumb-reach bar: on a monitor it reads
+    // as a phone app parked mid-screen. From lg it docks to the corner.
+    'lg:inset-x-auto lg:bottom-6 lg:right-8 lg:mx-0 lg:w-[420px]',
   ].join(' ')
   const actionClassName = [
     'flex min-h-12 items-center justify-center gap-2 px-3 text-center text-[12px] font-bold text-white',

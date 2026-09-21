@@ -7,7 +7,7 @@ export const pencilHardwareAlternating = defineSpecialTemplate({
   accent: '#809589',
   darkPanel: '#20322C',
   image: pencilImages.workshop,
-  imageLabel: 'NORTHLINE HARDWARE · OBJECTS FOR WORK',
-  imageTitle: 'the tools you keep',
+  imageLabel: 'PARA EL TRABAJO',
+  imageTitle: 'las herramientas que quedan',
   layout: 'alternating',
 })
