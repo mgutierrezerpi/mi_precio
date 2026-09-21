@@ -251,10 +251,12 @@ The picker offers `pickableListDesigns()` (`lib/listAppearance.ts`), not
 `LIST_DESIGNS` itself: designs in `HIDDEN_LIST_DESIGNS` are left out of new
 choices but stay valid everywhere else, and the one a list already uses is
 always listed so its selection still shows. Hiding never touches a live page.
-Today that set is nineteen Pencil editions, listed with their picker names in
-the source: three of the four "Maison Étoile" (only "Diario", `pencil-bakery`,
-is offered), the whole of Northline, Wild Stem, Casa Férrea, Fromage & Co. and
-Parchment Cellar, and Blush & Bloom.
+Today that set is twenty-three Pencil editions, listed with their picker names
+in the source: three of the four "Maison Étoile" (only "Diario",
+`pencil-bakery`, is offered), the whole of Northline, Wild Stem, Casa Férrea,
+Fromage & Co. and Parchment Cellar, and five standalone branded templates.
+What stays on offer: the nine base designs, Diario, Obsidian · Auto Detail,
+Nova Studio, The Calm Spa and Union Barber Shop.
 
 ### Server errors reach the panel as errors
 
@@ -384,6 +386,33 @@ Obsidian · Auto Detail is the second cover layout (`pencilHasDesktopCover`):
 type, actions and menu on the left, a sticky product showcase on the right,
 set in heavy Inter over a slow ambient glow (`.pencil-glow` in `index.css`,
 transform-only, still under reduced motion).
+
+#### Nova, Calm Spa and Union Barber
+
+Three more templates rebuilt, each to be unlike the others:
+
+- **Nova Studio** used to be a teaser — `sections.slice(0, 4)` and, per card,
+  three names and the *first* item's price and `+`. Every section and item now
+  shows, in frosted cards over `AmbientSky` (fixed, drifting colour fields and
+  rising motes, `.pencil-sky` in `index.css`), darkened by its `veil`.
+- **The Calm Spa** was one `rounded-[48%]` box that grew into an ellipse and
+  cut its own rows off. Now soft-cornered panels over a pale moving sky, all
+  Inter by weight, with a `story` variant of `ProductShowcase` (progress
+  segments, photo fading into the panel colour) so its carousel is its own.
+- **Union Barber Shop** lives in `pencil/unionBarber.tsx`: a navy sign in
+  Oswald (loaded on demand by `useWebFont`, not for every page), a featured
+  service, a running red-white-blue ribbon, a marquee of work photos, category
+  chips and service cards. The trade's red and blue are fixed, not the shop's
+  accent. Its WhatsApp button reads "Reservar turno" everywhere
+  (`pencilAskLabel`), and on desktop the sticky chip bar carries booking and
+  the cart, since the sign's buttons scroll away and there is no floating bar.
+
+`pencilSignsItself(design)` tells `MenuScreen` where a design signs MiPrecio
+itself — never, from `lg` up (the covers) or always (designs over a moving
+sky, where a flat closing band would cut the background) — and it hides its
+own band accordingly. `PoweredByMark` clips the corner of the logo image
+rather than painting over it, so it sits on gradients too. `ShopLogo` takes a
+`ground`: on a light one the treatment inverts (light ink on a dark tile).
 
 ### Leads
 

@@ -131,6 +131,13 @@ export const DICT_BASE_01: Record<string, TranslationEntry> = {
     en: 'Order via WhatsApp',
     pt: 'Pedir por WhatsApp',
   },
+  // For designs made for appointments (barbershops): what the WhatsApp button
+  // is actually for there.
+  'pub.bookWhatsApp': {
+    es: 'Reservar turno',
+    en: 'Book an appointment',
+    pt: 'Agendar horário',
+  },
   'pub.askWhatsApp': {
     es: 'Hacer una pregunta',
     en: 'Ask a question',

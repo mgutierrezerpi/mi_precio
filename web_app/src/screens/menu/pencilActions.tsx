@@ -5,8 +5,11 @@ export function PencilActionBar({
   props,
   docked = false,
   hideOnDesktop = false,
+  askLabel,
 }: {
   props: DesignProps
+  /** Replaces the WhatsApp button's wording (e.g. "Reservar turno"). */
+  askLabel?: string
   /** Rendered in the flow of a layout (the desktop cover) instead of floating. */
   docked?: boolean
   /** The layout already docks its own copy from lg up, so the floating one steps aside. */
@@ -64,9 +67,11 @@ export function PencilActionBar({
           <SIco name="message-circle" size={18} color="#fff" />
           {checkoutChannel === 'instagram'
             ? 'Copiar pedido · Instagram'
-            : cartCount > 0
-              ? t('pub.cartWhatsApp')
-              : t('pub.askWhatsApp')}
+            : askLabel
+              ? askLabel
+              : cartCount > 0
+                ? t('pub.cartWhatsApp')
+                : t('pub.askWhatsApp')}
         </a>
         <button
           type="button"

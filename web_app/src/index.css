@@ -2093,3 +2093,289 @@ div:has(> img[alt='Dani, Cafecitos con Dani'])::after {
     animation: none;
   }
 }
+
+/*
+ * A full-viewport animated sky for Pencil layouts that own the whole page:
+ * three blurred colour fields drifting (`--sky-1..3` over `--sky-base`) and
+ * motes of light rising slowly. Fixed, so it stays in view while the menu
+ * scrolls and does not depend on page height. Transform and opacity only.
+ */
+.pencil-sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--sky-base, #5b4bca);
+}
+.pencil-sky > i {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  will-change: transform;
+}
+.pencil-sky > i:nth-child(1) {
+  width: 55vmax;
+  height: 55vmax;
+  top: -18%;
+  left: -12%;
+  background: var(--sky-1, #4bceed);
+  opacity: 0.4;
+  animation: pencil-sky-a 26s ease-in-out infinite alternate;
+}
+.pencil-sky > i:nth-child(2) {
+  width: 62vmax;
+  height: 62vmax;
+  bottom: -28%;
+  right: -18%;
+  background: var(--sky-2, #f3b8ff);
+  opacity: 0.5;
+  animation: pencil-sky-b 33s ease-in-out infinite alternate;
+}
+.pencil-sky > i:nth-child(3) {
+  width: 46vmax;
+  height: 46vmax;
+  top: 28%;
+  left: 32%;
+  background: var(--sky-3, #8b5cf6);
+  opacity: 0.45;
+  animation: pencil-sky-c 23s ease-in-out infinite alternate;
+}
+.pencil-sky > b {
+  position: absolute;
+  bottom: -12px;
+  border-radius: 9999px;
+  background: #fff;
+  opacity: 0;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  will-change: transform, opacity;
+  animation-name: pencil-mote;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+/* An even darkening over the whole sky, so a layout can deepen it without
+ * touching the colours or the motion. Sits above the fields and motes. */
+.pencil-sky::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--sky-veil, transparent);
+}
+@keyframes pencil-sky-a {
+  to {
+    transform: translate(34%, 26%) scale(1.2);
+  }
+}
+@keyframes pencil-sky-b {
+  to {
+    transform: translate(-30%, -34%) scale(1.1);
+  }
+}
+@keyframes pencil-sky-c {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-26%, 16%) scale(1.25);
+  }
+  100% {
+    transform: translate(22%, -20%) scale(0.9);
+  }
+}
+@keyframes pencil-mote {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.75;
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-110vh);
+    opacity: 0;
+  }
+}
+
+/* Cards that rise into place in turn, then lift under the pointer. The rise
+ * uses `backwards` fill so it lets go of `transform` once done — `both` would
+ * pin it and silently kill the hover lift. */
+.pencil-rise {
+  animation: pencil-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+@keyframes pencil-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+.pencil-glass {
+  transition:
+    transform 0.35s ease,
+    border-color 0.35s ease,
+    background-color 0.35s ease;
+}
+.pencil-glass:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.85);
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pencil-sky > i,
+  .pencil-sky > b,
+  .pencil-rise {
+    animation: none;
+  }
+  .pencil-glass,
+  .pencil-glass:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Story-style progress for a showcase segment: fills over one slide. The
+ * duration is set inline to match the showcase interval; hover pauses it. */
+.pencil-story-fill {
+  animation: pencil-story linear forwards;
+  transform-origin: left center;
+}
+.pencil-story-fill[data-paused='true'] {
+  animation-play-state: paused;
+}
+@keyframes pencil-story {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pencil-story-fill {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+
+/*
+ * Barber pole: red, white and blue stripes that climb forever, the way a
+ * turning pole reads. The stripe layer is taller than the pole and slides by
+ * exactly one vertical period (56px of stripe at 45deg = 56 × √2), so the loop
+ * has no seam. A second layer shades it like a cylinder. `--pole-*` recolours.
+ * The horizontal `.barber-ribbon` is the same stripes sliding sideways.
+ */
+.barber-pole,
+.barber-ribbon {
+  position: relative;
+  overflow: hidden;
+}
+.barber-pole::before,
+.barber-ribbon::before {
+  content: '';
+  position: absolute;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--pole-red, #d9232e) 0 14px,
+    #ffffff 14px 28px,
+    var(--pole-blue, #283b97) 28px 42px,
+    #ffffff 42px 56px
+  );
+  will-change: transform;
+}
+.barber-pole::before {
+  inset: -80px 0 0 0;
+  animation: barber-climb 2.4s linear infinite;
+}
+.barber-ribbon::before {
+  inset: 0 0 0 -80px;
+  animation: barber-slide 3s linear infinite;
+}
+.barber-pole::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(255, 255, 255, 0.35) 38%,
+    rgba(255, 255, 255, 0) 55%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+}
+@keyframes barber-climb {
+  to {
+    transform: translateY(79.196px);
+  }
+}
+@keyframes barber-slide {
+  to {
+    transform: translateX(79.196px);
+  }
+}
+
+/* A service card: lifts under the pointer while a red rule draws across its
+ * top, and its tool icon gives a small snip. */
+.barber-card {
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.barber-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 18px auto;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--pole-red, #d9232e);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+.barber-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 44px -22px rgba(23, 34, 108, 0.45);
+}
+.barber-card:hover::before {
+  transform: scaleX(1);
+}
+.barber-card:hover .barber-tool {
+  animation: barber-snip 0.5s ease-in-out 2;
+}
+@keyframes barber-snip {
+  50% {
+    transform: rotate(-14deg) scale(1.1);
+  }
+}
+
+/* A strip of work photos that runs by itself: the track holds the photos
+ * twice and slides by half its width, so the loop joins up. Hover pauses. */
+.barber-marquee:hover .barber-track {
+  animation-play-state: paused;
+}
+.barber-track {
+  animation: barber-marquee linear infinite;
+  will-change: transform;
+}
+@keyframes barber-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barber-pole::before,
+  .barber-ribbon::before,
+  .barber-card:hover .barber-tool,
+  .barber-track {
+    animation: none;
+  }
+  .barber-card,
+  .barber-card::before {
+    transition: none;
+  }
+  .barber-card:hover {
+    transform: none;
+  }
+}

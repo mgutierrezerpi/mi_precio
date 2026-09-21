@@ -386,7 +386,7 @@ describe('pencilHasDesktopCover', () => {
 
 describe('branded templates without a hero of their own', () => {
   // The branded templates — offered in the picker, or hidden from it but
-  // still rendering for lists that already use them (Blush & Bloom).
+  // still rendering for lists that already use them (most of them, now).
   const branded: PencilVariant[] = [
     'pencil-auto-detail',
     'pencil-blush-bloom',
@@ -430,6 +430,32 @@ describe('branded templates without a hero of their own', () => {
     const text = view.container.textContent ?? ''
     expect(text).toContain('Carta de otoño')
     for (const sample of sampleCopy) expect(text).not.toContain(sample)
+    view.unmount()
+  })
+})
+
+describe('Nova', () => {
+  it('shows every section and every item with its own price', () => {
+    // It used to keep four sections and, per section, three names and the
+    // first item's price — a café's twelfth product never showed.
+    const sections = Array.from({ length: 5 }, (_, s) => ({
+      key: `s${s}`,
+      name: `Sección ${s + 1}`,
+      min: 1,
+      max: 9,
+      items: Array.from({ length: 4 }, (_, i) => ({
+        id: `s${s}-i${i}`,
+        name: `Producto ${s + 1}.${i + 1}`,
+        price: String(100 + s * 10 + i),
+      })),
+    })) as unknown as DesignProps['sections']
+    const view = render(
+      <PencilList variant="pencil-nova" {...props} sections={sections} />
+    )
+    const text = view.container.textContent ?? ''
+    expect(text).toContain('Sección 5')
+    expect(text).toContain('Producto 5.4')
+    expect(text).toContain('$143')
     view.unmount()
   })
 })

@@ -18,7 +18,32 @@ import { isPencilVariant, type PencilVariant } from './variants'
 const COVER_LAYOUTS: ReadonlySet<PencilConfig['layout']> = new Set([
   'left-image',
   'auto-detail',
+  'nova',
+  'calm-spa',
+  'union-barber',
 ])
+
+/** Layouts that sign MiPrecio inside their own page at every width. */
+const SELF_SIGNED_LAYOUTS: ReadonlySet<PencilConfig['layout']> = new Set([
+  'nova',
+  'calm-spa',
+  'union-barber',
+])
+
+/**
+ * The WhatsApp button's wording for designs made for a trade where it books
+ * rather than asks — a barbershop's list is a list of appointments.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function pencilAskLabel(
+  design: ListDesign,
+  t: (key: string) => string
+): string | undefined {
+  if (!isPencilVariant(design)) return undefined
+  return PENCIL_TEMPLATE_CONFIG[design].layout === 'union-barber'
+    ? t('pub.bookWhatsApp')
+    : undefined
+}
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function pencilHasDesktopCover(design: ListDesign): boolean {
@@ -26,6 +51,22 @@ export function pencilHasDesktopCover(design: ListDesign): boolean {
     isPencilVariant(design) &&
     COVER_LAYOUTS.has(PENCIL_TEMPLATE_CONFIG[design].layout)
   )
+}
+
+/**
+ * Where a design signs "Powered by MiPrecio" itself, and so where `MenuScreen`
+ * must leave out its own closing band: nowhere, from `lg` up (the desktop
+ * covers), or at every width (a design painted over a moving sky, where a flat
+ * band would cut the background off).
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function pencilSignsItself(
+  design: ListDesign
+): 'never' | 'desktop' | 'always' {
+  if (!isPencilVariant(design)) return 'never'
+  const layout = PENCIL_TEMPLATE_CONFIG[design].layout
+  if (SELF_SIGNED_LAYOUTS.has(layout)) return 'always'
+  return COVER_LAYOUTS.has(layout) ? 'desktop' : 'never'
 }
 
 /** The authored copy/media a Pencil layout starts with. Exposed to the admin
@@ -847,9 +888,9 @@ function PencilShell({
  * band under it: on this layout the band would sit beneath a dark panel and a
  * light column at once and match neither.
  */
-function CoverPoweredBy({ background }: { background: string }) {
+function CoverPoweredBy() {
   return (
-    <PoweredByMark ink={PANEL_INK} muted={PANEL_MUTED} background={background} />
+    <PoweredByMark ink={PANEL_INK} muted={PANEL_MUTED} />
   )
 }
 
@@ -961,7 +1002,7 @@ function PencilCoverSpread({
             )}
             <span>{right}</span>
           </p>
-          <CoverPoweredBy background={config.darkPanel} />
+          <CoverPoweredBy />
         </div>
       </aside>
       <main className="min-w-0 px-12 py-14 xl:px-20 xl:py-16">
