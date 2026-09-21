@@ -72,6 +72,8 @@ export const HIDDEN_LIST_DESIGNS: ReadonlySet<ListDesign> = new Set([
   'pencil-cheese-alternating', // Piezas
   // Parchment Cellar
   'pencil-wine', // Vinos
+  // Standalone branded templates
+  'pencil-blush-bloom', // Blush & Bloom
 ])
 
 /**
