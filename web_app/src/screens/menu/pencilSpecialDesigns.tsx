@@ -838,7 +838,7 @@ function Nova({ props, config }: { props: DesignProps; config: PencilConfig }) {
   const soft = '#F4E7FF'
   return (
     <div
-      className="relative min-h-[100svh] w-full min-w-0 overflow-x-clip px-4 pb-32 pt-10 sm:px-8 lg:px-12 lg:pb-14 lg:pt-16"
+      className="relative flex min-h-[100svh] w-full min-w-0 flex-col overflow-x-clip px-4 pb-32 pt-10 sm:px-8 lg:px-12 lg:pb-14 lg:pt-16"
       style={{ color: '#FFFFFF', fontFamily: SANS }}
     >
       <AmbientSky
@@ -846,7 +846,9 @@ function Nova({ props, config }: { props: DesignProps; config: PencilConfig }) {
         colors={[config.accent, '#F3B8FF', '#8B5CF6']}
         veil="rgba(18, 10, 52, 0.34)"
       />
-      <div className="relative mx-auto w-full min-w-0 max-w-[600px] lg:max-w-[1200px]">
+      {/* A column that fills the screen, so the footer's `mt-auto` pins it to
+          the bottom edge however short the menu above it is. */}
+      <div className="relative mx-auto flex w-full min-w-0 max-w-[600px] flex-1 flex-col lg:max-w-[1200px]">
         <header className="flex flex-col items-center gap-6 text-center lg:flex-row lg:items-end lg:justify-between lg:text-left">
           <div className="flex min-w-0 flex-col items-center gap-5 lg:items-start">
             <ShopLogo
@@ -947,7 +949,7 @@ function Nova({ props, config }: { props: DesignProps; config: PencilConfig }) {
           ))}
         </div>
 
-        <footer className="mt-8 flex flex-col items-center gap-4 text-center lg:flex-row lg:justify-between lg:text-left">
+        <footer className="mt-auto flex flex-col items-center gap-4 pt-8 text-center lg:flex-row lg:justify-between lg:text-left">
           <p
             className="text-[10px] uppercase tracking-[2px] sm:text-[11px]"
             style={{ color: soft, fontFamily: MONO }}
