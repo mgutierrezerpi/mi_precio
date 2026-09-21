@@ -99,6 +99,29 @@ describe('Pencil price-list templates', () => {
     expect(theme.buttonRadius).toBeTruthy()
   })
 
+  it("paints Auto Detail's cart in the list's own colours", () => {
+    const template = {
+      backgroundColor: '#FAFAF6',
+      textColor: '#17211C',
+      mutedColor: '#526158',
+      accentColor: '#155E75',
+    }
+    const theme = pencilCartThemeFor('pencil-auto-detail', template)
+    // A pale list must not open onto the template's stock black cart.
+    expect(theme.isDark).toBe(false)
+    expect(theme.bg).toBe('#FAFAF6')
+    expect(theme.surface).toBe('#FAFAF6')
+    expect(theme.ink).toBe('#17211C')
+    expect(theme.accent).toBe('#155E75')
+    expect(theme.headingFamily).toContain('Inter')
+    // Without its own colours it keeps the stock dark cart.
+    expect(pencilCartThemeFor('pencil-auto-detail').isDark).toBe(true)
+    // Other templates ignore the list's colours in the cart, as before.
+    expect(pencilCartThemeFor('pencil-nova', template)).toEqual(
+      pencilCartThemeFor('pencil-nova')
+    )
+  })
+
   it('honors intentional blank template fields instead of restoring defaults', () => {
     const view = render(
       <PencilList

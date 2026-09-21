@@ -412,6 +412,10 @@ green, or Instagram's gradient — never the shop's accent, same as the ask
 button in `PencilActionBar`. **Auto Detail** paints its rows white only when
 its background is actually dark (`hexLuminance`): a list whose
 `content.template` brings a light ground keeps its own ink.
+Its cart goes further (`LIST_COLOR_VARIANTS` in `pencil/cartTheme.ts`): it
+takes the list's own background, ink, muted, accent and panel colours, and is
+light or dark by that background, so the cart reads as the same page as the
+menu. Every other template's cart still reads only its stock palette.
 - **Union Barber Shop** lives in `pencil/unionBarber.tsx`: a navy sign in
   Oswald (loaded on demand by `useWebFont`, not for every page), a featured
   service, a running red-white-blue ribbon, a marquee of work photos, category
