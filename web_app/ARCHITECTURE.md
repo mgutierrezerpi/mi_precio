@@ -247,6 +247,33 @@ and `bgOverlay`; `null` on a list means "inherit". `ListAppearanceFields`
 single list — the index route merges all published lists and keeps the business
 default.
 
+The picker offers `pickableListDesigns()` (`lib/listAppearance.ts`), not
+`LIST_DESIGNS` itself: designs in `HIDDEN_LIST_DESIGNS` are left out of new
+choices but stay valid everywhere else, and the one a list already uses is
+always listed so its selection still shows. Hiding never touches a live page.
+Today that set is three of the four "Maison Étoile" editions (`pencil-garden`,
+`pencil-market`, `pencil-evening`); only "Diario" (`pencil-bakery`) is offered.
+
+### Server errors reach the panel as errors
+
+An uncaught exception in the API used to reach the browser as a network
+failure. Starlette answers it from `ServerErrorMiddleware`, which sits outside
+`CORSMiddleware`, so the 500 left without `Access-Control-Allow-Origin`; the
+browser dropped it, `fetch` threw, and `api.request` raised the
+"No se pudo conectar con el servidor" toast for what was a server bug.
+`unhandled_errors_as_json` in `api/app.py` now catches it *inside* CORS and
+answers `500 {"detail": "Algo falló de nuestro lado…"}` — an
+`exception_handler(Exception)` would not do, Starlette mounts that on the same
+outer middleware. It reports to Sentry itself, since swallowing the exception
+hides it from Sentry's own hooks.
+
+That turns a thrown `fetch` into a resolved `{ error }`, so every caller has to
+read it: the per-list autosave in Configuración reports to the screen's error
+banner, and the list dialog stays open with the reason instead of closing as if
+it had saved. One exception on purpose — when creating a list, a failure in the
+follow-up settings save still closes the dialog, because the list exists by
+then and a second click would create a duplicate.
+
 ### Social links in the public footer
 
 `lib/socials.ts` is the single definition of the shop's networks — used by the
@@ -302,6 +329,33 @@ authored, `PencilFooter` falls back to the shop's own `tenant.address` and the
 standard `pub.footer` line, and `PencilImage` drops its caption box when empty.
 Decorative captions may stay as sample copy, but in Spanish — this is a
 Uruguayan product and the public page is the shop's customer's view of it.
+
+#### `left-image` on desktop: a cover and a menu
+
+From `lg` up the `left-image` layout (Maison Étoile · Diario) is not the phone
+column re-placed on a grid — that was tried first and stranded the pieces:
+tabs alone in a corner over a hole, the footer floating mid-rail, the shop's
+name nowhere near the top. `PencilCoverSpread` is a real spread instead: a
+sticky, full-height cover on the dark panel holds everything about the shop —
+a product showcase, the shop's name, the WhatsApp/cart actions and the
+"Powered by MiPrecio" signature — and the right side holds only the menu, as
+dotted-leader rows (`PencilItem` with `leaders`).
+
+`PencilList` renders one tree per breakpoint through `useIsDesktop()`, not both
+with one hidden: the menu carries cart controls and a photo lightbox that must
+exist once. Because the cover carries the actions and the signature,
+`pencilHasDesktopCover(design)` tells `MenuScreen` to hide its floating action
+bar and its closing MiPrecio band from `lg` up.
+
+`PencilShowcase` replaces the old "Galería" tab on this layout, on the cover at
+desktop and in the image slot on a phone: product photos cycle every 5s, each
+captioned with name and price, pausing on hover and holding still under
+`prefers-reduced-motion`. With no product photos it falls back to the
+template's picture. The cover's footer line uses `pub.pricesIn` rather than
+`pub.footer`, whose "Generado con MiPrecio" would repeat the badge right below.
+
+Tests run on happy-dom, whose window starts 1024px wide — so `lg` matches by
+default there. Tests that care about the layout pin `matchMedia` explicitly.
 
 ### Leads
 

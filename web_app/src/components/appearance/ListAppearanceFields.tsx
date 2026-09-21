@@ -5,7 +5,7 @@ import { getT, type TFn } from '../../lib/i18n'
 import { fileToDataUrl } from '../../lib/image'
 import {
   BRAND_SWATCHES,
-  LIST_DESIGNS,
+  pickableListDesigns,
   type ListAppearance,
 } from '../../lib/listAppearance'
 import { Icon } from '../../screens/admin/crm/ui'
@@ -800,7 +800,7 @@ export function ListAppearanceFields({
               </div>
             </div>
           )}
-          {LIST_DESIGNS.map((d) => {
+          {pickableListDesigns(effectiveDesign).map((d) => {
             const on = canInherit ? value.design === d : effectiveDesign === d
             return (
               <div
