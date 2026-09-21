@@ -9,7 +9,7 @@ from controllers.public_leads_controller import public_leads_router
 from controllers.public_request import request_ip
 from controllers.router import ControllerRouter
 from lib.ctx import feature_flags, public, public_viewers
-from views import PublicMagazineView, PublicMenuView, PublicTenantView
+from views import MarketplaceTenantView, PublicMagazineResponseView, PublicMenuView
 
 router = ControllerRouter(prefix="/public", tags=["public"])
 router.include_router(public_interactions_router)
@@ -22,21 +22,10 @@ def nearby_marketplace_endpoint(
     longitude: float | None = Query(None, ge=-180, le=180),
     category: str | None = Query(None, max_length=32),
     limit: int = Query(50, ge=1, le=100),
-):
+) -> list[MarketplaceTenantView]:
     """Discover opted-in businesses, ordered by proximity when available."""
     return [
-        {
-            "name": tenant.name,
-            "subdomain": tenant.subdomain,
-            "logo_url": tenant.logo_url,
-            "description": tenant.description,
-            "address": tenant.address,
-            "business_category": tenant.business_category,
-            "whatsapp_url": tenant.whatsapp_url,
-            "website_url": tenant.website_url,
-            "instagram_url": tenant.instagram_url,
-            "distance_km": distance_km,
-        }
+        MarketplaceTenantView.render(tenant, distance_km)
         for tenant, distance_km in public.nearby_marketplace_tenants(
             latitude, longitude, limit, category
         )
@@ -44,17 +33,16 @@ def nearby_marketplace_endpoint(
 
 
 @router.get("/{subdomain}/magazines/{magazine}")
-def get_public_magazine(subdomain: str, magazine: str):
+def get_public_magazine(
+    subdomain: str, magazine: str
+) -> PublicMagazineResponseView:
     tenant = public.get_tenant_by_subdomain(subdomain)
     if not tenant or not feature_flags.magazines_enabled(tenant.id):
         raise HTTPException(status_code=404, detail="Not found")
     published = public.get_public_magazine(tenant, magazine)
     if not published:
         raise HTTPException(status_code=404, detail="Not found")
-    return {
-        "tenant": PublicTenantView.render(tenant),
-        "magazine": PublicMagazineView.render(published),
-    }
+    return PublicMagazineResponseView.render(tenant, published)
 
 
 @router.get("/{subdomain}")

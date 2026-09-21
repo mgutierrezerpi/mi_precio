@@ -13,7 +13,7 @@ from lib import encode_token
 from lib.ctx import activity, brand_assets, identity, plans
 from lib.value_objects import AuthResult
 from models import User
-from views import AuthTokenView, DeletedView, TenantView
+from views import AuthTokenView, DeletedView, PlanView, TenantView, UrlView
 
 router = ControllerRouter(prefix="/tenants", tags=["tenants"])
 
@@ -24,8 +24,10 @@ plan_gated = [Depends(require_active_plan)]
 
 
 @router.get("/{tenant_id}/plan")
-def plan_info_endpoint(tenant_id: str, current_user: dict = Depends(get_current_user)):
-    return plans.plan_info(tenant_id)
+def plan_info_endpoint(
+    tenant_id: str, current_user: dict = Depends(get_current_user)
+) -> PlanView:
+    return PlanView.render(plans.plan_info(tenant_id))
 
 
 @router.patch("/{tenant_id}/plan")
@@ -124,7 +126,7 @@ async def upload_tenant_logo_endpoint(
     tenant_id: str,
     image: UploadFile = File(...),
     current_user: dict = Depends(require_admin),
-):
+) -> UrlView:
     try:
         url = brand_assets.upload_brand_image(
             tenant_id, await image.read(), image.content_type or ""
@@ -140,7 +142,7 @@ async def upload_tenant_logo_endpoint(
         raise HTTPException(status_code=status, detail=str(e)) from e
     if not url:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    return {"url": url}
+    return UrlView(url=url)
 
 
 @router.delete("/{tenant_id}")

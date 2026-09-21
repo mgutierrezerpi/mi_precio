@@ -1,6 +1,37 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib/ports.sh
+source "$repo_dir/bin/lib/ports.sh"
 
-docker compose up --build "$@"
+cd "$repo_dir"
+
+# Compose interpolates variables from the shell or a repository-root .env file,
+# while the API's local secrets live in api/.env. Export them before Compose
+# renders the service environment so optional integrations (including Lemon
+# Squeezy test mode) work in the normal local stack.
+if [[ -f "$repo_dir/api/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$repo_dir/api/.env"
+  set +a
+fi
+
+reuse_compose_port WEB_APP_PORT web_app 3000 || \
+  reserve_available_port WEB_APP_PORT "${WEB_APP_PORT:-3001}" "Web app"
+reuse_compose_port API_PORT api 8000 || \
+  reserve_available_port API_PORT "${API_PORT:-8000}" "API"
+reuse_compose_port STORAGE_PORT storage 9000 || \
+  reserve_available_port STORAGE_PORT "${STORAGE_PORT:-9000}" "MinIO API"
+reuse_compose_port STORAGE_CONSOLE_PORT storage 9001 || \
+  reserve_available_port STORAGE_CONSOLE_PORT "${STORAGE_CONSOLE_PORT:-9001}" "MinIO console"
+export STORAGE_PUBLIC_URL="${STORAGE_PUBLIC_URL:-http://localhost:$STORAGE_PORT}"
+export CORS_ORIGINS="${CORS_ORIGINS:-[\"http://localhost:$WEB_APP_PORT\"]}"
+
+echo "Web app:       http://localhost:$WEB_APP_PORT"
+echo "API:           http://localhost:$API_PORT"
+echo "MinIO API:     http://localhost:$STORAGE_PORT"
+echo "MinIO console: http://localhost:$STORAGE_CONSOLE_PORT"
+
+docker compose up "$@"

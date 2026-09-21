@@ -4,10 +4,9 @@ from config import settings
 from controllers.deps import require_owner
 from controllers.input_types import CreateCheckout, ManualSubscriptionSync
 from controllers.router import ControllerRouter
-from lib.ctx import activity
-from lib.ctx import billing_context as billing
+from lib.ctx import activity, billing
 from tasks import check_pending_billing, notify_subscription_expired
-from views import TenantView
+from views import OkView, TenantView, UrlView
 
 router = ControllerRouter(prefix="/billing", tags=["billing"])
 
@@ -15,7 +14,7 @@ router = ControllerRouter(prefix="/billing", tags=["billing"])
 @router.post("/checkouts")
 def create_checkout_endpoint(
     data: CreateCheckout, current_user: dict = Depends(require_owner)
-):
+) -> UrlView:
     if current_user.get("tenant_id") != data.tenant_id:
         raise HTTPException(
             status_code=403, detail="No tenés permisos para esta acción"
@@ -35,7 +34,7 @@ def create_checkout_endpoint(
         data.tenant_id, checkout.get("checkout_id"), data.plan
     )
     check_pending_billing.schedule((data.tenant_id,), delay=10)
-    return {"url": checkout["url"]}
+    return UrlView(url=checkout["url"])
 
 
 @router.post("/manual-subscriptions")
@@ -74,7 +73,7 @@ def sync_manual_subscription_endpoint(
 
 
 @router.post("/lemon-squeezy/webhook")
-async def lemonsqueezy_webhook_endpoint(request: Request):
+async def lemonsqueezy_webhook_endpoint(request: Request) -> OkView:
     raw = await request.body()
     if not billing.verify_lemonsqueezy_signature(
         raw, request.headers.get("X-Signature")
@@ -110,4 +109,4 @@ async def lemonsqueezy_webhook_endpoint(request: Request):
             if tenant.billing_status == "expired" and not was_expired:
                 notify_subscription_expired(tenant.id)
 
-    return {"ok": True}
+    return OkView()

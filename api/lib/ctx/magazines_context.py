@@ -1,6 +1,6 @@
 import json
 
-from lib.ctx.identity_context import get_tenant
+from lib.ctx.identity import get_tenant
 from models import Magazine, MagazinePage, Tenant
 from models.magazine import unique_magazine_slug
 

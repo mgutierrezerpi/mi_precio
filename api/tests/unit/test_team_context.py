@@ -4,7 +4,7 @@ import pytest
 from peewee import SqliteDatabase
 
 from lib.ctx import identity, team
-from lib.ctx.team_context import TeamError
+from lib.ctx.team import TeamError
 from models import AuthCode, Invitation, Tenant, TenantMembership, User
 
 team_db = SqliteDatabase(":memory:")

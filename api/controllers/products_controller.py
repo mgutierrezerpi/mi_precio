@@ -5,7 +5,7 @@ from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateProduct, UpdateProduct
 from controllers.router import ControllerRouter
 from lib.ctx import activity, plans, products
-from lib.ctx.plans_context import PlanLimitError
+from lib.ctx.plans import PlanLimitError
 from views import DeletedView, ProductImageView, ProductView
 
 router = ControllerRouter(tags=["products"], plan_gated=True)

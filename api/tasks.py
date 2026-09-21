@@ -13,10 +13,9 @@ from urllib.parse import urlencode
 from huey import SqliteHuey, crontab
 
 from config import settings
-from infra.sentry import init_sentry
 from infra.mailer import mailer
-from lib.ctx import auth
-from lib.ctx import billing_context as billing
+from infra.sentry import init_sentry
+from lib.ctx import auth, billing
 from models import Lead, TenantMembership, User, db
 
 logger = logging.getLogger(__name__)

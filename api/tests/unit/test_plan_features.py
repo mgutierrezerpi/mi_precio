@@ -1,7 +1,7 @@
 """Whole features a tier unlocks, as opposed to its numeric allowances."""
 
 from lib.ctx import identity, plans
-from lib.ctx.plans_context import PLAN_FEATURES, PLAN_ORDER, PLANS
+from lib.ctx.plans import PLAN_FEATURES, PLAN_ORDER, PLANS
 
 _n = 0
 

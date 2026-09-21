@@ -5,7 +5,6 @@ from controllers.categories_controller import router as categories_router
 from controllers.customers_controller import router as customers_router
 from controllers.designs_controller import router as designs_router
 from controllers.developer_controller import router as developer_router
-from controllers.import_controller import router as import_router
 from controllers.items_controller import router as items_router
 from controllers.leads_controller import router as leads_router
 from controllers.link_trees_controller import router as link_trees_router
@@ -31,7 +30,6 @@ CONTROLLER_ROUTERS = (
     products_router,
     categories_router,
     public_router,
-    import_router,
     customers_router,
     public_viewers_router,
     leads_router,

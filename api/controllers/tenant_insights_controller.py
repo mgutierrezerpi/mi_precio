@@ -5,7 +5,7 @@ from fastapi import Depends, Query
 from controllers.deps import get_current_user, require_active_plan
 from controllers.router import ControllerRouter
 from lib.ctx import activity, analytics
-from views import ActivityView
+from views import ActivityView, ReportsView, VisitStatsView
 
 router = ControllerRouter(
     prefix="/tenants",
@@ -17,8 +17,8 @@ router = ControllerRouter(
 @router.get("/{tenant_id}/stats/visits")
 def visit_stats_endpoint(
     tenant_id: str, current_user: dict = Depends(get_current_user)
-):
-    return analytics.visit_stats(tenant_id)
+) -> VisitStatsView:
+    return VisitStatsView.render(analytics.visit_stats(tenant_id))
 
 
 @router.get("/{tenant_id}/stats/reports")
@@ -28,8 +28,10 @@ def reports_endpoint(
     list_id: str | None = None,
     customer_id: str | None = None,
     current_user: dict = Depends(get_current_user),
-):
-    return analytics.reports(tenant_id, days, list_id, customer_id)
+) -> ReportsView:
+    return ReportsView.render(
+        analytics.reports(tenant_id, days, list_id, customer_id)
+    )
 
 
 @router.get("/{tenant_id}/activity")

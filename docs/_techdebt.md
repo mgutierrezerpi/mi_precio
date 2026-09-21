@@ -1,2 +1,3 @@
-- [ ] dead code like the duckduck go and a bunch of stuff in the services section needs to go
-- [ ] unused imports and contexts that can be grouped under a folder, for example instead of billing_checkout and billing_common do billing/checkout billing/common
+- [x] Remove the unused URL/image import feature, including the DuckDuckGo browser capture code and generated artifacts.
+- [x] Remove unused imports and group split context helpers into domain packages under `lib/ctx/`.
+- [x] Serialize every successful controller response through a typed view model.

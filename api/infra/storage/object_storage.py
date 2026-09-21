@@ -1,6 +1,7 @@
 from io import BytesIO
 from pathlib import Path, PurePosixPath
 from typing import Any
+from urllib.parse import urlsplit
 
 from config import settings
 
@@ -36,6 +37,16 @@ class ObjectStorage:
     def public_url_for(self, key: str) -> str:
         base_url = settings.storage_public_url.rstrip("/")
         return f"{base_url}/{settings.storage_bucket}/{key}"
+
+    def normalize_public_url(self, value: str) -> str:
+        """Point persisted local object URLs at the current development port."""
+        parsed = urlsplit(value)
+        if parsed.hostname not in {"localhost", "127.0.0.1"}:
+            return value
+        object_prefix = f"/{settings.storage_bucket}/"
+        if not parsed.path.startswith(object_prefix) or not settings.storage_public_url:
+            return value
+        return f"{settings.storage_public_url.rstrip('/')}{parsed.path}"
 
     @property
     def _s3_configured(self) -> bool:

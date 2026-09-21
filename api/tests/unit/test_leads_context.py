@@ -3,7 +3,7 @@
 import pytest
 
 from lib.ctx import identity, leads, plans
-from lib.ctx.leads_context import LeadRejected
+from lib.ctx.leads import LeadRejected
 from models import Activity, Customer, Lead, Tenant
 
 _n = 0

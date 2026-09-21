@@ -10,7 +10,13 @@ from controllers.input_types import (
 )
 from controllers.router import ControllerRouter
 from lib.ctx import activity, customers, leads
-from views import CustomerView, DeletedView, LeadView, OrderView
+from views import (
+    CustomerDetailView,
+    CustomerStatsView,
+    CustomerView,
+    DeletedView,
+    OrderView,
+)
 
 router = ControllerRouter(tags=["customers"], plan_gated=True)
 
@@ -25,8 +31,8 @@ def list_customers_endpoint(
 @router.get("/tenants/{tenant_id}/customers/stats")
 def customer_stats_endpoint(
     tenant_id: str, current_user: dict = Depends(get_current_user)
-):
-    return customers.customer_stats(tenant_id)
+) -> CustomerStatsView:
+    return CustomerStatsView.render(customers.customer_stats(tenant_id))
 
 
 @router.post("/tenants/{tenant_id}/customers", status_code=201)
@@ -52,15 +58,15 @@ def create_customer_endpoint(
 @router.get("/customers/{customer_id}")
 def get_customer_endpoint(
     customer_id: str, current_user: dict = Depends(get_current_user)
-):
+) -> CustomerDetailView:
     """Customer detail: profile + aggregates + full purchase history."""
     customer = ownership.own_customer(customer_id, current_user)
     orders = customers.list_orders(customer_id)
-    return {
-        "customer": CustomerView.render(customer),
-        "orders": OrderView.render_many(orders),
-        "submissions": LeadView.render_many(leads.list_customer_submissions(customer_id)),
-    }
+    return CustomerDetailView.render(
+        customer,
+        orders,
+        leads.list_customer_submissions(customer_id),
+    )
 
 
 @router.patch("/customers/{customer_id}")

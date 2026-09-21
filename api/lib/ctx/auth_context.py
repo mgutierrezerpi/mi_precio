@@ -5,8 +5,8 @@ from datetime import UTC, datetime, timedelta
 
 from config import settings
 from infra.mailer import MailerError, mailer
-from lib import encode_token, generate_verification_code
-from lib.ctx.identity_context import get_or_create_user
+from lib.ctx.identity import get_or_create_user
+from lib.security import encode_token, generate_verification_code
 from lib.value_objects import AuthResult
 from models import AuthCode
 

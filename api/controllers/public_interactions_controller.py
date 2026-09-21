@@ -1,11 +1,12 @@
 """Public visitor identification and analytics endpoints."""
 
 from fastapi import APIRouter, HTTPException, Request, Response
+from pydantic import BaseModel, Field
 
 from controllers.input_types import PublicViewerCapture, PublicViewerDismissal
-from pydantic import BaseModel, Field
 from controllers.public_request import request_ip
 from lib.ctx import analytics, public, public_viewers
+from views import OkView
 
 router = APIRouter()
 
@@ -22,7 +23,9 @@ def _tenant(subdomain: str):
 
 
 @router.post("/{subdomain}/viewer")
-def capture_public_viewer(subdomain: str, data: PublicViewerCapture, request: Request, response: Response):
+def capture_public_viewer(
+    subdomain: str, data: PublicViewerCapture, request: Request, response: Response
+) -> OkView:
     tenant = _tenant(subdomain)
     viewer = public_viewers.capture_viewer(
         str(tenant.id),
@@ -46,21 +49,23 @@ def capture_public_viewer(subdomain: str, data: PublicViewerCapture, request: Re
         secure=request.url.scheme == "https",
         path="/",
     )
-    return {"ok": True}
+    return OkView()
 
 
 @router.post("/{subdomain}/viewer-dismissed")
-def record_public_viewer_dismissal(subdomain: str, data: PublicViewerDismissal):
+def record_public_viewer_dismissal(
+    subdomain: str, data: PublicViewerDismissal
+) -> OkView:
     tenant = _tenant(subdomain)
     if not public_viewers.record_anonymous_dismissal(str(tenant.id), data.list_id):
         raise HTTPException(status_code=400, detail="Viewer capture is not enabled")
-    return {"ok": True}
+    return OkView()
 
 
 @router.post("/{subdomain}/lists/{list_key}/access")
 def unlock_public_list(
     subdomain: str, list_key: str, data: ListAccessCode, request: Request, response: Response
-):
+) -> OkView:
     tenant = _tenant(subdomain)
     viewer = public_viewers.unlock_list(
         str(tenant.id), list_key, data.code,
@@ -73,7 +78,7 @@ def unlock_public_list(
         max_age=public_viewers.PUBLIC_VIEWER_COOKIE_MAX_AGE, httponly=True,
         samesite="lax", secure=request.url.scheme == "https", path="/",
     )
-    return {"ok": True}
+    return OkView()
 
 
 @router.post("/{subdomain}/view")
@@ -82,7 +87,7 @@ def record_public_view(
     request: Request,
     list: str | None = None,
     source: str | None = None,
-):
+) -> OkView:
     tenant = _tenant(subdomain)
     viewer = None
     token = request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE)
@@ -98,4 +103,4 @@ def record_public_view(
         str(tenant.id), list_id=list, source=source,
         customer_id=viewer.customer_id if viewer else None,
     )
-    return {"ok": True}
+    return OkView()

@@ -33,6 +33,19 @@ CONTENT = {
 }
 
 
+PENCIL_STYLE_CONTENT = {
+    **CONTENT,
+    "template": {
+        "divider_icon": "leaf",
+        "background_color": "#F7FAF5",
+        "text_color": "#153D2E",
+        "muted_color": "#557064",
+        "accent_color": "#176B45",
+        "dark_panel_color": "#0F4D32",
+    },
+}
+
+
 def test_create_version(db):
     tenant = identity.create_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")
@@ -125,6 +138,17 @@ def test_update_content_replaces_a_version_snapshot(db):
     assert updated is not None
     assert updated.content_revision == 1
     assert deserialize_content(updated.content) == CONTENT
+
+
+def test_update_content_accepts_pencil_icon_and_palette(db):
+    tenant = identity.create_tenant("Vivero", "vivero")
+    created = lists.create_list(tenant.id, "Primavera")
+    created.price_list.design = "pencil-flower-summer"
+    created.price_list.save()
+
+    updated = versions.update_content(created.version.id, PENCIL_STYLE_CONTENT, 0)
+
+    assert deserialize_content(updated.content) == PENCIL_STYLE_CONTENT
 
 
 def test_update_content_allows_clearing_optional_copy(db):

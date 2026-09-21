@@ -6,6 +6,7 @@ from controllers.router import ControllerRouter
 from infra.zohodesk import ZohoDeskError
 from lib.ctx import activity
 from lib.ctx import support_context as support
+from views import SupportTicketView
 
 router = ControllerRouter(prefix="/support", tags=["support"], plan_gated=True)
 
@@ -13,7 +14,7 @@ router = ControllerRouter(prefix="/support", tags=["support"], plan_gated=True)
 @router.post("/tickets")
 def create_ticket_endpoint(
     data: CreateSupportTicket, current_user: dict = Depends(get_current_user)
-):
+) -> SupportTicketView:
     email = current_user.get("email")
     if not email:
         raise HTTPException(status_code=400, detail="Tu cuenta no tiene email asociado")
@@ -40,4 +41,4 @@ def create_ticket_endpoint(
         f"Abrió un ticket de soporte: {data.subject}",
         meta={"priority": data.priority, "zohodesk_id": str(ticket.get("id") or "")},
     )
-    return {"id": number, "status": "created"}
+    return SupportTicketView(id=number)

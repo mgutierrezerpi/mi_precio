@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import field_serializer
+from pydantic import Field, field_serializer
 
 from views.base_view import BaseView
 
@@ -15,7 +15,7 @@ class CustomerView(BaseView):
     phone: str | None
     notes: str | None
     access_code_enabled: bool = False
-    access_list_ids: list[str] = []
+    access_list_ids: list[str] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
     # Aggregates attached by the context (default to empty for un-annotated instances).

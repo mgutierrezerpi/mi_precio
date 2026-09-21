@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from lib import decode_token
-from lib.ctx import plans_context
+from lib.ctx import plans
 from models import User
 
 security = HTTPBearer(auto_error=False)
@@ -50,12 +50,12 @@ def require_active_plan(current_user: dict = Depends(get_current_user)) -> dict:
     plan info, changing the plan, checkout, and deleting the account."""
 
     tenant_id = current_user.get("tenant_id")
-    if tenant_id and plans_context.plan_required(tenant_id):
+    if tenant_id and plans.plan_required(tenant_id):
         raise HTTPException(
             status_code=402,
             detail={
                 "code": "plan_required",
-                "message": plans_context.PLAN_REQUIRED_MESSAGE,
+                "message": plans.PLAN_REQUIRED_MESSAGE,
             },
         )
     return current_user

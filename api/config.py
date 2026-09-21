@@ -25,9 +25,6 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24  # 24 hours
 
-    # OpenAI settings
-    openai_api_key: str = ""
-
     # Outscraper settings (for Google Maps scraping)
     outscraper_api_key: str = ""
 

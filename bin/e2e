@@ -74,6 +74,16 @@ if [[ "$use_lemon" == true ]]; then
   export E2E_LEMONSQUEEZY=true
 fi
 
+# Playwright must know the selected web port before it loads its config, so
+# reserve the complete E2E port set in this parent process.
+# shellcheck source=lib/ports.sh
+source "$repo_dir/bin/lib/ports.sh"
+reserve_available_port E2E_WEB_PORT "${E2E_WEB_PORT:-43117}" "E2E web app"
+reserve_available_port E2E_API_PORT "${E2E_API_PORT:-43118}" "E2E API"
+reserve_available_port E2E_STORAGE_PORT "${E2E_STORAGE_PORT:-43119}" "E2E MinIO API"
+reserve_available_port E2E_STORAGE_CONSOLE_PORT "${E2E_STORAGE_CONSOLE_PORT:-43120}" "E2E MinIO console"
+export E2E_PORTS_SELECTED=true
+
 cd "$repo_dir/web_app"
 
 case "$mode" in

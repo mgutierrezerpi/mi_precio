@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from controllers.deps import get_current_user, require_editor
 from controllers.router import ControllerRouter
 from lib.ctx import leads, plans
-from views import CustomerView, LeadView
+from views import CustomerView, DeletedView, LeadView
 
 router = ControllerRouter(tags=["leads"], plan_gated=True)
 
@@ -88,7 +88,7 @@ def link_lead_customer_endpoint(
 @router.delete("/tenants/{tenant_id}/leads/{lead_id}")
 def delete_lead_endpoint(
     tenant_id: str, lead_id: str, current_user: dict = Depends(require_editor)
-):
+) -> DeletedView:
     if not leads.delete_lead(tenant_id, lead_id):
         raise HTTPException(status_code=404, detail="Lead not found")
-    return {"deleted": True}
+    return DeletedView()

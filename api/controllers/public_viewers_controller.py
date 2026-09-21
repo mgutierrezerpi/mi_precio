@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException
 from controllers.deps import get_current_user, require_editor
 from controllers.router import ControllerRouter
 from lib.ctx import public_viewers
-from views import CustomerView, PublicViewerView
+from views import CustomerView, DeletedView, PublicViewerStatsView, PublicViewerView
 
 router = ControllerRouter(tags=["public-viewers"], plan_gated=True)
 
@@ -22,8 +22,10 @@ def list_public_viewers(
 @router.get("/tenants/{tenant_id}/public-viewers/stats")
 def public_viewer_stats(
     tenant_id: str, current_user: Annotated[dict, Depends(get_current_user)]
-):
-    return {"anonymous_dismissals": public_viewers.anonymous_dismissal_count(tenant_id)}
+) -> PublicViewerStatsView:
+    return PublicViewerStatsView(
+        anonymous_dismissals=public_viewers.anonymous_dismissal_count(tenant_id)
+    )
 
 
 @router.post("/tenants/{tenant_id}/public-viewers/{viewer_id}/promote")
@@ -43,7 +45,7 @@ def delete_public_viewer(
     tenant_id: str,
     viewer_id: str,
     current_user: Annotated[dict, Depends(require_editor)],
-):
+) -> DeletedView:
     if not public_viewers.delete_viewer(tenant_id, viewer_id):
         raise HTTPException(status_code=404, detail="Viewer not found")
-    return {"deleted": True}
+    return DeletedView()

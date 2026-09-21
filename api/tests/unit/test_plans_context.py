@@ -4,7 +4,7 @@ import pytest
 from peewee import SqliteDatabase
 
 from lib.ctx import plans
-from lib.ctx.plans_context import PlanLimitError
+from lib.ctx.plans import PlanLimitError
 from models import Invitation, PriceList, Product, Tenant, User
 
 plans_db = SqliteDatabase(":memory:")

@@ -6,11 +6,11 @@ from controllers.deps import get_current_user, require_active_plan, require_admi
 from controllers.input_types import InviteMember, UpdateMember
 from controllers.router import ControllerRouter
 from lib.ctx import activity, identity, plans, team
-from lib.ctx.plans_context import PlanLimitError
-from lib.ctx.team_context import TeamError
+from lib.ctx.plans import PlanLimitError
+from lib.ctx.team import TeamError
 from models import User
 from tasks import send_invitation_email
-from views import DeletedView, InvitationView, UserView
+from views import DeletedView, InvitationView, TeamStatsView, UserView
 
 router = ControllerRouter(tags=["team"])
 logger = logging.getLogger(__name__)
@@ -48,8 +48,8 @@ def list_members_endpoint(
 @router.get("/tenants/{tenant_id}/members/stats", dependencies=plan_gated)
 def member_stats_endpoint(
     tenant_id: str, current_user: dict = Depends(get_current_user)
-):
-    return team.member_stats(tenant_id)
+) -> TeamStatsView:
+    return TeamStatsView.render(team.member_stats(tenant_id))
 
 
 @router.get("/tenants/{tenant_id}/invitations", dependencies=plan_gated)

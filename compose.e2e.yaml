@@ -12,18 +12,18 @@ services:
       LEMONSQUEEZY_VARIANT_MICRO: "${LEMONSQUEEZY_VARIANT_MICRO:-}"
       LEMONSQUEEZY_VARIANT_PLUS: "${LEMONSQUEEZY_VARIANT_PLUS:-}"
       LEMONSQUEEZY_VARIANT_PRO: "${LEMONSQUEEZY_VARIANT_PRO:-}"
-    ports:
+    ports: !override
       - "${E2E_API_PORT:-43118}:8000"
     tmpfs:
       - /tmp
 
   storage:
-    ports:
+    ports: !override
       - "${E2E_STORAGE_PORT:-43119}:9000"
       - "127.0.0.1:${E2E_STORAGE_CONSOLE_PORT:-43120}:9001"
 
   web_app:
     environment:
       VITE_API_URL: "http://localhost:${E2E_API_PORT:-43118}/api/v1"
-    ports:
+    ports: !override
       - "${E2E_WEB_PORT:-43117}:3000"

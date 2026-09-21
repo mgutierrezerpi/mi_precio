@@ -1,0 +1,19 @@
+"""Stable public API for tenant team management."""
+
+from lib.ctx.team.invitations import cancel_invitation, invite_member, list_invitations
+from lib.ctx.team.member_updates import remove_member, update_member, update_member_role
+from lib.ctx.team.members import list_members, member_stats
+from lib.ctx.team.shared import ASSIGNABLE_ROLES, TeamError
+
+__all__ = [
+    "ASSIGNABLE_ROLES",
+    "TeamError",
+    "cancel_invitation",
+    "invite_member",
+    "list_invitations",
+    "list_members",
+    "member_stats",
+    "remove_member",
+    "update_member",
+    "update_member_role",
+]

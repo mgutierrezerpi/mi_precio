@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
+from infra.storage import object_storage
+
 
 class BaseView(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -22,4 +24,6 @@ class BaseView(BaseModel):
         """
         if isinstance(value, datetime) and value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
+        if isinstance(value, str):
+            return object_storage.normalize_public_url(value)
         return value

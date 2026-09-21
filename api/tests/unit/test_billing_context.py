@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from lib.ctx import billing_context as billing
+from lib.ctx import billing
 from models import Tenant, User
 
 

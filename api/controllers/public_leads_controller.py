@@ -5,8 +5,9 @@ from fastapi import APIRouter, HTTPException, Request
 from controllers.input_types import CreateLead
 from lib import rate_limit
 from lib.ctx import leads, public
-from lib.ctx.leads_context import LeadRejected
+from lib.ctx.leads import LeadRejected
 from tasks import send_contact_submission_email
+from views import OkView
 
 LEADS_PER_WINDOW = 5
 LEADS_WINDOW_SECONDS = 600
@@ -14,13 +15,13 @@ public_leads_router = APIRouter()
 
 
 @public_leads_router.post("/{subdomain}/leads", status_code=201)
-def create_public_lead(subdomain: str, data: CreateLead, request: Request):
+def create_public_lead(subdomain: str, data: CreateLead, request: Request) -> OkView:
     """Store a public-list lead without exposing the shop's plan to visitors."""
     tenant = public.get_tenant_by_subdomain(subdomain)
     if not tenant:
         raise HTTPException(status_code=404, detail="Not found")
     if data.website:
-        return {"ok": True}
+        return OkView()
     client = request.client.host if request.client else "unknown"
     if not rate_limit.allow(
         f"lead:{tenant.id}:{client}", LEADS_PER_WINDOW, LEADS_WINDOW_SECONDS
@@ -32,4 +33,4 @@ def create_public_lead(subdomain: str, data: CreateLead, request: Request):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     if lead and lead.source == "contact":
         send_contact_submission_email(lead.id)
-    return {"ok": True}
+    return OkView()

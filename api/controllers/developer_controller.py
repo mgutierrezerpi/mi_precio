@@ -4,20 +4,25 @@ from controllers.deps import require_super_admin
 from controllers.input_types import UpdateFeatureFlag
 from controllers.router import ControllerRouter
 from lib.ctx import feature_flags
+from views import DeveloperAccessView, FeatureFlagAssignmentView, FeatureFlagView
 
 router = ControllerRouter(prefix="/developer", tags=["developer"])
 
 
 @router.get("/access")
-def developer_access(current_user: dict = Depends(require_super_admin)):
+def developer_access(
+    current_user: dict = Depends(require_super_admin),
+) -> DeveloperAccessView:
     """Guard the developer portal with a server-side platform permission."""
-    return {"enabled": True, "user_id": current_user.get("sub")}
+    return DeveloperAccessView(enabled=True, user_id=current_user.get("sub"))
 
 
 @router.get("/feature-flags")
-def list_feature_flags(current_user: dict = Depends(require_super_admin)):
+def list_feature_flags(
+    current_user: dict = Depends(require_super_admin),
+) -> list[FeatureFlagView]:
     """List feature flags and their tenant rollout state for super admins."""
-    return feature_flags.list_flags()
+    return FeatureFlagView.render_many(feature_flags.list_flags())
 
 
 @router.put("/feature-flags/{key}/tenants/{tenant_id}")
@@ -26,8 +31,8 @@ def update_feature_flag(
     tenant_id: str,
     data: UpdateFeatureFlag,
     current_user: dict = Depends(require_super_admin),
-):
+) -> FeatureFlagAssignmentView:
     assignment = feature_flags.set_tenant_flag(key, tenant_id, data.enabled)
     if not assignment:
         raise HTTPException(status_code=404, detail="Feature flag or tenant not found")
-    return assignment
+    return FeatureFlagAssignmentView.model_validate(assignment)

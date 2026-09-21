@@ -22,6 +22,12 @@ Run it detached with:
 bin/dev -d
 ```
 
+Rebuild the images after changing a Dockerfile or dependency lockfile:
+
+```bash
+docker compose build
+```
+
 Stop the stack with:
 
 ```bash
@@ -41,7 +47,15 @@ The Vite web app also has these useful routes:
 - `http://localhost:3001/admin/items`
 - `http://localhost:3001/admin/settings`
 
-Ports can be overridden with `WEB_APP_PORT` and `API_PORT`.
+`bin/dev` checks all four host ports before starting. If a preferred port is
+busy, it uses the next available one and prints the resulting URLs. Preferred
+ports can be overridden with `WEB_APP_PORT`, `API_PORT`, `STORAGE_PORT`, and
+`STORAGE_CONSOLE_PORT`.
+
+`bin/dev` also loads `api/.env` before starting Compose. To use Lemon Squeezy's
+test-mode checkout locally, set `BILLING_ENABLED=true` there together with the
+test-mode API key, store ID, webhook secret, and plan variant IDs, then restart
+the API container with `bin/dev -d --force-recreate api web_app`.
 
 ## Error monitoring
 

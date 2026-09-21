@@ -3,7 +3,7 @@
 import json
 from uuid import uuid4
 
-from lib.ctx.identity_context import get_tenant
+from lib.ctx.identity import get_tenant
 from models import LinkTree
 
 

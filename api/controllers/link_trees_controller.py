@@ -4,7 +4,7 @@ from controllers.deps import get_current_user, require_editor
 from controllers.input_types import UpdateLinkTree
 from controllers.router import ControllerRouter
 from lib.ctx import activity, brand_assets, linktrees, public
-from views import LinkTreeView
+from views import LinkTreeView, PublicLinkTreeView, UrlView
 
 router = ControllerRouter(tags=["linktrees"])
 
@@ -14,7 +14,7 @@ async def upload_list_template_image_endpoint(
     tenant_id: str,
     image: UploadFile = File(...),
     current_user: dict = Depends(require_editor),
-):
+) -> UrlView:
     if current_user.get("tenant_id") != tenant_id:
         raise HTTPException(
             status_code=403, detail="No tenés permisos para esta acción"
@@ -34,7 +34,7 @@ async def upload_list_template_image_endpoint(
         raise HTTPException(status_code=status, detail=str(e)) from e
     if not url:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    return {"url": url}
+    return UrlView(url=url)
 
 
 @router.post("/tenants/{tenant_id}/list-template/video", status_code=201)
@@ -42,7 +42,7 @@ async def upload_list_template_video_endpoint(
     tenant_id: str,
     video: UploadFile = File(...),
     current_user: dict = Depends(require_editor),
-):
+) -> UrlView:
     if current_user.get("tenant_id") != tenant_id:
         raise HTTPException(
             status_code=403, detail="No tenés permisos para esta acción"
@@ -62,7 +62,7 @@ async def upload_list_template_video_endpoint(
         raise HTTPException(status_code=status, detail=str(e)) from e
     if not url:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    return {"url": url}
+    return UrlView(url=url)
 
 
 @router.post("/tenants/{tenant_id}/linktree/avatar", status_code=201)
@@ -70,7 +70,7 @@ async def upload_linktree_avatar_endpoint(
     tenant_id: str,
     image: UploadFile = File(...),
     current_user: dict = Depends(require_editor),
-):
+) -> UrlView:
     try:
         url = brand_assets.upload_brand_image(
             tenant_id, await image.read(), image.content_type or ""
@@ -86,7 +86,7 @@ async def upload_linktree_avatar_endpoint(
         raise HTTPException(status_code=status, detail=str(e)) from e
     if not url:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    return {"url": url}
+    return UrlView(url=url)
 
 
 @router.get("/tenants/{tenant_id}/linktree")
@@ -122,7 +122,7 @@ def update_linktree_endpoint(
 
 
 @router.get("/public/{subdomain}/linktree")
-def get_public_linktree_endpoint(subdomain: str):
+def get_public_linktree_endpoint(subdomain: str) -> PublicLinkTreeView:
     tree = linktrees.LinkTree.get_or_none(
         linktrees.LinkTree.public_slug == subdomain.lower()
     )
@@ -133,7 +133,4 @@ def get_public_linktree_endpoint(subdomain: str):
     if not public.get_published_lists(tenant):
         catalog_url = f"/p/{tenant.subdomain}"
         view.links = [link for link in view.links if link.get("url") != catalog_url]
-    return {
-        "tenant": {"name": tenant.name, "subdomain": tenant.subdomain},
-        "linktree": view,
-    }
+    return PublicLinkTreeView.render(tenant, view)

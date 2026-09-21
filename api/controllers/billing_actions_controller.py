@@ -5,9 +5,8 @@ from fastapi import Depends, HTTPException
 from controllers.deps import require_owner
 from controllers.input_types import ReconcileCheckout, SubscriptionAction
 from controllers.router import ControllerRouter
-from lib.ctx import activity
-from lib.ctx import billing_context as billing
-from views import TenantView
+from lib.ctx import activity, billing
+from views import BillingReconciliationView, TenantView
 
 router = ControllerRouter(prefix="/billing", tags=["billing"])
 
@@ -60,9 +59,11 @@ def resume_subscription_endpoint(
 @router.post("/reconcile-checkout")
 def reconcile_checkout_endpoint(
     data: ReconcileCheckout, current_user: dict = Depends(require_owner)
-):
+) -> BillingReconciliationView:
     _require_own_tenant(data.tenant_id, current_user)
     try:
-        return billing.reconcile_checkout_order(data.tenant_id, data.order_id)
+        return BillingReconciliationView.render(
+            billing.reconcile_checkout_order(data.tenant_id, data.order_id)
+        )
     except billing.BillingError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
