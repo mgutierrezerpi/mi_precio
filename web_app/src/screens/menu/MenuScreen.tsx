@@ -32,7 +32,7 @@ import {
 import { lighten, readableOn, withAlpha } from '../../lib/designColors'
 import { parseUtc } from '../../lib/datetime'
 import { categoryIcon } from '../../lib/categoryIcon'
-import { PencilList } from './pencil'
+import { PencilList, pencilHasDesktopCover } from './pencil'
 import { pencilCartThemeFor } from './pencil/cartTheme'
 import { isPencilVariant } from './pencil/variants'
 import { PencilActionBar } from './pencilActions'
@@ -757,12 +757,17 @@ export function MenuScreen() {
             )}
           </div>
           {isPencilCartDesign && !isService && !showCart && (
-            <PencilActionBar props={designProps} />
+            <PencilActionBar
+              props={designProps}
+              hideOnDesktop={pencilHasDesktopCover(design)}
+            />
           )}
           {/* The band spans the full width so it reads as one surface with the
-              footer above it; the link itself stays centered and w-fit. */}
+              footer above it; the link itself stays centered and w-fit. A
+              design with a desktop cover signs itself inside that cover, so
+              the band steps aside from lg up. */}
           <div
-            className="relative z-10 w-full"
+            className={`relative z-10 w-full ${pencilHasDesktopCover(design) ? 'lg:hidden' : ''}`}
             style={{ backgroundColor: barSurface, backgroundImage: barTexture }}
           >
             <a

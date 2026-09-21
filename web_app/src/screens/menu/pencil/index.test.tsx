@@ -1,8 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { DesignProps } from '../designs'
 import { getT } from '../../../lib/i18n'
-import { PencilList, pencilTemplateDefaults } from './index'
+import {
+  PencilList,
+  pencilHasDesktopCover,
+  pencilTemplateDefaults,
+} from './index'
 import { pencilCartThemeFor } from './cartTheme'
 import type { PencilVariant } from './variants'
 
@@ -290,5 +294,92 @@ describe('Pencil price-list templates', () => {
       'Un servicio pensado para acompañar cada proyecto.'
     )
     view.unmount()
+  })
+})
+
+describe('left-image across the lg breakpoint', () => {
+  const realMatchMedia = window.matchMedia
+  // happy-dom's window starts 1024px wide, so pin the breakpoint either way
+  // instead of inheriting whatever the environment happens to be.
+  const pinLg = (matches: boolean) => {
+    window.matchMedia = ((query: string) => ({
+      matches,
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })) as unknown as typeof window.matchMedia
+  }
+  afterEach(() => {
+    window.matchMedia = realMatchMedia
+  })
+
+  it('puts the shop on a cover and the menu beside it on desktop', () => {
+    pinLg(true)
+    const view = render(<PencilList variant="pencil-bakery" {...props} />)
+    // The shop leads the page; the list's own title heads the menu side.
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Demo Studio'
+    )
+    expect(
+      screen.getByRole('heading', { name: 'Demo price list' })
+    ).toBeTruthy()
+    // The cover docks its own cart button instead of a floating bar.
+    expect(screen.getByRole('button', { name: /Mi carrito/ })).toBeTruthy()
+    view.unmount()
+  })
+
+  it('keeps the phone layout below lg', () => {
+    pinLg(false)
+    const view = render(<PencilList variant="pencil-bakery" {...props} />)
+    expect(view.container.querySelector('aside.sticky')).toBeNull()
+    view.unmount()
+  })
+})
+
+describe('left-image product showcase', () => {
+  const photographed = [
+    { ...props.sections[0].items[0], imageUrl: '/espresso.jpg' },
+    {
+      ...props.sections[0].items[0],
+      id: 'item-2',
+      name: 'Flat White',
+      price: '140',
+      imageUrl: '/flat-white.jpg',
+    },
+  ]
+  const withPhotos = {
+    ...props,
+    allItems: photographed,
+    sections: [{ ...props.sections[0], items: photographed }],
+  }
+
+  it('cycles product photos captioned with name and price, with no gallery tab', () => {
+    const view = render(<PencilList variant="pencil-bakery" {...withPhotos} />)
+    const showcase = screen.getByRole('region', { name: 'Fotos de productos' })
+    expect(showcase.textContent).toContain('Signature service')
+    expect(showcase.textContent).toContain('$42')
+    // One dot per photo, and the second one jumps straight to it.
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Flat White' }))
+    expect(showcase.textContent).toContain('Flat White')
+    expect(showcase.textContent).toContain('$140')
+    expect(screen.queryByRole('button', { name: /galer/i })).toBeNull()
+    view.unmount()
+  })
+
+  it("falls back to the template's picture when no product has a photo", () => {
+    const view = render(<PencilList variant="pencil-bakery" {...props} />)
+    expect(
+      screen.queryByRole('region', { name: 'Fotos de productos' })
+    ).toBeNull()
+    expect(view.container.textContent).toContain('la mesa de la mañana')
+    view.unmount()
+  })
+})
+
+describe('pencilHasDesktopCover', () => {
+  it('is true only for layouts whose desktop cover carries the actions', () => {
+    expect(pencilHasDesktopCover('pencil-bakery')).toBe(true)
+    expect(pencilHasDesktopCover('pencil-casa-bath')).toBe(false)
+    expect(pencilHasDesktopCover('store')).toBe(false)
   })
 })

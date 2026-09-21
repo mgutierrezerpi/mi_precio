@@ -3,8 +3,23 @@ import { createPortal } from 'react-dom'
 import { CartControl, type DesignProps, type Section } from '../designs'
 import type { ListContent, ListDesign } from '../../../types'
 import { SpecialPencilList } from '../pencilSpecialDesigns'
+import { PencilActionBar } from '../pencilActions'
+import { useIsDesktop, useMediaQuery } from '../../../hooks/useMediaQuery'
 import { PENCIL_TEMPLATE_CONFIG } from './templates'
 import { isPencilVariant, type PencilVariant } from './variants'
+
+/**
+ * Layouts whose desktop cover carries the WhatsApp/cart actions and the
+ * "Powered by MiPrecio" signature, so the page-level floating bar and closing
+ * band both stand aside from `lg` up.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function pencilHasDesktopCover(design: ListDesign): boolean {
+  return (
+    isPencilVariant(design) &&
+    PENCIL_TEMPLATE_CONFIG[design].layout === 'left-image'
+  )
+}
 
 /** The authored copy/media a Pencil layout starts with. Exposed to the admin
  * editor so an untouched template is editable rather than looking blank. */
@@ -221,17 +236,12 @@ function Masthead({
   color: PencilConfig
   logoUrl?: string | null
   brandName: string
-  /** `rail` is the desktop spread: centered on a phone, left in the side rail. */
-  align?: 'left' | 'center' | 'rail'
+  align?: 'left' | 'center'
 }) {
-  const alignment =
-    align === 'center'
-      ? 'items-center text-center'
-      : align === 'left'
-        ? 'items-start text-left'
-        : 'items-center text-center lg:items-start lg:text-left'
   return (
-    <header className={`flex flex-col gap-1 ${alignment}`}>
+    <header
+      className={`flex flex-col gap-1 ${align === 'center' ? 'items-center text-center' : 'items-start text-left'}`}
+    >
       {logoUrl && (
         <img
           src={logoUrl}
@@ -249,7 +259,7 @@ function Masthead({
         </p>
       )}
       <h1
-        className={`max-w-full break-words text-balance text-[44px] leading-none sm:text-[60px] ${align === 'rail' ? 'lg:text-[46px]' : ''}`}
+        className="max-w-full break-words text-balance text-[44px] leading-none sm:text-[60px]"
         style={{
           color: color.ink,
           fontFamily: fontFor(color, 'heading'),
@@ -309,17 +319,122 @@ function PencilImage({
   )
 }
 
-function PencilPromo({ config }: { config: PencilConfig }) {
-  // The panel advertises an offer at a price. With nothing authored it used to
-  // fall back to the template's sample combo, so a shop that never opened the
-  // editor published a product it does not sell. Better to show nothing.
-  const authored =
+const SHOWCASE_INTERVAL_MS = 5000
+
+/**
+ * The shop's own product photos, cycling on their own, each captioned with
+ * the product's name and price. It stands where the template's stock photo
+ * stood, and replaces the separate "Galería" page: the pictures now sell from
+ * the page itself instead of from behind a tab.
+ *
+ * With no product photos it falls back to the template's image, so a shop
+ * that has not uploaded any is not left with an empty frame.
+ */
+function PencilShowcase({
+  config,
+  items,
+  className,
+}: {
+  config: PencilConfig
+  items: Section['items']
+  className?: string
+}) {
+  const photos = items.filter((item) => item.imageUrl || item.imageThumbUrl)
+  const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
+  const count = photos.length
+
+  useEffect(() => {
+    if (count < 2 || paused || reduceMotion) return
+    const timer = window.setInterval(
+      () => setIndex((current) => (current + 1) % count),
+      SHOWCASE_INTERVAL_MS
+    )
+    return () => window.clearInterval(timer)
+  }, [count, paused, reduceMotion])
+
+  if (count === 0) return <PencilImage config={config} className={className} />
+  // The list can shrink under a running index (a filter, a refetch).
+  const active = index % count
+  const current = photos[active]
+
+  return (
+    <div
+      className={`relative overflow-hidden ${className ?? ''}`}
+      role="region"
+      aria-roledescription="carrusel"
+      aria-label="Fotos de productos"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {photos.map((photo, i) => (
+        <img
+          key={photo.id}
+          src={photo.imageUrl || photo.imageThumbUrl || ''}
+          alt={i === active ? photo.name : ''}
+          aria-hidden={i !== active}
+          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
+          style={{ opacity: i === active ? 1 : 0 }}
+        />
+      ))}
+      <div
+        className="absolute bottom-3 left-3 flex max-w-[calc(100%-1.5rem)] items-baseline gap-4 px-3 py-2"
+        style={{ background: `${config.background}e8`, color: config.ink }}
+        aria-live={paused ? 'polite' : 'off'}
+      >
+        <span
+          className="min-w-0 truncate text-[17px] italic leading-none sm:text-[18px]"
+          style={{ fontFamily: fontFor(config, 'heading') }}
+        >
+          {current.name}
+        </span>
+        <span
+          className="shrink-0 text-[13px] tabular-nums"
+          style={{ fontFamily: fontFor(config, 'label') }}
+        >
+          {price(current.price, config.priceFormat)}
+        </span>
+      </div>
+      {count > 1 && (
+        <div className="absolute bottom-4 right-4 flex gap-1.5">
+          {photos.map((photo, i) => (
+            <button
+              key={photo.id}
+              type="button"
+              onClick={() => setIndex(i)}
+              aria-label={`Ver ${photo.name}`}
+              aria-current={i === active}
+              className="h-1.5 rounded-full transition-all"
+              style={{
+                width: i === active ? 18 : 6,
+                background: i === active ? '#FFFFFF' : '#FFFFFF80',
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The promo panel advertises an offer at a price. With nothing authored it
+ * used to fall back to the template's sample combo, so a shop that never
+ * opened the editor published a product it does not sell. Better to show
+ * nothing.
+ */
+const promoAuthored = (config: PencilConfig) =>
+  Boolean(
     config.promoEyebrow ||
     config.promoTitle ||
     config.promoBody ||
     config.promoPrice ||
     config.promoNote
-  if (!authored) return null
+  )
+
+function PencilPromo({ config }: { config: PencilConfig }) {
+  if (!promoAuthored(config)) return null
   return (
     <aside
       className="flex min-h-[190px] min-w-0 w-full flex-col justify-between p-5 sm:p-8"
@@ -367,10 +482,13 @@ function PencilItem({
   item,
   color,
   props,
+  leaders = false,
 }: {
   item: Section['items'][number]
   color: PencilConfig
   props: DesignProps
+  /** A printed-menu row: name, a dotted leader, then price and cart. */
+  leaders?: boolean
 }) {
   const galleryItems = (
     props.allItems || props.sections.flatMap((section) => section.items)
@@ -403,54 +521,86 @@ function PencilItem({
       document.body.style.overflow = previousOverflow
     }
   }, [imageIndex, galleryItems.length])
+  const name = image ? (
+    <button
+      type="button"
+      className="cursor-zoom-in break-words text-left text-[18px] leading-[1.08] underline decoration-transparent underline-offset-4 transition group-hover:decoration-current sm:text-[20px]"
+      style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
+      onClick={() => setImageIndex(Math.max(itemImageIndex, 0))}
+      aria-label={`Ver foto de ${item.name}`}
+    >
+      {item.name}
+    </button>
+  ) : (
+    <p
+      className="break-words text-[18px] leading-[1.08] sm:text-[20px]"
+      style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
+    >
+      {item.name}
+    </p>
+  )
+  const description = item.description && (
+    <p
+      className="mt-0.5 break-words text-[11px] leading-[1.25] sm:text-[12px]"
+      style={{ color: color.muted, fontFamily: fontFor(color, 'body') }}
+    >
+      {item.description}
+    </p>
+  )
+  const priceTag = (
+    <span
+      className="text-right text-[14px] tabular-nums sm:text-[15px]"
+      style={{ color: color.ink, fontFamily: fontFor(color, 'label') }}
+    >
+      {price(item.price, color.priceFormat)}
+    </span>
+  )
+  const cartControl = !props.isService && (
+    <CartControl
+      qty={props.cart[item.id] ?? 0}
+      id={item.id}
+      addToCart={props.addToCart}
+      decFromCart={props.decFromCart}
+      accent={color.accent}
+      ink={color.ink}
+    />
+  )
   return (
-    <div className="group relative flex min-w-0 items-start justify-between gap-4">
-      <div className="min-w-0 flex-1">
-        {image ? (
-          <button
-            type="button"
-            className="cursor-zoom-in break-words text-left text-[18px] leading-[1.08] underline decoration-transparent underline-offset-4 transition group-hover:decoration-current sm:text-[20px]"
-            style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
-            onClick={() => setImageIndex(Math.max(itemImageIndex, 0))}
-            aria-label={`Ver foto de ${item.name}`}
-          >
-            {item.name}
-          </button>
-        ) : (
-          <p
-            className="break-words text-[18px] leading-[1.08] sm:text-[20px]"
-            style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
-          >
-            {item.name}
-          </p>
-        )}
-        {item.description && (
-          <p
-            className="mt-0.5 break-words text-[11px] leading-[1.25] sm:text-[12px]"
-            style={{ color: color.muted, fontFamily: fontFor(color, 'body') }}
-          >
-            {item.description}
-          </p>
-        )}
-      </div>
-      <div className="flex shrink-0 items-center gap-3">
-        {!props.isService && (
-          <CartControl
-            qty={props.cart[item.id] ?? 0}
-            id={item.id}
-            addToCart={props.addToCart}
-            decFromCart={props.decFromCart}
-            accent={color.accent}
-            ink={color.ink}
-          />
-        )}
-        <span
-          className="text-right text-[14px] tabular-nums sm:text-[15px]"
-          style={{ color: color.ink, fontFamily: fontFor(color, 'label') }}
-        >
-          {price(item.price, color.priceFormat)}
-        </span>
-      </div>
+    <div
+      className={
+        leaders
+          ? 'group relative min-w-0'
+          : 'group relative flex min-w-0 items-start justify-between gap-4'
+      }
+    >
+      {leaders ? (
+        <>
+          {/* The leader carries the eye from name to price across the wide
+              column, the way a printed menu does; the cart sits last. */}
+          <div className="flex min-w-0 items-baseline gap-3">
+            <div className="min-w-0 shrink">{name}</div>
+            <span
+              aria-hidden="true"
+              className="min-w-8 flex-1 border-b border-dotted"
+              style={{ borderColor: `${color.muted}99` }}
+            />
+            {priceTag}
+            {cartControl && <div className="self-center">{cartControl}</div>}
+          </div>
+          {description}
+        </>
+      ) : (
+        <>
+          <div className="min-w-0 flex-1">
+            {name}
+            {description}
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            {cartControl}
+            {priceTag}
+          </div>
+        </>
+      )}
       {image && (
         <>
           <div
@@ -534,10 +684,12 @@ function PencilSection({
   section,
   config,
   props,
+  leaders = false,
 }: {
   section: Section
   config: PencilConfig
   props: DesignProps
+  leaders?: boolean
 }) {
   return (
     <section className="flex min-w-0 flex-col gap-2.5">
@@ -549,7 +701,13 @@ function PencilSection({
       </h2>
       <div className="flex flex-col gap-4 sm:gap-3.5">
         {section.items.map((item) => (
-          <PencilItem key={item.id} item={item} color={config} props={props} />
+          <PencilItem
+            key={item.id}
+            item={item}
+            color={config}
+            props={props}
+            leaders={leaders}
+          />
         ))}
       </div>
     </section>
@@ -561,11 +719,14 @@ function PencilCatalog({
   config,
   props,
   fullWidth = false,
+  leaders = false,
 }: {
   sections: Section[]
   config: PencilConfig
   props: DesignProps
   fullWidth?: boolean
+  /** Single column of dotted-leader rows, for the wide side of the desktop spread. */
+  leaders?: boolean
 }) {
   if (sections.length === 0) {
     return (
@@ -579,7 +740,7 @@ function PencilCatalog({
   }
   return (
     <div
-      className={`grid min-w-0 grid-cols-1 gap-8 ${fullWidth ? '' : 'md:grid-cols-2 md:gap-x-10 md:gap-y-7'}`}
+      className={`grid min-w-0 grid-cols-1 ${leaders ? 'gap-12' : 'gap-8'} ${fullWidth || leaders ? '' : 'md:grid-cols-2 md:gap-x-10 md:gap-y-7'}`}
     >
       {sections.map((section) => (
         <PencilSection
@@ -587,6 +748,7 @@ function PencilCatalog({
           section={section}
           config={config}
           props={props}
+          leaders={leaders}
         />
       ))}
     </div>
@@ -703,6 +865,19 @@ function PencilPageNav({
   )
 }
 
+/**
+ * The shop's own words win. With nothing authored we show the shop's real
+ * details — never the sample address the template shipped with, which put a
+ * street in Paris on the page of a café in Montevideo.
+ */
+function footerLines(config: PencilConfig, props: DesignProps) {
+  return {
+    left: config.footerLeft || props.tenant.address || props.tenant.name,
+    right:
+      config.footerRight || props.t('pub.footer', { currency: props.currency }),
+  }
+}
+
 function PencilFooter({
   config,
   props,
@@ -710,12 +885,7 @@ function PencilFooter({
   config: PencilConfig
   props: DesignProps
 }) {
-  // The shop's own words win. With nothing authored we show the shop's real
-  // details — never the sample address the template shipped with, which put a
-  // street in Paris on the page of a café in Montevideo.
-  const left = config.footerLeft || props.tenant.address || props.tenant.name
-  const right =
-    config.footerRight || props.t('pub.footer', { currency: props.currency })
+  const { left, right } = footerLines(config, props)
   return (
     <footer
       className="flex min-w-0 flex-col gap-2 border-t pt-5 sm:flex-row sm:items-center sm:justify-between"
@@ -740,16 +910,9 @@ function PencilFooter({
 function PencilShell({
   config,
   children,
-  /**
-   * Opens the measure up for layouts that lay out as a desktop spread. The
-   * default 920px is a phone column stretched onto a monitor: on a 1900px
-   * screen it leaves roughly 490px dead on either side.
-   */
-  wide = false,
 }: {
   config: PencilConfig
   children: React.ReactNode
-  wide?: boolean
 }) {
   const style: CSSProperties = {
     background: config.background,
@@ -758,15 +921,211 @@ function PencilShell({
   }
   return (
     <div className="min-h-0 w-full min-w-0 overflow-x-clip" style={style}>
-      <div
-        className={`mx-auto flex min-w-0 w-full flex-col px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10 ${
-          wide
-            ? 'max-w-[920px] lg:max-w-[1180px] xl:max-w-[1360px]'
-            : 'max-w-[920px]'
-        }`}
-      >
+      <div className="mx-auto flex min-w-0 w-full max-w-[920px] flex-col px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
         {children}
       </div>
+    </div>
+  )
+}
+
+/**
+ * MiPrecio's signature, set inside the cover rather than in the page-wide
+ * band under it: on this layout the band would sit beneath a dark panel and a
+ * light column at once and match neither. Same mark and mask as the band in
+ * `MenuScreen`, in the panel's light ink.
+ */
+function CoverPoweredBy({ background }: { background: string }) {
+  return (
+    <a
+      href="https://miprecio.app"
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Powered by MiPrecio"
+      className="flex w-fit items-center gap-2 text-[9px] font-bold uppercase tracking-[0.12em] no-underline"
+      style={{ color: PANEL_MUTED }}
+    >
+      <span>Powered by</span>
+      <span
+        className="relative block h-6 w-[94px] overflow-hidden"
+        aria-hidden="true"
+      >
+        <span
+          className="absolute inset-0"
+          style={{
+            background: PANEL_INK,
+            WebkitMask:
+              "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
+            mask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
+          }}
+        />
+        <span
+          className="absolute bottom-0 left-[30%] right-0 h-[25%]"
+          style={{ background }}
+        />
+      </span>
+    </a>
+  )
+}
+
+/** Light ink used on the template's dark panel, matching `PencilPromo`. */
+const PANEL_INK = '#F8F5EE'
+const PANEL_MUTED = '#D9D3C8'
+
+/**
+ * The desktop spread for `left-image`: a cover that stays put on the left and
+ * a menu that scrolls on the right, the way a restaurant's own site reads.
+ *
+ * Not the phone layout re-placed on a grid — that was tried first and left
+ * the pieces stranded: tabs alone in a corner above a 150px hole, the footer
+ * floating mid-rail, the shop's name nowhere near the top. The cover holds
+ * everything about the shop (photo, name, how to order, where it is); the
+ * right side holds only the menu.
+ */
+function PencilCoverSpread({
+  config,
+  props,
+  eyebrow,
+  title,
+  body,
+  items,
+  catalog,
+  promo,
+}: {
+  config: PencilConfig
+  props: DesignProps
+  eyebrow?: string
+  title: string
+  body?: string
+  items: Section['items']
+  catalog: React.ReactNode
+  promo: React.ReactNode
+}) {
+  const { tenant } = props
+  const lines = footerLines(config, props)
+  // With no address the fallback is the shop's name, which the cover already
+  // prints in 52px right above — drop it rather than say it twice.
+  const left = lines.left === tenant.name ? '' : lines.left
+  // Likewise the stock line credits MiPrecio, and the badge below does that.
+  const right =
+    config.footerRight || props.t('pub.pricesIn', { currency: props.currency })
+  // The list's own title is worth a heading only when it says something the
+  // cover does not already: a list named after the shop would print it twice.
+  const showTitle = title.trim() !== tenant.name.trim()
+  return (
+    <div
+      className="grid min-h-[100dvh] w-full grid-cols-[minmax(400px,42%)_minmax(0,1fr)]"
+      style={{
+        background: config.background,
+        color: config.ink,
+        fontFamily: fontFor(config, 'body'),
+      }}
+    >
+      <aside
+        className="sticky top-0 flex h-[100dvh] min-w-0 flex-col"
+        style={{ background: config.darkPanel, color: PANEL_INK }}
+      >
+        <PencilShowcase
+          config={config}
+          items={items}
+          className="min-h-0 flex-1"
+        />
+        <div className="flex flex-col gap-5 px-10 py-9 xl:px-14 xl:py-11">
+          <div className="flex items-center gap-4">
+            {tenant.logoUrl && (
+              <img
+                src={tenant.logoUrl}
+                alt={`Logo de ${tenant.name}`}
+                // The white tile is what keeps a dark-ink logo legible on the
+                // dark panel. It cannot rescue a logo with white lettering;
+                // that one needs a version made for light backgrounds.
+                className="h-14 w-14 shrink-0 rounded-xl bg-white object-contain p-1.5"
+              />
+            )}
+            <h1
+              className="min-w-0 break-words text-[40px] leading-[0.95] xl:text-[52px]"
+              style={{
+                fontFamily: fontFor(config, 'heading'),
+                fontWeight: 400,
+              }}
+            >
+              {tenant.name}
+            </h1>
+          </div>
+          {tenant.description && (
+            <p
+              className="max-w-[46ch] text-[14px] leading-relaxed"
+              style={{
+                color: PANEL_MUTED,
+                fontFamily: fontFor(config, 'body'),
+              }}
+            >
+              {tenant.description}
+            </p>
+          )}
+          {!props.isService && <PencilActionBar props={props} docked />}
+          <p
+            className="flex flex-wrap gap-x-3 gap-y-1 border-t pt-4 text-[10px] uppercase tracking-[1.5px]"
+            style={{
+              borderColor: `${PANEL_INK}26`,
+              color: PANEL_MUTED,
+              fontFamily: fontFor(config, 'label'),
+            }}
+          >
+            {left && (
+              <>
+                <span>{left}</span>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
+            <span>{right}</span>
+          </p>
+          <CoverPoweredBy background={config.darkPanel} />
+        </div>
+      </aside>
+      <main className="min-w-0 px-12 py-14 xl:px-20 xl:py-16">
+        <div className="mx-auto flex max-w-[720px] flex-col">
+          {(eyebrow || showTitle || body) && (
+            <header className="mb-8 flex flex-col gap-2">
+              {eyebrow && (
+                <p
+                  className="text-[11px] uppercase tracking-[2px]"
+                  style={{
+                    color: config.accent,
+                    fontFamily: fontFor(config, 'label'),
+                  }}
+                >
+                  {eyebrow}
+                </p>
+              )}
+              {showTitle && (
+                <h2
+                  className="text-[44px] leading-none"
+                  style={{
+                    fontFamily: fontFor(config, 'heading'),
+                    fontWeight: 400,
+                  }}
+                >
+                  {title}
+                </h2>
+              )}
+              {body && (
+                <p
+                  className="max-w-[56ch] text-[15px] italic"
+                  style={{ color: config.muted }}
+                >
+                  {body}
+                </p>
+              )}
+            </header>
+          )}
+          <div
+            className="mb-10 h-px"
+            style={{ background: `${config.accent}66` }}
+          />
+          {catalog}
+          {promoAuthored(config) && <div className="mt-16">{promo}</div>}
+        </div>
+      </main>
     </div>
   )
 }
@@ -776,6 +1135,9 @@ export function PencilList({
   ...props
 }: DesignProps & { variant: PencilVariant }) {
   const [page, setPage] = useState<'catalog' | 'gallery'>('catalog')
+  // One tree per breakpoint rather than both with one hidden: the menu carries
+  // cart controls and a photo lightbox that should exist exactly once.
+  const isDesktop = useIsDesktop()
   const config = withTemplateOverrides(
     { ...PENCIL_TEMPLATE_CONFIG[variant], accent: props.accent },
     props.content?.template
@@ -832,42 +1194,43 @@ export function PencilList({
   const promo = <PencilPromo config={config} />
 
   if (layout === 'left-image') {
+    // No "Galería" tab here: the product photos cycle in the showcase instead,
+    // on the cover at desktop and in the image slot on a phone.
+    const menu = (
+      <PencilCatalog
+        sections={props.sections}
+        config={config}
+        props={props}
+        leaders={isDesktop}
+      />
+    )
+    if (isDesktop)
+      return (
+        <PencilCoverSpread
+          config={config}
+          props={props}
+          eyebrow={eyebrow}
+          title={title}
+          body={body}
+          items={galleryItems}
+          catalog={menu}
+          promo={promo}
+        />
+      )
     return (
-      <PencilShell config={config} wide>
-        {/*
-          Phones keep the single column, in source order. From `lg` the very
-          same nodes re-place themselves as a desktop spread: the shop's
-          identity, picture, offer and details hold a left rail, and the menu
-          itself — the thing people came to read — takes the wide side.
-        */}
-        <div className="flex flex-col lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-x-12 xl:grid-cols-[400px_minmax(0,1fr)] xl:gap-x-16">
-          <div className="lg:col-start-1 lg:row-start-1">
-            <Masthead
-              eyebrow={eyebrow}
-              title={title}
-              body={body}
-              color={config}
-              logoUrl={props.tenant.logoUrl}
-              brandName={props.tenant.name}
-              align="rail"
-            />
-            <Rule
-              color={config.accent}
-              background={config.background}
-              icon={config.dividerIcon ?? 'coffee'}
-            />
-          </div>
-          <div className="lg:col-start-2 lg:row-start-1">{pageNav}</div>
-          <div className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-2">
-            {catalog}
-          </div>
-          <div className="mt-10 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:col-start-1 lg:row-start-2 lg:mt-0 lg:grid-cols-1 lg:gap-6">
-            <PencilImage config={config} className="min-h-[220px]" />
-            {promo}
-          </div>
-          <div className="mt-8 lg:col-start-1 lg:row-start-3">
-            <PencilFooter config={config} props={props} />
-          </div>
+      <PencilShell config={config}>
+        {masthead}
+        {menu}
+        <div className="mt-10 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+          <PencilShowcase
+            config={config}
+            items={galleryItems}
+            className="min-h-[260px]"
+          />
+          {promo}
+        </div>
+        <div className="mt-8">
+          <PencilFooter config={config} props={props} />
         </div>
       </PencilShell>
     )
