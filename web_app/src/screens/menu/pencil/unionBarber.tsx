@@ -258,16 +258,13 @@ export function UnionBarber({
                 {copy.eyebrow}
               </p>
             )}
-            <h1
-              className="max-w-full break-words text-[56px] font-bold uppercase leading-[0.88] sm:text-[84px] lg:text-[120px]"
-              style={{ fontFamily: OSWALD, letterSpacing: '-0.01em' }}
-            >
-              {copy.title}
-            </h1>
+            {/* The list's name stays for screen readers and search, not on
+                the sign: the logo and the description carry it. */}
+            <h1 className="sr-only">{copy.title}</h1>
             {copy.body && (
               <p
-                className="max-w-[52ch] text-[15px] leading-relaxed sm:text-[16px]"
-                style={{ color: '#FFFFFFBF' }}
+                className="max-w-[36ch] text-[22px] font-medium leading-snug sm:text-[26px] lg:text-[30px]"
+                style={{ color: '#FFFFFFE6' }}
               >
                 {copy.body}
               </p>
