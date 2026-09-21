@@ -4,6 +4,7 @@ import logging
 import re
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -39,6 +40,36 @@ async def enforce_tenant_isolation(request: Request, call_next):
     return await call_next(request)
 
 
+_log = logging.getLogger(__name__)
+
+
+async def unhandled_errors_as_json(request: Request, call_next):
+    """Answer an uncaught exception with a JSON 500 from inside the CORS layer.
+
+    Left to Starlette, an uncaught exception is answered by
+    `ServerErrorMiddleware`, which sits outside `CORSMiddleware`. That 500 goes
+    out without `Access-Control-Allow-Origin`, the browser drops it, and
+    `fetch` throws exactly as it would with the API down — so the panel told
+    shops "No se pudo conectar con el servidor" about what was a server bug.
+    Catching it here keeps CORS on the response and gives the panel a sentence
+    it can show. An `exception_handler(Exception)` would not do: Starlette
+    hangs that one on `ServerErrorMiddleware` too, still outside CORS.
+    """
+    try:
+        return await call_next(request)
+    except Exception:
+        _log.exception("Unhandled error on %s %s", request.method, request.url.path)
+        # Swallowing the exception hides it from Sentry's own hooks, which
+        # live on the middleware we are now bypassing. No-op without a DSN.
+        sentry_sdk.capture_exception()
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Algo falló de nuestro lado. Probá de nuevo en un momento."
+            },
+        )
+
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -68,9 +99,11 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Added before CORS so CORS stays the outermost layer and still attaches its
-    # headers to a 403 returned by the isolation check.
+    # Both added before CORS so CORS stays the outermost layer and still
+    # attaches its headers to a 403 from the isolation check and to a 500 from
+    # an unhandled error. The error catcher wraps the isolation check too.
     app.add_middleware(BaseHTTPMiddleware, dispatch=enforce_tenant_isolation)
+    app.add_middleware(BaseHTTPMiddleware, dispatch=unhandled_errors_as_json)
 
     app.add_middleware(
         CORSMiddleware,
