@@ -1481,6 +1481,7 @@ function ListModal({
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [prodSearch, setProdSearch] = useState('')
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [showProductModal, setShowProductModal] = useState(false)
   // Per-list appearance overrides. Null fields inherit the tenant's defaults,
   // so a list only carries what the user deliberately changed here.
@@ -1736,9 +1737,12 @@ function ListModal({
   const finalize = async () => {
     if (!name.trim()) return
     setSaving(true)
+    setSaveError(null)
     try {
+      // A rejected save used to close the dialog all the same, so the shop
+      // walked away believing a change had stuck. Stay open and say why.
       if (editing) {
-        await dispatch(
+        const res = await dispatch(
           updateList({
             listId: list!.id,
             data: {
@@ -1754,13 +1758,23 @@ function ListModal({
             },
           })
         )
+        if (updateList.rejected.match(res)) {
+          setSaveError(String(res.payload ?? t('pl.saveFailed')))
+          return
+        }
         if (versionId.current) await syncItems(versionId.current)
       } else if (tenantId) {
         const res = await dispatch(
           createList({ tenantId, name: name.trim(), kind })
         )
+        if (createList.rejected.match(res)) {
+          setSaveError(String(res.payload ?? t('pl.saveFailed')))
+          return
+        }
         if (createList.fulfilled.match(res) && res.payload) {
           const vid = res.payload.versions?.[0]?.id
+          // Not checked on purpose: the list already exists by now, and holding
+          // the dialog open would let a second click create a duplicate.
           await dispatch(
             updateList({
               listId: res.payload.id,
@@ -1768,8 +1782,8 @@ function ListModal({
                 slug: slug.trim() || undefined,
                 published,
                 showOnIndex: principal,
-              captureViewerInfo,
-              isPrivate,
+                captureViewerInfo,
+                isPrivate,
                 ...appearance,
               },
             })
@@ -2441,6 +2455,14 @@ function ListModal({
               )}
             </div>
 
+            {saveError && (
+              <p
+                role="alert"
+                className="mt-4 flex items-center gap-2 rounded-xl bg-[var(--tone-red-bg)] px-3 py-2.5 text-xs font-semibold text-[var(--tone-red-fg)]"
+              >
+                <Icon name="alert-triangle" size={14} /> {saveError}
+              </p>
+            )}
             <div className="mt-5 flex items-center justify-between gap-3">
               <span className="text-xs font-semibold text-[var(--dash-muted)]">
                 {selected.size === 1

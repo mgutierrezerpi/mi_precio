@@ -7,7 +7,7 @@ export const pencilCasaSignature = defineSpecialTemplate({
   accent: '#D5D8D9',
   darkPanel: '#ECEEEF',
   image: '/pencil/templates/w6m36A.png',
-  imageLabel: 'CASA FÉRREA',
-  imageTitle: 'Signature reference',
+  imageLabel: 'SELECCIÓN',
+  imageTitle: 'Referencia de autor',
   layout: 'casa-signature',
 })

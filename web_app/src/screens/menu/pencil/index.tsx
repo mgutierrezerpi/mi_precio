@@ -3,8 +3,71 @@ import { createPortal } from 'react-dom'
 import { CartControl, type DesignProps, type Section } from '../designs'
 import type { ListContent, ListDesign } from '../../../types'
 import { SpecialPencilList } from '../pencilSpecialDesigns'
+import { PencilActionBar } from '../pencilActions'
+import { useIsDesktop } from '../../../hooks/useMediaQuery'
+import { footerLines, pencilPrice } from './copy'
+import { PoweredByMark, ProductShowcase, ShopLogo } from './shared'
 import { PENCIL_TEMPLATE_CONFIG } from './templates'
 import { isPencilVariant, type PencilVariant } from './variants'
+
+/**
+ * Layouts whose desktop cover carries the WhatsApp/cart actions and the
+ * "Powered by MiPrecio" signature, so the page-level floating bar and closing
+ * band both stand aside from `lg` up.
+ */
+const COVER_LAYOUTS: ReadonlySet<PencilConfig['layout']> = new Set([
+  'left-image',
+  'auto-detail',
+  'nova',
+  'calm-spa',
+  'union-barber',
+])
+
+/** Layouts that sign MiPrecio inside their own page at every width. */
+const SELF_SIGNED_LAYOUTS: ReadonlySet<PencilConfig['layout']> = new Set([
+  'nova',
+  'calm-spa',
+  'union-barber',
+])
+
+/**
+ * The WhatsApp button's wording for designs made for a trade where it books
+ * rather than asks — a barbershop's list is a list of appointments.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function pencilAskLabel(
+  design: ListDesign,
+  t: (key: string) => string
+): string | undefined {
+  if (!isPencilVariant(design)) return undefined
+  return PENCIL_TEMPLATE_CONFIG[design].layout === 'union-barber'
+    ? t('pub.bookWhatsApp')
+    : undefined
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function pencilHasDesktopCover(design: ListDesign): boolean {
+  return (
+    isPencilVariant(design) &&
+    COVER_LAYOUTS.has(PENCIL_TEMPLATE_CONFIG[design].layout)
+  )
+}
+
+/**
+ * Where a design signs "Powered by MiPrecio" itself, and so where `MenuScreen`
+ * must leave out its own closing band: nowhere, from `lg` up (the desktop
+ * covers), or at every width (a design painted over a moving sky, where a flat
+ * band would cut the background off).
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function pencilSignsItself(
+  design: ListDesign
+): 'never' | 'desktop' | 'always' {
+  if (!isPencilVariant(design)) return 'never'
+  const layout = PENCIL_TEMPLATE_CONFIG[design].layout
+  if (SELF_SIGNED_LAYOUTS.has(layout)) return 'always'
+  return COVER_LAYOUTS.has(layout) ? 'desktop' : 'never'
+}
 
 /** The authored copy/media a Pencil layout starts with. Exposed to the admin
  * editor so an untouched template is editable rather than looking blank. */
@@ -131,9 +194,7 @@ const withTemplateOverrides = (
     ...(template.footerRight !== undefined
       ? { footerRight: template.footerRight }
       : {}),
-    ...(template.masthead !== undefined
-      ? { masthead: template.masthead }
-      : {}),
+    ...(template.masthead !== undefined ? { masthead: template.masthead } : {}),
     ...(template.brandLabel !== undefined
       ? { brandLabel: template.brandLabel }
       : {}),
@@ -164,13 +225,6 @@ const withTemplateOverrides = (
       ? { darkPanel: template.darkPanelColor }
       : {}),
   }
-}
-
-const price = (value: string | number, prefix = '$') => {
-  const amount = typeof value === 'number' ? value : Number.parseFloat(value)
-  if (Number.isNaN(amount)) return '$—'
-  const display = amount.toFixed(2).replace(/\.00$/, '')
-  return prefix === '$' ? `$${display}` : `${prefix} ${display}`
 }
 
 function Rule({
@@ -279,28 +333,76 @@ function PencilImage({
       className={`relative overflow-hidden bg-cover bg-center ${className ?? ''}`}
       style={{ backgroundImage: `url("${config.image}")` }}
     >
-      <div
-        className="absolute bottom-3 left-3 flex flex-col gap-0.5 px-3 py-2"
-        style={{ background: `${config.background}e8`, color: config.ink }}
-      >
-        <span
-          className="text-[9px] uppercase tracking-[1.6px] sm:text-[10px]"
-          style={{ fontFamily: fontFor(config, 'label') }}
+      {(config.imageLabel || config.imageTitle) && (
+        <div
+          className="absolute bottom-3 left-3 flex flex-col gap-0.5 px-3 py-2"
+          style={{ background: `${config.background}e8`, color: config.ink }}
         >
-          {config.imageLabel}
-        </span>
-        <span
-          className="text-[17px] italic leading-none sm:text-[18px]"
-          style={{ fontFamily: fontFor(config, 'heading') }}
-        >
-          {config.imageTitle}
-        </span>
-      </div>
+          {config.imageLabel && (
+            <span
+              className="text-[9px] uppercase tracking-[1.6px] sm:text-[10px]"
+              style={{ fontFamily: fontFor(config, 'label') }}
+            >
+              {config.imageLabel}
+            </span>
+          )}
+          {config.imageTitle && (
+            <span
+              className="text-[17px] italic leading-none sm:text-[18px]"
+              style={{ fontFamily: fontFor(config, 'heading') }}
+            >
+              {config.imageTitle}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
+/** The shared product showcase, in this template's colours and type. */
+function PencilShowcase({
+  config,
+  items,
+  className,
+}: {
+  config: PencilConfig
+  items: Section['items']
+  className?: string
+}) {
+  return (
+    <ProductShowcase
+      items={items}
+      caption={{
+        background: config.background,
+        ink: config.ink,
+        headingFont: fontFor(config, 'heading'),
+        labelFont: fontFor(config, 'label'),
+      }}
+      priceFormat={config.priceFormat}
+      className={className}
+      fallback={<PencilImage config={config} className={className} />}
+    />
+  )
+}
+
+/**
+ * The promo panel advertises an offer at a price. With nothing authored it
+ * used to fall back to the template's sample combo, so a shop that never
+ * opened the editor published a product it does not sell. Better to show
+ * nothing.
+ */
+const promoAuthored = (config: PencilConfig) =>
+  Boolean(
+    config.promoEyebrow ||
+    config.promoTitle ||
+    config.promoBody ||
+    config.promoPrice ||
+    config.promoNote
+  )
+
 function PencilPromo({ config }: { config: PencilConfig }) {
+  if (!promoAuthored(config)) return null
   return (
     <aside
       className="flex min-h-[190px] min-w-0 w-full flex-col justify-between p-5 sm:p-8"
@@ -348,14 +450,17 @@ function PencilItem({
   item,
   color,
   props,
+  leaders = false,
 }: {
   item: Section['items'][number]
   color: PencilConfig
   props: DesignProps
+  /** A printed-menu row: name, a dotted leader, then price and cart. */
+  leaders?: boolean
 }) {
-  const galleryItems = (props.allItems || props.sections.flatMap((section) => section.items)).filter(
-    (candidate) => candidate.imageUrl || candidate.imageThumbUrl
-  )
+  const galleryItems = (
+    props.allItems || props.sections.flatMap((section) => section.items)
+  ).filter((candidate) => candidate.imageUrl || candidate.imageThumbUrl)
   const itemImageIndex = galleryItems.findIndex(
     (candidate) => candidate.id === item.id
   )
@@ -384,120 +489,159 @@ function PencilItem({
       document.body.style.overflow = previousOverflow
     }
   }, [imageIndex, galleryItems.length])
+  const name = image ? (
+    <button
+      type="button"
+      className="cursor-zoom-in break-words text-left text-[18px] leading-[1.08] underline decoration-transparent underline-offset-4 transition group-hover:decoration-current sm:text-[20px]"
+      style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
+      onClick={() => setImageIndex(Math.max(itemImageIndex, 0))}
+      aria-label={`Ver foto de ${item.name}`}
+    >
+      {item.name}
+    </button>
+  ) : (
+    <p
+      className="break-words text-[18px] leading-[1.08] sm:text-[20px]"
+      style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
+    >
+      {item.name}
+    </p>
+  )
+  const description = item.description && (
+    <p
+      className="mt-0.5 break-words text-[11px] leading-[1.25] sm:text-[12px]"
+      style={{ color: color.muted, fontFamily: fontFor(color, 'body') }}
+    >
+      {item.description}
+    </p>
+  )
+  const priceTag = (
+    <span
+      className="text-right text-[14px] tabular-nums sm:text-[15px]"
+      style={{ color: color.ink, fontFamily: fontFor(color, 'label') }}
+    >
+      {pencilPrice(item.price, color.priceFormat)}
+    </span>
+  )
+  const cartControl = !props.isService && (
+    <CartControl
+      qty={props.cart[item.id] ?? 0}
+      id={item.id}
+      addToCart={props.addToCart}
+      decFromCart={props.decFromCart}
+      accent={color.accent}
+      ink={color.ink}
+    />
+  )
   return (
-    <div className="group relative flex min-w-0 items-start justify-between gap-4">
-      <div className="min-w-0 flex-1">
-        {image ? (
-          <button
-            type="button"
-            className="cursor-zoom-in break-words text-left text-[18px] leading-[1.08] underline decoration-transparent underline-offset-4 transition group-hover:decoration-current sm:text-[20px]"
-            style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
-            onClick={() => setImageIndex(Math.max(itemImageIndex, 0))}
-            aria-label={`Ver foto de ${item.name}`}
-          >
-            {item.name}
-          </button>
-        ) : (
-          <p
-            className="break-words text-[18px] leading-[1.08] sm:text-[20px]"
-            style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
-          >
-            {item.name}
-          </p>
-        )}
-        {item.description && (
-          <p
-            className="mt-0.5 break-words text-[11px] leading-[1.25] sm:text-[12px]"
-            style={{ color: color.muted, fontFamily: fontFor(color, 'body') }}
-          >
-            {item.description}
-          </p>
-        )}
-      </div>
-      <div className="flex shrink-0 items-center gap-3">
-        {!props.isService && (
-          <CartControl
-            qty={props.cart[item.id] ?? 0}
-            id={item.id}
-            addToCart={props.addToCart}
-            decFromCart={props.decFromCart}
-            accent={color.accent}
-            ink={color.ink}
-          />
-        )}
-        <span
-          className="text-right text-[14px] tabular-nums sm:text-[15px]"
-          style={{ color: color.ink, fontFamily: fontFor(color, 'label') }}
-        >
-          {price(item.price, color.priceFormat)}
-        </span>
-      </div>
+    <div
+      className={
+        leaders
+          ? 'group relative min-w-0'
+          : 'group relative flex min-w-0 items-start justify-between gap-4'
+      }
+    >
+      {leaders ? (
+        <>
+          {/* The leader carries the eye from name to price across the wide
+              column, the way a printed menu does; the cart sits last. */}
+          <div className="flex min-w-0 items-baseline gap-3">
+            <div className="min-w-0 shrink">{name}</div>
+            <span
+              aria-hidden="true"
+              className="min-w-8 flex-1 border-b border-dotted"
+              style={{ borderColor: `${color.muted}99` }}
+            />
+            {priceTag}
+            {cartControl && <div className="self-center">{cartControl}</div>}
+          </div>
+          {description}
+        </>
+      ) : (
+        <>
+          <div className="min-w-0 flex-1">
+            {name}
+            {description}
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            {cartControl}
+            {priceTag}
+          </div>
+        </>
+      )}
       {image && (
         <>
           <div
             className="pointer-events-none absolute bottom-full left-0 z-20 mb-3 hidden w-52 overflow-hidden rounded-sm border-4 bg-white p-1 opacity-0 shadow-2xl transition-opacity group-hover:opacity-100 md:block"
             style={{ borderColor: color.background }}
           >
-            <img src={image} alt="" className="aspect-[4/3] w-full object-cover" />
+            <img
+              src={image}
+              alt=""
+              className="aspect-[4/3] w-full object-cover"
+            />
           </div>
-          {activeImage && createPortal(
-            <div
-              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-5"
-              role="dialog"
-              aria-modal="true"
-              aria-label={`Foto de ${activeImage.name}`}
-              onClick={() => setImageIndex(null)}
-            >
-              <button
-                type="button"
-                className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-2xl text-black shadow-lg"
+          {activeImage &&
+            createPortal(
+              <div
+                className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-5"
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Foto de ${activeImage.name}`}
                 onClick={() => setImageIndex(null)}
-                aria-label="Cerrar foto"
               >
-                ×
-              </button>
-              {galleryItems.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    className="absolute left-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg sm:left-6"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      moveImage(-1)
-                    }}
-                    aria-label="Foto anterior"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg sm:right-6"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      moveImage(1)
-                    }}
-                    aria-label="Foto siguiente"
-                  >
-                    ›
-                  </button>
-                </>
-              )}
-              <figure
-                className="max-w-3xl"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <img
-                  src={activeImage.imageUrl || activeImage.imageThumbUrl || ''}
-                  alt={activeImage.name}
-                  className="max-h-[78vh] w-auto rounded-sm object-contain shadow-2xl"
-                />
-                <figcaption className="bg-white px-4 py-3 text-center text-sm font-semibold text-black">
-                  {activeImage.name}
-                </figcaption>
-              </figure>
-            </div>,
-            document.body
-          )}
+                <button
+                  type="button"
+                  className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-2xl text-black shadow-lg"
+                  onClick={() => setImageIndex(null)}
+                  aria-label="Cerrar foto"
+                >
+                  ×
+                </button>
+                {galleryItems.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="absolute left-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg sm:left-6"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        moveImage(-1)
+                      }}
+                      aria-label="Foto anterior"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg sm:right-6"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        moveImage(1)
+                      }}
+                      aria-label="Foto siguiente"
+                    >
+                      ›
+                    </button>
+                  </>
+                )}
+                <figure
+                  className="max-w-3xl"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <img
+                    src={
+                      activeImage.imageUrl || activeImage.imageThumbUrl || ''
+                    }
+                    alt={activeImage.name}
+                    className="max-h-[78vh] w-auto rounded-sm object-contain shadow-2xl"
+                  />
+                  <figcaption className="bg-white px-4 py-3 text-center text-sm font-semibold text-black">
+                    {activeImage.name}
+                  </figcaption>
+                </figure>
+              </div>,
+              document.body
+            )}
         </>
       )}
     </div>
@@ -508,10 +652,12 @@ function PencilSection({
   section,
   config,
   props,
+  leaders = false,
 }: {
   section: Section
   config: PencilConfig
   props: DesignProps
+  leaders?: boolean
 }) {
   return (
     <section className="flex min-w-0 flex-col gap-2.5">
@@ -523,7 +669,13 @@ function PencilSection({
       </h2>
       <div className="flex flex-col gap-4 sm:gap-3.5">
         {section.items.map((item) => (
-          <PencilItem key={item.id} item={item} color={config} props={props} />
+          <PencilItem
+            key={item.id}
+            item={item}
+            color={config}
+            props={props}
+            leaders={leaders}
+          />
         ))}
       </div>
     </section>
@@ -535,11 +687,14 @@ function PencilCatalog({
   config,
   props,
   fullWidth = false,
+  leaders = false,
 }: {
   sections: Section[]
   config: PencilConfig
   props: DesignProps
   fullWidth?: boolean
+  /** Single column of dotted-leader rows, for the wide side of the desktop spread. */
+  leaders?: boolean
 }) {
   if (sections.length === 0) {
     return (
@@ -553,7 +708,7 @@ function PencilCatalog({
   }
   return (
     <div
-      className={`grid min-w-0 grid-cols-1 gap-8 ${fullWidth ? '' : 'md:grid-cols-2 md:gap-x-10 md:gap-y-7'}`}
+      className={`grid min-w-0 grid-cols-1 ${leaders ? 'gap-12' : 'gap-8'} ${fullWidth || leaders ? '' : 'md:grid-cols-2 md:gap-x-10 md:gap-y-7'}`}
     >
       {sections.map((section) => (
         <PencilSection
@@ -561,6 +716,7 @@ function PencilCatalog({
           section={section}
           config={config}
           props={props}
+          leaders={leaders}
         />
       ))}
     </div>
@@ -611,7 +767,7 @@ function PencilGallery({
                   className="text-[12px] tabular-nums"
                   style={{ fontFamily: fontFor(config, 'label') }}
                 >
-                  {price(item.price, config.priceFormat)}
+                  {pencilPrice(item.price, config.priceFormat)}
                 </span>
                 {(props.cart[item.id] ?? 0) > 0 ? (
                   <CartControl
@@ -652,29 +808,39 @@ function PencilPageNav({
 }) {
   return (
     <nav className="mb-7 flex gap-2" aria-label="Páginas de la lista">
-      {([['catalog', 'Productos'], ['gallery', 'Galería']] as const).map(
-        ([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setPage(value)}
-            className="border px-4 py-2 text-[10px] font-semibold uppercase tracking-[1.3px] transition"
-            style={{
-              borderColor: config.accent,
-              background: page === value ? config.accent : 'transparent',
-              color: page === value ? config.background : config.ink,
-              fontFamily: fontFor(config, 'label'),
-            }}
-          >
-            {label}
-          </button>
-        )
-      )}
+      {(
+        [
+          ['catalog', 'Productos'],
+          ['gallery', 'Galería'],
+        ] as const
+      ).map(([value, label]) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setPage(value)}
+          className="border px-4 py-2 text-[10px] font-semibold uppercase tracking-[1.3px] transition"
+          style={{
+            borderColor: config.accent,
+            background: page === value ? config.accent : 'transparent',
+            color: page === value ? config.background : config.ink,
+            fontFamily: fontFor(config, 'label'),
+          }}
+        >
+          {label}
+        </button>
+      ))}
     </nav>
   )
 }
 
-function PencilFooter({ config }: { config: PencilConfig }) {
+function PencilFooter({
+  config,
+  props,
+}: {
+  config: PencilConfig
+  props: DesignProps
+}) {
+  const { left, right } = footerLines(config, props)
   return (
     <footer
       className="flex min-w-0 flex-col gap-2 border-t pt-5 sm:flex-row sm:items-center sm:justify-between"
@@ -684,13 +850,13 @@ function PencilFooter({ config }: { config: PencilConfig }) {
         className="break-words text-[10px] uppercase tracking-[1.5px] sm:text-[11px]"
         style={{ color: config.muted, fontFamily: fontFor(config, 'label') }}
       >
-        {config.footerLeft}
+        {left}
       </span>
       <span
         className="break-words text-[10px] uppercase tracking-[1.5px] sm:text-right sm:text-[11px]"
         style={{ color: config.accent, fontFamily: fontFor(config, 'label') }}
       >
-        {config.footerRight}
+        {right}
       </span>
     </footer>
   )
@@ -717,11 +883,184 @@ function PencilShell({
   )
 }
 
+/**
+ * MiPrecio's signature, set inside the cover rather than in the page-wide
+ * band under it: on this layout the band would sit beneath a dark panel and a
+ * light column at once and match neither.
+ */
+function CoverPoweredBy() {
+  return (
+    <PoweredByMark ink={PANEL_INK} muted={PANEL_MUTED} />
+  )
+}
+
+/** Light ink used on the template's dark panel, matching `PencilPromo`. */
+const PANEL_INK = '#F8F5EE'
+const PANEL_MUTED = '#D9D3C8'
+
+/**
+ * The desktop spread for `left-image`: a cover that stays put on the left and
+ * a menu that scrolls on the right, the way a restaurant's own site reads.
+ *
+ * Not the phone layout re-placed on a grid — that was tried first and left
+ * the pieces stranded: tabs alone in a corner above a 150px hole, the footer
+ * floating mid-rail, the shop's name nowhere near the top. The cover holds
+ * everything about the shop (photo, name, how to order, where it is); the
+ * right side holds only the menu.
+ */
+function PencilCoverSpread({
+  config,
+  props,
+  eyebrow,
+  title,
+  body,
+  items,
+  catalog,
+  promo,
+}: {
+  config: PencilConfig
+  props: DesignProps
+  eyebrow?: string
+  title: string
+  body?: string
+  items: Section['items']
+  catalog: React.ReactNode
+  promo: React.ReactNode
+}) {
+  const { tenant } = props
+  const lines = footerLines(config, props)
+  // With no address the fallback is the shop's name, which the cover already
+  // prints in 52px right above — drop it rather than say it twice.
+  const left = lines.left === tenant.name ? '' : lines.left
+  // Likewise the stock line credits MiPrecio, and the badge below does that.
+  const right =
+    config.footerRight || props.t('pub.pricesIn', { currency: props.currency })
+  // The list's own title is worth a heading only when it says something the
+  // cover does not already: a list named after the shop would print it twice.
+  const showTitle = title.trim() !== tenant.name.trim()
+  return (
+    <div
+      className="grid min-h-[100dvh] w-full grid-cols-[minmax(400px,42%)_minmax(0,1fr)]"
+      style={{
+        background: config.background,
+        color: config.ink,
+        fontFamily: fontFor(config, 'body'),
+      }}
+    >
+      <aside
+        className="sticky top-0 flex h-[100dvh] min-w-0 flex-col"
+        style={{ background: config.darkPanel, color: PANEL_INK }}
+      >
+        <PencilShowcase
+          config={config}
+          items={items}
+          className="min-h-0 flex-1"
+        />
+        <div className="flex flex-col gap-5 px-10 py-9 xl:px-14 xl:py-11">
+          <div className="flex flex-col items-start gap-4">
+            <ShopLogo
+              name={tenant.name}
+              logoUrl={tenant.logoUrl}
+              tile="h-16 w-16"
+              bare="h-14 max-w-[260px]"
+            />
+            <h1
+              className="min-w-0 break-words text-[40px] leading-[0.95] xl:text-[52px]"
+              style={{
+                fontFamily: fontFor(config, 'heading'),
+                fontWeight: 400,
+              }}
+            >
+              {tenant.name}
+            </h1>
+          </div>
+          {tenant.description && (
+            <p
+              className="max-w-[46ch] text-[14px] leading-relaxed"
+              style={{
+                color: PANEL_MUTED,
+                fontFamily: fontFor(config, 'body'),
+              }}
+            >
+              {tenant.description}
+            </p>
+          )}
+          {!props.isService && <PencilActionBar props={props} docked />}
+          <p
+            className="flex flex-wrap gap-x-3 gap-y-1 border-t pt-4 text-[10px] uppercase tracking-[1.5px]"
+            style={{
+              borderColor: `${PANEL_INK}26`,
+              color: PANEL_MUTED,
+              fontFamily: fontFor(config, 'label'),
+            }}
+          >
+            {left && (
+              <>
+                <span>{left}</span>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
+            <span>{right}</span>
+          </p>
+          <CoverPoweredBy />
+        </div>
+      </aside>
+      <main className="min-w-0 px-12 py-14 xl:px-20 xl:py-16">
+        <div className="mx-auto flex max-w-[720px] flex-col">
+          {(eyebrow || showTitle || body) && (
+            <header className="mb-8 flex flex-col gap-2">
+              {eyebrow && (
+                <p
+                  className="text-[11px] uppercase tracking-[2px]"
+                  style={{
+                    color: config.accent,
+                    fontFamily: fontFor(config, 'label'),
+                  }}
+                >
+                  {eyebrow}
+                </p>
+              )}
+              {showTitle && (
+                <h2
+                  className="text-[44px] leading-none"
+                  style={{
+                    fontFamily: fontFor(config, 'heading'),
+                    fontWeight: 400,
+                  }}
+                >
+                  {title}
+                </h2>
+              )}
+              {body && (
+                <p
+                  className="max-w-[56ch] text-[15px] italic"
+                  style={{ color: config.muted }}
+                >
+                  {body}
+                </p>
+              )}
+            </header>
+          )}
+          <div
+            className="mb-10 h-px"
+            style={{ background: `${config.accent}66` }}
+          />
+          {catalog}
+          {promoAuthored(config) && <div className="mt-16">{promo}</div>}
+        </div>
+      </main>
+    </div>
+  )
+}
+
 export function PencilList({
   variant,
   ...props
 }: DesignProps & { variant: PencilVariant }) {
   const [page, setPage] = useState<'catalog' | 'gallery'>('catalog')
+  // One tree per breakpoint rather than both with one hidden: the menu carries
+  // cart controls and a photo lightbox that should exist exactly once.
+  const isDesktop = useIsDesktop()
   const config = withTemplateOverrides(
     { ...PENCIL_TEMPLATE_CONFIG[variant], accent: props.accent },
     props.content?.template
@@ -754,37 +1093,67 @@ export function PencilList({
       <Rule
         color={config.accent}
         background={config.background}
-        icon={config.dividerIcon ?? (variant === 'pencil-flower-summer' ? 'flower' : 'coffee')}
+        icon={
+          config.dividerIcon ??
+          (variant === 'pencil-flower-summer' ? 'flower' : 'coffee')
+        }
       />
     </>
   )
   const pageNav = galleryItems.length > 0 && (
     <PencilPageNav page={page} setPage={setPage} config={config} />
   )
-  const catalog = page === 'gallery' ? (
-    <PencilGallery items={galleryItems} config={config} props={props} />
-  ) : (
-    <PencilCatalog
-      sections={props.sections}
-      config={config}
-      props={props}
-      fullWidth={variant === 'pencil-flower-winter'}
-    />
-  )
+  const catalog =
+    page === 'gallery' ? (
+      <PencilGallery items={galleryItems} config={config} props={props} />
+    ) : (
+      <PencilCatalog
+        sections={props.sections}
+        config={config}
+        props={props}
+        fullWidth={variant === 'pencil-flower-winter'}
+      />
+    )
   const promo = <PencilPromo config={config} />
 
   if (layout === 'left-image') {
+    // No "Galería" tab here: the product photos cycle in the showcase instead,
+    // on the cover at desktop and in the image slot on a phone.
+    const menu = (
+      <PencilCatalog
+        sections={props.sections}
+        config={config}
+        props={props}
+        leaders={isDesktop}
+      />
+    )
+    if (isDesktop)
+      return (
+        <PencilCoverSpread
+          config={config}
+          props={props}
+          eyebrow={eyebrow}
+          title={title}
+          body={body}
+          items={galleryItems}
+          catalog={menu}
+          promo={promo}
+        />
+      )
     return (
       <PencilShell config={config}>
         {masthead}
-        {pageNav}
-        {catalog}
+        {menu}
         <div className="mt-10 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
-          <PencilImage config={config} className="min-h-[220px]" />
+          <PencilShowcase
+            config={config}
+            items={galleryItems}
+            className="min-h-[260px]"
+          />
           {promo}
         </div>
         <div className="mt-8">
-          <PencilFooter config={config} />
+          <PencilFooter config={config} props={props} />
         </div>
       </PencilShell>
     )
@@ -808,7 +1177,10 @@ export function PencilList({
         <Rule
           color={config.accent}
           background={config.background}
-          icon={config.dividerIcon ?? (variant === 'pencil-flower-summer' ? 'flower' : 'coffee')}
+          icon={
+            config.dividerIcon ??
+            (variant === 'pencil-flower-summer' ? 'flower' : 'coffee')
+          }
         />
         {pageNav}
         <div className="grid min-w-0 grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_268px] md:items-start">
@@ -816,7 +1188,7 @@ export function PencilList({
           {promo}
         </div>
         <div className="mt-8">
-          <PencilFooter config={config} />
+          <PencilFooter config={config} props={props} />
         </div>
       </PencilShell>
     )
@@ -833,7 +1205,7 @@ export function PencilList({
           <PencilImage config={config} className="h-[96px]" />
         </div>
         <div className="mt-8">
-          <PencilFooter config={config} />
+          <PencilFooter config={config} props={props} />
         </div>
       </PencilShell>
     )
@@ -850,7 +1222,7 @@ export function PencilList({
       {catalog}
       <div className="mt-8">{promo}</div>
       <div className="mt-8">
-        <PencilFooter config={config} />
+        <PencilFooter config={config} props={props} />
       </div>
     </PencilShell>
   )

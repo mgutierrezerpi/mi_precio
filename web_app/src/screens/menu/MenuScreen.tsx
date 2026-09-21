@@ -14,6 +14,8 @@ import type {
 import {
   SIco,
   cartThemeFor,
+  FOOTER_BANDS,
+  listBarSurface,
   ClassicList,
   NordicMenu,
   FineDining,
@@ -27,10 +29,15 @@ import {
   type DesignProps,
   type CartTheme,
 } from './designs'
-import { lighten, readableOn } from '../../lib/designColors'
+import { lighten, readableOn, withAlpha } from '../../lib/designColors'
 import { parseUtc } from '../../lib/datetime'
 import { categoryIcon } from '../../lib/categoryIcon'
-import { PencilList } from './pencil'
+import {
+  PencilList,
+  pencilAskLabel,
+  pencilHasDesktopCover,
+  pencilSignsItself,
+} from './pencil'
 import { pencilCartThemeFor } from './pencil/cartTheme'
 import { isPencilVariant } from './pencil/variants'
 import { PencilActionBar } from './pencilActions'
@@ -425,15 +432,35 @@ export function MenuScreen() {
     }
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0d3d30] px-5 font-sans">
-        <form onSubmit={unlock} className="w-full max-w-sm rounded-3xl border border-[#9bc6b7] bg-white p-7 text-center shadow-2xl">
-          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#07583f]">Lista privada</p>
-          <h1 className="mt-3 text-2xl font-extrabold text-[#062d20]">Ingresá tu código</h1>
-          <p className="mt-2 text-sm font-medium text-[#23483b]">Esta lista está disponible solo para personas invitadas.</p>
-          <input autoFocus value={accessCode} onChange={(e) => setAccessCode(e.target.value)}
+        <form
+          onSubmit={unlock}
+          className="w-full max-w-sm rounded-3xl border border-[#9bc6b7] bg-white p-7 text-center shadow-2xl"
+        >
+          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#07583f]">
+            Lista privada
+          </p>
+          <h1 className="mt-3 text-2xl font-extrabold text-[#062d20]">
+            Ingresá tu código
+          </h1>
+          <p className="mt-2 text-sm font-medium text-[#23483b]">
+            Esta lista está disponible solo para personas invitadas.
+          </p>
+          <input
+            autoFocus
+            value={accessCode}
+            onChange={(e) => setAccessCode(e.target.value)}
             className="mt-6 w-full rounded-xl border-2 border-[#5d9f89] bg-[#f5fbf8] px-4 py-3 text-center font-bold tracking-[0.08em] text-[#062d20] outline-none placeholder:text-[#527365] focus:border-[#07583f] focus:ring-4 focus:ring-[#07583f]/15"
-            placeholder="Código de acceso" />
-          {accessError && <p className="mt-2 text-xs font-semibold text-red-600">El código no es válido. Intentá de nuevo.</p>}
-          <button disabled={accessSaving} className="mt-4 w-full rounded-xl bg-[#07583f] py-3 text-sm font-extrabold text-white shadow-[0_4px_0_#043b2a] transition hover:bg-[#043b2a] active:translate-y-px disabled:opacity-60">
+            placeholder="Código de acceso"
+          />
+          {accessError && (
+            <p className="mt-2 text-xs font-semibold text-red-600">
+              El código no es válido. Intentá de nuevo.
+            </p>
+          )}
+          <button
+            disabled={accessSaving}
+            className="mt-4 w-full rounded-xl bg-[#07583f] py-3 text-sm font-extrabold text-white shadow-[0_4px_0_#043b2a] transition hover:bg-[#043b2a] active:translate-y-px disabled:opacity-60"
+          >
             {accessSaving ? 'Verificando…' : 'Ver lista'}
           </button>
         </form>
@@ -552,8 +579,17 @@ export function MenuScreen() {
         ? pencilCartThemeFor(design)
         : cartThemeFor(design)
   const listAccent = content?.template?.accentColor || accent
+  // The Pencil cart theme derives its borders from the template's own accent
+  // too (Obsidian's red), so swapping only `accent` left a red frame around
+  // the shop's blue action bar. Re-derive them from the list's accent.
   const cartT = isPencilCartDesign
-    ? { ...baseCartT, accent: listAccent, actionAccent: listAccent }
+    ? {
+        ...baseCartT,
+        accent: listAccent,
+        actionAccent: listAccent,
+        divider: `${listAccent}33`,
+        line: `${listAccent}88`,
+      }
     : baseCartT
   const cartAccent = cartT.accent || accent
   const cartActionAccent = cartT.actionAccent || cartAccent
@@ -565,6 +601,22 @@ export function MenuScreen() {
   const bgOverlay = skin?.bgUrl ? !!skin.bgOverlay : !!tenant.listBgOverlay
   const hasBg = !!bgUrl
   const heroColor = skin?.heroColor || tenant.listHeroColor || accent
+  // The MiPrecio bar closes the page, so it has to sit on the same surface as
+  // whatever ends above it: the footer's band, else the design root, else the
+  // page background. Its ink follows that surface so it stays legible on a
+  // dark band as well as on a light paper.
+  const ownSurface = listBarSurface(design, heroColor, hasBg)
+  const barSurface = ownSurface?.base ?? listSurface
+  const barTexture = ownSurface?.texture
+  const barInk = ownSurface
+    ? withAlpha(readableOn(ownSurface.base), 0.66)
+    : C.muted
+  // Tinting the logo with the shop's accent only reads when the two differ
+  // enough — on `catalog` the accent IS the hero, i.e. the surface itself.
+  const barLogo =
+    ownSurface && readableOn(ownSurface.base) === readableOn(listAccent)
+      ? readableOn(ownSurface.base)
+      : listAccent
   const edition = String(list?.version?.versionNumber ?? 1).padStart(3, '0')
   const designProps: DesignProps = {
     tenant,
@@ -658,10 +710,7 @@ export function MenuScreen() {
               )}
             </div>
           )}
-          <div
-            className="relative flex-1"
-            style={{ zIndex: 1 }}
-          >
+          <div className="relative flex-1" style={{ zIndex: 1 }}>
             {!listId && magazines.length > 0 && (
               <MagazineShelf
                 tenant={tenant}
@@ -722,36 +771,49 @@ export function MenuScreen() {
             )}
           </div>
           {isPencilCartDesign && !isService && !showCart && (
-            <PencilActionBar props={designProps} />
+            <PencilActionBar
+              props={designProps}
+              hideOnDesktop={pencilHasDesktopCover(design)}
+              askLabel={pencilAskLabel(design, t)}
+            />
           )}
-          <a
-            href="https://miprecio.app"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Powered by MiPrecio"
-            className={`relative z-10 mx-auto flex w-fit items-center gap-2 px-5 text-[9px] font-bold uppercase tracking-[0.12em] no-underline ${isPencilCartDesign && !isService ? 'h-24 items-start pt-3' : 'py-7'}`}
-            style={{ color: C.muted, background: listSurface }}
+          {/* The band spans the full width so it reads as one surface with the
+              footer above it; the link itself stays centered and w-fit. A
+              design with a desktop cover signs itself inside that cover, so
+              the band steps aside from lg up. */}
+          <div
+            className={`relative z-10 w-full ${{ never: '', desktop: 'lg:hidden', always: 'hidden' }[pencilSignsItself(design)]}`}
+            style={{ backgroundColor: barSurface, backgroundImage: barTexture }}
           >
-            <span>Powered by</span>
-            <span
-              className="relative block h-6 w-[94px] overflow-hidden"
-              aria-hidden="true"
+            <a
+              href="https://miprecio.app"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Powered by MiPrecio"
+              className={`mx-auto flex w-fit items-center gap-2 px-5 text-[9px] font-bold uppercase tracking-[0.12em] no-underline ${isPencilCartDesign && !isService ? 'h-24 items-start pt-3' : 'py-7'}`}
+              style={{ color: barInk }}
             >
+              <span>Powered by</span>
               <span
-                className="absolute inset-0"
-                style={{
-                  background: accent,
-                  WebkitMask:
-                    "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
-                  mask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
-                }}
-              />
-              <span
-                className="absolute bottom-0 left-[30%] right-0 h-[25%]"
-                style={{ background: listSurface }}
-              />
-            </span>
-          </a>
+                className="relative block h-6 w-[94px] overflow-hidden"
+                aria-hidden="true"
+              >
+                <span
+                  className="absolute inset-0"
+                  style={{
+                    background: barLogo,
+                    WebkitMask:
+                      "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
+                    mask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
+                  }}
+                />
+                <span
+                  className="absolute bottom-0 left-[30%] right-0 h-[25%]"
+                  style={{ background: barSurface }}
+                />
+              </span>
+            </a>
+          </div>
         </div>
       )}
 
@@ -1758,7 +1820,7 @@ function Storefront(p: StoreProps) {
       </div>
 
       {/* Footer */}
-      <footer className="py-10" style={{ background: '#0F172A' }}>
+      <footer className="py-10" style={{ background: FOOTER_BANDS.store }}>
         <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-3 px-5 md:px-16">
           <span className="text-[16px] font-bold text-white">
             {tenant.name}

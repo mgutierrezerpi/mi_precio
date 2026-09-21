@@ -7,7 +7,7 @@ export const pencilCasaRitual = defineSpecialTemplate({
   accent: '#B5A384',
   darkPanel: '#171717',
   image: '/pencil/templates/b1fvV.png',
-  imageLabel: 'CASA FÉRREA',
+  imageLabel: 'EL BAÑO',
   imageTitle: 'El baño, como un ritual.',
   layout: 'casa-ritual',
 })

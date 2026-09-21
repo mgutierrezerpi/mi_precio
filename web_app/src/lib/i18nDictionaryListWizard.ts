@@ -113,6 +113,7 @@ export const DICT_LIST_WIZARD: Record<string, TranslationEntry> = {
 },
 'pl.back': { es: 'Atrás', en: 'Back', pt: 'Voltar' },
 'pl.saving': { es: 'Guardando…', en: 'Saving…', pt: 'Salvando…' },
+'pl.saveFailed': { es: 'No se pudieron guardar los cambios. Probá de nuevo.', en: 'Your changes could not be saved. Please try again.', pt: 'Não foi possível salvar as alterações. Tente novamente.' },
 'pl.saveChanges': {
   es: 'Guardar cambios',
   en: 'Save changes',

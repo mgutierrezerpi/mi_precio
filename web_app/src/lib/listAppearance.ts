@@ -41,6 +41,55 @@ export const LIST_DESIGNS: ListDesign[] = [
   'pencil-obsidian-quarterly',
 ]
 
+/**
+ * Designs no longer offered in the picker. They stay in `LIST_DESIGNS` and
+ * valid on the API, so a list already using one keeps rendering exactly as
+ * before — hiding is about what new choices look like, not about breaking
+ * anyone's live page. The picker's name for each is noted alongside.
+ */
+export const HIDDEN_LIST_DESIGNS: ReadonlySet<ListDesign> = new Set([
+  // Maison Étoile: only "Diario" (`pencil-bakery`) stays on offer.
+  'pencil-garden', // Jardín
+  'pencil-market', // Mercado
+  'pencil-evening', // Noche
+  // Northline — the whole family.
+  'pencil-workshop', // Taller
+  'pencil-hardware-weekend', // Proyecto
+  'pencil-hardware-shelf', // Estante
+  'pencil-hardware-alternating', // Herramientas
+  // Wild Stem — the whole family.
+  'pencil-flower', // Flores
+  'pencil-flower-winter', // Invierno
+  'pencil-flower-spring', // Primavera
+  'pencil-flower-summer', // Verano
+  // Casa Férrea — the whole family.
+  'pencil-casa-ritual', // Ritual
+  'pencil-casa-bath', // Baño
+  'pencil-casa-signature', // Firma
+  'pencil-casa-services', // Servicios
+  // Fromage & Co. — the whole family.
+  'pencil-cheese', // Mesa
+  'pencil-cheese-alternating', // Piezas
+  // Parchment Cellar
+  'pencil-wine', // Vinos
+  // Standalone branded templates
+  'pencil-blush-bloom', // Blush & Bloom
+  'pencil-beardy', // Beardy Beauty Studio
+  'pencil-studio-mono', // Studio Mono
+  'pencil-beauty-issue', // The Beauty Issue
+  'pencil-obsidian-quarterly', // Obsidian Quarterly
+])
+
+/**
+ * What the picker lists: every design minus the hidden ones — except the one
+ * already in use, so a shop on a retired design still sees its selection.
+ */
+export function pickableListDesigns(current: ListDesign | null): ListDesign[] {
+  return LIST_DESIGNS.filter(
+    (design) => !HIDDEN_LIST_DESIGNS.has(design) || design === current
+  )
+}
+
 export const BRAND_SWATCHES = [
   '#7C3AED',
   '#2563EB',

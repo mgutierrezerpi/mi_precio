@@ -111,6 +111,85 @@ const STORE_ICONS: Record<string, React.ReactNode> = {
       <path d="M12 22V12" />
     </>
   ),
+  // Food and retail, for the categories a shop actually sells. Until these
+  // existed every café and bakery fell back to `box`, so a whole menu came out
+  // as one repeated grey crate.
+  coffee: (
+    <>
+      <path d="M10 2v2" />
+      <path d="M14 2v2" />
+      <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" />
+      <path d="M6 2v2" />
+    </>
+  ),
+  cake: (
+    <>
+      <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
+      <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" />
+      <path d="M2 21h20" />
+      <path d="M7 8v3" />
+      <path d="M12 8v3" />
+      <path d="M17 8v3" />
+    </>
+  ),
+  utensils: (
+    <>
+      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+      <path d="M7 2v20" />
+      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+    </>
+  ),
+  wine: (
+    <>
+      <path d="M8 22h8" />
+      <path d="M7 10h10" />
+      <path d="M12 15v7" />
+      <path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z" />
+    </>
+  ),
+  glass: (
+    <>
+      <path d="M5.116 4.104A1 1 0 0 1 6.11 3h11.78a1 1 0 0 1 .994 1.105L17.19 20.21A2 2 0 0 1 15.2 22H8.8a2 2 0 0 1-2-1.79z" />
+      <path d="M6 12a5 5 0 0 1 6 0 5 5 0 0 0 6 0" />
+    </>
+  ),
+  egg: (
+    <path d="M12 22c6.23-.05 7.87-5.57 7.5-10-.36-4.34-3.95-9.96-7.5-10-3.55.04-7.14 5.66-7.5 10-.37 4.43 1.27 9.95 7.5 10z" />
+  ),
+  'ice-cream': (
+    <>
+      <path d="m7 11 4.08 10.35a1 1 0 0 0 1.84 0L17 11" />
+      <path d="M17 7A5 5 0 0 0 7 7" />
+      <path d="M17 7a2 2 0 0 1 0 4H7a2 2 0 0 1 0-4" />
+    </>
+  ),
+  apple: (
+    <>
+      <path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z" />
+      <path d="M10 2c1 .5 2 2 2 5" />
+    </>
+  ),
+  shirt: (
+    <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
+  ),
+  pill: (
+    <>
+      <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" />
+      <path d="m8.5 8.5 7 7" />
+    </>
+  ),
+  book: (
+    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
+  ),
+  scissors: (
+    <>
+      <circle cx="6" cy="6" r="3" />
+      <path d="M8.12 8.12 12 12" />
+      <path d="M20 4 8.12 15.88" />
+      <circle cx="6" cy="18" r="3" />
+      <path d="M14.8 14.8 20 20" />
+    </>
+  ),
 }
 
 export function SIco({
@@ -426,6 +505,69 @@ export const cartThemeFor = (design: ListDesign): CartTheme => ({
   ...CART_DEFAULTS,
   ...(CART_THEMES[design] ?? CART_THEMES.store!),
 })
+
+/**
+ * Full-width bands painted by a design's footer. Only three designs paint one:
+ * the rest close with a border-top and let the page background through, so the
+ * MiPrecio bar underneath already sits on the same surface.
+ *
+ * Note this is NOT `CartTheme.footerBg` — that one colors the cart's footer,
+ * which is always solid. Reusing it here would drop a dark band under the six
+ * designs whose public footer is transparent.
+ */
+export const FOOTER_BANDS = { store: '#0F172A', modern: '#111111' } as const
+
+/**
+ * What each design's root paints, and the scrim alpha it fades to when the
+ * shop sets a background image. `classic` and `store` are absent on purpose:
+ * they paint nothing and let the page background through.
+ */
+export const DESIGN_SURFACES = {
+  nordic: { base: '#F3EBE2', scrim: 0.62 },
+  fine: { base: '#10100F', scrim: 0.5 },
+  modern: { base: '#FFFFFF', scrim: 0.62 },
+  photo: { base: '#0A0A0A', scrim: 0.5 },
+  cards: { base: '#F4F7FB', scrim: 0.62 },
+  catalog: { base: '#FFFFFF', scrim: 0.62 },
+  tech: { base: '#0A0E16', scrim: 0.55 },
+} as const satisfies Record<string, { base: string; scrim: number }>
+
+/**
+ * Paper fibre grain for `nordic`, to sell the printed-menu premise the design
+ * is after. Inline SVG so it costs no request; skipped when the shop sets a
+ * background image, where it would only muddy the photo under the scrim.
+ */
+const PAPER_GRAIN =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.2'/%3E%3C/svg%3E\")"
+
+/**
+ * The surface the MiPrecio bar has to sit on so it reads as one piece with the
+ * page above it. Three layers, in order: the footer's own band, then the
+ * design root's surface, then the page background for designs that paint
+ * neither. Returns null for that last case — the caller supplies the page bg.
+ *
+ * `texture` carries any background image the root layers over its base, so the
+ * bar matches a patterned surface and not merely its color. `base` stays a
+ * plain hex: it is what the caller does its contrast math against.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function listBarSurface(
+  design: ListDesign,
+  heroColor: string,
+  hasBg: boolean
+): { base: string; texture?: string } | null {
+  if (design === 'catalog') return { base: heroColor } // ImageCatalog tints its footer with the hero
+  if (design === 'store') return { base: FOOTER_BANDS.store }
+  if (design === 'modern') return { base: FOOTER_BANDS.modern }
+  const surface = (
+    DESIGN_SURFACES as Record<string, { base: string; scrim: number }>
+  )[design]
+  if (!surface) return null
+  return {
+    base: rootBg(surface.base, hasBg, surface.scrim),
+    texture: design === 'nordic' && !hasBg ? PAPER_GRAIN : undefined,
+  }
+}
 
 export interface DesignProps {
   tenant: Tenant
@@ -971,6 +1113,20 @@ function FilterTab({
    ══════════════════════════════════════════════════════════════════════ */
 const SERIF = "'Playfair Display', 'Georgia', serif"
 
+/** Printer's fleuron — rule, diamond, rule: the classic menu section break. */
+function Fleuron({ accent, line }: { accent: string; line: string }) {
+  return (
+    <span className="flex items-center gap-2.5" aria-hidden="true">
+      <span className="h-px w-10" style={{ background: line }} />
+      <span
+        className="h-[5px] w-[5px] rotate-45"
+        style={{ background: accent }}
+      />
+      <span className="h-px w-10" style={{ background: line }} />
+    </span>
+  )
+}
+
 export function NordicMenu(p: DesignProps) {
   const {
     tenant,
@@ -984,8 +1140,9 @@ export function NordicMenu(p: DesignProps) {
     addToCart,
     decFromCart,
   } = p
-  const paper = '#F3EBE2',
-    ink = '#2B2620',
+  // Same call the MiPrecio bar makes, so paper and bar cannot drift apart.
+  const surface = listBarSurface('nordic', p.heroColor, p.hasBg)!
+  const ink = '#2B2620',
     soft = '#6B6156',
     line = '#C5BEB6',
     accent = p.accent
@@ -993,15 +1150,16 @@ export function NordicMenu(p: DesignProps) {
   return (
     <div
       style={{
-        background: rootBg(paper, p.hasBg),
+        backgroundColor: surface.base,
+        backgroundImage: surface.texture,
         fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
       <div className="mx-auto w-full max-w-[900px] px-6 md:px-12">
         {/* Cover */}
         <header
-          className="flex flex-col items-center gap-3 border-b py-14 text-center"
-          style={{ borderColor: line }}
+          className="flex flex-col items-center gap-3 py-14 text-center"
+          style={{ borderBottom: `3px double ${line}` }}
         >
           {tenant.logoUrl && (
             <img
@@ -1054,7 +1212,7 @@ export function NordicMenu(p: DesignProps) {
                   >
                     {s.name}
                   </h2>
-                  <span className="h-px w-16" style={{ background: accent }} />
+                  <Fleuron accent={accent} line={line} />
                 </div>
                 {s.items.map((it) => (
                   <div
@@ -1107,8 +1265,8 @@ export function NordicMenu(p: DesignProps) {
         </main>
 
         <footer
-          className="flex flex-col items-center gap-2 border-t py-10 text-center"
-          style={{ borderColor: line }}
+          className="flex flex-col items-center gap-2 py-10 text-center"
+          style={{ borderTop: `3px double ${line}` }}
         >
           <span
             className="text-[15px] uppercase tracking-[3px]"
@@ -1141,7 +1299,7 @@ export function FineDining(p: DesignProps) {
     addToCart,
     decFromCart,
   } = p
-  const stage = '#10100F',
+  const stage = DESIGN_SURFACES.fine.base,
     paper = '#F7F2E8',
     ink = '#211D16',
     soft = '#6E6656',
@@ -1340,7 +1498,7 @@ export function ModernBrand(p: DesignProps) {
   return (
     <div
       style={{
-        background: rootBg('#FFFFFF', p.hasBg),
+        background: rootBg(DESIGN_SURFACES.modern.base, p.hasBg),
         fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
@@ -1465,7 +1623,7 @@ export function ModernBrand(p: DesignProps) {
       </main>
 
       {/* Footer */}
-      <footer className="py-10" style={{ background: '#111111' }}>
+      <footer className="py-10" style={{ background: FOOTER_BANDS.modern }}>
         <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-6 md:px-12">
           <span className="text-[16px] font-bold text-white">
             {tenant.name}
@@ -1499,7 +1657,7 @@ export function PhotoLookbook(p: DesignProps) {
     addToCart,
     decFromCart,
   } = p
-  const bg = '#0A0A0A',
+  const bg = DESIGN_SURFACES.photo.base,
     panel = '#161616',
     ink = '#F5F5F5',
     soft = '#9A9A9A',
@@ -1729,7 +1887,7 @@ export function ServiceCards(p: DesignProps) {
     soft = '#64748B',
     line = '#E2E8F0',
     card = '#FFFFFF',
-    bg = '#F4F7FB'
+    bg = DESIGN_SURFACES.cards.base
 
   return (
     <div
@@ -1960,7 +2118,7 @@ export function ImageCatalog(p: DesignProps) {
   return (
     <div
       style={{
-        background: rootBg('#FFFFFF', p.hasBg),
+        background: rootBg(DESIGN_SURFACES.catalog.base, p.hasBg),
         fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
@@ -2178,7 +2336,7 @@ export function TechGrid(p: DesignProps) {
   } = p
   const accent = p.accent,
     hero = p.heroColor
-  const bg = '#0A0E16',
+  const bg = DESIGN_SURFACES.tech.base,
     panel = 'rgba(255,255,255,0.035)',
     panelSolid = '#121826',
     border = 'rgba(255,255,255,0.08)',

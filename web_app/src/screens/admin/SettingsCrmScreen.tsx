@@ -151,7 +151,15 @@ export function SettingsCrmContent({ simple = false }: { simple?: boolean }) {
     }
   }
 
-  const ctx = { tenant, canManage, save, savingKey, savedKey, t }
+  const ctx = {
+    tenant,
+    canManage,
+    save,
+    savingKey,
+    savedKey,
+    reportError: setError,
+    t,
+  }
 
   return (
     <div
@@ -256,6 +264,8 @@ type Ctx = {
   ) => Promise<void>
   savingKey: string | null
   savedKey: string | null
+  /** Puts a message in the screen's error banner; `null` clears it. */
+  reportError: (message: string | null) => void
   t: TFn
 }
 
@@ -603,9 +613,10 @@ function BrandSection({
   save,
   savingKey,
   savedKey,
+  reportError,
 }: Ctx) {
   const identity = useBrandIdentity(tenant, canManage, save)
-  const editor = useAppearanceEditor(tenant, canManage, save)
+  const editor = useAppearanceEditor(tenant, canManage, save, reportError)
 
   return (
     <>
@@ -668,7 +679,8 @@ function useBrandIdentity(
 function useAppearanceEditor(
   tenant: Tenant | null,
   canManage: boolean,
-  save: Ctx['save']
+  save: Ctx['save'],
+  reportError: Ctx['reportError']
 ) {
   const [targetId, setTargetId] = useState('')
   const [lists, setLists] = useState<PriceList[]>([])
@@ -709,9 +721,13 @@ function useAppearanceEditor(
         return
       }
       setSaving(true)
+      reportError(null)
       const res = await api.updateList(targetId, appearance)
       setSaving(false)
-      if (res.data) {
+      // The shop-wide path reports through `save`; this one used to drop a
+      // failure on the floor, so a design that did not stick looked saved.
+      if (res.error) reportError(res.error)
+      else if (res.data) {
         setLists((previous) =>
           previous.map((list) => (list.id === res.data!.id ? res.data! : list))
         )
@@ -720,7 +736,7 @@ function useAppearanceEditor(
       }
     }, 400)
     return () => clearTimeout(timer)
-  }, [appearance, canManage, editingTenant, targetId, save])
+  }, [appearance, canManage, editingTenant, targetId, save, reportError])
 
   const pickTarget = (id: string) => {
     touched.current = false
@@ -1265,7 +1281,7 @@ function MarketplaceProfileFields({
   savingKey,
   savedKey,
   t,
-}: Ctx) {
+}: Omit<Ctx, 'reportError'>) {
   const [address, setAddress] = useState(tenant?.address ?? '')
   const [whatsappUrl, setWhatsappUrl] = useState(tenant?.whatsappUrl ?? '')
   const [websiteUrl, setWebsiteUrl] = useState(tenant?.websiteUrl ?? '')

@@ -1,7 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { DesignProps } from '../designs'
-import { PencilList, pencilTemplateDefaults } from './index'
+import { getT } from '../../../lib/i18n'
+import {
+  PencilList,
+  pencilHasDesktopCover,
+  pencilTemplateDefaults,
+} from './index'
 import { pencilCartThemeFor } from './cartTheme'
 import type { PencilVariant } from './variants'
 
@@ -72,6 +77,10 @@ const props = {
   },
   listName: 'Demo price list',
   monthYear: 'AUG 2026',
+  // The footer falls back to the shop's real details, so it needs the same
+  // translator and currency every real caller passes.
+  t: getT('es'),
+  currency: 'UYU',
 } as unknown as DesignProps
 
 describe('Pencil price-list templates', () => {
@@ -284,6 +293,169 @@ describe('Pencil price-list templates', () => {
     expect(view.container.textContent).not.toContain(
       'Un servicio pensado para acompañar cada proyecto.'
     )
+    view.unmount()
+  })
+})
+
+describe('left-image across the lg breakpoint', () => {
+  const realMatchMedia = window.matchMedia
+  // happy-dom's window starts 1024px wide, so pin the breakpoint either way
+  // instead of inheriting whatever the environment happens to be.
+  const pinLg = (matches: boolean) => {
+    window.matchMedia = ((query: string) => ({
+      matches,
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })) as unknown as typeof window.matchMedia
+  }
+  afterEach(() => {
+    window.matchMedia = realMatchMedia
+  })
+
+  it('puts the shop on a cover and the menu beside it on desktop', () => {
+    pinLg(true)
+    const view = render(<PencilList variant="pencil-bakery" {...props} />)
+    // The shop leads the page; the list's own title heads the menu side.
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Demo Studio'
+    )
+    expect(
+      screen.getByRole('heading', { name: 'Demo price list' })
+    ).toBeTruthy()
+    // The cover docks its own cart button instead of a floating bar.
+    expect(screen.getByRole('button', { name: /Mi carrito/ })).toBeTruthy()
+    view.unmount()
+  })
+
+  it('keeps the phone layout below lg', () => {
+    pinLg(false)
+    const view = render(<PencilList variant="pencil-bakery" {...props} />)
+    expect(view.container.querySelector('aside.sticky')).toBeNull()
+    view.unmount()
+  })
+})
+
+describe('left-image product showcase', () => {
+  const photographed = [
+    { ...props.sections[0].items[0], imageUrl: '/espresso.jpg' },
+    {
+      ...props.sections[0].items[0],
+      id: 'item-2',
+      name: 'Flat White',
+      price: '140',
+      imageUrl: '/flat-white.jpg',
+    },
+  ]
+  const withPhotos = {
+    ...props,
+    allItems: photographed,
+    sections: [{ ...props.sections[0], items: photographed }],
+  }
+
+  it('cycles product photos captioned with name and price, with no gallery tab', () => {
+    const view = render(<PencilList variant="pencil-bakery" {...withPhotos} />)
+    const showcase = screen.getByRole('region', { name: 'Fotos de productos' })
+    expect(showcase.textContent).toContain('Signature service')
+    expect(showcase.textContent).toContain('$42')
+    // One dot per photo, and the second one jumps straight to it.
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Flat White' }))
+    expect(showcase.textContent).toContain('Flat White')
+    expect(showcase.textContent).toContain('$140')
+    expect(screen.queryByRole('button', { name: /galer/i })).toBeNull()
+    view.unmount()
+  })
+
+  it("falls back to the template's picture when no product has a photo", () => {
+    const view = render(<PencilList variant="pencil-bakery" {...props} />)
+    expect(
+      screen.queryByRole('region', { name: 'Fotos de productos' })
+    ).toBeNull()
+    expect(view.container.textContent).toContain('la mesa de la mañana')
+    view.unmount()
+  })
+})
+
+describe('pencilHasDesktopCover', () => {
+  it('is true only for layouts whose desktop cover carries the actions', () => {
+    expect(pencilHasDesktopCover('pencil-bakery')).toBe(true)
+    expect(pencilHasDesktopCover('pencil-casa-bath')).toBe(false)
+    expect(pencilHasDesktopCover('store')).toBe(false)
+  })
+})
+
+describe('branded templates without a hero of their own', () => {
+  // The branded templates — offered in the picker, or hidden from it but
+  // still rendering for lists that already use them (most of them, now).
+  const branded: PencilVariant[] = [
+    'pencil-auto-detail',
+    'pencil-blush-bloom',
+    'pencil-nova',
+    'pencil-beardy',
+    'pencil-calm-spa',
+    'pencil-union-barber',
+    'pencil-studio-mono',
+    'pencil-beauty-issue',
+    'pencil-obsidian-quarterly',
+  ]
+  // What they used to print instead of the shop: another business, in English.
+  const sampleCopy = [
+    'PRICE LIST',
+    'Price List',
+    'Price list',
+    'SERVICES LIST',
+    'SERVICES & PACKAGES',
+    'THE CALM SPA',
+    'OBSIDIAN',
+    'CAR DETAILING',
+    'Care for the drive',
+    'BEARDY',
+    'Beauty studio',
+    'Cut, colour and craft',
+    "UNION'S Barber Shop",
+  ]
+  const shop = {
+    ...props,
+    tenant: {
+      name: 'Café Aurora',
+      description: 'Café de especialidad',
+      address: 'Bvar. Artigas 1234',
+    },
+    listName: 'Carta de otoño',
+    content: { schemaVersion: 1, blocks: [] },
+  } as unknown as DesignProps
+
+  it.each(branded)('%s shows the shop, not sample copy', (variant) => {
+    const view = render(<PencilList variant={variant} {...shop} />)
+    const text = view.container.textContent ?? ''
+    expect(text).toContain('Carta de otoño')
+    for (const sample of sampleCopy) expect(text).not.toContain(sample)
+    view.unmount()
+  })
+})
+
+describe('Nova', () => {
+  it('shows every section and every item with its own price', () => {
+    // It used to keep four sections and, per section, three names and the
+    // first item's price — a café's twelfth product never showed.
+    const sections = Array.from({ length: 5 }, (_, s) => ({
+      key: `s${s}`,
+      name: `Sección ${s + 1}`,
+      min: 1,
+      max: 9,
+      items: Array.from({ length: 4 }, (_, i) => ({
+        id: `s${s}-i${i}`,
+        name: `Producto ${s + 1}.${i + 1}`,
+        price: String(100 + s * 10 + i),
+      })),
+    })) as unknown as DesignProps['sections']
+    const view = render(
+      <PencilList variant="pencil-nova" {...props} sections={sections} />
+    )
+    const text = view.container.textContent ?? ''
+    expect(text).toContain('Sección 5')
+    expect(text).toContain('Producto 5.4')
+    expect(text).toContain('$143')
     view.unmount()
   })
 })

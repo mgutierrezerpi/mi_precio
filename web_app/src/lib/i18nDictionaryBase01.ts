@@ -99,6 +99,13 @@ export const DICT_BASE_01: Record<string, TranslationEntry> = {
     en: 'Prices in {currency} · Made with MiPrecio',
     pt: 'Preços em {currency} · Gerado com MiPrecio',
   },
+  // The line without our credit, for layouts that sign with the Powered by
+  // badge right beneath it and would otherwise say MiPrecio twice.
+  'pub.pricesIn': {
+    es: 'Precios en {currency}',
+    en: 'Prices in {currency}',
+    pt: 'Preços em {currency}',
+  },
   'pub.notFound': {
     es: 'Lista no encontrada',
     en: 'List not found',
@@ -123,6 +130,13 @@ export const DICT_BASE_01: Record<string, TranslationEntry> = {
     es: 'Pedir por WhatsApp',
     en: 'Order via WhatsApp',
     pt: 'Pedir por WhatsApp',
+  },
+  // For designs made for appointments (barbershops): what the WhatsApp button
+  // is actually for there.
+  'pub.bookWhatsApp': {
+    es: 'Reservar turno',
+    en: 'Book an appointment',
+    pt: 'Agendar horário',
   },
   'pub.askWhatsApp': {
     es: 'Hacer una pregunta',

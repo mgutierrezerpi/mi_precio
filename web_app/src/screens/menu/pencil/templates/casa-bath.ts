@@ -7,7 +7,7 @@ export const pencilCasaBath = defineSpecialTemplate({
   accent: '#B9A487',
   darkPanel: '#090909',
   image: '/pencil/templates/j1DN7.png',
-  imageLabel: 'CASA FÉRREA',
-  imageTitle: 'BAÑO EQUIPAR',
+  imageLabel: 'EL BAÑO',
+  imageTitle: 'Equipar el baño',
   layout: 'casa-bath',
 })
