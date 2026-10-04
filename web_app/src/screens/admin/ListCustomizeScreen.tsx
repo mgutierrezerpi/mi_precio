@@ -9,6 +9,7 @@ import {
 import { Link, useParams } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectCanEdit, selectTenant } from '../../store/slices/authSlice'
+import { whatsappPhone } from '../../lib/whatsappOrder'
 import api from '../../services/api'
 import type {
   ListContent,
@@ -567,6 +568,15 @@ export function ListCustomizeScreen() {
                         Instagram · copiar pedido y abrir DM
                       </option>
                     </select>
+                    {content.template?.checkoutChannel !== 'instagram' &&
+                      tenant &&
+                      !whatsappPhone(tenant) && (
+                        <span className="mt-1 block text-[11px] font-medium text-amber-600">
+                          Cargá tu «Link de WhatsApp» en Configuración → Idioma
+                          y región para que el pedido te llegue directo. Sin el
+                          número, tu cliente tiene que buscarte entre sus chats.
+                        </span>
+                      )}
                   </Field>}
                   {hasField('template.instagram_handle') &&
                     content.template?.checkoutChannel === 'instagram' && (

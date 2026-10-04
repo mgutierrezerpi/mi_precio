@@ -1,6 +1,7 @@
 """Tests for public context."""
 
 from lib.ctx import identity, items, lists, products, public, versions
+from models import LinkTree
 from tests.conftest import subscribed_tenant
 from views.price_list_view import PriceListView
 from views.public_tenant_view import PublicTenantView
@@ -66,6 +67,32 @@ def test_public_tenant_view_does_not_expose_marketplace_coordinates(db):
 
     assert "marketplace_latitude" not in public_tenant.model_dump()
     assert "marketplace_longitude" not in public_tenant.model_dump()
+
+
+def test_public_tenant_view_exposes_whatsapp_for_orders(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant.social_whatsapp = "59898402451"
+    tenant.whatsapp_url = "https://wa.me/59898402451"
+    tenant.save()
+
+    public_tenant = PublicTenantView.render(tenant).model_dump()
+
+    assert public_tenant["social_whatsapp"] == "59898402451"
+    assert public_tenant["whatsapp_url"] == "https://wa.me/59898402451"
+
+
+def test_public_tenant_view_falls_back_to_linktree_whatsapp(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    LinkTree.create(
+        tenant=tenant,
+        public_slug="test-store",
+        display_name="Test Store",
+        whatsapp_url="https://wa.me/59898402451",
+    )
+
+    public_tenant = PublicTenantView.render(tenant).model_dump()
+
+    assert public_tenant["whatsapp_url"] == "https://wa.me/59898402451"
 
 
 def test_get_published_lists(db):
