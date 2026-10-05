@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { DesignProps } from '../../designs'
 import type { PencilConfig } from '..'
+import { whatsappOrderHref, whatsappPhone } from '../../../../lib/whatsappOrder'
 
 const CODE = "'Code Pro', 'DM Sans', Arial, sans-serif"
 const DEFAULT_STORY_VIDEOS = [
@@ -261,11 +262,7 @@ export function CafecitosTemplate({
       ? instagramHandle
         ? `https://ig.me/m/${instagramHandle}`
         : 'https://instagram.com'
-      : (() => {
-          const phone = (props.tenant.socialWhatsapp || props.tenant.whatsappUrl || '').replace(/\D/g, '')
-          const recipient = phone ? `/${phone}` : ''
-          return `https://wa.me${recipient}?text=${encodeURIComponent(contactMessage)}`
-        })()
+      : whatsappOrderHref(whatsappPhone(props.tenant), contactMessage)
   return (
     <div
       className="miprecio-public-list min-h-[100svh] overflow-x-clip bg-[#F8FAF7] px-5 py-3 text-[#16352A] sm:px-10 sm:py-10"

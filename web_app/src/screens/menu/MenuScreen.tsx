@@ -32,6 +32,7 @@ import {
 import { lighten, readableOn, withAlpha } from '../../lib/designColors'
 import { parseUtc } from '../../lib/datetime'
 import { categoryIcon } from '../../lib/categoryIcon'
+import { whatsappOrderHref, whatsappPhone } from '../../lib/whatsappOrder'
 import {
   PencilList,
   pencilAskLabel,
@@ -388,7 +389,7 @@ export function MenuScreen() {
   }, [cart, allItems, cartTotal, customer])
   const waHref = useMemo(() => {
     if (checkoutChannel === 'whatsapp')
-      return `https://wa.me/?text=${encodeURIComponent(orderMessage)}`
+      return whatsappOrderHref(tenant && whatsappPhone(tenant), orderMessage)
     const raw = content?.template?.instagramHandle || tenant?.instagramUrl || ''
     const handle = raw
       .replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')
@@ -399,7 +400,7 @@ export function MenuScreen() {
     checkoutChannel,
     content?.template?.instagramHandle,
     orderMessage,
-    tenant?.instagramUrl,
+    tenant,
   ])
   const onCheckout = () => {
     if (checkoutChannel === 'instagram')

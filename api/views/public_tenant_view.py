@@ -23,6 +23,9 @@ class PublicTenantView(BaseView):
     social_tiktok: str | None = None
     social_website: str | None = None
     social_whatsapp: str | None = None
+    # Where the cart sends orders. The shop's own link (Settings, already
+    # public on /marketplace), else the one on its Linktree.
+    whatsapp_url: str | None = None
     leads_enabled: bool = False
     delivery_enabled: bool = False
     tax_id: str | None = None
@@ -48,6 +51,10 @@ class PublicTenantView(BaseView):
             social_tiktok=getattr(tenant, "social_tiktok", None),
             social_website=getattr(tenant, "social_website", None),
             social_whatsapp=getattr(tenant, "social_whatsapp", None),
+            whatsapp_url=(
+                getattr(tenant, "whatsapp_url", None)
+                or (linktree.whatsapp_url if linktree else None)
+            ),
             leads_enabled=bool(getattr(tenant, "leads_enabled", False)),
             delivery_enabled=bool(getattr(tenant, "delivery_enabled", False)),
             tax_id=getattr(tenant, "tax_id", None),
