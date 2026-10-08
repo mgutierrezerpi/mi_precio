@@ -427,17 +427,11 @@ function Navbar({
               className="h-11 w-auto"
             />
           ) : (
-            <span className="relative inline-flex h-11 overflow-hidden">
-              <img
-                src="/miprecio-logo-white-pencil.webp"
-                alt="MiPrecio"
-                className="h-11 w-auto"
-              />
-              <span
-                aria-hidden
-                className="pointer-events-none absolute bottom-0 left-[30%] right-0 h-[25%] bg-white"
-              />
-            </span>
+            <img
+              src="/miprecio-logo-white-pencil.webp"
+              alt="MiPrecio"
+              className="h-11 w-auto"
+            />
           )}
         </a>
 

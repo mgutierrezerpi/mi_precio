@@ -222,10 +222,6 @@ function SidebarHeader({
             alt="MiPrecio"
             className="h-[34px] w-auto max-w-[155px] object-contain object-left"
           />
-          <span
-            aria-hidden
-            className="pointer-events-none absolute bottom-0 left-[30%] right-0 h-[25%] bg-[var(--dash-sidebar)]"
-          />
         </Link>
       )}
       <button
