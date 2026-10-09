@@ -808,10 +808,6 @@ export function MenuScreen() {
                     mask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
                   }}
                 />
-                <span
-                  className="absolute bottom-0 left-[30%] right-0 h-[25%]"
-                  style={{ background: barSurface }}
-                />
               </span>
             </a>
           </div>

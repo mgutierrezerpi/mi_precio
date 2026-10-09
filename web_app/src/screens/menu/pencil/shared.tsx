@@ -240,8 +240,6 @@ export function PoweredByMark({ ink, muted }: { ink: string; muted: string }) {
             WebkitMask:
               "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
             mask: "url('/miprecio-logo-white-pencil.webp') left center / contain no-repeat",
-            clipPath:
-              'polygon(0 0, 100% 0, 100% 75%, 30% 75%, 30% 100%, 0 100%)',
           }}
         />
       </span>
