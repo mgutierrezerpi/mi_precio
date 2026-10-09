@@ -15,3 +15,10 @@ openapi.json
 
 # Verification renders produced by vcap.js / verify_tour.js
 shots/tour_*.png
+
+# Seed de Malvin: datos duros de comercios reales (ver ventas/). Nunca al repo.
+.malvin_cache/
+malvin_*.py
+seed_malvin.py
+elegir_fotos.py
+revisar_fotos.py
