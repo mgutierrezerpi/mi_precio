@@ -1,7 +1,19 @@
 """Identity context - interface for tenant and user operations."""
 
+from datetime import timedelta
+
 from lib.value_objects import UserResult
 from models import Invitation, Tenant, TenantMembership, User
+from models.base import utc_now
+
+
+def _trial_fields() -> dict:
+    started_at = utc_now()
+    return {
+        "plan_gate": True,
+        "trial_started_at": started_at,
+        "trial_ends_at": started_at + timedelta(days=14),
+    }
 
 
 def list_tenants(user_id: str | None = None) -> list[Tenant]:
@@ -38,7 +50,7 @@ def create_tenant(
         return None
     # Additional businesses follow the same paid onboarding as new signups.
     # Existing tenants retain their persisted gate state.
-    tenant = Tenant.create(name=name, subdomain=subdomain, plan_gate=True)
+    tenant = Tenant.create(name=name, subdomain=subdomain, **_trial_fields())
     if owner_user_id:
         user = User.get_or_none(User.id == owner_user_id)
         if user:
@@ -133,12 +145,13 @@ def get_or_create_user(email: str, language: str = "es") -> UserResult:
         subdomain = f"{base}-{counter}"[:63]
         counter += 1
 
-    # Brand-new signup: gate the CRM until the owner picks a plan (plans_context).
+    # Brand-new signup starts a cardless Pro trial. Once it expires the plan
+    # gate sends the owner to checkout without deleting any tenant data.
     tenant = Tenant.create(
         name=name,
         subdomain=subdomain,
         language="en" if language == "en" else "es",
-        plan_gate=True,
+        **_trial_fields(),
     )
     # First user of a brand-new tenant owns it.
     user = User.create(email=email, tenant=tenant, name=name, role="owner")

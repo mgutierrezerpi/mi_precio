@@ -15,6 +15,10 @@ def _tenant(plan="free"):
     assert tenant is not None
     if plan != "free":
         plans.set_plan(tenant.id, plan)
+    tenant = type(tenant).get_by_id(tenant.id)
+    tenant.trial_started_at = None
+    tenant.trial_ends_at = None
+    tenant.save()
     return tenant
 
 
@@ -39,6 +43,7 @@ class TestLeadsGating:
         tenant = _tenant("pro")
         tenant.plan = "free"
         tenant.plan_gate = True
+        tenant.billing_status = "expired"
         tenant.save()
 
         assert plans.plan_required(tenant.id)

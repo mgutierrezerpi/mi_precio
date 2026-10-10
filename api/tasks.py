@@ -7,6 +7,7 @@ tasks, and periodic jobs may rerun after restarts.
 
 import logging
 import os
+from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -17,7 +18,8 @@ from infra.sentry import init_sentry
 from infra.mailer import mailer
 from lib.ctx import auth
 from lib.ctx import billing_context as billing
-from models import db
+from models import Tenant, db
+from models.base import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +56,7 @@ def run_billing_maintenance() -> dict[str, int]:
     expired_ids = _with_db(billing.expired_subscription_ids)
     pruned_codes = _with_db(auth.prune_expired_codes)
     pending_ids = _with_db(billing.due_pending_subscription_ids)
+    trial_notices = _with_db(send_due_trial_notices)
     for tenant_id in pending_ids:
         check_pending_billing.schedule((tenant_id,), delay=0)
     for tenant_id in expired_ids:
@@ -68,7 +71,62 @@ def run_billing_maintenance() -> dict[str, int]:
         "expired_subscriptions": len(expired_ids),
         "pruned_codes": pruned_codes,
         "pending_billing_checks": len(pending_ids),
+        "trial_ending_notices": trial_notices["ending"],
+        "trial_expired_notices": trial_notices["expired"],
     }
+
+
+def send_due_trial_notices(now=None) -> dict[str, int]:
+    """Send each tenant one reminder and one expiry notice for its app trial."""
+    current = now or utc_now()
+    plans_url = f"{settings.public_app_url.rstrip('/')}/plans"
+    ending = Tenant.select().where(
+        Tenant.trial_ends_at > current,
+        Tenant.trial_ends_at <= current + timedelta(days=3),
+        Tenant.trial_ending_notified_at.is_null(True),
+        Tenant.billing_status.is_null(True),
+    )
+    expired = Tenant.select().where(
+        Tenant.trial_ends_at <= current,
+        Tenant.trial_expired_notified_at.is_null(True),
+        Tenant.billing_status.is_null(True),
+    )
+    counts = {"ending": 0, "expired": 0}
+    for tenant in list(ending):
+        target = billing.expiry_notice_target(tenant.id)
+        if not target:
+            continue
+        email, tenant_name = target
+        mailer.send(
+            to=email,
+            subject=f"Tu prueba de {tenant_name} termina pronto",
+            body=(
+                "Tu prueba Pro de Mi Precio termina en menos de 3 días. "
+                "Elegí un plan para mantener el acceso y tus listas online:\n"
+                f"{plans_url}\n"
+            ),
+        )
+        tenant.trial_ending_notified_at = current
+        tenant.save(only=[Tenant.trial_ending_notified_at])
+        counts["ending"] += 1
+    for tenant in list(expired):
+        target = billing.expiry_notice_target(tenant.id)
+        if not target:
+            continue
+        email, tenant_name = target
+        mailer.send(
+            to=email,
+            subject=f"Terminó tu prueba de {tenant_name}",
+            body=(
+                "Tu prueba Pro de Mi Precio terminó. Tus datos siguen intactos; "
+                "elegí un plan para recuperar el acceso:\n"
+                f"{plans_url}\n"
+            ),
+        )
+        tenant.trial_expired_notified_at = current
+        tenant.save(only=[Tenant.trial_expired_notified_at])
+        counts["expired"] += 1
+    return counts
 
 
 @huey.task(retries=2, retry_delay=30)

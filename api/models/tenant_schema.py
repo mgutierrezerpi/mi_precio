@@ -7,6 +7,10 @@ def ensure_tenant_columns() -> None:
         [
             ("plan", "plan VARCHAR(16) NOT NULL DEFAULT 'free'"),
             ("plan_gate", "plan_gate INTEGER NOT NULL DEFAULT 0"),
+            ("trial_started_at", "trial_started_at DATETIME"),
+            ("trial_ends_at", "trial_ends_at DATETIME"),
+            ("trial_ending_notified_at", "trial_ending_notified_at DATETIME"),
+            ("trial_expired_notified_at", "trial_expired_notified_at DATETIME"),
             ("billing_provider", "billing_provider VARCHAR(32)"),
             ("billing_customer_id", "billing_customer_id VARCHAR(64)"),
             ("billing_subscription_id", "billing_subscription_id VARCHAR(64)"),
@@ -23,7 +27,10 @@ def ensure_tenant_columns() -> None:
             ("billing_order_id", "billing_order_id VARCHAR(64)"),
             ("billing_sync_started_at", "billing_sync_started_at DATETIME"),
             ("billing_sync_next_at", "billing_sync_next_at DATETIME"),
-            ("billing_sync_attempts", "billing_sync_attempts INTEGER NOT NULL DEFAULT 0"),
+            (
+                "billing_sync_attempts",
+                "billing_sync_attempts INTEGER NOT NULL DEFAULT 0",
+            ),
             ("logo_url", "logo_url TEXT"),
             ("brand_color", "brand_color VARCHAR(9)"),
             ("description", "description TEXT"),

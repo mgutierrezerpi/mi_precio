@@ -21,6 +21,8 @@ class TenantView(BaseView):
     plan: str = "free"
     # True when this tenant must pick a plan before the CRM opens up.
     plan_gate: bool = False
+    trial_started_at: datetime | None = None
+    trial_ends_at: datetime | None = None
     logo_url: str | None = None
     brand_color: str | None = None
     description: str | None = None
@@ -63,6 +65,8 @@ class TenantView(BaseView):
             currency=g("currency", "UYU") or "UYU",
             plan=g("plan", "free") or "free",
             plan_gate=bool(g("plan_gate", False)),
+            trial_started_at=g("trial_started_at"),
+            trial_ends_at=g("trial_ends_at"),
             logo_url=g("logo_url"),
             brand_color=g("brand_color"),
             description=g("description"),

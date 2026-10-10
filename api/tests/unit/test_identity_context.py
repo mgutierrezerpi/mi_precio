@@ -1,15 +1,21 @@
 """Tests for identity context."""
 
+from datetime import timedelta
+
 from lib.ctx import identity
+from models.base import utc_now
 
 
 def test_create_tenant(db):
+    before = utc_now()
     tenant = identity.create_tenant("Test Store", "test-store")
 
     assert tenant is not None
     assert tenant.name == "Test Store"
     assert tenant.subdomain == "test-store"
     assert tenant.plan_gate is True
+    assert tenant.trial_started_at >= before
+    assert tenant.trial_ends_at == tenant.trial_started_at + timedelta(days=14)
 
 
 def test_create_tenant_lowercases_subdomain(db):
@@ -77,6 +83,7 @@ def test_get_or_create_user_creates_new(db):
     assert result.user.email == "john@example.com"
     assert result.user.tenant is not None
     assert result.user.tenant.subdomain == "john"
+    assert result.user.tenant.trial_ends_at is not None
 
 
 def test_get_or_create_user_returns_existing(db):

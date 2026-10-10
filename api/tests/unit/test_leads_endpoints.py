@@ -26,6 +26,8 @@ def _shop(plan="plus", enabled=True):
     tenant = identity.create_tenant(f"Store {_n}", f"store_{_n}")
     plans.set_plan(tenant.id, plan)
     tenant = Tenant.get_by_id(tenant.id)
+    tenant.trial_started_at = None
+    tenant.trial_ends_at = None
     tenant.leads_enabled = enabled
     tenant.save()
     return tenant
