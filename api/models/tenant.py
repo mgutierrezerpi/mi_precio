@@ -15,6 +15,12 @@ class Tenant(BaseModel):
     # (see plans_context.plan_required). Defaults to False so tenants created
     # before the gate existed keep their access untouched.
     plan_gate = BooleanField(default=False)
+    # One-time, application-managed trial. Lemon Squeezy is only involved when
+    # the owner chooses to subscribe, so no payment method is needed here.
+    trial_started_at = DateTimeField(null=True)
+    trial_ends_at = DateTimeField(null=True)
+    trial_ending_notified_at = DateTimeField(null=True)
+    trial_expired_notified_at = DateTimeField(null=True)
 
     # Billing provider state. Lemon Squeezy is the first provider, but these
     # columns stay generic enough for manual fallback and future migration.

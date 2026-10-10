@@ -38,6 +38,7 @@ export function useChoosePlan() {
   })
   const [error, setError] = useState<string | null>(null)
   const [otherTenants, setOtherTenants] = useState<Tenant[]>([])
+  const [renderedAt] = useState(() => Date.now())
   const tenantId = tenant?.id
   const pollsLeft = useRef(CONFIRM_POLL_TRIES)
 
@@ -137,6 +138,9 @@ export function useChoosePlan() {
     otherTenants, switchTo,
     isPlanStatusKnown: info !== null,
     isPlanRequired: info?.planRequired === true,
-    tenant, expired: Boolean(info?.billing?.status),
+    tenant,
+    expired: Boolean(info?.billing?.status) || Boolean(
+      info?.trialEndsAt && new Date(info.trialEndsAt).getTime() <= renderedAt
+    ),
   }
 }

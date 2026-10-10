@@ -12,8 +12,12 @@ export const selectAuthError = (state: RootAuthState) => state.auth.error
 export const selectCodeSent = (state: RootAuthState) => state.auth.codeSent
 export const selectPendingEmail = (state: RootAuthState) => state.auth.pendingEmail
 
-export const tenantNeedsPlan = (tenant: Tenant | null | undefined) =>
-  !!tenant?.planGate && (tenant.plan ?? 'free') === 'free'
+export const tenantNeedsPlan = (tenant: Tenant | null | undefined) => {
+  if (!tenant?.planGate || (tenant.plan ?? 'free') !== 'free') return false
+  if (!tenant.trialEndsAt) return true
+  const trialEndsAt = new Date(tenant.trialEndsAt).getTime()
+  return !Number.isFinite(trialEndsAt) || trialEndsAt <= Date.now()
+}
 
 export const selectNeedsPlan = (state: RootAuthState) =>
   tenantNeedsPlan(state.auth.tenant)

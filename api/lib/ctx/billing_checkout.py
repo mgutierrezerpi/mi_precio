@@ -53,7 +53,12 @@ def create_checkout(
     product_options: dict[str, Any] = {"enabled_variants": [int(variant_id)]}
     if redirect_url:
         product_options["redirect_url"] = redirect_url
-    checkout_options = {"locale": "en" if locale == "en" else "es"}
+    # Trials are owned by Mi Precio and happen before checkout. Explicitly skip
+    # any provider-side trial so subscribing cannot grant a second free period.
+    checkout_options = {
+        "locale": "en" if locale == "en" else "es",
+        "skip_trial": True,
+    }
     checkout_data: dict[str, Any] = {"custom": {"tenant_id": tenant_id, "plan": plan}}
     if email:
         checkout_data["email"] = email

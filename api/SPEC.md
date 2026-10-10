@@ -616,9 +616,14 @@ def get_products_controller() -> ProductsController:
 
 ### Plan gate
 
-Tenants created after paid onboarding shipped are flagged with `tenant.plan_gate`.
-While such a tenant is still on `free`, `plans_context.plan_required()` is true and
-the `require_active_plan` dependency answers CRM endpoints with:
+Tenants created after paid onboarding shipped are flagged with `tenant.plan_gate`
+and receive a one-time, application-managed 14-day Pro trial. The trial starts
+when the tenant is created and does not require a payment method or create a
+Lemon Squeezy subscription. While the trial is active, Pro limits and features
+apply even though the persisted plan remains `free`.
+
+After the trial expires, `plans_context.plan_required()` is true and the
+`require_active_plan` dependency answers CRM endpoints with:
 
 ```json
 HTTP 402 { "detail": { "code": "plan_required", "message": "Elegí un plan…" } }
@@ -631,7 +636,9 @@ endpoints. Deliberately left open so a blocked owner can get out: `/auth/*`,
 `POST /billing/checkouts` and `DELETE /tenants/{id}`.
 
 The gate lifts as soon as the plan is not `free` (Lemon Squeezy webhook, or the
-immediate `PATCH` fallback when `BILLING_ENABLED=false`).
+immediate `PATCH` fallback when `BILLING_ENABLED=false`). Lemon Squeezy checkout
+uses `skip_trial=true`: the free period has already happened in Mi Precio and
+subscribing must not start a second provider-side trial.
 
 `free` is not a tier you can subscribe to — it is the absence of a plan. Two
 kinds of tenant land there and are gated: signups carrying `plan_gate`, and
