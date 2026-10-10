@@ -27,6 +27,8 @@ export interface PlanInfo {
   billingEnabled?: boolean
   /** True while the tenant still has to pick a plan before the CRM opens up. */
   planRequired?: boolean
+  /** End of the one-time cardless trial managed by Mi Precio. */
+  trialEndsAt?: string | null
   /** camelCase: `api.request` camelizes every response key. Declaring these in
    *  snake_case used to silently break every read (the portal link never
    *  rendered) because the type lied and TS could not catch it. */
@@ -70,6 +72,9 @@ export interface Tenant {
   /** Signed up after paid onboarding shipped: no plan, no CRM. Absent on
    *  sessions stored before this field existed (treated as not gated). */
   planGate?: boolean
+  /** One-time cardless tenant trial managed by Mi Precio. */
+  trialStartedAt?: string | null
+  trialEndsAt?: string | null
   logoUrl: string | null
   brandColor: string | null
   linktreeAccentColor?: string | null

@@ -67,6 +67,7 @@ export function ChoosePlanContent({
               <PlanCard
                 key={plan.id}
                 plan={plan}
+                expired={expired}
                 choosing={choosing}
                 t={t}
                 onChoosePlan={onChoosePlan}
@@ -93,9 +94,10 @@ export function ChoosePlanContent({
 
 type PlanCardProps = Pick<ChoosePlanContentProps, 'choosing' | 't' | 'onChoosePlan'> & {
   plan: (typeof PLANS)[number]
+  expired: boolean
 }
 
-function PlanCard({ plan, choosing, t, onChoosePlan }: PlanCardProps) {
+function PlanCard({ plan, expired, choosing, t, onChoosePlan }: PlanCardProps) {
   const cardClassName = [
     'flex flex-col gap-3 rounded-3xl border bg-white p-6 shadow-[0_18px_50px_-30px_rgba(30,27,75,0.4)]',
     plan.popular ? 'border-[#7C3AED] ring-2 ring-[#7C3AED]/15' : 'border-[#E2E8F0]',
@@ -119,7 +121,7 @@ function PlanCard({ plan, choosing, t, onChoosePlan }: PlanCardProps) {
       <span className="text-[30px] font-black leading-none text-[#0F172A]">{plan.price}</span>
       <span className="pb-0.5 text-[12px] font-semibold text-[#94A3B8]">{plan.cadence}</span>
     </div>
-    {plan.trialLabel && <span className="w-fit rounded-full bg-[#ECFDF5] px-2.5 py-1 text-[11px] font-bold text-[#047857]">{plan.trialLabel}</span>}
+    {!expired && plan.trialLabel && <span className="w-fit rounded-full bg-[#ECFDF5] px-2.5 py-1 text-[11px] font-bold text-[#047857]">{plan.trialLabel}</span>}
     <ul className="flex flex-col gap-2 border-t border-[#F1F5F9] pt-4">
       {plan.features.map((feature) => <li key={feature} className="flex items-center gap-2 text-[13px]">
         <span className="text-[#10B981]"><CheckIcon /></span>

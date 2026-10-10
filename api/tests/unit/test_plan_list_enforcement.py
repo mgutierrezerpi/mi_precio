@@ -15,6 +15,8 @@ from models import ListVersion, PriceList
 def _tenant(plan="pro", **extra):
     tenant = identity.create_tenant("Test Store", "test_store")
     tenant.plan = plan
+    tenant.trial_started_at = None
+    tenant.trial_ends_at = None
     for key, value in extra.items():
         setattr(tenant, key, value)
     tenant.save()

@@ -99,14 +99,14 @@ export const DICT_EXTRA: Record<string, TranslationEntry> = {
     pt: 'Criamos a conta “{name}”. Ative um plano e entre no painel.',
   },
   'gate.trialNote': {
-    es: 'Arrancás con la prueba gratis. Cancelás cuando quieras.',
-    en: 'You start with the free trial. Cancel anytime.',
-    pt: 'Você começa com o teste grátis. Cancele quando quiser.',
+    es: 'No se cobra nada hoy. El pago empieza al suscribirte.',
+    en: 'Nothing is charged today. Billing starts when you subscribe.',
+    pt: 'Nada é cobrado hoje. A cobrança começa quando você assina.',
   },
   'gate.choose': {
-    es: 'Empezar prueba',
-    en: 'Start trial',
-    pt: 'Começar teste',
+    es: 'Suscribirme',
+    en: 'Subscribe',
+    pt: 'Assinar',
   },
   'gate.opening': { es: 'Abriendo…', en: 'Opening…', pt: 'Abrindo…' },
   'gate.confirming': {
@@ -135,9 +135,9 @@ export const DICT_EXTRA: Record<string, TranslationEntry> = {
     pt: 'Apenas o dono da conta pode ativar o plano. Peça a ele para que você possa entrar.',
   },
   'gate.expired': {
-    es: 'Tu suscripción terminó. Elegí un plan para volver a entrar.',
-    en: 'Your subscription ended. Choose a plan to get back in.',
-    pt: 'Sua assinatura terminou. Escolha um plano para voltar a entrar.',
+    es: 'Tu prueba o suscripción terminó. Elegí un plan para volver a entrar.',
+    en: 'Your trial or subscription ended. Choose a plan to get back in.',
+    pt: 'Seu teste ou assinatura terminou. Escolha um plano para voltar a entrar.',
   },
 
 }

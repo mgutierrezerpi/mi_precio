@@ -36,6 +36,7 @@ export function useChoosePlan() {
     return params.get('checkout_plan') ? params.get('order_id') : null
   })
   const [error, setError] = useState<string | null>(null)
+  const [renderedAt] = useState(() => Date.now())
   const tenantId = tenant?.id
   const pollsLeft = useRef(CONFIRM_POLL_TRIES)
 
@@ -116,6 +117,9 @@ export function useChoosePlan() {
     isOwner, needsPlan, noPaymentYet, choosePlan, recheck, t,
     isPlanStatusKnown: info !== null,
     isPlanRequired: info?.planRequired === true,
-    tenant, expired: Boolean(info?.billing?.status),
+    tenant,
+    expired: Boolean(info?.billing?.status) || Boolean(
+      info?.trialEndsAt && new Date(info.trialEndsAt).getTime() <= renderedAt
+    ),
   }
 }

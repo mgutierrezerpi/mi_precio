@@ -1,8 +1,10 @@
-"""Plans context - subscription tiers, usage, and limit enforcement.
+"""Plans context - subscription tiers, trials, usage, and limit enforcement.
 
 There is no payment gateway yet, so changing plan is immediate (no charge).
 What is real: per-plan limits on products, lists and team members, the current
 usage, and enforcement when creating those resources."""
+
+from datetime import timedelta
 
 from config import settings
 from lib.ctx.plan_catalog import (
@@ -14,6 +16,7 @@ from lib.ctx.plan_catalog import (
 )
 from lib.ctx.plan_usage import usage
 from models import Tenant
+from models.base import utc_now
 
 __all__ = [
     "PLANS",
@@ -22,15 +25,18 @@ __all__ = [
     "PlanLimitError",
     "assert_can_add",
     "has_feature",
+    "trial_active",
     "live_list_allowance",
     "normalize_plan",
     "plan_info",
     "plan_required",
     "set_plan",
+    "start_trial",
 ]
 
 # Shown on the blocking plan screen when a gated tenant has no paid plan yet.
 PLAN_REQUIRED_MESSAGE = "Elegí un plan para empezar a usar Mi Precio."
+APP_TRIAL_DAYS = 14
 
 
 def _ever_subscribed(tenant: Tenant) -> bool:
@@ -39,6 +45,39 @@ def _ever_subscribed(tenant: Tenant) -> bool:
         getattr(tenant, "billing_status", None)
         or getattr(tenant, "billing_provider", None)
     )
+
+
+def _has_subscription(tenant: Tenant) -> bool:
+    """True only after checkout has produced a real provider subscription."""
+    return bool(
+        getattr(tenant, "billing_subscription_id", None)
+        or getattr(tenant, "billing_status", None)
+        not in (None, "checkout_pending")
+    )
+
+
+def trial_active(tenant: Tenant, now=None) -> bool:
+    """Whether a never-subscribed tenant is inside its cardless app trial."""
+    ends_at = getattr(tenant, "trial_ends_at", None)
+    return bool(
+        ends_at and not _has_subscription(tenant) and ends_at > (now or utc_now())
+    )
+
+
+def start_trial(tenant: Tenant, now=None) -> bool:
+    """Start the tenant's one-time cardless trial."""
+    if (
+        normalize_plan(getattr(tenant, "plan", "free")) != "free"
+        or _ever_subscribed(tenant)
+        or getattr(tenant, "trial_started_at", None) is not None
+    ):
+        return False
+    tenant.plan_gate = True
+    started_at = now or utc_now()
+    tenant.trial_started_at = started_at
+    tenant.trial_ends_at = started_at + timedelta(days=APP_TRIAL_DAYS)
+    tenant.save(only=[Tenant.plan_gate, Tenant.trial_started_at, Tenant.trial_ends_at])
+    return True
 
 
 def plan_required(tenant_id: str) -> bool:
@@ -57,7 +96,11 @@ def plan_required(tenant_id: str) -> bool:
         return False
     if normalize_plan(getattr(tenant, "plan", "free")) != "free":
         return False
-    return bool(getattr(tenant, "plan_gate", False)) or _ever_subscribed(tenant)
+    if trial_active(tenant):
+        return False
+    if _ever_subscribed(tenant):
+        return True
+    return bool(getattr(tenant, "plan_gate", False))
 
 
 def live_list_allowance(tenant: Tenant | None) -> int | None:
@@ -69,7 +112,8 @@ def live_list_allowance(tenant: Tenant | None) -> int | None:
         return 0
     if plan_required(tenant.id):
         return 0
-    return PLANS[normalize_plan(getattr(tenant, "plan", "free"))]["lists"]
+    plan = "pro" if trial_active(tenant) else normalize_plan(tenant.plan)
+    return PLANS[plan]["lists"]
 
 
 def has_feature(tenant_id: str, feature: str) -> bool:
@@ -81,7 +125,8 @@ def has_feature(tenant_id: str, feature: str) -> bool:
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant or plan_required(tenant_id):
         return False
-    return feature in PLAN_FEATURES[normalize_plan(getattr(tenant, "plan", "free"))]
+    plan = "pro" if trial_active(tenant) else normalize_plan(tenant.plan)
+    return feature in PLAN_FEATURES[plan]
 
 
 def normalize_plan(plan: str | None) -> str:
@@ -93,7 +138,8 @@ def normalize_plan(plan: str | None) -> str:
 def plan_info(tenant_id: str) -> dict:
     """Current plan + its limits + current usage for the billing screen."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    plan = normalize_plan(getattr(tenant, "plan", "free")) if tenant else "free"
+    stored_plan = normalize_plan(getattr(tenant, "plan", "free")) if tenant else "free"
+    plan = "pro" if tenant and trial_active(tenant) else stored_plan
     # When billing is disabled there is no payment gateway, so the UI switches
     # plans immediately via PATCH instead of opening a checkout.
     info = {
@@ -105,6 +151,7 @@ def plan_info(tenant_id: str) -> dict:
         "billing_enabled": settings.billing_enabled,
         # Lets the plan screen poll for the checkout/webhook to land.
         "plan_required": plan_required(tenant_id),
+        "trial_ends_at": (getattr(tenant, "trial_ends_at", None) if tenant else None),
     }
     if tenant:
         info["billing"] = {
@@ -127,7 +174,13 @@ def plan_info(tenant_id: str) -> dict:
 def assert_can_add(tenant_id: str, resource: str) -> None:
     """Raise PlanLimitError if adding one more `resource` would exceed the plan limit."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    plan = normalize_plan(getattr(tenant, "plan", "free")) if tenant else "free"
+    plan = (
+        "pro"
+        if tenant and trial_active(tenant)
+        else normalize_plan(getattr(tenant, "plan", "free"))
+        if tenant
+        else "free"
+    )
     limit = PLANS[plan].get(resource)
     if limit is None:
         return

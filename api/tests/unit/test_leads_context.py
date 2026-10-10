@@ -18,6 +18,8 @@ def _shop(plan="plus", enabled=True):
     # Re-read: set_plan saved through its own instance, so the one we hold is
     # now stale and saving it would write the old plan back over it.
     tenant = Tenant.get_by_id(tenant.id)
+    tenant.trial_started_at = None
+    tenant.trial_ends_at = None
     tenant.leads_enabled = enabled
     tenant.save()
     return tenant
