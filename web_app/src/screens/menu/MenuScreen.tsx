@@ -45,6 +45,7 @@ import { PencilActionBar } from './pencilActions'
 import { PencilJournal } from './pencilJournal'
 import { StoreChip } from './StoreChip'
 import { MagazineShelf } from './MagazineShelf'
+import { pickDisplayLists } from './displayLists'
 
 export interface PublicList {
   id: string
@@ -144,9 +145,7 @@ export function MenuScreen() {
   const [accessSaving, setAccessSaving] = useState(false)
   const [accessError, setAccessError] = useState(false)
 
-  const displayLists = listId
-    ? lists.filter((l) => l.id === listId || l.slug === listId)
-    : lists
+  const displayLists = pickDisplayLists(lists, listId)
   // Service lists are read-only price lists: no cart / add-to-cart.
   const isService =
     displayLists.length > 0 && displayLists.every((l) => l.kind === 'service')
