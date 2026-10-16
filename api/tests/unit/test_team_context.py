@@ -161,3 +161,21 @@ def test_cancel_invitation(tenant, owner):
     assert team.cancel_invitation(tenant.id, inv.id) is True
     assert Invitation.get_or_none(Invitation.id == inv.id) is None
     assert team.cancel_invitation(tenant.id, "missing") is False
+
+
+def test_role_change_in_another_business_keeps_the_legacy_role(tenant, owner):
+    # `owner` signed up with `tenant`; another shop invites them as editor.
+    other = Tenant.create(name="Otro", subdomain="otro", currency="UYU")
+    TenantMembership.create(user=owner, tenant=other, role="editor")
+
+    team.update_member_role(other.id, owner.id, "viewer")
+    team.update_member(other.id, owner.id, None, role="editor")
+
+    assert User.get_by_id(owner.id).role == "owner"
+    assert TenantMembership.get(user=owner.id, tenant=other.id).role == "editor"
+
+
+def test_role_change_in_the_primary_business_updates_the_legacy_role(tenant, owner):
+    member = User.create(email="m@shop.com", tenant=tenant, role="editor")
+    team.update_member(tenant.id, member.id, owner.id, role="viewer")
+    assert User.get_by_id(member.id).role == "viewer"

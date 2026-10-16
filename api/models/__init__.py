@@ -26,6 +26,7 @@ from models.public_viewer_dismissal import (
 from models.push_subscription import PushSubscription as PushSubscription
 from models.schema_maintenance import ensure_columns as ensure_columns
 from models.schema_maintenance import ensure_memberships as ensure_memberships
+from models.schema_maintenance import sync_legacy_roles as sync_legacy_roles
 from models.table_registry import TABLES, resolve_deferred_foreign_keys
 from models.tenant import Tenant as Tenant
 from models.tenant_membership import TenantMembership as TenantMembership
@@ -37,3 +38,4 @@ def create_tables() -> None:
     db.create_tables(TABLES)
     ensure_columns()
     ensure_memberships()
+    sync_legacy_roles()

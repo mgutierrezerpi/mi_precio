@@ -6,11 +6,15 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from config import settings
-from lib.ctx.billing_common import ACTIVE_SUBSCRIPTION_STATUSES, _parse_dt
+from lib.ctx.billing_common import (
+    ACTIVE_SUBSCRIPTION_STATUSES,
+    _parse_dt,
+    owner_of,
+)
 from lib.ctx.billing_gateway import _lemonsqueezy_get
 from lib.ctx.billing_sync_state import _schedule_next_sync, clear_subscription_sync
 from lib.ctx.billing_updates import sync_subscription_from_attributes
-from models import Tenant, User
+from models import Tenant
 from models.base import utc_now
 
 
@@ -37,7 +41,7 @@ def poll_pending_subscription(
             "delay": int((tenant.billing_sync_next_at - current).total_seconds()),
         }
 
-    owner = User.get_or_none((User.tenant == tenant) & (User.role == "owner"))
+    owner = owner_of(tenant.id)
     if not owner or not owner.email or not tenant.billing_variant_id:
         return {"status": "pending", "delay": _schedule_next_sync(tenant, current)}
 

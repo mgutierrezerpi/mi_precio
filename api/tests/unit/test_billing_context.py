@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 
 from lib.ctx import billing_context as billing
-from models import Tenant, User
+from models import Tenant, TenantMembership, User
 
 
 def test_expire_ended_subscriptions_downgrades_paid_tenants(db):
@@ -46,7 +46,8 @@ def test_pending_subscription_poll_uses_provider_state_and_clears_backstop(
     tenant = Tenant.create(
         name="Shop", subdomain="shop", currency="UYU", plan_gate=True
     )
-    User.create(email="owner@shop.com", tenant=tenant, role="owner")
+    owner = User.create(email="owner@shop.com", tenant=tenant, role="owner")
+    TenantMembership.create(user=owner, tenant=tenant, role="owner")
     started = datetime.utcnow() - timedelta(seconds=11)
     monkeypatch.setattr(billing.settings, "lemonsqueezy_store_id", "store")
     monkeypatch.setattr(billing.settings, "lemonsqueezy_variant_micro", "micro-variant")
@@ -88,7 +89,8 @@ def test_pending_subscription_poll_backoff_increases(db, monkeypatch):
     tenant = Tenant.create(
         name="Shop", subdomain="shop", currency="UYU", plan_gate=True
     )
-    User.create(email="owner@shop.com", tenant=tenant, role="owner")
+    owner = User.create(email="owner@shop.com", tenant=tenant, role="owner")
+    TenantMembership.create(user=owner, tenant=tenant, role="owner")
     now = datetime.utcnow()
     monkeypatch.setattr(billing.settings, "lemonsqueezy_store_id", "store")
     monkeypatch.setattr(billing.settings, "lemonsqueezy_variant_micro", "micro-variant")

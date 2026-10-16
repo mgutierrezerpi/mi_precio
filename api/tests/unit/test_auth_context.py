@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from lib import decode_token
 from lib.ctx import auth
-from models import AuthCode
+from models import AuthCode, User
 
 
 def setup_function():
@@ -145,3 +145,14 @@ def test_authenticate_invalid_code(db):
     result = auth.authenticate("test@example.com", "000000")
 
     assert result is None
+
+
+def test_authenticate_takes_the_role_from_the_membership(db):
+    first = auth.authenticate("test@example.com", auth.send_code("test@example.com"))
+    # Legacy data: `User.role` overwritten from another business's team.
+    User.update(role="viewer").where(User.id == first.user.id).execute()
+
+    again = auth.authenticate("test@example.com", auth.send_code("test@example.com"))
+
+    assert again.role == "owner"
+    assert decode_token(again.token)["role"] == "owner"

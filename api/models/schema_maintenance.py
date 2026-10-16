@@ -111,3 +111,20 @@ def ensure_memberships() -> None:
         TenantMembership.get_or_create(
             user=user, tenant=user.tenant, defaults={"role": user.role or "owner"}
         )
+
+
+def sync_legacy_roles() -> None:
+    """Realign `User.role` with the membership of the user's primary business.
+
+    Role changes made in a *secondary* business used to be written to
+    `User.role` too, leaving e.g. a shop owner recorded as "viewer". The
+    membership is the source of truth; this repairs rows hit before the fix.
+    Runs after `ensure_memberships`, so every user has that membership."""
+    primary = TenantMembership.select().join(
+        User, on=(TenantMembership.user == User.id)
+    ).where(
+        (TenantMembership.tenant == User.tenant)
+        & ((User.role.is_null()) | (User.role != TenantMembership.role))
+    )
+    for member in primary:
+        User.update(role=member.role).where(User.id == member.user_id).execute()

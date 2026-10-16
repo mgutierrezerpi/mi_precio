@@ -22,10 +22,21 @@ def update_member_role(tenant_id: str, user_id: str, role: str) -> User:
         raise TeamError("No se puede cambiar el rol del dueño")
     membership.role = role
     membership.save()
-    user.role = role
-    user.save(only=[User.role])
+    _sync_legacy_role(user, tenant_id, role)
     user._team_role = role
     return user
+
+
+def _sync_legacy_role(user: User, tenant_id: str, role: str) -> None:
+    """Mirror a role change into the legacy `User.role`, primary business only.
+
+    `User.role` describes the business the user signed up with (`User.tenant`).
+    A role in any other business lives only in its membership; writing it here
+    would overwrite, say, the owner of one shop with the viewer role they hold
+    in another."""
+    if str(user.tenant_id) == str(tenant_id) and user.role != role:
+        user.role = role
+        user.save(only=[User.role])
 
 
 def update_member(
@@ -52,7 +63,8 @@ def update_member(
         if membership.role == "owner":
             raise TeamError("No se puede cambiar el rol del dueño")
         membership.role = role
-        user.role = role
+        if str(user.tenant_id) == str(tenant_id):
+            user.role = role
         changed = True
 
     if name is not None:
