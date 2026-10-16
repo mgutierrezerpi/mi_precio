@@ -41,6 +41,11 @@ export const DICT_CATALOG_CATEGORY_EDIT: Record<string, TranslationEntry> = {
     pt: 'Descrição',
   },
   'categories.color': { es: 'Color', en: 'Color', pt: 'Cor' },
+  'categories.duplicateName': {
+    es: 'Ya existe una categoría con ese nombre',
+    en: 'A category with that name already exists',
+    pt: 'Já existe uma categoria com esse nome',
+  },
   'categories.namePlaceholder': {
     es: 'Ferretería',
     en: 'Hardware',

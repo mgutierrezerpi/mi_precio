@@ -421,6 +421,8 @@ function CategoryModal({
   const t = useCatalogT()
   const dispatch = useAppDispatch()
   const saving = useAppSelector(selectCategoriesSaving)
+  const categories = useAppSelector(selectCategories)
+  const [error, setError] = useState<string | null>(null)
   const [name, setName] = useState(category?.name ?? '')
   const [description, setDescription] = useState(category?.description ?? '')
   const [color, setColor] = useState<Tone>(
@@ -429,12 +431,15 @@ function CategoryModal({
 
   useModalDismiss(onClose)
   const submit = useCategorySubmit({
+    categories,
     category,
     color,
     description,
     dispatch,
+    duplicateMessage: t('categories.duplicateName'),
     name,
     onClose,
+    setError,
     tenantId,
   })
 
@@ -464,13 +469,22 @@ function CategoryModal({
               <input
                 autoFocus
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value)
+                  setError(null)
+                }}
                 placeholder={t('categories.namePlaceholder')}
                 className={inputCls}
+                aria-invalid={!!error}
                 required
               />
             </label>
           </div>
+          {error && (
+            <p role="alert" className="text-xs font-semibold text-[#EF4444]">
+              {error}
+            </p>
+          )}
 
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-bold text-[var(--dash-text2)]">
@@ -597,27 +611,43 @@ function useModalDismiss(onClose: () => void) {
   }, [onClose])
 }
 
+// Products point at categories by name, so two categories may not share one
+// (casing aside). The API refuses it too; checking here answers right away.
 function useCategorySubmit({
+  categories,
   category,
   color,
   description,
   dispatch,
+  duplicateMessage,
   name,
   onClose,
+  setError,
   tenantId,
 }: {
+  categories: Category[]
   category: Category | null
   color: Tone
   description: string
   dispatch: ReturnType<typeof useAppDispatch>
+  duplicateMessage: string
   name: string
   onClose: () => void
+  setError: (error: string | null) => void
   tenantId?: string
 }) {
   return async (event: React.FormEvent) => {
     event.preventDefault()
     const cleanName = normalizeCategory(name)
     if (!cleanName) return
+    const key = cleanName.toLocaleLowerCase()
+    const taken = categories.some(
+      (c) => c.id !== category?.id && c.name.trim().toLocaleLowerCase() === key
+    )
+    if (taken) {
+      setError(duplicateMessage)
+      return
+    }
     const data: CategoryInput = {
       name: cleanName,
       description: description.trim() || null,
@@ -628,12 +658,14 @@ function useCategorySubmit({
       : tenantId
         ? await dispatch(createCategory({ tenantId, data }))
         : null
+    if (!result) return
     if (
-      result &&
-      (createCategory.fulfilled.match(result) ||
-        updateCategory.fulfilled.match(result))
+      createCategory.fulfilled.match(result) ||
+      updateCategory.fulfilled.match(result)
     )
-      onClose()
+      return onClose()
+    // A failed save used to leave the modal open with no explanation.
+    setError(typeof result.payload === 'string' ? result.payload : 'Error')
   }
 }
 

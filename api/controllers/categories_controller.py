@@ -9,6 +9,11 @@ from views import CategoryView, DeletedView
 router = APIRouter(tags=["categories"])
 
 
+def _refuse(error: categories.CategoryError) -> HTTPException:
+    status = 409 if isinstance(error, categories.DuplicateCategoryName) else 400
+    return HTTPException(status_code=status, detail=str(error))
+
+
 @router.get("/tenants/{tenant_id}/categories")
 def list_categories_endpoint(
     tenant_id: str, current_user: dict = Depends(get_current_user)
@@ -20,7 +25,10 @@ def list_categories_endpoint(
 def create_category_endpoint(
     tenant_id: str, data: CreateCategory, current_user: dict = Depends(require_editor)
 ):
-    category = categories.create_category(tenant_id, **data.model_dump())
+    try:
+        category = categories.create_category(tenant_id, **data.model_dump())
+    except categories.CategoryError as error:
+        raise _refuse(error) from error
     if not category:
         raise HTTPException(status_code=404, detail="Tenant not found")
     return CategoryView.render(category)
@@ -31,9 +39,12 @@ def update_category_endpoint(
     category_id: str, data: UpdateCategory, current_user: dict = Depends(require_editor)
 ):
     ownership.own_category(category_id, current_user)
-    category = categories.update_category(
-        category_id, **data.model_dump(exclude_unset=True)
-    )
+    try:
+        category = categories.update_category(
+            category_id, **data.model_dump(exclude_unset=True)
+        )
+    except categories.CategoryError as error:
+        raise _refuse(error) from error
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
     return CategoryView.render(category)

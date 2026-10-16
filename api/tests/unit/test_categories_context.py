@@ -71,3 +71,53 @@ def test_cascade_does_not_touch_other_tenants(db):
     assert Product.get_by_id(mine.id).category == "Líquidos"
     # Same category name, different tenant: must be untouched.
     assert Product.get_by_id(theirs.id).category == "Bebidas"
+
+
+def test_a_name_already_in_use_is_refused_regardless_of_casing(db):
+    tenant = identity.create_tenant("Store", "store")
+    categories.create_category(tenant.id, name="Cafés")
+
+    for name in ("Cafés", "cafés", "CAFÉS", "  Cafés  "):
+        with pytest.raises(categories.DuplicateCategoryName):
+            categories.create_category(tenant.id, name=name)
+    assert Category.select().where(Category.tenant == tenant.id).count() == 1
+
+
+def test_the_same_name_is_fine_in_another_shop(db):
+    tenant = identity.create_tenant("Store", "store")
+    other = identity.create_tenant("Other", "other")
+    categories.create_category(tenant.id, name="Cafés")
+
+    assert categories.create_category(other.id, name="Cafés") is not None
+
+
+def test_renaming_onto_another_categorys_name_is_refused(db):
+    tenant = identity.create_tenant("Store", "store")
+    categories.create_category(tenant.id, name="Cafés")
+    postres = categories.create_category(tenant.id, name="Postres")
+
+    with pytest.raises(categories.DuplicateCategoryName):
+        categories.update_category(postres.id, name="cafés")
+    # Re-saving a category with its own name (or new casing) is not a clash.
+    assert categories.update_category(postres.id, name="POSTRES").name == "POSTRES"
+
+
+def test_an_empty_name_is_refused(db):
+    tenant = identity.create_tenant("Store", "store")
+    with pytest.raises(categories.CategoryError):
+        categories.create_category(tenant.id, name="   ")
+
+
+def test_deleting_a_duplicate_keeps_the_products_of_its_twin(db):
+    # Shops created before names were unique may still have duplicates.
+    tenant = identity.create_tenant("Store", "store")
+    original = Category.create(tenant=tenant, name="Cafés", position=0)
+    duplicate = Category.create(tenant=tenant, name="cafés", position=1)
+    espresso = products.create_product(
+        tenant.id, name="Espresso", price=90, category="Cafés"
+    )
+
+    categories.delete_category(duplicate.id)
+
+    assert Product.get_by_id(espresso.id).category == "Cafés"
+    assert Category.get_or_none(Category.id == original.id) is not None
