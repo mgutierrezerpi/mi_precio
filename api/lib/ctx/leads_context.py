@@ -114,10 +114,19 @@ def delete_lead(tenant_id: str, lead_id: str) -> bool:
     )
 
 
-def set_status(lead_id: str, status: str) -> Lead | None:
+def get_lead(tenant_id: str, lead_id: str) -> Lead | None:
+    """One submission, only if it belongs to the requesting tenant.
+
+    The tenant in the URL is checked against the caller's token upstream, but
+    the lead id is not: filtering here is what keeps one shop from reading or
+    changing another shop's leads by id."""
+    return Lead.get_or_none((Lead.id == lead_id) & (Lead.tenant == tenant_id))
+
+
+def set_status(tenant_id: str, lead_id: str, status: str) -> Lead | None:
     if status not in STATUSES:
         return None
-    lead = Lead.get_or_none(Lead.id == lead_id)
+    lead = get_lead(tenant_id, lead_id)
     if not lead:
         return None
     lead.status = status
@@ -125,13 +134,13 @@ def set_status(lead_id: str, status: str) -> Lead | None:
     return lead
 
 
-def convert_to_customer(lead_id: str) -> Customer | None:
+def convert_to_customer(tenant_id: str, lead_id: str) -> Customer | None:
     """Promotes a lead into the customers book.
 
     Converting an already-converted lead is a no-op rather than a second
     customer: the shop clicking twice is far likelier than it wanting the
     same person recorded again."""
-    lead = Lead.get_or_none(Lead.id == lead_id)
+    lead = get_lead(tenant_id, lead_id)
     if not lead or lead.status == "converted":
         return None
 

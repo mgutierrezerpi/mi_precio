@@ -100,14 +100,22 @@ class TestTheInbox:
     def test_can_be_filtered_by_status(self, db):
         shop = _shop()
         lead = leads.create_lead(shop.id, "Ana", phone="59899123456")
-        leads.set_status(lead.id, "contacted")
+        leads.set_status(shop.id, lead.id, "contacted")
 
         assert len(leads.list_leads(shop.id, status="contacted")) == 1
         assert leads.list_leads(shop.id, status="new") == []
 
     def test_an_invented_status_is_refused(self, db):
-        lead = leads.create_lead(_shop().id, "Ana", phone="59899123456")
-        assert leads.set_status(lead.id, "muy-interesado") is None
+        shop = _shop()
+        lead = leads.create_lead(shop.id, "Ana", phone="59899123456")
+        assert leads.set_status(shop.id, lead.id, "muy-interesado") is None
+
+    def test_another_shop_cannot_change_the_status(self, db):
+        shop, other = _shop(), _shop()
+        lead = leads.create_lead(other.id, "Ana", phone="59899123456")
+
+        assert leads.set_status(shop.id, lead.id, "contacted") is None
+        assert Lead.get_by_id(lead.id).status == "new"
 
 
 class TestConverting:
@@ -117,7 +125,7 @@ class TestConverting:
             shop.id, "Ana", phone="59899123456", email="a@b.com", message="Hola"
         )
 
-        customer = leads.convert_to_customer(lead.id)
+        customer = leads.convert_to_customer(shop.id, lead.id)
 
         assert customer.name == "Ana"
         assert customer.phone == "59899123456"
@@ -129,10 +137,17 @@ class TestConverting:
         # Clicking twice is likelier than wanting the same person recorded again.
         shop = _shop()
         lead = leads.create_lead(shop.id, "Ana", phone="59899123456")
-        leads.convert_to_customer(lead.id)
+        leads.convert_to_customer(shop.id, lead.id)
 
-        assert leads.convert_to_customer(lead.id) is None
+        assert leads.convert_to_customer(shop.id, lead.id) is None
         assert Customer.select().where(Customer.tenant == shop.id).count() == 1
+
+    def test_another_shop_cannot_convert_the_lead(self, db):
+        shop, other = _shop(), _shop()
+        lead = leads.create_lead(other.id, "Ana", phone="59899123456")
+
+        assert leads.convert_to_customer(shop.id, lead.id) is None
+        assert Lead.get_by_id(lead.id).status == "new"
 
 
 class TestNotifying:

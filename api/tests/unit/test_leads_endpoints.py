@@ -4,7 +4,7 @@ import pytest
 
 from lib import encode_token, rate_limit
 from lib.ctx import identity, leads, plans
-from models import Lead, Tenant, TenantMembership, User
+from models import Customer, Lead, Tenant, TenantMembership, User
 
 
 _members = 0
@@ -164,3 +164,34 @@ class TestTheCrmRoutes:
 
         assert res.status_code == 404
         assert Lead.get_or_none(Lead.id == lead.id) is not None
+
+    def test_a_submission_cannot_be_read_or_changed_from_another_tenant(
+        self, client, db
+    ):
+        shop = _plus_shop()
+        other = _plus_shop()
+        lead = leads.create_lead(other.id, "Ana", phone="59899123456")
+
+        res = client.patch(
+            f"/api/v1/tenants/{shop.id}/leads/{lead.id}",
+            json={"status": "contacted"},
+            headers=_auth(shop.id),
+        )
+
+        assert res.status_code == 404
+        assert "Ana" not in res.text
+        assert Lead.get_by_id(lead.id).status == "new"
+
+    def test_a_submission_cannot_be_converted_from_another_tenant(self, client, db):
+        shop = _plus_shop()
+        other = _plus_shop()
+        lead = leads.create_lead(other.id, "Ana", phone="59899123456")
+
+        res = client.post(
+            f"/api/v1/tenants/{shop.id}/leads/{lead.id}/convert",
+            headers=_auth(shop.id),
+        )
+
+        assert res.status_code == 404
+        assert Lead.get_by_id(lead.id).status == "new"
+        assert Customer.select().where(Customer.tenant == other.id).count() == 0
