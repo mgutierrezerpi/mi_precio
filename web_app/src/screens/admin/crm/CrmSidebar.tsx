@@ -31,6 +31,8 @@ const navMain: {
   label: string
   to?: string
   badge?: string
+  /** `data-tour` anchor the onboarding tour spotlights. */
+  tour?: string
 }[] = [
   {
     icon: 'layout-dashboard',
@@ -43,6 +45,7 @@ const navMain: {
     icon: 'list-checks',
     id: 'Listas de precios',
     tKey: 'nav.lists',
+    tour: 'nav-lists',
     label: 'Listas',
     to: '/admin/lists',
   },
@@ -64,6 +67,7 @@ const navMain: {
     icon: 'package',
     id: 'Productos',
     tKey: 'nav.products',
+    tour: 'nav-products',
     label: 'Productos',
     to: '/admin/items',
   },
@@ -71,6 +75,7 @@ const navMain: {
     icon: 'qr-code',
     id: 'Códigos QR',
     tKey: 'nav.qr',
+    tour: 'nav-qr',
     label: 'Códigos QR',
     to: '/admin/qr',
   },
@@ -95,6 +100,7 @@ const navSettings: {
   tKey: string
   label: string
   to?: string
+  tour?: string
 }[] = [
   {
     icon: 'user-plus',
@@ -107,6 +113,7 @@ const navSettings: {
     icon: 'settings',
     id: 'Configuración',
     tKey: 'nav.settings',
+    tour: 'nav-settings',
     label: 'Configuración',
     to: '/admin/settings',
   },
@@ -114,6 +121,7 @@ const navSettings: {
     icon: 'life-buoy',
     id: 'Soporte',
     tKey: 'nav.support',
+    tour: 'nav-support',
     label: 'Soporte',
     to: '/admin/support',
   },
@@ -132,6 +140,7 @@ function NavItem({
   label,
   to,
   badge,
+  tour,
   active,
   onNavigate,
   collapsed,
@@ -140,6 +149,7 @@ function NavItem({
   label: string
   to?: string
   badge?: string
+  tour?: string
   active: boolean
   onNavigate?: () => void
   collapsed?: boolean
@@ -179,11 +189,15 @@ function NavItem({
   )
   const cls = `flex h-9 items-center gap-2 rounded-[8px] ${collapsed ? 'justify-center px-0' : 'px-3'} ${active ? 'bg-[var(--dash-sidebar-active)] text-[var(--dash-sidebar-active-text)]' : 'text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'}`
   return to ? (
-    <Link to={to} onClick={onNavigate} className={cls}>
+    <Link to={to} onClick={onNavigate} className={cls} data-tour={tour}>
       {inner}
     </Link>
   ) : (
-    <button type="button" className={`${cls} w-full text-left`}>
+    <button
+      type="button"
+      className={`${cls} w-full text-left`}
+      data-tour={tour}
+    >
       {inner}
     </button>
   )
@@ -262,6 +276,7 @@ function PublicListAction({
         title={label}
         aria-label={label}
         className={className}
+        data-tour="share-link"
       >
         <Icon name={linkCopied ? 'circle-check' : 'link-2'} size={15} />
         {!collapsed && label}
@@ -274,6 +289,7 @@ function PublicListAction({
       title={t('side.createMainList')}
       aria-label={t('side.createMainList')}
       className={className}
+      data-tour="share-link"
     >
       <Icon name="list-plus" size={15} />
       {!collapsed && t('side.createMainList')}
@@ -297,6 +313,7 @@ function SidebarNav({
     tKey: string
     to?: string
     badge?: string
+    tour?: string
   }[]
   onClose?: () => void
   title: string
@@ -315,6 +332,7 @@ function SidebarNav({
           icon={item.icon}
           to={item.to}
           badge={item.badge}
+          tour={item.tour}
           label={t(item.tKey)}
           active={item.id === active}
           onNavigate={onClose}

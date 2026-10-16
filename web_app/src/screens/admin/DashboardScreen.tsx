@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectTenant } from '../../store/slices/authSlice'
 import { fetchLists, selectLists } from '../../store/slices/menuSlice'
+import {
+  fetchProducts,
+  selectProducts,
+} from '../../store/slices/productsSlice'
+import { FirstSteps } from './crm/FirstSteps'
 import type {
   Product,
   CustomerStats,
@@ -83,6 +88,7 @@ export function DashboardScreen() {
     year: 'numeric',
   }).format(new Date())
   const dashboard = useDashboardData(navigate)
+  const firstSteps = useFirstStepsData(dashboard.tenant?.id)
   const {
     copied,
     copyUrl,
@@ -138,6 +144,10 @@ export function DashboardScreen() {
       }
     >
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
+        <FirstSteps
+          lists={firstSteps.lists}
+          productCount={firstSteps.productCount}
+        />
         <DashboardHero
           copied={copied}
           goCreateList={goCreateList}
@@ -177,6 +187,17 @@ export function DashboardScreen() {
       )}
     </CrmLayout>
   )
+}
+
+/** What the "first steps" checklist reads: lists and how many products exist. */
+function useFirstStepsData(tenantId?: string) {
+  const dispatch = useAppDispatch()
+  const lists = useAppSelector(selectLists)
+  const products = useAppSelector(selectProducts)
+  useEffect(() => {
+    if (tenantId) dispatch(fetchProducts(tenantId))
+  }, [dispatch, tenantId])
+  return { lists, productCount: products.length }
 }
 
 function useDashboardData(navigate: ReturnType<typeof useNavigate>) {
