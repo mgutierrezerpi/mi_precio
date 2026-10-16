@@ -194,9 +194,11 @@ export function MenuScreen() {
     )
   }, [subdomain, listId, viewSource, isLoading, error, tenant, displayLists])
 
-  // Customer-facing catalog and Linktree intentionally share one accent.
-  const accent =
-    tenant?.linktreeAccentColor || tenant?.brandColor || BASE.accent
+  // The catalog wears the brand color set in Settings → Brand ("used in
+  // accents, buttons and the cart"). It used to prefer the Linktree's accent,
+  // which exists as soon as the Links screen is opened (default lime, or a
+  // palette picked from the logo) and silently overrode the brand color.
+  const accent = tenant?.brandColor || BASE.accent
   const C = { ...BASE, accent, accent2: accent }
   const brandGradient = `linear-gradient(135deg, ${accent} 0%, ${lighten(accent, 0.42)} 100%)`
 

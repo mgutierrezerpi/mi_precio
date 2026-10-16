@@ -72,7 +72,6 @@ export interface Tenant {
   planGate?: boolean
   logoUrl: string | null
   brandColor: string | null
-  linktreeAccentColor?: string | null
   description: string | null
   listDesign: ListDesign | null
   listBgUrl: string | null
