@@ -1,7 +1,13 @@
 """Tests for identified public-list viewers."""
 
 from lib.ctx import customers, identity, lists, public_viewers, versions
-from models import Customer, CustomerListAccess, PublicViewer, PublicViewerDismissal
+from models import (
+    Customer,
+    CustomerListAccess,
+    PriceList,
+    PublicViewer,
+    PublicViewerDismissal,
+)
 
 
 def _published_list(tenant_id: str):
@@ -192,3 +198,54 @@ def test_customer_code_unlocks_each_private_list_granted_to_the_customer(db):
         )
         is None
     )
+
+
+def _private_list_for(tenant_id: str, customer):
+    created = lists.create_list(tenant_id, "Wholesale")
+    created.price_list.is_private = True
+    created.price_list.save()
+    lists.update_list(created.price_list.id, published=True)
+    versions.update_version(created.version.id, published=True)
+    CustomerListAccess.create(customer=customer, price_list=created.price_list)
+    return PriceList.get_by_id(created.price_list.id)
+
+
+def test_a_form_with_a_known_email_does_not_inherit_the_customers_access(db):
+    # A viewer linked to a customer carries that customer's private-list
+    # access through its browser token. Typing the same email on another
+    # browser must not hand that access (or that record) over.
+    tenant = identity.create_tenant("Test Store", "test-store")
+    public = _published_list(tenant.id)
+    customer = customers.create_customer(
+        tenant.id, name="Lucía", email="lucia@example.com"
+    )
+    private = _private_list_for(tenant.id, customer)
+    original_token = "c" * 43
+    linked = public_viewers.capture_viewer(
+        tenant.id,
+        public.id,
+        "Lucía",
+        email="lucia@example.com",
+        visitor_token=original_token,
+    )
+    linked.customer_id = customer.id
+    linked.save()
+
+    other_token = "d" * 43
+    other = public_viewers.capture_viewer(
+        tenant.id,
+        public.id,
+        "Otra persona",
+        email="LUCIA@example.com",
+        visitor_token=other_token,
+    )
+
+    assert other is not None
+    assert other.id != linked.id
+    assert other.customer_id is None
+    assert not public_viewers.has_list_access(private, other_token)
+    # The customer's own browser keeps working and its record is untouched.
+    kept = PublicViewer.get_by_id(linked.id)
+    assert kept.visitor_token == original_token
+    assert kept.name == "Lucía"
+    assert public_viewers.has_list_access(private, original_token)
