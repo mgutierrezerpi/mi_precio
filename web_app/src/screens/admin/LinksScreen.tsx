@@ -242,6 +242,23 @@ function LinkEditor({
   )
 }
 
+// Older avatars and tenant logos may still be embedded `data:` URLs, which the
+// API refuses (it only stores hosted images). Upload those to object storage
+// and use the hosted URL instead; anything else is already hosted.
+async function hostedImageUrl(tenantId: string, url: string): Promise<string> {
+  if (!url.startsWith('data:')) return url
+  const file = await (await fetch(url)).blob()
+  const response = await api.uploadLinkTreeAvatar(tenantId, file)
+  if (!response.data) throw new Error(response.error)
+  return response.data.url
+}
+
+// "Error 422"-style messages mean nothing to a shop owner.
+const saveErrorMessage = (error?: string) =>
+  !error || /^Error \d+$/.test(error)
+    ? 'No pudimos guardar los cambios. Revisá los datos y probá de nuevo.'
+    : error
+
 export function LinksScreen() {
   const tenant = useAppSelector(selectTenant)
   const canEdit = useAppSelector(selectCanEdit)
@@ -256,6 +273,10 @@ export function LinksScreen() {
   )
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [savedSnapshot, setSavedSnapshot] = useState('')
+  // The exact tree that last failed to save. Autosave won't resend it — that
+  // retried forever on a 422 — and resumes as soon as the shop edits anything.
+  const [failedSnapshot, setFailedSnapshot] = useState('')
+  const [avatarNotice, setAvatarNotice] = useState('')
 
   useEffect(() => {
     if (!tenant?.id) return
@@ -263,6 +284,21 @@ export function LinksScreen() {
       setIsLoading(false)
       if (response.data) {
         setSavedSnapshot(JSON.stringify(response.data))
+        if (response.data.avatarUrl?.startsWith('data:')) {
+          try {
+            response.data.avatarUrl = await hostedImageUrl(
+              tenant.id,
+              response.data.avatarUrl
+            )
+          } catch {
+            // Saving would keep failing with the embedded image: drop it (the
+            // page falls back to the business logo) and ask for a new one.
+            response.data.avatarUrl = null
+            setAvatarNotice(
+              'Tu imagen de perfil estaba en un formato viejo. Subila de nuevo.'
+            )
+          }
+        }
         const logo = response.data.avatarUrl || tenant.logoUrl
         const hasDefaultPalette =
           response.data.accentColor === '#D6EE4A' &&
@@ -311,6 +347,7 @@ export function LinksScreen() {
       const response = await api.uploadLinkTreeAvatar(tenant.id, file)
       if (!response.data) throw new Error(response.error)
       update('avatarUrl', response.data.url)
+      setAvatarNotice('')
       const colors = await colorsFromLogo(response.data.url)
       update('accentColor', colors.accent)
       update('backgroundColor', colors.background)
@@ -321,18 +358,12 @@ export function LinksScreen() {
     }
   }
   const selectCompanyLogo = async (logo: string) => {
+    if (!tenant) return
     try {
       setIsUploadingAvatar(true)
-      let storedLogo = logo
-      // Older tenant logos may still be embedded data URLs. Move those to
-      // object storage before reusing them in a Linktree record.
-      if (logo.startsWith('data:') && tenant) {
-        const file = await (await fetch(logo)).blob()
-        const response = await api.uploadLinkTreeAvatar(tenant.id, file)
-        if (!response.data) throw new Error(response.error)
-        storedLogo = response.data.url
-      }
+      const storedLogo = await hostedImageUrl(tenant.id, logo)
       update('avatarUrl', storedLogo)
+      setAvatarNotice('')
       const colors = await colorsFromLogo(storedLogo)
       update('accentColor', colors.accent)
       update('backgroundColor', colors.background)
@@ -376,19 +407,31 @@ export function LinksScreen() {
     if (!tenant || !tree || isSaving || !canEdit) return
     setIsSaving(true)
     setError('')
+    const sent = JSON.stringify(tree)
     const response = await api.updateLinkTree(tenant.id, tree)
     setIsSaving(false)
     if (response.data) {
+      setFailedSnapshot('')
       setSavedSnapshot(JSON.stringify(response.data))
       setTree(response.data)
-    } else setError(response.error || 'No pudimos guardar los cambios')
+    } else {
+      setFailedSnapshot(sent)
+      setError(saveErrorMessage(response.error))
+    }
   }, [canEdit, isSaving, tenant, tree])
 
+  const lastSaveFailed = !!tree && failedSnapshot === JSON.stringify(tree)
+  // Editing after a failed save drops the stale error; autosave takes over.
   useEffect(() => {
-    if (!isDirty || !canEdit || isSaving) return
+    if (!failedSnapshot || lastSaveFailed) return
+    setFailedSnapshot('')
+    setError('')
+  }, [failedSnapshot, lastSaveFailed])
+  useEffect(() => {
+    if (!isDirty || !canEdit || isSaving || lastSaveFailed) return
     const timer = window.setTimeout(() => void save(), 850)
     return () => window.clearTimeout(timer)
-  }, [canEdit, isDirty, isSaving, save])
+  }, [canEdit, isDirty, isSaving, lastSaveFailed, save])
 
   return (
     <CrmLayout
@@ -461,6 +504,11 @@ export function LinksScreen() {
         {error && (
           <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700">
             {error}
+          </div>
+        )}
+        {avatarNotice && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
+            {avatarNotice}
           </div>
         )}
         {isLoading && (
