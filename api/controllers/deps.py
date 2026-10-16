@@ -5,7 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from lib import decode_token
 from lib.ctx import plans_context
-from models import User
+from models import TenantMembership, User
 
 security = HTTPBearer(auto_error=False)
 
@@ -22,6 +22,21 @@ def get_current_user(
 
     # Tokens issued before roles existed belong to single-user tenant owners.
     payload.setdefault("role", "owner")
+
+    # A token outlives the membership it was issued for (30 days), so check the
+    # membership on every request: someone removed from the team loses access
+    # right away, and a role change applies without waiting for a new login.
+    tenant_id = payload.get("tenant_id")
+    if tenant_id:
+        membership = TenantMembership.get_or_none(
+            (TenantMembership.user == payload.get("sub"))
+            & (TenantMembership.tenant == tenant_id)
+        )
+        if not membership:
+            raise HTTPException(
+                status_code=401, detail="Ya no tenés acceso a este negocio"
+            )
+        payload["role"] = membership.role
     return payload
 
 

@@ -4,11 +4,19 @@ import pytest
 
 from lib import encode_token, rate_limit
 from lib.ctx import identity, leads, plans
-from models import Lead, Tenant
+from models import Lead, Tenant, TenantMembership, User
+
+
+_members = 0
 
 
 def _auth(tenant_id, role="owner"):
-    token = encode_token("user-1", "user@shop.com", tenant_id, role)
+    """Headers for a real member: the API checks the membership, not just the token."""
+    global _members
+    _members += 1
+    user = User.create(email=f"user{_members}@shop.com", tenant=tenant_id, role=role)
+    TenantMembership.create(user=user, tenant=tenant_id, role=role)
+    token = encode_token(str(user.id), user.email, tenant_id, role)
     return {"Authorization": f"Bearer {token}"}
 
 
