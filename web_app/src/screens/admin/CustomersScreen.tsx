@@ -111,8 +111,15 @@ function statusOf(c: Customer): Status {
   if (last && (Date.now() - last.getTime()) / 86400000 <= 30) return 'Activo'
   return 'Inactivo'
 }
+// The status values are Spanish, the dictionary keys English: lower-casing
+// one into the other showed the raw «status.nuevo» key.
+const STATUS_KEY: Record<Status, string> = {
+  Activo: 'status.active',
+  Inactivo: 'status.inactive',
+  Nuevo: 'status.new',
+}
 function statusLabel(status: Status, t: (key: string) => string) {
-  return t(`status.${status.toLowerCase()}`)
+  return t(STATUS_KEY[status])
 }
 
 export function CustomersScreen() {
