@@ -33,6 +33,8 @@ export function ChoosePlanScreen() {
       t={plan.t}
       onChoosePlan={plan.choosePlan}
       onLogout={plan.handleLogout}
+      otherTenants={plan.otherTenants}
+      onSwitchTenant={plan.switchTo}
       onRecheck={plan.recheck}
     />
   )

@@ -10,8 +10,9 @@ import {
   selectNeedsPlan,
   selectTenant,
   setTenant,
+  setUser,
 } from '../../store/slices/authSlice'
-import type { PlanId, PlanInfo } from '../../types'
+import type { PlanId, PlanInfo, Tenant } from '../../types'
 
 const CONFIRM_POLL_MS = 3000
 const CONFIRM_POLL_TRIES = 20
@@ -36,6 +37,7 @@ export function useChoosePlan() {
     return params.get('checkout_plan') ? params.get('order_id') : null
   })
   const [error, setError] = useState<string | null>(null)
+  const [otherTenants, setOtherTenants] = useState<Tenant[]>([])
   const tenantId = tenant?.id
   const pollsLeft = useRef(CONFIRM_POLL_TRIES)
 
@@ -111,9 +113,28 @@ export function useChoosePlan() {
     navigate('/')
   }
 
+  // A new business starts without a plan; the user's other businesses are the
+  // way back, instead of having to pay or log out (A11).
+  useEffect(() => {
+    if (!isAuthenticated) return
+    void api.getTenants().then((res) => {
+      if (res.data) setOtherTenants(res.data.filter((x) => x.id !== tenantId))
+    })
+  }, [isAuthenticated, tenantId])
+
+  const switchTo = async (other: Tenant) => {
+    const res = await api.switchTenant(other.id)
+    if (!res.data) return setError(res.error || 'No se pudo abrir el negocio.')
+    api.setToken(res.data.token)
+    dispatch(setUser(res.data.user))
+    dispatch(setTenant(res.data.tenant))
+    window.location.assign('/admin')
+  }
+
   return {
     choosing, checking, confirming, error, handleLogout, isAuthenticated,
     isOwner, needsPlan, noPaymentYet, choosePlan, recheck, t,
+    otherTenants, switchTo,
     isPlanStatusKnown: info !== null,
     isPlanRequired: info?.planRequired === true,
     tenant, expired: Boolean(info?.billing?.status),

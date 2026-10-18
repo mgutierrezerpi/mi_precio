@@ -21,11 +21,13 @@ interface ChoosePlanContentProps {
   onChoosePlan: (plan: PlanId) => void
   onLogout: () => void
   onRecheck: () => void
+  otherTenants?: Tenant[]
+  onSwitchTenant?: (tenant: Tenant) => void
 }
 
 export function ChoosePlanContent({
   choosing, checking, confirming, error, expired, isOwner, noPaymentYet, tenant,
-  t, onChoosePlan, onLogout, onRecheck,
+  t, onChoosePlan, onLogout, onRecheck, otherTenants = [], onSwitchTenant,
 }: ChoosePlanContentProps) {
   const confirmingClassName = [
     'mx-auto flex w-full max-w-xl items-center justify-center gap-3 rounded-2xl border',
@@ -44,9 +46,16 @@ export function ChoosePlanContent({
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <header className="flex items-center justify-between gap-4">
           <img src="/miprecio-logo-pencil.webp" alt="Mi Precio" className="h-9 w-auto" />
-          <button type="button" onClick={onLogout} className="text-sm font-semibold text-[#64748B] transition-colors hover:text-[#0F172A]">
-            {t('gate.logout')}
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
+            {otherTenants.map((other) => (
+              <button key={other.id} type="button" onClick={() => onSwitchTenant?.(other)} className="text-sm font-semibold text-[#7C3AED] transition-colors hover:text-[#5B21B6]">
+                ← {t('gate.backTo', { name: other.name })}
+              </button>
+            ))}
+            <button type="button" onClick={onLogout} className="text-sm font-semibold text-[#64748B] transition-colors hover:text-[#0F172A]">
+              {t('gate.logout')}
+            </button>
+          </div>
         </header>
         <div className="flex flex-col gap-2 text-center">
           <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-[#0F172A] sm:text-[34px]">
