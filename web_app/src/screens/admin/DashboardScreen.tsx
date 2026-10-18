@@ -22,6 +22,7 @@ import { QrCode } from './crm/QrCode'
 import { QrModal } from './PriceListsScreen'
 import { tone, gradient, type Tone } from './crm/theme'
 import { QR_COLOR_STORAGE_PREFIX } from '../../lib/qrRender'
+import { workspaceSearchTarget } from '../../lib/workspaceSearch'
 import { useStoredQrColor } from '../../hooks/useStoredQrColor'
 import { localeOf, normalizeLang, useT, type TFn } from '../../lib/i18n'
 import { DICT_ANALYTICS } from '../../lib/i18nDictionaryAnalytics'
@@ -135,13 +136,10 @@ export function DashboardScreen() {
       searchPlaceholder={t('analytics.searchWorkspace')}
       searchValue={search}
       onSearchChange={setSearch}
-      onSearchSubmit={(q) =>
-        navigate(
-          q.trim()
-            ? `/admin/items?q=${encodeURIComponent(q.trim())}`
-            : '/admin/items'
-        )
-      }
+      onSearchSubmit={(q) => {
+        if (!tenant?.id) return
+        void workspaceSearchTarget(tenant.id, q).then((to) => navigate(to))
+      }}
     >
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
         <FirstSteps

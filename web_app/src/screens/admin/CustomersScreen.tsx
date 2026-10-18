@@ -142,8 +142,9 @@ export function CustomersScreen() {
   const [viewersLoading, setViewersLoading] = useState(true)
   const [anonymousDismissals, setAnonymousDismissals] = useState(0)
   const [anonymousLoading, setAnonymousLoading] = useState(true)
-  const [search, setSearch] = useState('')
   const [searchParams] = useSearchParams()
+  // The workspace search lands here with ?q= when the match is a customer.
+  const [search, setSearch] = useState(() => searchParams.get('q') || '')
   const [showNew, setShowNew] = useState(
     () => searchParams.get('new') === '1' && canEdit
   )

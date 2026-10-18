@@ -76,7 +76,8 @@ export function PriceListsScreen() {
 
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [search, setSearch] = useState('')
+  // The workspace search lands here with ?q= when the match is a list.
+  const [search, setSearch] = useState(() => searchParams.get('q') || '')
   const [tab, setTab] = useState<Tab>('all')
   const [modal, setModal] = useState<{ open: boolean; list: PriceList | null }>(
     () => ({
