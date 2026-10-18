@@ -1397,8 +1397,17 @@ export function ProductModal({
   const [imageThumbUrl, setImageThumbUrl] = useState(
     product?.imageThumbUrl ?? ''
   )
+  // Only the lists that carry this product can take its new price; offering
+  // every list made the box long and the choice meaningless.
+  const productLists = useMemo(
+    () =>
+      product?.priceListIds
+        ? lists.filter((list) => product.priceListIds!.includes(list.id))
+        : lists,
+    [lists, product]
+  )
   const [priceListIds, setPriceListIds] = useState<Set<string>>(
-    () => new Set(lists.map((list) => list.id))
+    () => new Set(productLists.map((list) => list.id))
   )
   const [imgLoading, setImgLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -1407,8 +1416,8 @@ export function ProductModal({
     !!product && (parseFloat(price) || 0) !== (parseFloat(product.price) || 0)
 
   useEffect(() => {
-    setPriceListIds(new Set(lists.map((list) => list.id)))
-  }, [lists])
+    setPriceListIds(new Set(productLists.map((list) => list.id)))
+  }, [productLists])
 
   const togglePriceList = (id: string) => {
     setPriceListIds((current) => {
@@ -1420,7 +1429,7 @@ export function ProductModal({
   }
 
   const selectAllPriceLists = () =>
-    setPriceListIds(new Set(lists.map((list) => list.id)))
+    setPriceListIds(new Set(productLists.map((list) => list.id)))
   const clearPriceLists = () => setPriceListIds(new Set())
 
   const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1643,7 +1652,11 @@ export function ProductModal({
               className={inputCls}
             />
           </Field>
-          {priceChanged && (
+          {/* Always there while editing a listed product, instead of popping in
+           *  on the first keystroke of the price: that pushed «Guardar cambios»
+           *  down and the click landed on a list checkbox. The choice only
+           *  takes effect when the price actually changes. */}
+          {product && productLists.length > 0 && (
             <div className="rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-3.5">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -1672,12 +1685,12 @@ export function ProductModal({
                 </div>
               </div>
               <div className="mt-3 flex max-h-32 flex-col gap-2 overflow-auto pr-1">
-                {lists.length === 0 ? (
+                {productLists.length === 0 ? (
                   <p className="text-[12px] font-semibold text-[var(--dash-muted)]">
                     {t('products.noLists')}
                   </p>
                 ) : (
-                  lists.map((list) => (
+                  productLists.map((list) => (
                     <label
                       key={list.id}
                       className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 py-2"
