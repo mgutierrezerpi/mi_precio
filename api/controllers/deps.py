@@ -40,6 +40,20 @@ def get_current_user(
     return payload
 
 
+def optional_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> dict | None:
+    """The signed-in user when the request carries a valid token, else None.
+
+    For public endpoints that show a little more to the shop's own team."""
+    if not credentials:
+        return None
+    try:
+        return get_current_user(credentials)
+    except HTTPException:
+        return None
+
+
 def require_roles(*allowed: str):
     """Dependency factory: allow the request only if the caller's role is in `allowed`.
 

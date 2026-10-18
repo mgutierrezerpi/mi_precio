@@ -1428,7 +1428,10 @@ class ApiService {
   // Public endpoints
   async getPublicMenu(
     subdomain: string,
-    listId?: string
+    listId?: string,
+    /** The list customizer's preview: the API shows the shop's own team the
+     *  list even before it is published. */
+    preview = false
   ): Promise<
     ApiResponse<{
       tenant: Tenant
@@ -1437,8 +1440,11 @@ class ApiService {
       viewerIdentified?: boolean
     }>
   > {
-    const listFilter = listId ? `?list=${encodeURIComponent(listId)}` : ''
-    return this.request(`/public/${subdomain}${listFilter}`)
+    const params = new URLSearchParams()
+    if (listId) params.set('list', listId)
+    if (listId && preview) params.set('preview', 'true')
+    const query = params.toString()
+    return this.request(`/public/${subdomain}${query ? `?${query}` : ''}`)
   }
 
   async unlockPublicList(

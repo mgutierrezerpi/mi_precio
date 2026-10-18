@@ -156,7 +156,11 @@ export function MenuScreen() {
       if (!subdomain) return
       setIsLoading(true)
       setError(null)
-      const response = (await api.getPublicMenu(subdomain, listId)) as {
+      const response = (await api.getPublicMenu(
+        subdomain,
+        listId,
+        isEditorPreview
+      )) as {
         data?: PublicMenuData
         error?: string
       }
@@ -170,7 +174,7 @@ export function MenuScreen() {
       setIsLoading(false)
     }
     fetchPublicData()
-  }, [subdomain, listId])
+  }, [subdomain, listId, isEditorPreview])
 
   useEffect(() => {
     setViewerSubmitted(false)

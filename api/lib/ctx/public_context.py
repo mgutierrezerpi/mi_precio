@@ -8,6 +8,7 @@ from lib.value_objects import PublishedList
 from models import Item, ListVersion, Magazine, PriceList, Tenant
 
 __all__ = [
+    "get_preview_list",
     "get_public_magazine",
     "get_published_lists",
     "get_published_magazines",
@@ -93,6 +94,38 @@ def get_published_lists(
                 PublishedList(price_list, version, visible_items(items, products))
             )
     return result
+
+
+def get_preview_list(tenant: Tenant, requested_list: str) -> list[PublishedList]:
+    """One list as its editor sees it, published or not.
+
+    For the preview inside the list customizer only: the caller has already
+    checked that the request comes from someone on the tenant's team. It shows
+    the published version when there is one and the latest draft otherwise —
+    a list nobody has published yet used to preview as «no disponible».
+    """
+    price_list = PriceList.get_or_none(
+        (PriceList.tenant == tenant.id)
+        & ((PriceList.id == requested_list) | (PriceList.slug == requested_list))
+    )
+    if not price_list:
+        return []
+    version = ListVersion.get_or_none(
+        (ListVersion.list == price_list.id) & ListVersion.published
+    ) or (
+        ListVersion.select()
+        .where(ListVersion.list == price_list.id)
+        .order_by(ListVersion.version_number.desc())
+        .first()
+    )
+    if not version:
+        return []
+    items = list(version.items.order_by(Item.position))
+    return [
+        PublishedList(
+            price_list, version, visible_items(items, product_details(tenant.id))
+        )
+    ]
 
 
 def get_tenant_by_subdomain(subdomain: str) -> Tenant | None:

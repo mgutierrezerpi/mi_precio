@@ -1,11 +1,12 @@
 """Public marketplace and catalog rendering endpoints."""
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from controllers.public_interactions_controller import (
     router as public_interactions_router,
 )
 from controllers.public_leads_controller import public_leads_router
+from controllers.deps import optional_current_user
 from controllers.public_request import request_ip
 from lib.ctx import feature_flags, public, public_viewers
 from views import PublicMagazineView, PublicMenuView, PublicTenantView
@@ -62,10 +63,25 @@ def get_public_menu(
     request: Request,
     list: str | None = None,
     magazine: str | None = None,
+    preview: bool = False,
+    current_user: dict | None = Depends(optional_current_user),
 ):
     tenant = public.get_tenant_by_subdomain(subdomain)
     if not tenant:
         raise HTTPException(status_code=404, detail="Not found")
+    # The list customizer previews through this page. For the shop's own team
+    # it shows the list even unpublished, and skips the access code and the
+    # visitor tracking meant for real customers.
+    if (
+        preview
+        and list
+        and current_user
+        and current_user.get("tenant_id") == str(tenant.id)
+    ):
+        preview_lists = public.get_preview_list(tenant, list)
+        if not preview_lists:
+            raise HTTPException(status_code=404, detail="Not found")
+        return PublicMenuView.render(tenant, preview_lists, True)
     viewer_token = request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE)
     published_lists = public.get_published_lists(tenant, list)
     # The business-level catalog URL is only valid when there is an actual
@@ -73,8 +89,12 @@ def get_public_menu(
     # storefront instead of behaving like an unavailable public page.
     if not list and not published_lists:
         raise HTTPException(status_code=404, detail="No published lists found")
-    if list and published_lists and not public_viewers.has_list_access(
-        published_lists[0].price_list, viewer_token
+    if (
+        list
+        and published_lists
+        and not public_viewers.has_list_access(
+            published_lists[0].price_list, viewer_token
+        )
     ):
         raise HTTPException(status_code=403, detail="Access code required")
     published_magazines = (
