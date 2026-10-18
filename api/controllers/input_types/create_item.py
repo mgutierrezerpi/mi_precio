@@ -1,10 +1,12 @@
 from pydantic import BaseModel
 
+from controllers.input_types.currency import Currency
+
 
 class CreateItem(BaseModel):
     name: str
     price: float
-    currency: str = "UYU"
+    currency: Currency = "UYU"
     description: str | None = None
     image_url: str | None = None
     image_thumb_url: str | None = None

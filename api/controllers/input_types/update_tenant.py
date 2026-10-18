@@ -3,13 +3,14 @@ import re
 from pydantic import BaseModel, field_validator
 
 from controllers.input_types.appearance import validate_design, validate_hex_color
+from controllers.input_types.currency import Currency
 from controllers.input_types.socials import normalize_social_url, normalize_whatsapp
 
 
 class UpdateTenant(BaseModel):
     name: str | None = None
     subdomain: str | None = None
-    currency: str | None = None
+    currency: Currency | None = None
     # Brand & appearance
     logo_url: str | None = None
     brand_color: str | None = None

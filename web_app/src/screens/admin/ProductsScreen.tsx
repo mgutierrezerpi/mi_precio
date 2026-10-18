@@ -125,13 +125,20 @@ export function ProductsScreen() {
   const locale = localeOf(tenant?.language)
   const formatProductPrice = (price: string) => {
     const value = parseFloat(price)
-    return Number.isNaN(value)
-      ? price
-      : new Intl.NumberFormat(locale, {
-          style: 'currency',
-          currency: tenant?.currency || 'UYU',
-          maximumFractionDigits: 0,
-        }).format(value)
+    if (Number.isNaN(value)) return price
+    // A bad code saved before the API checked it used to throw here and take
+    // the whole screen down; fall back to the bare number instead.
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: tenant?.currency || 'UYU',
+        maximumFractionDigits: 0,
+      }).format(value)
+    } catch {
+      return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(
+        value
+      )
+    }
   }
 
   const [searchParams] = useSearchParams()

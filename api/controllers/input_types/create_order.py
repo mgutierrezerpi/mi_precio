@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from controllers.input_types.currency import Currency
+
 
 class OrderItemInput(BaseModel):
     name: str
@@ -11,7 +13,7 @@ class CreateOrder(BaseModel):
     items: list[OrderItemInput] = []
     status: str = "paid"
     note: str | None = None
-    currency: str | None = None
+    currency: Currency | None = None
     reference: str | None = None
 
 

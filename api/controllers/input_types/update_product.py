@@ -1,11 +1,13 @@
 from pydantic import BaseModel
 
+from controllers.input_types.currency import Currency
+
 
 class UpdateProduct(BaseModel):
     name: str | None = None
     price: float | None = None
     sku: str | None = None
-    currency: str | None = None
+    currency: Currency | None = None
     available: bool | None = None
     description: str | None = None
     image_url: str | None = None
