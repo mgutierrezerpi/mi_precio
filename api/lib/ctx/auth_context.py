@@ -59,6 +59,11 @@ def send_code(email: str, language: str = "es") -> str:
     return code
 
 
+def invalidate_codes(email: str) -> int:
+    """Drop every pending code for an email (after too many wrong tries)."""
+    return AuthCode.delete().where(AuthCode.email == email.lower()).execute()
+
+
 def prune_expired_codes(now: datetime | None = None) -> int:
     """Delete expired auth codes. Used by the in-machine maintenance worker."""
     cutoff = now or _utc_now()

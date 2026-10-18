@@ -22,6 +22,16 @@ test_db = SqliteDatabase(
 )
 
 
+@pytest.fixture(autouse=True)
+def _fresh_rate_limits():
+    """The limiter lives in process memory; tests must not share counters."""
+    from lib import rate_limit
+
+    rate_limit.reset()
+    yield
+    rate_limit.reset()
+
+
 @pytest.fixture(scope="function")
 def db():
     models = TABLES

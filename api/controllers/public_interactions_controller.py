@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from controllers.input_types import PublicViewerCapture, PublicViewerDismissal
 from pydantic import BaseModel, Field
 from controllers.public_request import request_ip
+from lib import rate_limit
 from lib.ctx import analytics, public, public_viewers
 
 router = APIRouter()
@@ -62,12 +63,22 @@ def unlock_public_list(
     subdomain: str, list_key: str, data: ListAccessCode, request: Request, response: Response
 ):
     tenant = _tenant(subdomain)
+    # A 4-character code falls to a script in minutes without a cap on wrong
+    # guesses (M16): 10 per visitor and list every 15 minutes.
+    failures = f"list-access:{request_ip(request)}:{tenant.id}:{list_key}"
+    if rate_limit.exceeded(failures, 10, 15 * 60):
+        raise HTTPException(
+            status_code=429,
+            detail="Demasiados intentos. Esperá unos minutos y probá de nuevo.",
+        )
     viewer = public_viewers.unlock_list(
         str(tenant.id), list_key, data.code,
         request.cookies.get(public_viewers.PUBLIC_VIEWER_COOKIE), request_ip(request)
     )
     if not viewer or not viewer.visitor_token:
+        rate_limit.allow(failures, 10, 15 * 60)
         raise HTTPException(status_code=403, detail="Invalid access code")
+    rate_limit.forget(failures)
     response.set_cookie(
         key=public_viewers.PUBLIC_VIEWER_COOKIE, value=viewer.visitor_token,
         max_age=public_viewers.PUBLIC_VIEWER_COOKIE_MAX_AGE, httponly=True,
