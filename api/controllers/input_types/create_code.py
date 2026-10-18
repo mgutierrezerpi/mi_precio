@@ -1,5 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
+
+from controllers.input_types.login_email import LoginEmail
 
 
 class CreateCode(BaseModel):
-    email: EmailStr
+    email: LoginEmail
