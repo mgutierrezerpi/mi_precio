@@ -889,11 +889,15 @@ function Menu({
   icon,
   label,
   width = 'w-56',
+  align = 'right',
   children,
 }: {
   icon: IconName
   label: string
   width?: string
+  /** Which edge of the trigger the panel hangs from. The left-most button
+   *  must open rightwards, or the panel slides under the sidebar. */
+  align?: 'left' | 'right'
   children: (close: () => void) => React.ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -923,7 +927,7 @@ function Menu({
         />
       </button>
       <div
-        className={`absolute right-0 top-[calc(100%+6px)] z-40 ${width} origin-top-right rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-2 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.3)] transition-all duration-150 ${open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'}`}
+        className={`absolute ${align === 'left' ? 'left-0 origin-top-left' : 'right-0 origin-top-right'} top-[calc(100%+6px)] z-40 ${width} rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-2 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.3)] transition-all duration-150 ${open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'}`}
       >
         {children(() => setOpen(false))}
       </div>
@@ -1050,7 +1054,12 @@ function FilterMenu({
   ]
   const onlyDigits = (v: string) => v.replace(/[^\d]/g, '')
   return (
-    <Menu icon="sliders-horizontal" label={t('products.filters')} width="w-64">
+    <Menu
+      icon="sliders-horizontal"
+      label={t('products.filters')}
+      width="w-64"
+      align="left"
+    >
       {() => (
         <div className="flex flex-col gap-3">
           <div>
