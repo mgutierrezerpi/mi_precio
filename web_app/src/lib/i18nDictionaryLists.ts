@@ -23,6 +23,11 @@ export const DICT_LISTS: Record<string, TranslationEntry> = {
   'pl.column.updated': { es: 'Actualizada', en: 'Updated', pt: 'Atualizada' },
   'pl.main': { es: 'Principal', en: 'Main', pt: 'Principal' },
   'pl.status.active': { es: 'Activa', en: 'Active', pt: 'Ativa' },
+  'pl.priceNegative': {
+    es: 'El precio no puede ser negativo: se usa el del catálogo.',
+    en: 'The price can not be negative: the catalog price is used.',
+    pt: 'O preço não pode ser negativo: usa-se o do catálogo.',
+  },
   'pl.status.draft': { es: 'Borrador', en: 'Draft', pt: 'Rascunho' },
   'pl.linkCopied': {
     es: 'Enlace copiado',

@@ -1680,10 +1680,13 @@ function ListModal({
   // keyed off the product id (stable across renames); items store product_id and copy
   // the product's image so the public list shows the real photo, not a category icon.
   // What this list charges for a product: the edited value when it parses,
-  // otherwise the catalog price. A blank or broken input never becomes a 0.
+  // otherwise the catalog price. A blank, broken or negative input never
+  // reaches the list — a negative one used to show «UYU -5» to the public.
   const priceFor = (product: Product) => {
     const edited = Number(priceOverrides[product.id])
-    return priceOverrides[product.id]?.trim() && Number.isFinite(edited)
+    return priceOverrides[product.id]?.trim() &&
+      Number.isFinite(edited) &&
+      edited >= 0
       ? edited
       : parseFloat(product.price) || 0
   }
@@ -2437,7 +2440,15 @@ function ListModal({
                                 [p.id]: event.target.value,
                               }))
                             }
-                            className="h-9 w-24 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-right text-[13px] font-extrabold text-[var(--dash-text)] outline-none focus:border-[#7C3AED]"
+                            aria-invalid={
+                              Number(priceOverrides[p.id]) < 0 || undefined
+                            }
+                            title={
+                              Number(priceOverrides[p.id]) < 0
+                                ? t('pl.priceNegative')
+                                : undefined
+                            }
+                            className="h-9 w-24 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-right text-[13px] font-extrabold text-[var(--dash-text)] outline-none focus:border-[#7C3AED] aria-[invalid=true]:border-[var(--tone-red-fg)] aria-[invalid=true]:text-[var(--tone-red-fg)]"
                           />
                         </span>
                       ) : (

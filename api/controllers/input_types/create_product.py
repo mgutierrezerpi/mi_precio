@@ -1,11 +1,12 @@
 from pydantic import BaseModel
 
+from controllers.input_types.catalog_fields import CatalogName, Price
 from controllers.input_types.currency import Currency
 
 
 class CreateProduct(BaseModel):
-    name: str
-    price: float
+    name: CatalogName
+    price: Price
     sku: str | None = None
     currency: Currency = "UYU"
     available: bool = True

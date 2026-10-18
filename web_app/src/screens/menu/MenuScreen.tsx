@@ -233,7 +233,10 @@ export function MenuScreen() {
   const cartTotal = useMemo(
     () =>
       allItems.reduce(
-        (sum, it) => sum + (cart[it.id] ?? 0) * (parseFloat(it.price) || 0),
+        // A negative price (stored before the API refused them) must not
+        // take money off the order.
+        (sum, it) =>
+          sum + (cart[it.id] ?? 0) * Math.max(0, parseFloat(it.price) || 0),
         0
       ),
     [cart, allItems]
