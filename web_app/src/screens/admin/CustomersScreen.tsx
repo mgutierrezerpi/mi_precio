@@ -5,7 +5,7 @@ import {
   useState,
   type MouseEvent,
 } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import type { Customer, Lead, Order, PriceList, Product, PublicViewer } from '../../types'
@@ -465,7 +465,7 @@ export function CustomersScreen() {
         <section className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
           <div className="border-b border-[var(--dash-divider)] px-5 py-4">
             <h2 className="text-base font-extrabold text-[var(--dash-text)]">Envíos de formulario</h2>
-            <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">Consultas enviadas desde formularios públicos.</p>
+            <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">Consultas enviadas desde tu media kit. Los contactos que dejan en tus listas públicas llegan a{' '}<Link to="/admin/leads" className="font-bold text-[var(--dash-link)] hover:underline">Leads</Link>.</p>
           </div>
           {submissions.length === 0 ? <p className="px-5 py-8 text-center text-sm font-medium text-[var(--dash-muted)]">Todavía no hay envíos de formulario.</p> : (
             <div className="overflow-x-auto">

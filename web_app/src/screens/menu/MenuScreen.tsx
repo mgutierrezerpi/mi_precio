@@ -45,6 +45,7 @@ import { PencilActionBar } from './pencilActions'
 import { PencilJournal } from './pencilJournal'
 import { StoreChip } from './StoreChip'
 import { MagazineShelf } from './MagazineShelf'
+import { LeadForm } from '../../components/LeadForm'
 import { pickDisplayLists } from './displayLists'
 
 export interface PublicList {
@@ -403,7 +404,36 @@ export function MenuScreen() {
     orderMessage,
     tenant,
   ])
+  /** Records the cart's contact details as a lead.
+   *
+   *  Called on the way to WhatsApp/Instagram, never in its place: whoever
+   *  built a cart is the warmest lead a shop gets, and that contact evaporates
+   *  every time the message is composed but never actually sent.
+   *
+   *  Deliberately fire-and-forget. If this fails the order still goes through
+   *  — nobody loses a sale over a problem of ours. The server ignores it when
+   *  the shop's plan or settings don't take leads. */
+  const rememberCartContact = () => {
+    if (!tenant?.leadsEnabled || !customer.name.trim()) return
+    if (!customer.phone.trim() && !customer.email.trim()) return
+    const ordered = allItems
+      .filter((it) => cart[it.id])
+      .map((it) => `${cart[it.id]}× ${it.name}`)
+      .join(', ')
+    void api
+      .createLead(tenant.subdomain, {
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email,
+        message: ordered ? `Pedido: ${ordered}` : undefined,
+        listId: list?.id ?? null,
+        listName: list?.name ?? null,
+        source: 'cart',
+      })
+      .catch(() => {})
+  }
   const onCheckout = () => {
+    rememberCartContact()
     if (checkoutChannel === 'instagram')
       void navigator.clipboard?.writeText(orderMessage)
   }
@@ -613,6 +643,11 @@ export function MenuScreen() {
   const barInk = ownSurface
     ? withAlpha(readableOn(ownSurface.base), 0.66)
     : C.muted
+  // The lead form sits on that same surface; its ink must be a plain 6-digit
+  // hex (the form derives its hairlines by appending alpha to it).
+  const leadInk = /^#[0-9a-f]{6}$/i.test(barSurface)
+    ? readableOn(barSurface)
+    : C.ink
   // Tinting the logo with the shop's accent only reads when the two differ
   // enough — on `catalog` the accent IS the hero, i.e. the surface itself.
   const barLogo =
@@ -771,6 +806,25 @@ export function MenuScreen() {
             ) : (
               <ClassicList {...designProps} />
             )}
+          </div>
+          {/* One form for every template, after the design and before the
+              MiPrecio band, on that band's surface so it reads as the close
+              of the page. It renders nothing unless the shop takes leads. */}
+          <div
+            className="relative z-10 w-full"
+            style={{ backgroundColor: barSurface, backgroundImage: barTexture }}
+          >
+            <div className="mx-auto w-full max-w-[1120px] px-5 pt-10 pb-2 md:px-12">
+              <LeadForm
+                tenant={tenant}
+                listId={list?.id ?? null}
+                listName={list?.name ?? null}
+                ink={leadInk}
+                accent={listAccent}
+                accentInk={readableOn(listAccent)}
+                dark={leadInk === '#FFFFFF'}
+              />
+            </div>
           </div>
           {isPencilCartDesign && !isService && !showCart && (
             <PencilActionBar

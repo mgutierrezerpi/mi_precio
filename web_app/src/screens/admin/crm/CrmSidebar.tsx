@@ -87,6 +87,15 @@ const navMain: {
     to: '/admin/customers',
   },
   {
+    // Listed on every plan: on the cheaper tiers the screen shows it locked,
+    // with the upgrade, rather than hiding a feature the shop never sees.
+    icon: 'user-plus',
+    id: 'Leads',
+    tKey: 'leads.title',
+    label: 'Leads',
+    to: '/admin/leads',
+  },
+  {
     icon: 'bar-chart',
     id: 'Reportes',
     tKey: 'nav.reports',

@@ -17,8 +17,11 @@ const FIELD_CLASS = 'h-[56px] rounded-2xl px-5 text-[16px] outline-none'
 
 export function LeadFormIntro({ t }: { t: Translate }) {
   return (
-    <div className="flex flex-col md:justify-center">
-      <p className="max-w-[13ch] text-[30px] font-bold leading-[1.05] md:text-[46px] lg:text-[54px]">
+    <div className="@container flex flex-col md:justify-center">
+      {/* Sized off the column, not the viewport: at a fixed 46px the column
+       *  beside the fields could not hold "te contactemos?" and the question
+       *  broke into three lines with "te" on its own. */}
+      <p className="max-w-[18ch] text-[min(54px,9.5cqi)] font-bold leading-[1.05] text-balance">
         {t('lead.title')}
       </p>
       <p className="mt-4 max-w-[30ch] text-[16px] leading-relaxed opacity-70 md:mt-5 md:text-[18px]">

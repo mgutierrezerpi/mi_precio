@@ -40,4 +40,17 @@ describe('CrmSidebar', () => {
       ).not.toBeNull()
     }
   })
+
+  it('links to the leads inbox', () => {
+    // The squash of #38 once dropped this item and left /admin/leads with no
+    // way in from the app.
+    const { container } = render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <CrmSidebar active="Overview" />
+        </MemoryRouter>
+      </Provider>
+    )
+    expect(container.querySelector('a[href="/admin/leads"]')).not.toBeNull()
+  })
 })

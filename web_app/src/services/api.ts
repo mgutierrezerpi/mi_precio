@@ -492,6 +492,7 @@ class ApiService {
       language?: string
       timezone?: string
       deliveryEnabled?: boolean
+      leadsEnabled?: boolean
       marketplaceEnabled?: boolean
       marketplaceLatitude?: number | null
       marketplaceLongitude?: number | null
@@ -515,6 +516,7 @@ class ApiService {
       legalName: 'legal_name',
       taxId: 'tax_id',
       deliveryEnabled: 'delivery_enabled',
+      leadsEnabled: 'leads_enabled',
       marketplaceEnabled: 'marketplace_enabled',
       marketplaceLatitude: 'marketplace_latitude',
       marketplaceLongitude: 'marketplace_longitude',
