@@ -78,9 +78,9 @@ export function hrefOf(
  *
  *  Mirrors only the *rejection* rules of the API's normaliser
  *  (controllers/input_types/socials.py) — never its rewriting, which stays
- *  server-side so there is one canonical form. This exists because a rejected
- *  PATCH surfaces as a bare "Error 422": FastAPI sends validation detail as a
- *  list, which the client cannot turn into a sentence a shop can act on. */
+ *  server-side so there is one canonical form. It lets the form flag the
+ *  field itself before saving; a rejected PATCH once surfaced only as a bare
+ *  "Error 422" (see lib/apiErrors.ts for how those read now). */
 export function socialError(id: SocialId, raw: string): string | null {
   const value = raw.trim().replace(/^@+/, '').trim()
   if (!value) return null

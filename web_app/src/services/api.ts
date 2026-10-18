@@ -34,6 +34,7 @@ import type {
   FeatureFlag,
 } from '../types'
 import { localeForHostname } from '../lib/domainLocale'
+import { apiErrorMessage } from '../lib/apiErrors'
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
@@ -351,8 +352,7 @@ class ApiService {
         const detail = errorData.detail
         if (response.status === 402 && detail?.code === 'plan_required')
           onPlanRequired?.()
-        const message = typeof detail === 'string' ? detail : detail?.message
-        return { error: message || `Error ${response.status}` }
+        return { error: apiErrorMessage(response.status, detail) }
       }
 
       const data = await response.json()
