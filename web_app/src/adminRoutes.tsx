@@ -20,6 +20,7 @@ import {
   AdminListsRoute,
   AdminProductsRoute,
   AdminSettingsRoute,
+  MagazinesGate,
 } from './screens/admin/AdminRouteSwitches'
 
 export const adminRoute: RouteObject = {
@@ -32,8 +33,22 @@ export const adminRoute: RouteObject = {
     { path: 'lists', element: <AdminListsRoute /> },
     { path: 'lists/:id/customize', element: <ListCustomizeScreen /> },
     { path: 'links', element: <LinksScreen /> },
-    { path: 'magazines', element: <MagazinesScreen /> },
-    { path: 'magazines/:magazineId/edit', element: <MagazineEditScreen /> },
+    {
+      path: 'magazines',
+      element: (
+        <MagazinesGate>
+          <MagazinesScreen />
+        </MagazinesGate>
+      ),
+    },
+    {
+      path: 'magazines/:magazineId/edit',
+      element: (
+        <MagazinesGate>
+          <MagazineEditScreen />
+        </MagazinesGate>
+      ),
+    },
     { path: 'qr', element: <CodesScreen /> },
     { path: 'customers', element: <CustomersScreen /> },
     { path: 'leads', element: <LeadsScreen /> },
