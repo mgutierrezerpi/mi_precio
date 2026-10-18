@@ -4,6 +4,7 @@ from controllers import ownership
 from controllers.deps import get_current_user, require_editor
 from controllers.input_types import CreateItem, ReorderItems, UpdateItem
 from lib.ctx import items
+from lib.ctx.plans_context import PlanLimitError
 from views import DeletedView, ItemView, ReorderedView
 
 router = APIRouter(tags=["items"])
@@ -22,7 +23,10 @@ def create_item_endpoint(
     version_id: str, data: CreateItem, current_user: dict = Depends(require_editor)
 ):
     ownership.own_version(version_id, current_user)
-    item = items.create_item(version_id, **data.model_dump())
+    try:
+        item = items.create_item(version_id, **data.model_dump())
+    except PlanLimitError as e:
+        raise HTTPException(status_code=402, detail=str(e))
     if not item:
         raise HTTPException(status_code=404, detail="Version not found")
     return ItemView.render(item)

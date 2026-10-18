@@ -1,7 +1,10 @@
 """Tests for items context."""
 
-from lib.ctx import identity, items, lists, products
-from models import Item
+import pytest
+
+from lib.ctx import identity, items, lists, plans, products
+from lib.ctx.plans_context import PlanLimitError
+from models import Item, Product
 from views import ItemView
 
 
@@ -42,6 +45,24 @@ def test_create_item_without_product_id_creates_global_product(db):
     item = items.create_item(created.version.id, name="Manual", price=10)
     assert item.product_id is not None
     assert ItemView.render(Item.get_by_id(item.id)).product_id == item.product_id
+
+
+def test_create_item_by_name_respects_product_limit(db):
+    # A7: a list item with an unknown name creates a catalog product, and it
+    # used to skip the plan limit the Products screen enforces.
+    tenant = identity.create_tenant("Store", "store-limit")
+    plans.set_plan(tenant.id, "micro")
+    created = lists.create_list(tenant.id, "Menu")
+    for i in range(25):
+        products.create_product(tenant.id, name=f"P{i}", price=1)
+
+    with pytest.raises(PlanLimitError):
+        items.create_item(created.version.id, name="Extra", price=1)
+    assert Product.select().where(Product.tenant == tenant.id).count() == 25
+
+    # Reusing a product already in the catalog adds nothing, so it still works.
+    item = items.create_item(created.version.id, name="P3", price=1)
+    assert item is not None
 
 
 def test_create_item_auto_increments_position(db):

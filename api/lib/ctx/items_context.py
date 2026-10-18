@@ -1,6 +1,7 @@
 """Items context - item operations."""
 
 from lib.ctx.item_products import find_product, next_product_position
+from lib.ctx.plans_context import assert_can_add
 from models import Item, ListVersion, Product
 
 
@@ -22,6 +23,9 @@ def create_item(version_id: str, **attrs) -> Item | None:
     Legacy callers may omit ``product_id``; in that case the product is looked
     up or created from the item name so no new orphan catalog rows are created.
     The list price remains a per-list snapshot, while product metadata is global.
+
+    Raises ``PlanLimitError`` when that new product would go over the plan's
+    product limit, same as adding it from the Products screen.
     """
     version = ListVersion.get_or_none(ListVersion.id == version_id)
     if not version:
@@ -40,6 +44,7 @@ def create_item(version_id: str, **attrs) -> Item | None:
             return None
         product = find_product(tenant_id, name)
         if not product:
+            assert_can_add(tenant_id, "products")
             product = Product.create(
                 tenant=version.list.tenant,
                 name=name,

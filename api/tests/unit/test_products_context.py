@@ -8,14 +8,15 @@ from peewee import SqliteDatabase
 from PIL import Image
 
 from lib.ctx import identity, items, lists, products
-from models import Item, ListVersion, PriceList, Product, Tenant
+from models import Invitation, Item, ListVersion, PriceList, Product, Tenant, User
 
 products_db = SqliteDatabase(":memory:")
 
 
 @pytest.fixture(scope="function")
 def db():
-    models = [Tenant, PriceList, ListVersion, Item, Product]
+    # Users and invitations are there for the plan limit check items run.
+    models = [Tenant, PriceList, ListVersion, Item, Product, User, Invitation]
     products_db.bind(models)
     products_db.connect()
     products_db.create_tables(models)
