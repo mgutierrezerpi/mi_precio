@@ -46,6 +46,31 @@ export const DICT_BASE_07: Record<string, TranslationEntry> = {
     en: 'Published list “{name}”',
     pt: 'Publicou a lista «{name}»',
   },
+  'activity.product.updated': {
+    es: 'Editó el producto «{name}»',
+    en: 'Edited product “{name}”',
+    pt: 'Editou o produto «{name}»',
+  },
+  'activity.product.price_changed': {
+    es: 'Cambió el precio de «{name}» de {currency} {old} a {currency} {new}',
+    en: 'Changed the price of “{name}” from {currency} {old} to {currency} {new}',
+    pt: 'Alterou o preço de «{name}» de {currency} {old} para {currency} {new}',
+  },
+  'activity.category.created': {
+    es: 'Creó la categoría «{name}»',
+    en: 'Created category “{name}”',
+    pt: 'Criou a categoria «{name}»',
+  },
+  'activity.category.renamed': {
+    es: 'Renombró la categoría «{old_name}» a «{name}»',
+    en: 'Renamed category “{old_name}” to “{name}”',
+    pt: 'Renomeou a categoria «{old_name}» para «{name}»',
+  },
+  'activity.category.deleted': {
+    es: 'Eliminó la categoría «{name}»',
+    en: 'Deleted category “{name}”',
+    pt: 'Excluiu a categoria «{name}»',
+  },
   'activity.customer.created': {
     es: 'Agregó el cliente «{name}»',
     en: 'Added customer “{name}”',

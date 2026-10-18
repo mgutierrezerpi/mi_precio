@@ -116,6 +116,8 @@ def update_linktree_endpoint(
         actor_id=current_user.get("sub"),
         entity_type="linktree",
         entity_id=tree.id if tree else None,
+        # Links autosaves; one entry per editing session is enough.
+        coalesce_minutes=10,
     )
     return LinkTreeView.render(tree)
 

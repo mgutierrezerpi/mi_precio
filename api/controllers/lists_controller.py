@@ -65,11 +65,14 @@ def get_list_endpoint(list_id: str, current_user: dict = Depends(get_current_use
 def update_list_endpoint(
     list_id: str, data: UpdateList, current_user: dict = Depends(require_editor)
 ):
-    ownership.own_list(list_id, current_user)
+    was_published = ownership.own_list(list_id, current_user).published
     price_list = lists.update_list(list_id, **data.model_dump(exclude_unset=True))
     if not price_list:
         raise HTTPException(status_code=404, detail="List not found")
-    if data.published is True:
+    # Every save of the list editor sends published=true; only the actual
+    # publishing is news. Logging each save filled the audit log with dozens
+    # of identical «Publicó la lista» rows.
+    if data.published is True and not was_published:
         activity.record(
             price_list.tenant_id,
             "list.published",
