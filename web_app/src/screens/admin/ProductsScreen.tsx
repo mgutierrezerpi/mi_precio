@@ -257,7 +257,9 @@ export function ProductsScreen() {
   }
 
   // ── Multi-select ──────────────────────────────────────────────────
-  const visibleIds = useMemo(() => visible.map((p) => p.id), [visible])
+  // The header checkbox covers the rows on screen, not every page: selecting
+  // all 12 while 8 showed let «Eliminar» delete products nobody was looking at.
+  const visibleIds = useMemo(() => pageItems.map((p) => p.id), [pageItems])
   const allSelected =
     visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
   const someSelected = selected.size > 0
