@@ -388,6 +388,7 @@ function InfoSection({ t, tenant, canManage, save, savingKey, savedKey }: Ctx) {
       <InfoDetailsFields
         canManage={canManage}
         name={name}
+        nameError={name.trim() ? undefined : t('set.info.nameRequired')}
         onChange={touch}
         setName={(value) => fields.setName(value)}
         setSubdomain={(value) => fields.setSubdomain(value)}
@@ -415,6 +416,9 @@ function useInfoFields(
 
   useEffect(() => {
     if (!canManage || !touched.current) return
+    // An empty name used to save and leave the header showing the user's
+    // name instead; it waits here, flagged, until there is one.
+    if (!name.trim()) return
     const timer = setTimeout(() => {
       touched.current = false
       void save(
@@ -529,6 +533,7 @@ function LogoControls({
 function InfoDetailsFields({
   canManage,
   name,
+  nameError,
   onChange,
   setName,
   setSubdomain,
@@ -539,6 +544,7 @@ function InfoDetailsFields({
 }: {
   canManage: boolean
   name: string
+  nameError?: string
   onChange: () => void
   setName: (value: string) => void
   setSubdomain: (value: string) => void
@@ -548,13 +554,13 @@ function InfoDetailsFields({
   taxId: string
 }) {
   const fields = [
-    [t('set.info.name'), name, setName, undefined],
-    [t('set.info.subdomain'), subdomain, setSubdomain, undefined],
-    [t('set.info.taxId'), taxId, setTaxId, '21 123456 0017'],
+    [t('set.info.name'), name, setName, undefined, nameError],
+    [t('set.info.subdomain'), subdomain, setSubdomain, undefined, undefined],
+    [t('set.info.taxId'), taxId, setTaxId, '21 123456 0017', undefined],
   ] as const
   return (
     <div className="grid grid-cols-2 gap-4">
-      {fields.map(([label, value, setValue, placeholder]) => (
+      {fields.map(([label, value, setValue, placeholder, error]) => (
         <Field key={label} label={label}>
           <input
             value={value}
@@ -564,8 +570,14 @@ function InfoDetailsFields({
             }}
             disabled={!canManage}
             placeholder={placeholder}
+            aria-invalid={error ? true : undefined}
             className={inputCls}
           />
+          {error && (
+            <span className="text-xs font-semibold text-[var(--tone-red-fg)]">
+              {error}
+            </span>
+          )}
         </Field>
       ))}
     </div>
