@@ -690,6 +690,7 @@ export function MenuScreen() {
     onCheckout,
     isService,
     listName: list?.name ?? null,
+    pageListName: listId ? (list?.name ?? null) : null,
     edition,
     taxId: tenant.taxId,
     hasBg,
