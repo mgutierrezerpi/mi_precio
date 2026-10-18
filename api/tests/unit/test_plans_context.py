@@ -5,14 +5,14 @@ from peewee import SqliteDatabase
 
 from lib.ctx import plans
 from lib.ctx.plans_context import PlanLimitError
-from models import Invitation, PriceList, Product, Tenant, User
+from models import Invitation, PriceList, Product, Tenant, TenantMembership, User
 
 plans_db = SqliteDatabase(":memory:")
 
 
 @pytest.fixture(scope="function")
 def db():
-    models = [Tenant, Product, PriceList, User, Invitation]
+    models = [Tenant, Product, PriceList, User, Invitation, TenantMembership]
     plans_db.bind(models)
     plans_db.connect()
     plans_db.create_tables(models)
@@ -41,7 +41,8 @@ def test_product_limit_enforced_on_free(tenant):
 
 
 def test_member_limit_counts_users_and_pending_invites(tenant):
-    User.create(email="owner@shop.com", tenant=tenant, role="owner")  # 1/1 on free
+    owner = User.create(email="owner@shop.com", tenant=tenant, role="owner")
+    TenantMembership.create(user=owner, tenant=tenant, role="owner")  # 1/1 on free
     with pytest.raises(PlanLimitError):
         plans.assert_can_add(tenant.id, "members")
     # a pending invitation also counts toward the limit
@@ -50,6 +51,19 @@ def test_member_limit_counts_users_and_pending_invites(tenant):
         tenant=tenant, email="a@shop.com", role="editor", status="pending"
     )
     assert plans.plan_info(tenant.id)["usage"]["members"] == 2
+
+
+def test_member_limit_counts_people_whose_main_business_is_another(tenant):
+    # M15: a member invited with an existing account keeps their own business
+    # as the primary one, and was not counted.
+    other = Tenant.create(name="Other", subdomain="other", currency="UYU")
+    owner = User.create(email="owner@shop.com", tenant=tenant, role="owner")
+    guest = User.create(email="guest@other.com", tenant=other, role="owner")
+    TenantMembership.create(user=owner, tenant=tenant, role="owner")
+    TenantMembership.create(user=guest, tenant=tenant, role="viewer")
+    TenantMembership.create(user=guest, tenant=other, role="owner")
+    assert plans.plan_info(tenant.id)["usage"]["members"] == 2
+    assert plans.plan_info(other.id)["usage"]["members"] == 1
 
 
 def test_upgrade_lifts_limits(tenant):
