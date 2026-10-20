@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import type { Magazine, Tenant } from '../../types'
 import { MagazineViewer, type JournalPage } from './pencilJournal'
 import { StoriesPhone } from './pencil/templates/cafecitos-layout'
@@ -17,7 +17,8 @@ type KitPage = {
   imagePosition?: string
   cards?: { title: string; body: string }[]
   stats?: { value: string; label: string }[]
-  reels?: { brand: string; video: string }[]
+  reels?: { brand: string; video?: string; images?: string[] }[]
+  brands?: { group: string; names: { name: string; logo?: string }[] }[]
 }
 
 const KIT_PAGES: KitPage[] = [
@@ -25,23 +26,23 @@ const KIT_PAGES: KitPage[] = [
     label: 'Portada',
     eyebrow: 'MEDIA KIT 2026',
     title: 'Cafecitos con Dani',
-    body: 'Contenido positivo para descubrir lugares, compartir experiencias y conectar marcas con una comunidad real.',
+    body: 'Mucho más que una cuenta de reseñas: te llevo conmigo en mi día a día, a los lugares que descubro y los planes que me gusta hacer.',
     image: '/cafecitos-dani-hero.jpg',
   },
   {
     label: 'Detrás de Cafecitos',
     eyebrow: 'HOLA, SOY DANI',
     title: 'Un espacio para compartir lo que me inspira.',
-    body: 'Tengo 31 años y creé Cafecitos.uy en 2022 como un espacio para ser yo misma, descubrir lugares y compartir un poquito de mi vida con quienes me siguen a diario. Además de crear contenido, trabajo en marketing y gestiono marcas en los rubros de estética y medicina.',
-    image: '/cafecitos-dani-card-1.jpg',
-    imagePosition: 'center 18%',
+    body: 'En 2022 creé Cafecitos.uy, un espacio que me permite ser yo misma, descubrir y visitar distintos lugares, y al mismo tiempo compartir un poquito de mi vida con quienes me siguen a diario. Me apasionan las redes sociales desde que soy muy chica, y hoy también trabajo en marketing, así que entiendo este mundo a la perfección.',
+    image: '/cafecitos-dani-media-kit.jpg',
+    imagePosition: 'center 58%',
   },
   {
     label: 'Mi comunidad',
     eyebrow: 'MI COMUNIDAD',
     title: 'Una audiencia que confía y participa.',
     stats: [
-      { value: '9.556', label: 'seguidores' },
+      { value: '13K', label: 'seguidores' },
       { value: '86%', label: 'mujeres' },
       { value: '27,9%', label: '35–44 años' },
       { value: '25,4%', label: '45–54 años' },
@@ -82,8 +83,8 @@ const KIT_PAGES: KitPage[] = [
     eyebrow: 'COLABORACIONES EN MOVIMIENTO',
     title: 'Recomendaciones para mirar, guardar y compartir.',
     reels: [
-      { brand: 'Experiencia gastronómica', video: '/cafecitos-Da-lOC3ANUt.mp4' },
-      { brand: 'Experiencia de marca', video: '/cafecitos-DaoEHZCAkrO.mp4' },
+      { brand: 'GRYK', video: '/cafecitos-DZ2u6rpg2mr.mp4' },
+      { brand: 'Garnier', video: '/cafecitos-DbF_XDygk4T.mp4' },
     ],
   },
   {
@@ -91,8 +92,42 @@ const KIT_PAGES: KitPage[] = [
     eyebrow: 'COLABORACIONES EN MOVIMIENTO',
     title: 'Historias que la comunidad lleva consigo.',
     reels: [
-      { brand: 'Plan para compartir', video: '/cafecitos-Db6v779A9YV.mp4' },
+      {
+        brand: 'Guía de planes · Octubre',
+        images: Array.from(
+          { length: 20 },
+          (_, index) => `/cafecitos-planes-octubre/${String(index + 1).padStart(2, '0')}.webp`
+        ),
+      },
       { brand: 'Recomendación gastronómica', video: '/cafecitos-DbtnZtbAh25.mp4' },
+    ],
+  },
+  {
+    label: 'Marcas y lugares',
+    eyebrow: 'CON QUIÉNES TRABAJÉ',
+    title: 'Marcas y lugares con los que trabajé.',
+    brands: [
+      {
+        group: 'Marcas',
+        names: [
+          { name: 'Savora', logo: 'savora' },
+          { name: 'Pinta Libre', logo: 'pinta-libre' },
+        ],
+      },
+      {
+        group: 'Cafeterías y lugares',
+        names: [
+          { name: 'Queriéndote', logo: 'queriendote' },
+          { name: 'GRYK', logo: 'gryk' },
+          { name: 'Cresta Café', logo: 'cresta' },
+          { name: 'Dalbertt', logo: 'dalbertt' },
+          { name: 'francés.co' },
+          { name: 'Umami Sushi', logo: 'umami' },
+          { name: 'Smoothie Time', logo: 'smoothie-time' },
+          { name: 'MVD POP UP', logo: 'mvd-pop-up' },
+          { name: 'Demeter', logo: 'demeter' },
+        ],
+      },
     ],
   },
   {
@@ -128,26 +163,30 @@ function ReelsPhone() {
   )
 }
 
-function MetricsGraph() {
-  const rows = [
-    { label: 'Impresiones', value: '251.770', width: '100%' },
-    { label: 'Interacciones', value: '14.431', width: '56%' },
-    { label: 'Visitas al perfil', value: '2.863', width: '32%' },
-  ]
+// A carousel post shown inside the same phone frame as the reels: it advances
+// on its own like a story, and a tap jumps to the next slide.
+function CarouselSlides({ images, label }: { images: string[]; label: string }) {
+  const [index, setIndex] = useState(0)
+  useEffect(() => {
+    const timer = window.setInterval(() => setIndex((current) => (current + 1) % images.length), 2600)
+    return () => window.clearInterval(timer)
+  }, [images.length, index])
+  const image = images[index]
   return (
-    <div className="mt-10 space-y-6 rounded-[30px] bg-[#004C30] p-8 text-white">
-      {rows.map((row) => (
-        <div key={row.label}>
-          <div className="mb-2 flex items-baseline justify-between gap-4">
-            <span className="text-[12px] font-semibold uppercase tracking-[1px] text-[#B6DCC8]">{row.label}</span>
-            <strong className="text-[22px] font-semibold tracking-[-.05em]">{row.value}</strong>
-          </div>
-          <div className="h-3 overflow-hidden rounded-full bg-white/15">
-            <div className="h-full rounded-full bg-[#B6DCC8]" style={{ width: row.width }} />
-          </div>
-        </div>
-      ))}
-    </div>
+    <button
+      type="button"
+      aria-label={`${label}: imagen ${index + 1} de ${images.length}`}
+      onClick={() => setIndex((current) => (current + 1) % images.length)}
+      className="relative block h-full w-full overflow-hidden"
+    >
+      <img src={image} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover blur-xl" />
+      <img src={image} alt="" className="relative h-full w-full object-contain" />
+      <span className="absolute inset-x-3 top-3 flex gap-[3px]" aria-hidden="true">
+        {images.map((slide, slideIndex) => (
+          <span key={slide} className={`h-[3px] flex-1 rounded-full ${slideIndex <= index ? 'bg-white' : 'bg-white/35'}`} />
+        ))}
+      </span>
+    </button>
   )
 }
 
@@ -157,18 +196,68 @@ function CollaborationVideos({
   reels: NonNullable<KitPage['reels']>
 }) {
   return (
-    <div className="mt-8 grid grid-cols-2 gap-7 px-8">
+    <div className="mt-8 flex justify-center gap-8">
       {reels.map((reel) => (
-        <figure key={reel.brand} className="min-w-0">
-          <div className="overflow-hidden rounded-[30px] border-[7px] border-[#0C1612] bg-black shadow-[0_22px_38px_-22px_rgba(0,49,34,.78)]">
-            <video autoPlay muted loop playsInline className="aspect-[9/14] w-full object-cover">
-              <source src={reel.video} type="video/mp4" />
-            </video>
+        <figure key={reel.brand} className="w-[230px] min-w-0">
+          {/* Same proportions as a current phone screen (≈9:19.5), not a 9:16 reel. */}
+          <div className="aspect-[9/19.5] overflow-hidden rounded-[38px] border-[7px] border-[#0C1612] bg-black shadow-[0_22px_38px_-22px_rgba(0,49,34,.78)]">
+            {reel.images ? (
+              <CarouselSlides images={reel.images} label={reel.brand} />
+            ) : (
+              <video autoPlay muted loop playsInline className="h-full w-full rounded-[31px] object-cover">
+                <source src={reel.video} type="video/mp4" />
+              </video>
+            )}
           </div>
           <figcaption className="mt-3 text-center text-[11px] font-bold uppercase tracking-[.7px]" style={{ color: GREEN }}>
             {reel.brand}
           </figcaption>
         </figure>
+      ))}
+    </div>
+  )
+}
+
+function BrandList({ brands }: { brands: NonNullable<KitPage['brands']> }) {
+  const total = brands.reduce((sum, group) => sum + group.names.length, 0)
+  return (
+    <div className="mt-8 flex flex-col gap-6">
+      <div className="rounded-[30px] bg-[#EAF4EE] p-7">
+        <p className="text-[51px] font-semibold leading-none tracking-[-.07em]" style={{ color: GREEN }}>
+          {total}
+        </p>
+        <p className="mt-4 text-[12px] font-semibold uppercase tracking-[1px]" style={{ color: MUTED }}>
+          marcas y lugares
+        </p>
+      </div>
+      {brands.map((group) => (
+        <div key={group.group}>
+          <h2 className="text-[12px] font-semibold uppercase tracking-[1px]" style={{ color: GREEN }}>
+            {group.group}
+          </h2>
+          <ul className="mt-4 grid grid-cols-5 gap-x-3 gap-y-5">
+            {group.names.map((brand) => (
+              <li key={brand.name} className="flex min-w-0 flex-col items-center gap-2 text-center">
+                {brand.logo ? (
+                  <img
+                    src={`/cafecitos-collabs/logos/${brand.logo}.webp`}
+                    alt=""
+                    className="h-[68px] w-[68px] rounded-full border border-[#C9E2D5] object-cover"
+                  />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#EAF4EE] text-[24px] font-bold"
+                    style={{ color: GREEN }}
+                  >
+                    {brand.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="text-[12px] font-semibold leading-tight">{brand.name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       ))}
     </div>
   )
@@ -277,8 +366,22 @@ function NativeKitPage({ page, tenant, magazine }: { page: KitPage; tenant?: Ten
           ))}
         </div>
       )}
-      {metrics && <MetricsGraph />}
+      {page.stats && metrics && (
+        <div className="mt-8 flex flex-1 flex-col gap-4 pb-2">
+          {page.stats.map((stat) => (
+            <div key={stat.label} className="flex flex-1 flex-col justify-end rounded-[30px] bg-[#EAF4EE] p-7">
+              <p className="text-[51px] font-semibold leading-none tracking-[-.07em]" style={{ color: GREEN }}>
+                {stat.value}
+              </p>
+              <p className="mt-4 text-[12px] font-semibold uppercase tracking-[1px]" style={{ color: MUTED }}>
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
       {page.reels && <CollaborationVideos reels={page.reels} />}
+      {page.brands && <BrandList brands={page.brands} />}
       {page.label === 'Contacto' && tenant ? <ContactForm tenant={tenant} magazine={magazine} /> : page.cards && (
         <div className="mt-8 grid grid-cols-2 gap-4">
           {page.cards.map((card) => (

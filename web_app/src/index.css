@@ -1404,11 +1404,11 @@ body:has(.miprecio-public-list[data-media-kit='true'])::-webkit-scrollbar-thumb 
    public price list: timed progress, tap navigation, live metrics and sound. */
 .cafecitos-media-kit-page .cafecitos-story-phone {
   position: relative;
-  width: 270px;
-  height: 480px;
+  width: 240px;
+  height: 520px; /* ≈9:19.5, the shape of a current phone */
   overflow: visible;
   border: 8px solid #0c1612;
-  border-radius: 36px;
+  border-radius: 40px;
   background: #0c1612;
   box-shadow:
     0 28px 60px -24px rgba(0, 0, 0, 0.7),
@@ -1419,7 +1419,7 @@ body:has(.miprecio-public-list[data-media-kit='true'])::-webkit-scrollbar-thumb 
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 32px;
   background: #000;
 }
 
