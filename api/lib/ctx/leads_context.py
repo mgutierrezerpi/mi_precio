@@ -16,7 +16,9 @@ from lib.ctx.lead_validation import (
     clean_email,
     clean_phone,
 )
-from models import Customer, Lead, Tenant
+from models import Customer, Lead, Magazine, Tenant
+
+MEDIA_KIT_DESIGN = "cafecitos-media-kit"
 
 
 def leads_open(tenant: Tenant | None) -> bool:
@@ -51,9 +53,17 @@ def create_lead(
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     # A published media kit is itself a lead-generation surface. It must keep
     # accepting its contact form even when the optional price-list lead form is
-    # disabled for the tenant.
-    if not leads_open(tenant) and source != "media_kit":
-        return None
+    # disabled for the tenant. But `source` comes from the visitor: anyone
+    # could send "media_kit" to any shop and skip the plan and the switch. So
+    # it only counts when `list_id` is a published media kit of this shop.
+    from_media_kit = source == "media_kit" and _is_published_media_kit(
+        tenant_id, list_id
+    )
+    if not from_media_kit:
+        if source == "media_kit":
+            source = "form"
+        if not leads_open(tenant):
+            return None
 
     name = (name or "").strip()
     if not name:
@@ -86,6 +96,21 @@ def create_lead(
         meta={"source": lead.source, "list": lead.list_name},
     )
     return lead
+
+
+def _is_published_media_kit(tenant_id: str, magazine_id: str | None) -> bool:
+    if not magazine_id:
+        return False
+    return (
+        Magazine.select()
+        .where(
+            (Magazine.id == magazine_id)
+            & (Magazine.tenant == tenant_id)
+            & (Magazine.design == MEDIA_KIT_DESIGN)
+            & Magazine.published
+        )
+        .exists()
+    )
 
 
 def list_leads(tenant_id: str, status: str | None = None) -> list[Lead]:
