@@ -118,6 +118,20 @@ const STATUS_KEY: Record<Status, string> = {
   Inactivo: 'status.inactive',
   Nuevo: 'status.new',
 }
+type Money = (v: string | number, cur?: string) => string
+
+/** What a customer spent: the shop's currency first, then any other one they
+ *  bought in («UYU 740 + USD 50»). The API used to add them up as one. */
+function spentLabel(c: Customer, money: Money): string {
+  const others = Object.entries(c.spentByCurrency ?? {}).filter(
+    ([cur, v]) => money(0, cur) !== money(0) && parseFloat(v) > 0
+  )
+  return [
+    money(c.totalSpent),
+    ...others.map(([cur, v]) => money(v, cur)),
+  ].join(' + ')
+}
+
 function statusLabel(status: Status, t: (key: string) => string) {
   return t(STATUS_KEY[status])
 }
@@ -128,8 +142,8 @@ export function CustomersScreen() {
   const canEdit = useAppSelector(selectCanEdit)
   const currency = tenant?.currency || 'UYU'
   const money = useCallback(
-    (v: string | number) =>
-      `${currency} ${new Intl.NumberFormat(localeOf(tenant?.language), { maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : parseFloat(v) || 0)}`,
+    (v: string | number, cur: string = currency) =>
+      `${cur} ${new Intl.NumberFormat(localeOf(tenant?.language), { maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : parseFloat(v) || 0)}`,
     [currency, tenant?.language]
   )
 
@@ -424,7 +438,7 @@ export function CustomersScreen() {
                       {relativeTime(c.lastOrderAt, t)}
                     </span>
                     <span className="w-[110px] shrink-0 text-[13px] font-extrabold text-[var(--dash-text)]">
-                      {money(c.totalSpent)}
+                      {spentLabel(c, money)}
                     </span>
                     <span className="w-[90px] shrink-0">
                       <span
@@ -1047,7 +1061,7 @@ function CustomerDrawer({
   customerId: string
   products: Product[]
   priceLists: PriceList[]
-  money: (v: string | number) => string
+  money: Money
   canEdit: boolean
   onClose: () => void
   onChanged: () => Promise<void>
@@ -1178,7 +1192,7 @@ function CustomerDrawer({
                 />
                 <Stat
                   label={t('customers.totalSpent')}
-                  value={money(customer.totalSpent)}
+                  value={spentLabel(customer, money)}
                 />
                 <Stat
                   label={t('customers.lastPurchase')}
@@ -1345,7 +1359,7 @@ function OrderCard({
   onDelete,
 }: {
   order: Order
-  money: (v: string | number) => string
+  money: Money
   canEdit: boolean
   onEdit: () => void
   onDelete: () => void
@@ -1450,7 +1464,7 @@ function OrderForm({
 }: {
   customerId: string
   products: Product[]
-  money: (v: string | number) => string
+  money: Money
   order?: Order
   onSaved: () => Promise<void>
   onCancel?: () => void

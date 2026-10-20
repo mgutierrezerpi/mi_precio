@@ -177,19 +177,33 @@ def customer_stats(tenant_id: str) -> dict:
 
 
 def _annotate(customer: Customer) -> None:
-    """Attach orders_count / total_spent / last_order_at to a customer instance."""
+    """Attach orders_count / total_spent / last_order_at to a customer instance.
+
+    `total_spent` is in the shop's own currency; orders in other currencies
+    are not added to it (they used to be: UYU 740 + USD 50 read «790») and
+    come separately in `spent_by_currency`."""
     agg = (
         Order.select(
             fn.COUNT(Order.id).alias("orders_count"),
-            fn.COALESCE(fn.SUM(Order.total), 0).alias("total_spent"),
             fn.MAX(Order.created_at).alias("last_order_at"),
         )
         .where(Order.customer == customer.id)
         .dicts()
         .get()
     )
+    shop_currency = Tenant.get_by_id(customer.tenant_id).currency or "UYU"
+    by_currency = {
+        (row["currency"] or shop_currency): Decimal(str(row["spent"] or 0))
+        for row in Order.select(
+            Order.currency, fn.COALESCE(fn.SUM(Order.total), 0).alias("spent")
+        )
+        .where(Order.customer == customer.id)
+        .group_by(Order.currency)
+        .dicts()
+    }
     customer.orders_count = agg["orders_count"] or 0
-    customer.total_spent = Decimal(str(agg["total_spent"] or 0))
+    customer.total_spent = by_currency.get(shop_currency, Decimal(0))
+    customer.spent_by_currency = {cur: str(v) for cur, v in by_currency.items()}
     last = agg["last_order_at"]
     customer.last_order_at = (
         last
