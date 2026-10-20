@@ -53,4 +53,21 @@ describe('CrmSidebar', () => {
     )
     expect(container.querySelector('a[href="/admin/leads"]')).not.toBeNull()
   })
+
+  it('names the next plan in the upsell, not a fixed «Micro» (B10)', () => {
+    store.dispatch(
+      setTenant({ id: 't1', subdomain: 'cafe', plan: 'plus' } as Tenant)
+    )
+    const { container } = render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <CrmSidebar active="Overview" />
+        </MemoryRouter>
+      </Provider>
+    )
+    const aside = container.textContent ?? ''
+    expect(aside).toContain('Plan Plus')
+    expect(aside).not.toContain('Micro')
+    expect(aside).toContain('$U 1.500')
+  })
 })

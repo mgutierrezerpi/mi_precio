@@ -456,8 +456,10 @@ export function CrmSidebar({
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">
                 {t('side.planTag', { plan: planById(tenant.plan).name })}
               </p>
+              {/* The next plan's price; it used to be a fixed «Micro», which
+               *  a Plus shop read as «Plan Plus · Micro». */}
               <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white">
-                Micro
+                {planById(nextPlan).price}
               </span>
             </div>
             <p className="text-base font-extrabold">
