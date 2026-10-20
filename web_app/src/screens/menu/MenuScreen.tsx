@@ -1362,7 +1362,9 @@ interface StoreProps {
   content: ListContent | null
 }
 
-function Storefront(p: StoreProps) {
+/** The «Tienda» layout. Exported so the template picker can show the real
+ *  thing in its thumbnail, like every other design. */
+export function Storefront(p: StoreProps) {
   const {
     tenant,
     C,

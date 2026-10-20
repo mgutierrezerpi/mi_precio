@@ -24,6 +24,7 @@ import {
 import { PencilList } from '../../screens/menu/pencil'
 import { isPencilVariant } from '../../screens/menu/pencil/variants'
 import { PencilJournal } from '../../screens/menu/pencilJournal'
+import { Storefront } from '../../screens/menu/MenuScreen'
 
 const SERIF = "'Playfair Display', Georgia, serif"
 
@@ -59,13 +60,24 @@ export function DesignThumb({
   if (isPencilVariant(design))
     preview = <PencilList variant={design} {...props} />
   else if (design === 'pencil-journal') preview = <PencilJournal {...props} />
+  else if (design === 'store')
+    // The real «Tienda», like the other designs; it used to be a two-box
+    // sketch that looked nothing like the page it chose.
+    preview = (
+      <Storefront
+        {...props}
+        content={props.content ?? null}
+        shareLink={() => {}}
+        copied={false}
+        list={null}
+        norm={(value) => (value ?? '').toLowerCase()}
+      />
+    )
   else {
     const Renderer = standardPreviewRenderers[design]
     if (Renderer) preview = <Renderer {...props} />
     else {
-      // Store is the only public layout still embedded in MenuScreen. Keep its
-      // current dedicated preview until that renderer is extracted.
-      const Thumb = thumbs.store ?? PencilExtendedThumb
+      const Thumb = thumbs[design] ?? PencilExtendedThumb
       return <Thumb accent={accent} />
     }
   }
@@ -136,10 +148,14 @@ export function createDesignPreviewProps(
     heroColor: accent,
     brandGradient: `linear-gradient(135deg, ${accent}, #A855F7)`,
     t: getT(language),
-    money: (value) => `$ ${value}`,
+    money: (value) => `${english ? 'USD' : 'UYU'} ${value}`,
     currency: english ? 'USD' : 'UYU',
     updated: english ? 'Today' : 'Hoy',
-    monthYear: english ? 'June 2026' : 'Junio 2026',
+    // The current month, like the real list; it was a fixed «Junio 2026».
+    monthYear: new Date().toLocaleDateString(english ? 'en-US' : 'es-AR', {
+      month: 'short',
+      year: 'numeric',
+    }),
     sections: [
       {
         key: 'featured',
