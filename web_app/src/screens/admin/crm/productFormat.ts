@@ -65,13 +65,12 @@ export function normalizeCategory(cat?: string | null): string | null {
   return c ? c : null
 }
 
-export function formatPrice(price: string): string {
+/** «UYU 4.620», the way the rest of the CRM writes amounts. It used a bare
+ *  «$ », which reads as another currency next to everything else. */
+export function formatPrice(price: string, currency = 'UYU'): string {
   const n = parseFloat(price)
   if (Number.isNaN(n)) return price
-  return (
-    '$ ' +
-    new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(n)
-  )
+  return `${currency} ${new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(n)}`
 }
 
 export function timeAgo(iso: string): string {

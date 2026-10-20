@@ -5,6 +5,37 @@ from peewee import fn
 from models import Category, Product, Tenant
 
 
+class CategoryError(Exception):
+    """A category change the shop has to fix before it can be saved."""
+
+
+class DuplicateCategoryName(CategoryError):
+    """Another category of the same shop already uses that name."""
+
+
+def _clean_name(name: str | None) -> str:
+    name = (name or "").strip()
+    if not name:
+        raise CategoryError("El nombre no puede estar vacío")
+    return name
+
+
+def _name_taken(tenant_id: str, name: str, exclude_id: str | None = None) -> bool:
+    """Whether another category of the shop already uses `name`.
+
+    Products point at categories by name (free text), so two categories with
+    the same name — even differing only in casing — are the same category to
+    the products and must not coexist. Compared in Python: SQLite's LOWER()
+    only folds ASCII, so «CAFÉS» and «cafés» would slip through it."""
+    key = name.casefold()
+    return any(
+        c.name.strip().casefold() == key and str(c.id) != str(exclude_id)
+        for c in Category.select(Category.id, Category.name).where(
+            Category.tenant == tenant_id
+        )
+    )
+
+
 def list_categories(tenant_id: str) -> list[Category]:
     return list(
         Category.select()
@@ -21,6 +52,9 @@ def create_category(tenant_id: str, **attrs) -> Category | None:
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant:
         return None
+    attrs["name"] = _clean_name(attrs.get("name"))
+    if _name_taken(tenant_id, attrs["name"]):
+        raise DuplicateCategoryName("Ya existe una categoría con ese nombre")
     return Category.create(tenant=tenant, position=_next_position(tenant_id), **attrs)
 
 
@@ -29,6 +63,10 @@ def update_category(category_id: str, **updates) -> Category | None:
     category = get_category(category_id)
     if not category:
         return None
+    if "name" in updates:
+        updates["name"] = _clean_name(updates["name"])
+        if _name_taken(category.tenant_id, updates["name"], exclude_id=category.id):
+            raise DuplicateCategoryName("Ya existe una categoría con ese nombre")
     old_name = category.name
     for key, value in updates.items():
         setattr(category, key, value)
@@ -45,16 +83,21 @@ def update_category(category_id: str, **updates) -> Category | None:
 
 
 def delete_category(category_id: str) -> bool:
-    """Delete a category and clear it from any products that referenced it."""
+    """Delete a category and clear it from any products that referenced it.
+
+    Products reference categories by name, so if another category of the shop
+    still carries the same name (a duplicate from before names were unique),
+    those products belong to it too and keep their category."""
     category = get_category(category_id)
     if not category:
         return False
-    # Case-insensitive match: product categories are free text and may differ
-    # only in casing from the category record (see update_category).
-    Product.update(category=None).where(
-        (Product.tenant == category.tenant_id)
-        & (fn.LOWER(Product.category) == category.name.lower())
-    ).execute()
+    if not _name_taken(category.tenant_id, category.name, exclude_id=category.id):
+        # Case-insensitive match: product categories are free text and may
+        # differ only in casing from the category record (see update_category).
+        Product.update(category=None).where(
+            (Product.tenant == category.tenant_id)
+            & (fn.LOWER(Product.category) == category.name.lower())
+        ).execute()
     category.delete_instance()
     return True
 

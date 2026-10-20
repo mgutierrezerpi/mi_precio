@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from models import Tenant, User
+from models import Tenant, TenantMembership, User
 
 
 class BillingError(Exception):
@@ -17,12 +17,29 @@ def is_expired(tenant_id: str) -> bool:
     return bool(tenant and tenant.billing_status == "expired")
 
 
+def owner_of(tenant_id: str) -> User | None:
+    """The owner of a business, read from its memberships.
+
+    `User.tenant`/`User.role` only describe the business a user signed up
+    with, so they miss owners of a second business and anyone whose legacy
+    role was overwritten from another team."""
+    return (
+        User.select()
+        .join(TenantMembership, on=(TenantMembership.user == User.id))
+        .where(
+            (TenantMembership.tenant == tenant_id) & (TenantMembership.role == "owner")
+        )
+        .order_by(TenantMembership.created_at)
+        .first()
+    )
+
+
 def expiry_notice_target(tenant_id: str) -> tuple[str, str] | None:
     """Return the owner email and business name for an expiry notice."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant:
         return None
-    owner = User.get_or_none((User.tenant == tenant_id) & (User.role == "owner"))
+    owner = owner_of(tenant_id)
     if not owner or not owner.email:
         return None
     return owner.email, tenant.name

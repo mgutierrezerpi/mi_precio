@@ -64,7 +64,7 @@ def test_update_list(db):
     updated = lists.update_list(created.price_list.id, name="New Name", published=True)
 
     assert updated.name == "New Name"
-    assert updated.slug == "new_name"
+    assert updated.slug == "new-name"
     assert updated.published is True
 
 
@@ -74,8 +74,21 @@ def test_create_list_uses_unique_slug(db):
     first = lists.create_list(tenant.id, "Lunch Menu")
     second = lists.create_list(tenant.id, "Lunch Menu")
 
-    assert first.price_list.slug == "lunch_menu"
-    assert second.price_list.slug == "lunch_menu_2"
+    assert first.price_list.slug == "lunch-menu"
+    assert second.price_list.slug == "lunch-menu-2"
+
+
+def test_saving_an_old_underscore_slug_back_keeps_it(db):
+    # B12: slugs now use hyphens, but the editor sends the current slug on
+    # every save; re-normalising it would break printed QR codes.
+    tenant = identity.create_tenant("Test Store", "test_store")
+    created = lists.create_list(tenant.id, "Promos")
+    created.price_list.slug = "promos_de_la_semana"
+    created.price_list.save()
+
+    updated = lists.update_list(created.price_list.id, slug="promos_de_la_semana")
+
+    assert updated.slug == "promos_de_la_semana"
 
 
 def test_update_list_not_found(db):

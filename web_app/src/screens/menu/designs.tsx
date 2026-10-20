@@ -604,6 +604,9 @@ export interface DesignProps {
   onCheckout?: () => void
   isService: boolean
   listName: string | null
+  /** The list this URL points at (`/p/{sub}/{list}`), or null on the shop's
+   *  index — where the hero speaks for the business, not for one list. */
+  pageListName?: string | null
   edition: string
   taxId: string | null
   hasBg: boolean
@@ -1535,7 +1538,9 @@ export function ModernBrand(p: DesignProps) {
             className="max-w-[820px] text-4xl font-black leading-[1.05] tracking-tight md:text-6xl"
             style={{ color: ink }}
           >
-            {tenant.description || t('store.heroTitle', { name: tenant.name })}
+            {p.pageListName ||
+              tenant.description ||
+              t('store.heroTitle', { name: tenant.name })}
           </h1>
         </div>
       </header>
@@ -1705,7 +1710,10 @@ export function PhotoLookbook(p: DesignProps) {
       <div className="mx-auto w-full max-w-[1120px] px-6 py-12 md:px-12">
         {/* Hero */}
         <header className="flex flex-col gap-4 pb-10">
-          <div className="flex items-center gap-3">
+          {/* On a phone the date takes its own line and, when there is a
+           *  logo, the name is left to it: logo, «Café / Aurora» and the date
+           *  side by side squeezed into three narrow columns. */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             {tenant.logoUrl ? (
               <img
                 src={tenant.logoUrl}
@@ -1720,11 +1728,14 @@ export function PhotoLookbook(p: DesignProps) {
                 {(tenant.name || '·').charAt(0).toUpperCase()}
               </span>
             )}
-            <span className="text-[14px] font-bold" style={{ color: ink }}>
+            <span
+              className={`whitespace-nowrap text-[14px] font-bold ${tenant.logoUrl ? 'hidden sm:inline' : ''}`}
+              style={{ color: ink }}
+            >
               {tenant.name}
             </span>
             <span
-              className="ml-auto text-[11px] font-medium"
+              className="w-full text-[11px] font-medium sm:ml-auto sm:w-auto"
               style={{ color: soft }}
             >
               {t('pub.updated', { date: updated })}
@@ -1734,7 +1745,9 @@ export function PhotoLookbook(p: DesignProps) {
             className="max-w-[720px] text-4xl font-black leading-[1.05] tracking-tight md:text-6xl"
             style={{ color: ink }}
           >
-            {tenant.description || t('store.heroTitle', { name: tenant.name })}
+            {p.pageListName ||
+              tenant.description ||
+              t('store.heroTitle', { name: tenant.name })}
           </h1>
         </header>
 
@@ -2132,7 +2145,9 @@ export function ImageCatalog(p: DesignProps) {
       {/* Hero header (uses the configurable hero color) */}
       <header style={{ background: hero }}>
         <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 px-5 py-9 md:px-12">
-          <div className="flex items-center gap-3">
+          {/* Same as the photo design: date below and name left to the
+           *  logo on a phone. */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             {tenant.logoUrl ? (
               <img
                 src={tenant.logoUrl}
@@ -2147,11 +2162,14 @@ export function ImageCatalog(p: DesignProps) {
                 {(tenant.name || '·').charAt(0).toUpperCase()}
               </span>
             )}
-            <span className="text-[14px] font-bold" style={{ color: heroInk }}>
+            <span
+              className={`whitespace-nowrap text-[14px] font-bold ${tenant.logoUrl ? 'hidden sm:inline' : ''}`}
+              style={{ color: heroInk }}
+            >
               {tenant.name}
             </span>
             <span
-              className="ml-auto text-[11px] font-medium"
+              className="w-full text-[11px] font-medium sm:ml-auto sm:w-auto"
               style={{ color: heroInk, opacity: 0.55 }}
             >
               {t('pub.updated', { date: updated })}
@@ -2161,7 +2179,9 @@ export function ImageCatalog(p: DesignProps) {
             className="max-w-[720px] text-3xl font-black leading-tight md:text-5xl"
             style={{ color: heroInk }}
           >
-            {tenant.description || t('store.heroTitle', { name: tenant.name })}
+            {p.pageListName ||
+              tenant.description ||
+              t('store.heroTitle', { name: tenant.name })}
           </h1>
           {tenant.description && (
             <p
@@ -2410,7 +2430,8 @@ export function TechGrid(p: DesignProps) {
               className="max-w-[760px] text-4xl font-black leading-[1.05] tracking-tight md:text-6xl"
               style={{ color: ink }}
             >
-              {tenant.description ||
+              {p.pageListName ||
+                tenant.description ||
                 t('store.heroTitle', { name: tenant.name })}
             </h1>
             <div className="flex flex-wrap gap-2.5">

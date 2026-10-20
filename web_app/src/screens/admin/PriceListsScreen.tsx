@@ -24,6 +24,7 @@ import type {
 } from '../../types'
 import api from '../../services/api'
 import { localeOf, useT, type TFn } from '../../lib/i18n'
+import { toast } from '../../lib/toast'
 import { ListAppearanceFields } from '../../components/appearance/ListAppearanceFields'
 import { hasOwnAppearance, type ListAppearance } from '../../lib/listAppearance'
 import { CrmLayout } from './crm/CrmLayout'
@@ -39,6 +40,7 @@ import {
 } from '../../lib/qrRender'
 import { trackEvent } from '../../lib/analytics'
 import { useStoredQrColor } from '../../hooks/useStoredQrColor'
+import { useEscapeToClose } from '../../hooks/useEscapeToClose'
 
 type Tab = 'all' | 'active' | 'inactive' | 'offline'
 
@@ -76,7 +78,8 @@ export function PriceListsScreen() {
 
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [search, setSearch] = useState('')
+  // The workspace search lands here with ?q= when the match is a list.
+  const [search, setSearch] = useState(() => searchParams.get('q') || '')
   const [tab, setTab] = useState<Tab>('all')
   const [modal, setModal] = useState<{ open: boolean; list: PriceList | null }>(
     () => ({
@@ -721,6 +724,7 @@ function RowMenu({
       window.removeEventListener('resize', close)
     }
   }, [open])
+  useEscapeToClose(open, () => setOpen(false))
 
   const act = (fn: () => void) => () => {
     setOpen(false)
@@ -1680,10 +1684,13 @@ function ListModal({
   // keyed off the product id (stable across renames); items store product_id and copy
   // the product's image so the public list shows the real photo, not a category icon.
   // What this list charges for a product: the edited value when it parses,
-  // otherwise the catalog price. A blank or broken input never becomes a 0.
+  // otherwise the catalog price. A blank, broken or negative input never
+  // reaches the list — a negative one used to show «UYU -5» to the public.
   const priceFor = (product: Product) => {
     const edited = Number(priceOverrides[product.id])
-    return priceOverrides[product.id]?.trim() && Number.isFinite(edited)
+    return priceOverrides[product.id]?.trim() &&
+      Number.isFinite(edited) &&
+      edited >= 0
       ? edited
       : parseFloat(product.price) || 0
   }
@@ -1734,6 +1741,14 @@ function ListModal({
     }
   }
 
+  // A typed link that was already taken, or had spaces or accents, is saved
+  // adjusted (`menu` → `menu-2`). Say what it became instead of letting the
+  // shop share a link that leads somewhere else.
+  const noticeSlug = (savedSlug?: string | null) => {
+    if (slug.trim() && savedSlug && savedSlug !== slug.trim())
+      toast.info(t('pl.slugAdjusted', { slug: savedSlug }))
+  }
+
   const finalize = async () => {
     if (!name.trim()) return
     setSaving(true)
@@ -1762,6 +1777,7 @@ function ListModal({
           setSaveError(String(res.payload ?? t('pl.saveFailed')))
           return
         }
+        if (slug.trim() !== (list?.slug ?? '')) noticeSlug(res.payload?.slug)
         if (versionId.current) await syncItems(versionId.current)
       } else if (tenantId) {
         const res = await dispatch(
@@ -1775,7 +1791,7 @@ function ListModal({
           const vid = res.payload.versions?.[0]?.id
           // Not checked on purpose: the list already exists by now, and holding
           // the dialog open would let a second click create a duplicate.
-          await dispatch(
+          const saved = await dispatch(
             updateList({
               listId: res.payload.id,
               data: {
@@ -1788,6 +1804,7 @@ function ListModal({
               },
             })
           )
+          if (updateList.fulfilled.match(saved)) noticeSlug(saved.payload?.slug)
           if (vid) await syncItems(vid)
           trackEvent('Created Price List', {
             kind,
@@ -2328,8 +2345,11 @@ function ListModal({
           </form>
         ) : (
           <div>
-            <div className="mb-3 flex items-center gap-2">
-              <label className="flex h-10 flex-1 items-center gap-2.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3 focus-within:border-[#7C3AED] focus-within:ring-2 focus-within:ring-[#7C3AED]/15">
+            {/* Wraps instead of overflowing: on a phone the search takes the
+             *  whole row and the two buttons go under it. In one row they ran
+             *  ~170 px past the modal and cut the placeholder. */}
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <label className="flex h-10 min-w-[220px] flex-1 basis-full items-center gap-2.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3 focus-within:border-[#7C3AED] focus-within:ring-2 focus-within:ring-[#7C3AED]/15 sm:basis-0">
                 <Icon
                   name="search"
                   size={16}
@@ -2437,7 +2457,15 @@ function ListModal({
                                 [p.id]: event.target.value,
                               }))
                             }
-                            className="h-9 w-24 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-right text-[13px] font-extrabold text-[var(--dash-text)] outline-none focus:border-[#7C3AED]"
+                            aria-invalid={
+                              Number(priceOverrides[p.id]) < 0 || undefined
+                            }
+                            title={
+                              Number(priceOverrides[p.id]) < 0
+                                ? t('pl.priceNegative')
+                                : undefined
+                            }
+                            className="h-9 w-24 rounded-lg border border-[var(--dash-border)] bg-[var(--dash-surface)] px-2 text-right text-[13px] font-extrabold text-[var(--dash-text)] outline-none focus:border-[#7C3AED] aria-[invalid=true]:border-[var(--tone-red-fg)] aria-[invalid=true]:text-[var(--tone-red-fg)]"
                           />
                         </span>
                       ) : (

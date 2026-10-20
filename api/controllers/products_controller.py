@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from controllers import ownership
@@ -81,11 +83,55 @@ def get_product_endpoint(
 def update_product_endpoint(
     product_id: str, data: UpdateProduct, current_user: dict = Depends(require_editor)
 ):
-    ownership.own_product(product_id, current_user)
-    product = products.update_product(product_id, **data.model_dump(exclude_unset=True))
+    before = ownership.own_product(product_id, current_user)
+    old_price, old_name = before.price, before.name
+    changes = data.model_dump(exclude_unset=True)
+    product = products.update_product(product_id, **changes)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    _record_product_update(product, changes, old_price, old_name, current_user)
     return ProductView.render(product)
+
+
+def _amount(value) -> str:
+    """190.00 → «190», 190.50 → «190.5»: how the CRM writes prices."""
+    return format(Decimal(str(value)).normalize(), "f")
+
+
+def _record_product_update(product, changes, old_price, old_name, current_user):
+    """A price change is the edit shops most want to trace, so it gets its own
+    entry with both amounts; anything else is a plain «edited»."""
+    price_changed = "price" in changes and Decimal(str(product.price)) != Decimal(
+        str(old_price)
+    )
+    if price_changed:
+        action, summary = (
+            "product.price_changed",
+            f"Cambió el precio de «{product.name}» de {product.currency} "
+            f"{_amount(old_price)} a {product.currency} {_amount(product.price)}",
+        )
+        meta = {
+            "name": product.name,
+            "currency": product.currency,
+            "old": _amount(old_price),
+            "new": _amount(product.price),
+        }
+    elif set(changes) - {"price", "price_list_ids"}:
+        action, summary = "product.updated", f"Editó el producto «{product.name}»"
+        meta = {"name": product.name, "old_name": old_name}
+    else:
+        return
+    activity.record(
+        product.tenant_id,
+        action,
+        summary,
+        actor=current_user.get("email"),
+        actor_id=current_user.get("sub"),
+        entity_type="product",
+        entity_id=product.id,
+        meta=meta,
+        coalesce_minutes=None if price_changed else 10,
+    )
 
 
 @router.delete("/products/{product_id}")

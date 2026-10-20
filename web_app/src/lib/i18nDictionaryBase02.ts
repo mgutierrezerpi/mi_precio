@@ -73,6 +73,11 @@ export const DICT_BASE_02: Record<string, TranslationEntry> = {
   },
   'store.each': { es: 'c/u', en: 'each', pt: 'cada' },
   'store.cartRemove': { es: 'Quitar', en: 'Remove', pt: 'Remover' },
+  'store.cartSubtotal1': {
+    es: 'Subtotal (1 producto):',
+    en: 'Subtotal (1 item):',
+    pt: 'Subtotal (1 produto):',
+  },
   'store.cartSubtotalN': {
     es: 'Subtotal ({n} productos):',
     en: 'Subtotal ({n} items):',
@@ -87,6 +92,11 @@ export const DICT_BASE_02: Record<string, TranslationEntry> = {
     es: 'El comerciante te contactará por WhatsApp para coordinar la entrega y el pago.',
     en: 'The seller will contact you on WhatsApp to arrange delivery and payment.',
     pt: 'O vendedor entrará em contato pelo WhatsApp para combinar a entrega e o pagamento.',
+  },
+  'store.cartMissingContact': {
+    es: 'Completá tu nombre y tu teléfono para que el comercio te pueda responder.',
+    en: 'Add your name and phone so the shop can reply to you.',
+    pt: 'Preencha seu nome e telefone para que a loja possa responder.',
   },
   'store.cartName': {
     es: 'Nombre completo',

@@ -22,21 +22,40 @@ def update_member_role(tenant_id: str, user_id: str, role: str) -> User:
         raise TeamError("No se puede cambiar el rol del dueño")
     membership.role = role
     membership.save()
-    user.role = role
-    user.save(only=[User.role])
+    _sync_legacy_role(user, tenant_id, role)
     user._team_role = role
     return user
+
+
+def _sync_legacy_role(user: User, tenant_id: str, role: str) -> None:
+    """Mirror a role change into the legacy `User.role`, primary business only.
+
+    `User.role` describes the business the user signed up with (`User.tenant`).
+    A role in any other business lives only in its membership; writing it here
+    would overwrite, say, the owner of one shop with the viewer role they hold
+    in another."""
+    if str(user.tenant_id) == str(tenant_id) and user.role != role:
+        user.role = role
+        user.save(only=[User.role])
 
 
 def update_member(
     tenant_id: str,
     user_id: str,
+    acting_user_id: str | None,
     role: str | None = None,
     name: str | None = None,
     email: str | None = None,
 ) -> User:
-    """Update editable member fields. At least one field must be provided."""
+    """Update editable member fields. At least one field must be provided.
+
+    A User is global (one login across every business it belongs to), so a
+    teammate may only change another member's role here. The name is editable
+    only by its owner, and the email — the login identity — is never editable
+    from the team screen: changing it would hand over the account.
+    """
     user, membership = _member(tenant_id, user_id)
+    is_self = acting_user_id is not None and str(user.id) == str(acting_user_id)
     changed = False
     if role is not None:
         if role not in ASSIGNABLE_ROLES:
@@ -44,7 +63,8 @@ def update_member(
         if membership.role == "owner":
             raise TeamError("No se puede cambiar el rol del dueño")
         membership.role = role
-        user.role = role
+        if str(user.tenant_id) == str(tenant_id):
+            user.role = role
         changed = True
 
     if name is not None:
@@ -54,19 +74,14 @@ def update_member(
         if len(name) > 255:
             raise TeamError("El nombre es demasiado largo")
         if user.name != name:
+            if not is_self:
+                raise TeamError("Sólo podés cambiar tu propio nombre")
             user.name = name
             changed = True
 
-    if email is not None:
-        email = email.strip().lower()
-        if "@" not in email or len(email) > 255:
-            raise TeamError("Email inválido")
-        existing = User.get_or_none(User.email == email)
-        if existing and existing.id != user.id:
-            raise TeamError("Ese email ya tiene una cuenta en Mi Precio")
-        if user.email != email:
-            user.email = email
-            changed = True
+    # The client may echo the current email back; anything else is refused.
+    if email is not None and email.strip().lower() != user.email:
+        raise TeamError("El email de acceso no se puede cambiar desde Equipo")
 
     if not changed:
         raise TeamError("No hay cambios para guardar")

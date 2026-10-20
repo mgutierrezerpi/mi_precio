@@ -23,6 +23,23 @@ describe('whatsappPhone', () => {
     ).toBe('59898402451')
   })
 
+  it('reads the number out of a link that carries a message (A9)', () => {
+    // Taking every digit glued the text onto the number and sent the order
+    // to a stranger or nowhere.
+    expect(
+      whatsappPhone({ whatsappUrl: 'https://wa.me/59899123456?text=Hola%2025' })
+    ).toBe('59899123456')
+    expect(
+      whatsappPhone({
+        whatsappUrl:
+          'https://api.whatsapp.com/send?phone=59899123456&text=hola2',
+      })
+    ).toBe('59899123456')
+    expect(
+      whatsappPhone({ whatsappUrl: 'wa.me/+59899123456?text=Pedido' })
+    ).toBe('59899123456')
+  })
+
   it('treats anything that is not a phone as no number', () => {
     expect(whatsappPhone({})).toBeNull()
     expect(

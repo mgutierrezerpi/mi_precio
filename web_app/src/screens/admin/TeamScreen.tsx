@@ -183,7 +183,7 @@ export function TeamScreen() {
 
   const updateMember = async (
     m: TeamMember,
-    data: { name: string; email: string; role?: Role }
+    data: { name?: string; role?: Role }
   ): Promise<string | null> => {
     if (!tenant?.id) return t('team.noAccount')
     const res = await api.updateMember(tenant.id, m.id, data)
@@ -454,6 +454,7 @@ export function TeamScreen() {
       {editMember && tenant?.id && (
         <EditMemberModal
           member={editMember}
+          isSelf={me?.id === editMember.id}
           onClose={() => setEditMember(null)}
           onSaved={(data) => updateMember(editMember, data)}
         />
@@ -462,33 +463,32 @@ export function TeamScreen() {
   )
 }
 
+// A user is one login across every business, so teammates may only change each
+// other's role. The name is editable by its owner; the email (the login) never
+// changes from here — the API refuses it too.
 function EditMemberModal({
   member,
+  isSelf,
   onClose,
   onSaved,
 }: {
   member: TeamMember
+  isSelf: boolean
   onClose: () => void
-  onSaved: (data: {
-    name: string
-    email: string
-    role?: Role
-  }) => Promise<string | null>
+  onSaved: (data: { name?: string; role?: Role }) => Promise<string | null>
 }) {
   const [name, setName] = useState(member.name)
-  const [email, setEmail] = useState(member.email)
   const [role, setRole] = useState<Role>(member.role)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
-  const valid = name.trim().length > 0 && /\S+@\S+\.\S+/.test(email.trim())
+  const valid = name.trim().length > 0
 
   const submit = async () => {
     if (!valid || saving) return
     setSaving(true)
     setErr(null)
     const error = await onSaved({
-      name: name.trim(),
-      email: email.trim(),
+      ...(isSelf ? { name: name.trim() } : {}),
       ...(member.role === 'owner' ? {} : { role }),
     })
     if (error) {
@@ -511,18 +511,27 @@ function EditMemberModal({
             Nombre
             <input
               value={name}
+              disabled={!isSelf}
               onChange={(e) => setName(e.target.value)}
-              className="h-10 rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-bg)] px-3 text-sm font-medium text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]"
+              className="h-10 rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-bg)] px-3 text-sm font-medium text-[var(--dash-text)] outline-none disabled:cursor-not-allowed disabled:opacity-60 focus:border-[var(--dash-link)]"
             />
+            {!isSelf && (
+              <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+                Sólo esa persona puede cambiar su nombre.
+              </span>
+            )}
           </label>
           <label className="flex flex-col gap-1.5 text-xs font-bold text-[var(--dash-text2)]">
             Email
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-10 rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-bg)] px-3 text-sm font-medium text-[var(--dash-text)] outline-none focus:border-[var(--dash-link)]"
+              value={member.email}
+              disabled
+              className="h-10 rounded-[var(--dash-radius)] border border-[var(--dash-border)] bg-[var(--dash-bg)] px-3 text-sm font-medium text-[var(--dash-text)] outline-none disabled:cursor-not-allowed disabled:opacity-60"
             />
+            <span className="text-[11px] font-medium text-[var(--dash-muted)]">
+              Es el email de acceso: no se puede cambiar desde Equipo.
+            </span>
           </label>
           <label className="flex flex-col gap-1.5 text-xs font-bold text-[var(--dash-text2)]">
             Rol

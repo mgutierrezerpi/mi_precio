@@ -84,13 +84,38 @@ def find_tenant_by_subdomain(subdomain: str) -> Tenant | None:
 
 
 def delete_tenant(tenant_id: str) -> bool:
-    """Permanently delete a tenant and everything under it (users, lists, products,
-    customers, orders, page views, etc.) via cascading FK deletes."""
+    """Permanently delete a tenant and everything under it (lists, products,
+    customers, orders, page views, etc.) via cascading FK deletes.
+
+    `User.tenant` cascades too, so anyone whose *primary* business was this one
+    went with it — along with their memberships in every other business they
+    belong to or own. Those people are moved to another business of theirs
+    first; only the ones who belonged here alone are deleted.
+    """
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     if not tenant:
         return False
-    tenant.delete_instance(recursive=True)
+    with Tenant._meta.database.atomic():
+        _rehome_users_of(tenant_id)
+        tenant.delete_instance(recursive=True)
     return True
+
+
+def _rehome_users_of(tenant_id: str) -> None:
+    for user in User.select().where(User.tenant == tenant_id):
+        other = (
+            TenantMembership.select()
+            .where(
+                (TenantMembership.user == user.id)
+                & (TenantMembership.tenant != tenant_id)
+            )
+            .order_by(TenantMembership.created_at)
+            .first()
+        )
+        if other:
+            user.tenant = other.tenant_id
+            user.role = other.role
+            user.save()
 
 
 def get_or_create_user(email: str, language: str = "es") -> UserResult:

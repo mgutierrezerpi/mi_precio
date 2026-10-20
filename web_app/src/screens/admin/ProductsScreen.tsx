@@ -27,6 +27,7 @@ import {
 import api from '../../services/api'
 import { localeOf } from '../../lib/i18n'
 import { useCatalogT } from '../../lib/i18nDictionaryCatalog'
+import { useEscapeToClose } from '../../hooks/useEscapeToClose'
 
 const DEFAULT_PAGE_SIZE = 8
 const PAGE_SIZE_OPTIONS = [8, 16, 32, 64] as const
@@ -125,13 +126,20 @@ export function ProductsScreen() {
   const locale = localeOf(tenant?.language)
   const formatProductPrice = (price: string) => {
     const value = parseFloat(price)
-    return Number.isNaN(value)
-      ? price
-      : new Intl.NumberFormat(locale, {
-          style: 'currency',
-          currency: tenant?.currency || 'UYU',
-          maximumFractionDigits: 0,
-        }).format(value)
+    if (Number.isNaN(value)) return price
+    // A bad code saved before the API checked it used to throw here and take
+    // the whole screen down; fall back to the bare number instead.
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: tenant?.currency || 'UYU',
+        maximumFractionDigits: 0,
+      }).format(value)
+    } catch {
+      return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(
+        value
+      )
+    }
   }
 
   const [searchParams] = useSearchParams()
@@ -250,7 +258,9 @@ export function ProductsScreen() {
   }
 
   // ── Multi-select ──────────────────────────────────────────────────
-  const visibleIds = useMemo(() => visible.map((p) => p.id), [visible])
+  // The header checkbox covers the rows on screen, not every page: selecting
+  // all 12 while 8 showed let «Eliminar» delete products nobody was looking at.
+  const visibleIds = useMemo(() => pageItems.map((p) => p.id), [pageItems])
   const allSelected =
     visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
   const someSelected = selected.size > 0
@@ -334,8 +344,11 @@ export function ProductsScreen() {
 
         <div className="flex flex-col gap-4">
           {/* Header */}
-          <section className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center justify-center gap-2">
+          {/* On a phone: two even columns (Filtros | Ordenar, Exportar |
+           *  Nuevo) with the category picker across. It used to mix full,
+           *  half and centred widths. From lg it is one row, as before. */}
+          <section className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-3">
+            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
               <FilterMenu
                 status={status}
                 onStatus={(s) => resetTo(() => setStatus(s))}
@@ -352,7 +365,7 @@ export function ProductsScreen() {
               />
               <SortMenu sort={sort} onSort={setSort} />
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
               <ExportMenu
                 count={someSelected ? selected.size : visible.length}
                 scoped={someSelected}
@@ -424,11 +437,13 @@ export function ProductsScreen() {
                 />
               </span>
               <span className="flex-1">{t('products.product')}</span>
-              <span className="w-[90px]">SKU</span>
+              <span className="hidden w-[90px] xl:block">SKU</span>
               <span className="w-[115px]">{t('products.category')}</span>
-              <span className="w-[100px]">{t('products.price')}</span>
+              <span className="w-[120px] shrink-0">{t('products.price')}</span>
               <span className="w-[145px]">{t('products.availability')}</span>
-              <span className="w-[105px]">{t('products.updated')}</span>
+              <span className="hidden w-[105px] xl:block">
+                {t('products.updated')}
+              </span>
               <span className="w-8" />
             </div>
 
@@ -562,7 +577,9 @@ export function ProductsScreen() {
                         </span>
                       </span>
                     </div>
-                    <span className="hidden w-[90px] text-xs font-semibold text-[var(--dash-text2)] lg:block">
+                    {/* SKU and «Actualizado» wait for xl: between 1024 and 1280 px the
+                     *  fixed columns left the product name 0 px wide. */}
+                    <span className="hidden w-[90px] text-xs font-semibold text-[var(--dash-text2)] xl:block">
                       {p.sku || '—'}
                     </span>
                     <span className="hidden w-[115px] lg:block">
@@ -579,8 +596,12 @@ export function ProductsScreen() {
                         </span>
                       )}
                     </span>
-                    <span className="hidden w-[100px] text-sm font-extrabold text-[var(--dash-text)] lg:block">
-                      {formatProductPrice(p.price)}
+                    {/* A long price wraps inside its column instead of running
+                     *  under the availability toggle next to it — at the space
+                     *  after the currency (Intl puts a non-breaking one there),
+                     *  never inside the number. */}
+                    <span className="hidden w-[120px] shrink-0 text-sm font-extrabold leading-tight text-[var(--dash-text)] [overflow-wrap:break-word] lg:block">
+                      {formatProductPrice(p.price).replace(/ /g, ' ')}
                     </span>
                     <span className="hidden w-[145px] lg:block">
                       {canEdit ? (
@@ -606,7 +627,7 @@ export function ProductsScreen() {
                         </span>
                       )}
                     </span>
-                    <span className="hidden w-[105px] text-xs font-medium text-[var(--dash-muted)] lg:block">
+                    <span className="hidden w-[105px] text-xs font-medium text-[var(--dash-muted)] xl:block">
                       {new Intl.DateTimeFormat(locale, {
                         dateStyle: 'medium',
                       }).format(parseUtcDate(p.updatedAt))}
@@ -811,14 +832,15 @@ function CategoryDropdown({
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
+  useEscapeToClose(open, () => setOpen(false))
   const label =
     value === 'all' ? t('products.allCategories') : displayCategory(value)
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative order-last col-span-2 lg:order-none">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-9 items-center gap-1.5 rounded-full border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-text2)]"
+        className="flex h-[38px] w-full items-center gap-1.5 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-text2)] lg:h-9 lg:w-auto lg:rounded-full"
       >
         <Icon name="tags" size={14} className="text-[var(--dash-link)]" />{' '}
         {label}
@@ -882,11 +904,15 @@ function Menu({
   icon,
   label,
   width = 'w-56',
+  align = 'right',
   children,
 }: {
   icon: IconName
   label: string
   width?: string
+  /** Which edge of the trigger the panel hangs from. The left-most button
+   *  must open rightwards, or the panel slides under the sidebar. */
+  align?: 'left' | 'right'
   children: (close: () => void) => React.ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -899,6 +925,7 @@ function Menu({
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
+  useEscapeToClose(open, () => setOpen(false))
   return (
     <div ref={ref} className="relative w-full lg:w-auto">
       <button
@@ -916,7 +943,7 @@ function Menu({
         />
       </button>
       <div
-        className={`absolute right-0 top-[calc(100%+6px)] z-40 ${width} origin-top-right rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-2 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.3)] transition-all duration-150 ${open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'}`}
+        className={`absolute ${align === 'left' ? 'left-0 origin-top-left' : 'right-0 origin-top-right'} top-[calc(100%+6px)] z-40 ${width} rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-2 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.3)] transition-all duration-150 ${open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'}`}
       >
         {children(() => setOpen(false))}
       </div>
@@ -1043,7 +1070,12 @@ function FilterMenu({
   ]
   const onlyDigits = (v: string) => v.replace(/[^\d]/g, '')
   return (
-    <Menu icon="sliders-horizontal" label={t('products.filters')} width="w-64">
+    <Menu
+      icon="sliders-horizontal"
+      label={t('products.filters')}
+      width="w-64"
+      align="left"
+    >
       {() => (
         <div className="flex flex-col gap-3">
           <div>
@@ -1379,8 +1411,17 @@ export function ProductModal({
   const [imageThumbUrl, setImageThumbUrl] = useState(
     product?.imageThumbUrl ?? ''
   )
+  // Only the lists that carry this product can take its new price; offering
+  // every list made the box long and the choice meaningless.
+  const productLists = useMemo(
+    () =>
+      product?.priceListIds
+        ? lists.filter((list) => product.priceListIds!.includes(list.id))
+        : lists,
+    [lists, product]
+  )
   const [priceListIds, setPriceListIds] = useState<Set<string>>(
-    () => new Set(lists.map((list) => list.id))
+    () => new Set(productLists.map((list) => list.id))
   )
   const [imgLoading, setImgLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -1389,8 +1430,8 @@ export function ProductModal({
     !!product && (parseFloat(price) || 0) !== (parseFloat(product.price) || 0)
 
   useEffect(() => {
-    setPriceListIds(new Set(lists.map((list) => list.id)))
-  }, [lists])
+    setPriceListIds(new Set(productLists.map((list) => list.id)))
+  }, [productLists])
 
   const togglePriceList = (id: string) => {
     setPriceListIds((current) => {
@@ -1402,7 +1443,7 @@ export function ProductModal({
   }
 
   const selectAllPriceLists = () =>
-    setPriceListIds(new Set(lists.map((list) => list.id)))
+    setPriceListIds(new Set(productLists.map((list) => list.id)))
   const clearPriceLists = () => setPriceListIds(new Set())
 
   const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1572,7 +1613,7 @@ export function ProductModal({
               <input
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
-                placeholder="TOR-001"
+                placeholder={t('products.skuPlaceholder')}
                 className={inputCls}
               />
             </Field>
@@ -1625,7 +1666,11 @@ export function ProductModal({
               className={inputCls}
             />
           </Field>
-          {priceChanged && (
+          {/* Always there while editing a listed product, instead of popping in
+           *  on the first keystroke of the price: that pushed «Guardar cambios»
+           *  down and the click landed on a list checkbox. The choice only
+           *  takes effect when the price actually changes. */}
+          {product && productLists.length > 0 && (
             <div className="rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] p-3.5">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -1654,12 +1699,12 @@ export function ProductModal({
                 </div>
               </div>
               <div className="mt-3 flex max-h-32 flex-col gap-2 overflow-auto pr-1">
-                {lists.length === 0 ? (
+                {productLists.length === 0 ? (
                   <p className="text-[12px] font-semibold text-[var(--dash-muted)]">
                     {t('products.noLists')}
                   </p>
                 ) : (
-                  lists.map((list) => (
+                  productLists.map((list) => (
                     <label
                       key={list.id}
                       className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 py-2"

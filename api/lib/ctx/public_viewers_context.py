@@ -157,6 +157,13 @@ def capture_viewer(
             & (PublicViewer.price_list == price_list.id)
             & (PublicViewer.phone == normalized_phone)
         )
+    # A record found by email/phone (not by this browser's token) is only
+    # reused while it is a plain contact. Once it is linked to a customer it
+    # carries that customer's private-list access through its token, and an
+    # email typed into a public form proves nothing: this browser gets its own
+    # unlinked record and the customer's record stays as it was.
+    if identity and identity.visitor_token != token and identity.customer_id:
+        identity = None
 
     now = utc_now()
     if identity:

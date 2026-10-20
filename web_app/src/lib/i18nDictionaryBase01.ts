@@ -17,6 +17,11 @@ export const DICT_BASE_01: Record<string, TranslationEntry> = {
   'common.cancel': { es: 'Cancelar', en: 'Cancel', pt: 'Cancelar' },
   'common.close': { es: 'Cerrar', en: 'Close', pt: 'Fechar' },
   'gate.logout': { es: 'Salir', en: 'Log out', pt: 'Sair' },
+  'gate.backTo': {
+    es: 'Volver a {name}',
+    en: 'Back to {name}',
+    pt: 'Voltar para {name}',
+  },
 
   'set.delete.subtitle': {
     es: 'Acción permanente e irreversible.',

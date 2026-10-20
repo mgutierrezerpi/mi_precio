@@ -9,10 +9,9 @@ class PublicTenantView(BaseView):
     subdomain: str
     currency: str = "UYU"
     logo_url: str | None = None
+    # The accent of public catalog pages. The Linktree keeps its own accent for
+    # its own page; it used to override this one (see the A3 fix).
     brand_color: str | None = None
-    # Public catalog pages use the same brand accent as the business's
-    # Linktree, keeping the two customer-facing surfaces in sync.
-    linktree_accent_color: str | None = None
     description: str | None = None
     list_design: str | None = None
     list_bg_url: str | None = None
@@ -40,7 +39,6 @@ class PublicTenantView(BaseView):
             currency=getattr(tenant, "currency", "UYU") or "UYU",
             logo_url=getattr(tenant, "logo_url", None),
             brand_color=getattr(tenant, "brand_color", None),
-            linktree_accent_color=(linktree.accent_color if linktree else None),
             description=getattr(tenant, "description", None),
             list_design=getattr(tenant, "list_design", None),
             list_bg_url=getattr(tenant, "list_bg_url", None),

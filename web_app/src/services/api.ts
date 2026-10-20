@@ -34,6 +34,7 @@ import type {
   FeatureFlag,
 } from '../types'
 import { localeForHostname } from '../lib/domainLocale'
+import { apiErrorMessage } from '../lib/apiErrors'
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
@@ -351,8 +352,7 @@ class ApiService {
         const detail = errorData.detail
         if (response.status === 402 && detail?.code === 'plan_required')
           onPlanRequired?.()
-        const message = typeof detail === 'string' ? detail : detail?.message
-        return { error: message || `Error ${response.status}` }
+        return { error: apiErrorMessage(response.status, detail) }
       }
 
       const data = await response.json()
@@ -492,6 +492,7 @@ class ApiService {
       language?: string
       timezone?: string
       deliveryEnabled?: boolean
+      leadsEnabled?: boolean
       marketplaceEnabled?: boolean
       marketplaceLatitude?: number | null
       marketplaceLongitude?: number | null
@@ -515,6 +516,7 @@ class ApiService {
       legalName: 'legal_name',
       taxId: 'tax_id',
       deliveryEnabled: 'delivery_enabled',
+      leadsEnabled: 'leads_enabled',
       marketplaceEnabled: 'marketplace_enabled',
       marketplaceLatitude: 'marketplace_latitude',
       marketplaceLongitude: 'marketplace_longitude',
@@ -1426,7 +1428,10 @@ class ApiService {
   // Public endpoints
   async getPublicMenu(
     subdomain: string,
-    listId?: string
+    listId?: string,
+    /** The list customizer's preview: the API shows the shop's own team the
+     *  list even before it is published. */
+    preview = false
   ): Promise<
     ApiResponse<{
       tenant: Tenant
@@ -1435,8 +1440,11 @@ class ApiService {
       viewerIdentified?: boolean
     }>
   > {
-    const listFilter = listId ? `?list=${encodeURIComponent(listId)}` : ''
-    return this.request(`/public/${subdomain}${listFilter}`)
+    const params = new URLSearchParams()
+    if (listId) params.set('list', listId)
+    if (listId && preview) params.set('preview', 'true')
+    const query = params.toString()
+    return this.request(`/public/${subdomain}${query ? `?${query}` : ''}`)
   }
 
   async unlockPublicList(

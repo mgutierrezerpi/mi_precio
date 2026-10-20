@@ -54,7 +54,7 @@ def update_lead_status_endpoint(
     current_user: dict = Depends(require_editor),
 ):
     _assert_tier(tenant_id)
-    lead = leads.set_status(lead_id, data.status)
+    lead = leads.set_status(tenant_id, lead_id, data.status)
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     return LeadView.render(lead)
@@ -67,7 +67,9 @@ def convert_lead_endpoint(
     """Promotes a lead into the customers book. Already-converted leads answer
     409 rather than quietly creating the same person twice."""
     _assert_tier(tenant_id)
-    customer = leads.convert_to_customer(lead_id)
+    if not leads.get_lead(tenant_id, lead_id):
+        raise HTTPException(status_code=404, detail="Lead not found")
+    customer = leads.convert_to_customer(tenant_id, lead_id)
     if not customer:
         raise HTTPException(status_code=409, detail="Ese lead ya es un cliente.")
     return CustomerView.render(customer)

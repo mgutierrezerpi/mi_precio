@@ -3,13 +3,15 @@ import re
 from pydantic import BaseModel, field_validator
 
 from controllers.input_types.appearance import validate_design, validate_hex_color
+from controllers.input_types.currency import Currency
+from controllers.input_types.tenant_name import clean_tenant_name
 from controllers.input_types.socials import normalize_social_url, normalize_whatsapp
 
 
 class UpdateTenant(BaseModel):
     name: str | None = None
     subdomain: str | None = None
-    currency: str | None = None
+    currency: Currency | None = None
     # Brand & appearance
     logo_url: str | None = None
     brand_color: str | None = None
@@ -40,6 +42,11 @@ class UpdateTenant(BaseModel):
     legal_name: str | None = None
     tax_id: str | None = None
     address: str | None = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str | None) -> str | None:
+        return None if v is None else clean_tenant_name(v)
 
     @field_validator("subdomain")
     @classmethod

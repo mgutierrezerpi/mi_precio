@@ -14,6 +14,8 @@ export interface Customer {
   updatedAt: string
   ordersCount: number
   totalSpent: string
+  /** Every currency bought in, e.g. { UYU: '740', USD: '50' }. */
+  spentByCurrency?: Record<string, string>
   lastOrderAt: string | null
 }
 

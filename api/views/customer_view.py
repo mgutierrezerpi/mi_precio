@@ -21,6 +21,8 @@ class CustomerView(BaseView):
     # Aggregates attached by the context (default to empty for un-annotated instances).
     orders_count: int = 0
     total_spent: Decimal = Decimal(0)
+    # Every currency the customer bought in, e.g. {"UYU": "740", "USD": "50"}.
+    spent_by_currency: dict[str, str] = {}
     last_order_at: datetime | None = None
 
     @field_serializer("total_spent")

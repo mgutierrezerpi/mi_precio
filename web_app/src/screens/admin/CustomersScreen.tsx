@@ -5,7 +5,7 @@ import {
   useState,
   type MouseEvent,
 } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAppSelector } from '../../store/hooks'
 import { selectTenant, selectCanEdit } from '../../store/slices/authSlice'
 import type { Customer, Lead, Order, PriceList, Product, PublicViewer } from '../../types'
@@ -111,8 +111,29 @@ function statusOf(c: Customer): Status {
   if (last && (Date.now() - last.getTime()) / 86400000 <= 30) return 'Activo'
   return 'Inactivo'
 }
+// The status values are Spanish, the dictionary keys English: lower-casing
+// one into the other showed the raw «status.nuevo» key.
+const STATUS_KEY: Record<Status, string> = {
+  Activo: 'status.active',
+  Inactivo: 'status.inactive',
+  Nuevo: 'status.new',
+}
+type Money = (v: string | number, cur?: string) => string
+
+/** What a customer spent: the shop's currency first, then any other one they
+ *  bought in («UYU 740 + USD 50»). The API used to add them up as one. */
+function spentLabel(c: Customer, money: Money): string {
+  const others = Object.entries(c.spentByCurrency ?? {}).filter(
+    ([cur, v]) => money(0, cur) !== money(0) && parseFloat(v) > 0
+  )
+  return [
+    money(c.totalSpent),
+    ...others.map(([cur, v]) => money(v, cur)),
+  ].join(' + ')
+}
+
 function statusLabel(status: Status, t: (key: string) => string) {
-  return t(`status.${status.toLowerCase()}`)
+  return t(STATUS_KEY[status])
 }
 
 export function CustomersScreen() {
@@ -121,8 +142,8 @@ export function CustomersScreen() {
   const canEdit = useAppSelector(selectCanEdit)
   const currency = tenant?.currency || 'UYU'
   const money = useCallback(
-    (v: string | number) =>
-      `${currency} ${new Intl.NumberFormat(localeOf(tenant?.language), { maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : parseFloat(v) || 0)}`,
+    (v: string | number, cur: string = currency) =>
+      `${cur} ${new Intl.NumberFormat(localeOf(tenant?.language), { maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : parseFloat(v) || 0)}`,
     [currency, tenant?.language]
   )
 
@@ -135,8 +156,9 @@ export function CustomersScreen() {
   const [viewersLoading, setViewersLoading] = useState(true)
   const [anonymousDismissals, setAnonymousDismissals] = useState(0)
   const [anonymousLoading, setAnonymousLoading] = useState(true)
-  const [search, setSearch] = useState('')
   const [searchParams] = useSearchParams()
+  // The workspace search lands here with ?q= when the match is a customer.
+  const [search, setSearch] = useState(() => searchParams.get('q') || '')
   const [showNew, setShowNew] = useState(
     () => searchParams.get('new') === '1' && canEdit
   )
@@ -285,7 +307,9 @@ export function CustomersScreen() {
       onSearchChange={setSearch}
     >
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[980px]">
-        <section className="flex min-h-[60px] items-end justify-between gap-4">
+        {/* On a phone the buttons go under the title: side by side they ran
+         *  55 px past a 375 px screen and cut «+ Nuevo cliente». */}
+        <section className="flex min-h-[60px] flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="flex flex-col gap-1">
             <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">
               {t('customers.title')}
@@ -295,7 +319,7 @@ export function CustomersScreen() {
             </p>
           </div>
           {canEdit && (
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
               {customerEmailList.length > 0 && (
                 <button
                   type="button"
@@ -338,13 +362,17 @@ export function CustomersScreen() {
         </section>
         <div className="flex flex-col gap-4">
           <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
-            <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
-              <span className="flex-1">{t('customers.customer')}</span>
-              <span className="w-[150px]">{t('customers.phone')}</span>
-              <span className="w-[120px]">{t('customers.lastPurchase')}</span>
-              <span className="w-[110px]">{t('customers.total')}</span>
-              <span className="w-[90px]">{t('customers.status')}</span>
-              <span className="w-[184px] text-right">
+            <div className="flex min-w-[800px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+              <span className="min-w-[160px] flex-1">
+                {t('customers.customer')}
+              </span>
+              <span className="w-[150px] shrink-0">{t('customers.phone')}</span>
+              <span className="hidden w-[120px] shrink-0 xl:block">
+                {t('customers.lastPurchase')}
+              </span>
+              <span className="w-[110px] shrink-0">{t('customers.total')}</span>
+              <span className="w-[90px] shrink-0">{t('customers.status')}</span>
+              <span className="w-[184px] shrink-0 text-right">
                 {t('customers.actions')}
               </span>
             </div>
@@ -373,9 +401,13 @@ export function CustomersScreen() {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') setOpenId(c.id)
                     }}
-                    className={`flex w-full min-w-[720px] cursor-pointer items-center gap-3 bg-[var(--dash-surface)] px-5 py-4 text-left hover:bg-[var(--dash-soft)] ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
+                    className={`flex w-full min-w-[800px] cursor-pointer items-center gap-3 bg-[var(--dash-surface)] px-5 py-4 text-left hover:bg-[var(--dash-soft)] ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
                   >
-                    <div className="flex flex-1 items-center gap-3">
+                    {/* A floor for the name and shrink-0 on the fixed columns:
+                     *  a long email used to push Teléfono and Total out of
+                     *  line. «Última compra» waits for xl so the actions still
+                     *  fit at 1024–1280 px; narrower screens scroll sideways. */}
+                    <div className="flex min-w-[160px] flex-1 items-center gap-3">
                       <span
                         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold"
                         style={tone(avatarTone(c.name))}
@@ -395,20 +427,20 @@ export function CustomersScreen() {
                         )}
                       </div>
                     </div>
-                    <span className="w-[150px] text-xs font-medium text-[var(--dash-text2)]">
+                    <span className="w-[150px] shrink-0 text-xs font-medium text-[var(--dash-text2)]">
                       {c.phone ? (
                         <CopyableContact value={c.phone} kind="phone" />
                       ) : (
                         '—'
                       )}
                     </span>
-                    <span className="w-[120px] text-xs font-medium text-[var(--dash-muted)]">
+                    <span className="hidden w-[120px] shrink-0 text-xs font-medium text-[var(--dash-muted)] xl:block">
                       {relativeTime(c.lastOrderAt, t)}
                     </span>
-                    <span className="w-[110px] text-[13px] font-extrabold text-[var(--dash-text)]">
-                      {money(c.totalSpent)}
+                    <span className="w-[110px] shrink-0 text-[13px] font-extrabold text-[var(--dash-text)]">
+                      {spentLabel(c, money)}
                     </span>
-                    <span className="w-[90px]">
+                    <span className="w-[90px] shrink-0">
                       <span
                         className="rounded-full px-2.5 py-1 text-[11px] font-bold"
                         style={tone(statusTone[st])}
@@ -416,7 +448,7 @@ export function CustomersScreen() {
                         {statusLabel(st, t)}
                       </span>
                     </span>
-                    <div className="flex w-[184px] items-center justify-end gap-2">
+                    <div className="flex w-[184px] shrink-0 items-center justify-end gap-2">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -465,7 +497,7 @@ export function CustomersScreen() {
         <section className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
           <div className="border-b border-[var(--dash-divider)] px-5 py-4">
             <h2 className="text-base font-extrabold text-[var(--dash-text)]">Envíos de formulario</h2>
-            <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">Consultas enviadas desde formularios públicos.</p>
+            <p className="mt-1 text-xs font-medium text-[var(--dash-muted)]">Consultas enviadas desde tu media kit. Los contactos que dejan en tus listas públicas llegan a{' '}<Link to="/admin/leads" className="font-bold text-[var(--dash-link)] hover:underline">Leads</Link>.</p>
           </div>
           {submissions.length === 0 ? <p className="px-5 py-8 text-center text-sm font-medium text-[var(--dash-muted)]">Todavía no hay envíos de formulario.</p> : (
             <div className="overflow-x-auto">
@@ -1029,7 +1061,7 @@ function CustomerDrawer({
   customerId: string
   products: Product[]
   priceLists: PriceList[]
-  money: (v: string | number) => string
+  money: Money
   canEdit: boolean
   onClose: () => void
   onChanged: () => Promise<void>
@@ -1160,7 +1192,7 @@ function CustomerDrawer({
                 />
                 <Stat
                   label={t('customers.totalSpent')}
-                  value={money(customer.totalSpent)}
+                  value={spentLabel(customer, money)}
                 />
                 <Stat
                   label={t('customers.lastPurchase')}
@@ -1327,7 +1359,7 @@ function OrderCard({
   onDelete,
 }: {
   order: Order
-  money: (v: string | number) => string
+  money: Money
   canEdit: boolean
   onEdit: () => void
   onDelete: () => void
@@ -1432,7 +1464,7 @@ function OrderForm({
 }: {
   customerId: string
   products: Product[]
-  money: (v: string | number) => string
+  money: Money
   order?: Order
   onSaved: () => Promise<void>
   onCancel?: () => void

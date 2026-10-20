@@ -16,7 +16,9 @@ from lib.ctx.lead_validation import (
     clean_email,
     clean_phone,
 )
-from models import Customer, Lead, Tenant
+from models import Customer, Lead, Magazine, Tenant
+
+MEDIA_KIT_DESIGN = "cafecitos-media-kit"
 
 
 def leads_open(tenant: Tenant | None) -> bool:
@@ -51,9 +53,17 @@ def create_lead(
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     # A published media kit is itself a lead-generation surface. It must keep
     # accepting its contact form even when the optional price-list lead form is
-    # disabled for the tenant.
-    if not leads_open(tenant) and source != "media_kit":
-        return None
+    # disabled for the tenant. But `source` comes from the visitor: anyone
+    # could send "media_kit" to any shop and skip the plan and the switch. So
+    # it only counts when `list_id` is a published media kit of this shop.
+    from_media_kit = source == "media_kit" and _is_published_media_kit(
+        tenant_id, list_id
+    )
+    if not from_media_kit:
+        if source == "media_kit":
+            source = "form"
+        if not leads_open(tenant):
+            return None
 
     name = (name or "").strip()
     if not name:
@@ -88,6 +98,21 @@ def create_lead(
     return lead
 
 
+def _is_published_media_kit(tenant_id: str, magazine_id: str | None) -> bool:
+    if not magazine_id:
+        return False
+    return (
+        Magazine.select()
+        .where(
+            (Magazine.id == magazine_id)
+            & (Magazine.tenant == tenant_id)
+            & (Magazine.design == MEDIA_KIT_DESIGN)
+            & Magazine.published
+        )
+        .exists()
+    )
+
+
 def list_leads(tenant_id: str, status: str | None = None) -> list[Lead]:
     """A tenant's leads, newest first — an inbox, so the newest is the point."""
     query = Lead.select().where(Lead.tenant == tenant_id)
@@ -114,10 +139,19 @@ def delete_lead(tenant_id: str, lead_id: str) -> bool:
     )
 
 
-def set_status(lead_id: str, status: str) -> Lead | None:
+def get_lead(tenant_id: str, lead_id: str) -> Lead | None:
+    """One submission, only if it belongs to the requesting tenant.
+
+    The tenant in the URL is checked against the caller's token upstream, but
+    the lead id is not: filtering here is what keeps one shop from reading or
+    changing another shop's leads by id."""
+    return Lead.get_or_none((Lead.id == lead_id) & (Lead.tenant == tenant_id))
+
+
+def set_status(tenant_id: str, lead_id: str, status: str) -> Lead | None:
     if status not in STATUSES:
         return None
-    lead = Lead.get_or_none(Lead.id == lead_id)
+    lead = get_lead(tenant_id, lead_id)
     if not lead:
         return None
     lead.status = status
@@ -125,13 +159,13 @@ def set_status(lead_id: str, status: str) -> Lead | None:
     return lead
 
 
-def convert_to_customer(lead_id: str) -> Customer | None:
+def convert_to_customer(tenant_id: str, lead_id: str) -> Customer | None:
     """Promotes a lead into the customers book.
 
     Converting an already-converted lead is a no-op rather than a second
     customer: the shop clicking twice is far likelier than it wanting the
     same person recorded again."""
-    lead = Lead.get_or_none(Lead.id == lead_id)
+    lead = get_lead(tenant_id, lead_id)
     if not lead or lead.status == "converted":
         return None
 

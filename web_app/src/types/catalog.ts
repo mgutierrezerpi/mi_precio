@@ -15,6 +15,8 @@ export interface Product {
   position: number
   createdAt: string
   updatedAt: string
+  /** Lists with an item linked to this product. */
+  priceListIds?: string[]
 }
 
 export interface Category {

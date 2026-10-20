@@ -10,6 +10,7 @@ so that field stores digits and the public page builds the link.
 """
 
 import re
+from urllib.parse import parse_qs, urlsplit
 
 MAX_LENGTH = 500
 
@@ -58,6 +59,24 @@ def normalize_social_url(v: str | None, network: str) -> str | None:
     return value
 
 
+def _whatsapp_digits(v: str) -> str:
+    """The number in a typed phone or in a pasted WhatsApp link.
+
+    A link is read by its parts (the `phone` parameter or the wa.me path):
+    taking every digit glued `?text=Hola%2025` onto the number."""
+    value = v.strip()
+    if not re.match(
+        r"(https?:|whatsapp:|wa\.me/|api\.whatsapp\.com|www\.)", value, re.I
+    ):
+        return re.sub(r"\D", "", value)
+    url = urlsplit(value if re.match(r"[a-z]+:", value, re.I) else f"https://{value}")
+    phone = parse_qs(url.query).get("phone")
+    if phone:
+        return re.sub(r"\D", "", phone[0])
+    segment = next((part for part in url.path.split("/") if part), "")
+    return re.sub(r"\D", "", segment) if re.fullmatch(r"\+?\d+", segment) else ""
+
+
 def normalize_whatsapp(v: str | None) -> str | None:
     """Stores digits only, so the number can be shown back in the form and the
     public page can build `wa.me/<digits>` from it.
@@ -66,7 +85,7 @@ def normalize_whatsapp(v: str | None) -> str | None:
     that nor a +, just the country code and the number."""
     if v is None:
         return None
-    digits = re.sub(r"\D", "", v)
+    digits = _whatsapp_digits(v)
     if not digits:
         return None
     digits = re.sub(r"^00", "", digits)

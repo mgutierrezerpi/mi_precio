@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from config import settings
 from infra.mailer import MailerError, mailer
 from lib import encode_token, generate_verification_code
-from lib.ctx.identity_context import get_or_create_user
+from lib.ctx.identity_context import get_or_create_user, membership
 from lib.value_objects import AuthResult
 from models import AuthCode
 
@@ -59,6 +59,11 @@ def send_code(email: str, language: str = "es") -> str:
     return code
 
 
+def invalidate_codes(email: str) -> int:
+    """Drop every pending code for an email (after too many wrong tries)."""
+    return AuthCode.delete().where(AuthCode.email == email.lower()).execute()
+
+
 def prune_expired_codes(now: datetime | None = None) -> int:
     """Delete expired auth codes. Used by the in-machine maintenance worker."""
     cutoff = now or _utc_now()
@@ -92,12 +97,17 @@ def authenticate(email: str, code: str, language: str = "es") -> AuthResult | No
     user.last_seen_at = _utc_now()
     user.save()
 
+    # The role in the signed-in business is the membership's; `User.role` is a
+    # legacy mirror that older data may still have out of sync.
+    member = membership(user.id, tenant.id)
+    role = member.role if member else user.role
+
     token = encode_token(
         str(user.id),
         user.email,
         tenant.id,
-        user.role,
+        role,
         bool(getattr(user, "is_super_admin", False)),
     )
 
-    return AuthResult(token, user, tenant, user.role)
+    return AuthResult(token, user, tenant, role)

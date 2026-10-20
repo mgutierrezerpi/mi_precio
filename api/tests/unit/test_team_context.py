@@ -94,32 +94,57 @@ def test_update_role_and_remove_member(tenant, owner):
     assert User.get_or_none(User.id == member.id) is None
 
 
-def test_update_member_details(tenant, owner):
+@pytest.fixture
+def admin(tenant, owner):
+    return User.create(
+        email="admin@shop.com", tenant=tenant, name="Admin", role="admin"
+    )
+
+
+def test_admin_can_change_another_members_role(tenant, admin):
     member = User.create(
         email="m@shop.com", tenant=tenant, name="Member", role="editor"
     )
+    # The client echoes the unchanged name and email along with the new role.
     updated = team.update_member(
-        tenant.id, member.id, role="admin", name="Nuevo nombre", email="New@Shop.com"
+        tenant.id, member.id, admin.id, role="viewer", name="Member", email="m@shop.com"
     )
-    assert updated.role == "admin"
-    assert updated.name == "Nuevo nombre"
-    assert updated.email == "new@shop.com"
+    assert updated.role == "viewer"
 
 
-def test_update_member_rejects_duplicate_email(tenant, owner):
+def test_admin_cannot_change_owner_email(tenant, owner, admin):
+    with pytest.raises(TeamError):
+        team.update_member(tenant.id, owner.id, admin.id, email="attacker@x.com")
+    assert User.get_by_id(owner.id).email == "owner@shop.com"
+
+
+def test_admin_cannot_change_another_members_email(tenant, admin):
     member = User.create(email="m@shop.com", tenant=tenant, role="editor")
     with pytest.raises(TeamError):
-        team.update_member(tenant.id, member.id, email=owner.email)
+        team.update_member(tenant.id, member.id, admin.id, email="attacker@x.com")
+    assert User.get_by_id(member.id).email == "m@shop.com"
 
 
-def test_update_member_allows_owner_details_but_not_role(tenant, owner):
-    updated = team.update_member(
-        tenant.id, owner.id, name="Nuevo dueño", email="new-owner@shop.com"
-    )
-    assert updated.name == "Nuevo dueño"
-    assert updated.email == "new-owner@shop.com"
+def test_admin_cannot_change_another_members_name(tenant, owner, admin):
     with pytest.raises(TeamError):
-        team.update_member(tenant.id, owner.id, role="admin")
+        team.update_member(tenant.id, owner.id, admin.id, name="Otro nombre")
+    assert User.get_by_id(owner.id).name == "Owner"
+
+
+def test_member_can_change_own_name(tenant, owner):
+    updated = team.update_member(tenant.id, owner.id, owner.id, name="Nuevo dueño")
+    assert updated.name == "Nuevo dueño"
+
+
+def test_member_cannot_change_own_email_from_team(tenant, owner):
+    with pytest.raises(TeamError):
+        team.update_member(tenant.id, owner.id, owner.id, email="new@shop.com")
+    assert User.get_by_id(owner.id).email == "owner@shop.com"
+
+
+def test_owner_role_stays_locked(tenant, owner):
+    with pytest.raises(TeamError):
+        team.update_member(tenant.id, owner.id, owner.id, role="admin")
 
 
 def test_member_stats(tenant, owner):
@@ -136,3 +161,21 @@ def test_cancel_invitation(tenant, owner):
     assert team.cancel_invitation(tenant.id, inv.id) is True
     assert Invitation.get_or_none(Invitation.id == inv.id) is None
     assert team.cancel_invitation(tenant.id, "missing") is False
+
+
+def test_role_change_in_another_business_keeps_the_legacy_role(tenant, owner):
+    # `owner` signed up with `tenant`; another shop invites them as editor.
+    other = Tenant.create(name="Otro", subdomain="otro", currency="UYU")
+    TenantMembership.create(user=owner, tenant=other, role="editor")
+
+    team.update_member_role(other.id, owner.id, "viewer")
+    team.update_member(other.id, owner.id, None, role="editor")
+
+    assert User.get_by_id(owner.id).role == "owner"
+    assert TenantMembership.get(user=owner.id, tenant=other.id).role == "editor"
+
+
+def test_role_change_in_the_primary_business_updates_the_legacy_role(tenant, owner):
+    member = User.create(email="m@shop.com", tenant=tenant, role="editor")
+    team.update_member(tenant.id, member.id, owner.id, role="viewer")
+    assert User.get_by_id(member.id).role == "viewer"

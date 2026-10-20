@@ -12,6 +12,7 @@ import { ActivityRow } from './crm/activity'
 import { tone, gradient, type Tone } from './crm/theme'
 import { localeOf, normalizeLang, useT, type TFn } from '../../lib/i18n'
 import { DICT_ANALYTICS } from '../../lib/i18nDictionaryAnalytics'
+import { pollWhileVisible } from '../../lib/pollWhileVisible'
 
 function useAnalyticsI18n() {
   const baseT = useT()
@@ -378,10 +379,10 @@ function ActivityLog({
           }
         })
     load()
-    const id = setInterval(load, 7000)
+    const stop = pollWhileVisible(load, 7000)
     return () => {
       cancelled = true
-      clearInterval(id)
+      stop()
     }
   }, [audit, page, tenantId])
 
@@ -600,11 +601,15 @@ function VisitChartContent({
       </div>
       <div className="flex gap-1">
         {series.map((day, index) => (
-          <span
-            key={day.date}
-            className="flex-1 truncate text-center text-[9px] font-medium text-[var(--dash-muted)]"
-          >
-            {index % labelEvery === 0 ? dayLabel(day.date, locale) : ''}
+          // The label hangs centred over its bar but may spill into the
+          // empty cells beside it: each cell is a bar wide, and truncating
+          // to that read «17 s…».
+          <span key={day.date} className="relative h-3 flex-1">
+            {index % labelEvery === 0 && (
+              <span className="absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap text-[9px] font-medium text-[var(--dash-muted)]">
+                {dayLabel(day.date, locale)}
+              </span>
+            )}
           </span>
         ))}
       </div>
@@ -656,6 +661,7 @@ function TopProducts({
   loading: boolean
 }) {
   const { locale, t } = useAnalyticsI18n()
+  const currency = useAppSelector(selectTenant)?.currency || 'UYU'
   const items = data?.topProducts ?? []
   const max = Math.max(1, ...items.map((p) => p.units))
 
@@ -682,7 +688,7 @@ function TopProducts({
                 </span>
                 <span className="shrink-0 font-bold text-[var(--dash-muted)]">
                   {fmtInt(p.units, locale)} {t('analytics.units')} ·{' '}
-                  {formatPrice(p.revenue)}
+                  {formatPrice(p.revenue, currency)}
                 </span>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--dash-soft)]">

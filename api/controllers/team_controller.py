@@ -96,7 +96,12 @@ def update_member_endpoint(
 ):
     try:
         user = team.update_member(
-            tenant_id, user_id, role=data.role, name=data.name, email=data.email
+            tenant_id,
+            user_id,
+            current_user.get("sub"),
+            role=data.role,
+            name=data.name,
+            email=data.email,
         )
     except TeamError as e:
         raise HTTPException(status_code=400, detail=str(e))

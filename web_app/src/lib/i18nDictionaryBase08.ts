@@ -99,6 +99,11 @@ export const DICT_BASE_08: Record<string, TranslationEntry> = {
     en: 'Business name',
     pt: 'Nome do negócio',
   },
+  'set.info.nameRequired': {
+    es: 'Poné el nombre del negocio: se muestra en tus listas.',
+    en: 'Enter the business name: it shows on your lists.',
+    pt: 'Coloque o nome do negócio: ele aparece nas suas listas.',
+  },
   'set.info.subdomain': { es: 'Subdominio', en: 'Subdomain', pt: 'Subdomínio' },
   'set.info.taxId': {
     es: 'RUT / Identificación fiscal',

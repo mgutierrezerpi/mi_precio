@@ -95,6 +95,24 @@ def test_public_tenant_view_falls_back_to_linktree_whatsapp(db):
     assert public_tenant["whatsapp_url"] == "https://wa.me/59898402451"
 
 
+def test_public_catalog_accent_is_the_brand_color_not_the_linktrees(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    tenant.brand_color = "#0EA5E9"
+    tenant.save()
+    # Opening the Links screen creates a Linktree with an accent of its own.
+    LinkTree.create(
+        tenant=tenant,
+        public_slug="test-store",
+        display_name="Test Store",
+        accent_color="#D6EE4A",
+    )
+
+    public_tenant = PublicTenantView.render(tenant).model_dump()
+
+    assert public_tenant["brand_color"] == "#0EA5E9"
+    assert "linktree_accent_color" not in public_tenant
+
+
 def test_get_published_lists(db):
     tenant = subscribed_tenant("Test Store", "test-store")
     created = lists.create_list(tenant.id, "Menu")

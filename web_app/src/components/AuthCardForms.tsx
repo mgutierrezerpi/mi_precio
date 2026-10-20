@@ -62,6 +62,10 @@ interface CodeFormProps {
   onChangeEmail: () => void
   onCodeChange: (value: string) => void
   onSubmit: (event: FormEvent) => void
+  /** Sends a new code to the same email (a lost or late email was a dead end). */
+  onResend: () => void
+  /** Seconds left before another code can be asked for; 0 when it can. */
+  resendIn: number
 }
 
 export function CodeForm({
@@ -71,6 +75,8 @@ export function CodeForm({
   onChangeEmail,
   onCodeChange,
   onSubmit,
+  onResend,
+  resendIn,
 }: CodeFormProps) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -88,13 +94,23 @@ export function CodeForm({
           className={`${AUTH_INPUT_CLASS_NAME} tracking-[0.3em]`}
         />
       </AuthField>
-      <button
-        type="button"
-        onClick={onChangeEmail}
-        className="self-start text-[13px] font-semibold text-[#7C3AED] hover:underline"
-      >
-        ← Cambiar email
-      </button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={onChangeEmail}
+          className="text-[13px] font-semibold text-[#7C3AED] hover:underline"
+        >
+          ← Cambiar email
+        </button>
+        <button
+          type="button"
+          onClick={onResend}
+          disabled={isLoading || resendIn > 0}
+          className="text-[13px] font-semibold text-[#7C3AED] hover:underline disabled:cursor-default disabled:text-[#94A3B8] disabled:no-underline"
+        >
+          {resendIn > 0 ? `Reenviar código (${resendIn} s)` : 'Reenviar código'}
+        </button>
+      </div>
       <AuthError error={error} />
       <button
         type="submit"

@@ -49,7 +49,6 @@ export const PLANS: PlanContent[] = [
     cadence: 'por mes',
     trialLabel: '14 días de prueba gratis',
     features: [
-      '14 días gratis',
       'Hasta 25 productos',
       '3 listas públicas',
       'QR personalizado',
@@ -64,10 +63,10 @@ export const PLANS: PlanContent[] = [
     cadence: 'por mes',
     trialLabel: '14 días de prueba gratis',
     features: [
-      '14 días gratis',
       'Hasta 300 productos',
       '15 listas públicas',
       'Equipo de hasta 5 usuarios',
+      'Captación de leads',
     ],
     limits: { products: 300, lists: 15, members: 5 },
     popular: true,
@@ -80,10 +79,10 @@ export const PLANS: PlanContent[] = [
     cadence: 'por mes',
     trialLabel: '14 días de prueba gratis',
     features: [
-      '14 días gratis',
       'Productos ilimitados',
       'Listas ilimitadas',
       'Usuarios ilimitados',
+      'Captación de leads',
     ],
     limits: { products: null, lists: null, members: null },
   },

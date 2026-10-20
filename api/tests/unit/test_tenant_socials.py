@@ -89,6 +89,21 @@ class TestWhatsapp:
     def test_plain_digits_survive(self):
         assert normalize_whatsapp("59899123456") == "59899123456"
 
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "https://wa.me/59899123456?text=Hola%2025",
+            "https://api.whatsapp.com/send?phone=59899123456&text=hola2",
+            "wa.me/+59899123456",
+        ],
+    )
+    def test_pasted_link_keeps_only_the_number(self, value):
+        # A9: taking every digit glued the message text onto the number.
+        assert normalize_whatsapp(value) == "59899123456"
+
+    def test_link_without_a_number_means_no_whatsapp(self):
+        assert normalize_whatsapp("https://wa.me/message/AB12C") is None
+
     @pytest.mark.parametrize("value", [None, "", "   ", "+", "-- --"])
     def test_no_digits_means_no_whatsapp(self, value):
         assert normalize_whatsapp(value) is None

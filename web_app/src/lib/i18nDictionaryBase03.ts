@@ -16,6 +16,11 @@ export const DICT_BASE_03: Record<string, TranslationEntry> = {
     en: 'All prices in {currency}.',
     pt: 'Todos os preços em {currency}.',
   },
+  'store.cartPricesMixed': {
+    es: 'Hay precios en {currencies}: cada total va en su moneda.',
+    en: 'Prices in {currencies}: each total stays in its currency.',
+    pt: 'Há preços em {currencies}: cada total fica na sua moeda.',
+  },
   'store.cartSubtotal': { es: 'Subtotal', en: 'Subtotal', pt: 'Subtotal' },
   'store.cartTotal': { es: 'Total', en: 'Total', pt: 'Total' },
   'store.cartSend': {

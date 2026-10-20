@@ -6,6 +6,24 @@ export const DICT_EXTRA: Record<string, TranslationEntry> = {
   ...DICT_NAVIGATION,
   ...DICT_SECURITY,
 
+  /* ── A screen that crashed while rendering ── */
+  'error.route.title': {
+    es: 'Algo salió mal en esta pantalla',
+    en: 'Something went wrong on this screen',
+    pt: 'Algo deu errado nesta tela',
+  },
+  'error.route.body': {
+    es: 'No pudimos mostrarla. Probá de nuevo; si sigue pasando, escribinos desde Soporte.',
+    en: 'We could not show it. Try again; if it keeps happening, write to us from Support.',
+    pt: 'Não conseguimos mostrá-la. Tente de novo; se continuar, fale com a gente pelo Suporte.',
+  },
+  'error.route.retry': {
+    es: 'Reintentar',
+    en: 'Try again',
+    pt: 'Tentar de novo',
+  },
+  'error.route.home': { es: 'Ir al inicio', en: 'Go home', pt: 'Ir ao início' },
+
   'set.billing.subtitle': {
     es: 'Tu plan actual y facturación.',
     en: 'Your current plan and billing.',

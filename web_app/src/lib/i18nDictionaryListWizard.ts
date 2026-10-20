@@ -71,6 +71,11 @@ export const DICT_LIST_WIZARD: Record<string, TranslationEntry> = {
   pt: 'Novo produto',
 },
 'pl.removeAll': { es: 'Quitar todos', en: 'Remove all', pt: 'Remover todos' },
+'pl.slugAdjusted': {
+  es: 'Ese link no estaba libre o tenía caracteres no válidos: quedó «{slug}».',
+  en: 'That link was taken or had invalid characters: it is now “{slug}”.',
+  pt: 'Esse link não estava livre ou tinha caracteres inválidos: ficou «{slug}».',
+},
 'pl.selectAll': {
   es: 'Seleccionar todos',
   en: 'Select all',

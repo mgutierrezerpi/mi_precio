@@ -8,6 +8,12 @@ import { activityAgo, activityText } from './activityFormat'
 const ACTIVITY_STYLE: Record<string, { icon: IconName; tone: Tone }> = {
   'product.created': { icon: 'package', tone: 'green' },
   'product.deleted': { icon: 'circle-x', tone: 'red' },
+  'product.updated': { icon: 'package', tone: 'slate' },
+  'product.price_changed': { icon: 'trending-up', tone: 'amber' },
+  'category.created': { icon: 'tags', tone: 'green' },
+  'category.renamed': { icon: 'tags', tone: 'slate' },
+  'category.deleted': { icon: 'tags', tone: 'red' },
+  'linktree.updated': { icon: 'link-2', tone: 'violet' },
   'list.created': { icon: 'list-checks', tone: 'violet' },
   'list.published': { icon: 'share-2', tone: 'violet' },
   'customer.created': { icon: 'user-plus', tone: 'blue' },

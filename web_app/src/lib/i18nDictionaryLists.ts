@@ -10,7 +10,9 @@ export const DICT_LISTS: Record<string, TranslationEntry> = {
   },
   'pl.tab.all': { es: 'Todas', en: 'All', pt: 'Todas' },
   'pl.tab.active': { es: 'Activas', en: 'Active', pt: 'Ativas' },
-  'pl.tab.inactive': { es: 'Inactivas', en: 'Inactive', pt: 'Inativas' },
+  // Same word as the row's status chip («Borrador»): the filter said
+  // «Inactivas» for the very same lists.
+  'pl.tab.inactive': { es: 'Borradores', en: 'Drafts', pt: 'Rascunhos' },
   'pl.new': { es: 'Nueva lista', en: 'New list', pt: 'Nova lista' },
   'pl.loading': {
     es: 'Cargando listas…',
@@ -23,6 +25,11 @@ export const DICT_LISTS: Record<string, TranslationEntry> = {
   'pl.column.updated': { es: 'Actualizada', en: 'Updated', pt: 'Atualizada' },
   'pl.main': { es: 'Principal', en: 'Main', pt: 'Principal' },
   'pl.status.active': { es: 'Activa', en: 'Active', pt: 'Ativa' },
+  'pl.priceNegative': {
+    es: 'El precio no puede ser negativo: se usa el del catálogo.',
+    en: 'The price can not be negative: the catalog price is used.',
+    pt: 'O preço não pode ser negativo: usa-se o do catálogo.',
+  },
   'pl.status.draft': { es: 'Borrador', en: 'Draft', pt: 'Rascunho' },
   'pl.linkCopied': {
     es: 'Enlace copiado',

@@ -277,7 +277,19 @@ export function LinkTreeView({
           <div className="link-tree-profile">
             <div className="profile-avatar" aria-hidden={!avatarUrl}>
               {avatarUrl ? (
-                <img src={avatarUrl} alt="" />
+                // A profile photo fills the circle; a wide or tall logo
+                // (the default avatar is the shop's logo) is shown whole
+                // instead of being cropped to its middle.
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  onLoad={(event) => {
+                    const { naturalWidth: w, naturalHeight: h } =
+                      event.currentTarget
+                    event.currentTarget.dataset.fit =
+                      h && (w / h > 1.25 || w / h < 0.8) ? 'contain' : 'cover'
+                  }}
+                />
               ) : (
                 <span>{data.displayName.slice(0, 2).toUpperCase()}</span>
               )}

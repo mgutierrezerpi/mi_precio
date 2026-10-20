@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
@@ -45,6 +45,8 @@ import { PencilActionBar } from './pencilActions'
 import { PencilJournal } from './pencilJournal'
 import { StoreChip } from './StoreChip'
 import { MagazineShelf } from './MagazineShelf'
+import { LeadForm } from '../../components/LeadForm'
+import { pickDisplayLists } from './displayLists'
 
 export interface PublicList {
   id: string
@@ -123,6 +125,17 @@ export function MenuScreen() {
   const clearCart = () => setCart({})
   // Full cart page (mirrors the Pencil "Carrito" design). "Mi carrito" opens this instead of jumping to WhatsApp.
   const [showCart, setShowCart] = useState(false)
+  // The cart is a page of its own: it opens at the top, and «volver» returns
+  // to where the visitor was in the list. It used to keep the list's scroll,
+  // so on a long list the cart opened as an empty, scrolled-past screen.
+  const listScrollY = useRef(0)
+  const openCartPage = () => {
+    listScrollY.current = window.scrollY
+    setShowCart(true)
+  }
+  useLayoutEffect(() => {
+    window.scrollTo(0, showCart ? 0 : listScrollY.current)
+  }, [showCart])
   // Customer details collected on the cart page; folded into the WhatsApp order message.
   const [customer, setCustomer] = useState({
     name: '',
@@ -144,9 +157,7 @@ export function MenuScreen() {
   const [accessSaving, setAccessSaving] = useState(false)
   const [accessError, setAccessError] = useState(false)
 
-  const displayLists = listId
-    ? lists.filter((l) => l.id === listId || l.slug === listId)
-    : lists
+  const displayLists = pickDisplayLists(lists, listId)
   // Service lists are read-only price lists: no cart / add-to-cart.
   const isService =
     displayLists.length > 0 && displayLists.every((l) => l.kind === 'service')
@@ -156,7 +167,11 @@ export function MenuScreen() {
       if (!subdomain) return
       setIsLoading(true)
       setError(null)
-      const response = (await api.getPublicMenu(subdomain, listId)) as {
+      const response = (await api.getPublicMenu(
+        subdomain,
+        listId,
+        isEditorPreview
+      )) as {
         data?: PublicMenuData
         error?: string
       }
@@ -170,7 +185,7 @@ export function MenuScreen() {
       setIsLoading(false)
     }
     fetchPublicData()
-  }, [subdomain, listId])
+  }, [subdomain, listId, isEditorPreview])
 
   useEffect(() => {
     setViewerSubmitted(false)
@@ -195,9 +210,11 @@ export function MenuScreen() {
     )
   }, [subdomain, listId, viewSource, isLoading, error, tenant, displayLists])
 
-  // Customer-facing catalog and Linktree intentionally share one accent.
-  const accent =
-    tenant?.linktreeAccentColor || tenant?.brandColor || BASE.accent
+  // The catalog wears the brand color set in Settings → Brand ("used in
+  // accents, buttons and the cart"). It used to prefer the Linktree's accent,
+  // which exists as soon as the Links screen is opened (default lime, or a
+  // palette picked from the logo) and silently overrode the brand color.
+  const accent = tenant?.brandColor || BASE.accent
   const C = { ...BASE, accent, accent2: accent }
   const brandGradient = `linear-gradient(135deg, ${accent} 0%, ${lighten(accent, 0.42)} 100%)`
 
@@ -210,8 +227,10 @@ export function MenuScreen() {
     new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0 }).format(
       typeof price === 'number' ? price : parseFloat(price)
     )
-  // Non-breaking space keeps the currency and the amount together on the same line.
-  const money = (price: string | number) => `${currency}\u00a0${fmt(price)}`
+  // Non-breaking space keeps the currency and the amount together on the same
+  // line. An item may be priced in another currency than the shop's.
+  const money = (price: string | number, itemCurrency?: string | null) =>
+    `${itemCurrency || currency}\u00a0${fmt(price)}`
 
   const norm = (s?: string | null) => (s?.trim() || 'Otros').toLowerCase()
   const disp = (s?: string | null) => {
@@ -228,14 +247,24 @@ export function MenuScreen() {
     () => Object.values(cart).reduce((a, b) => a + b, 0),
     [cart]
   )
-  const cartTotal = useMemo(
-    () =>
-      allItems.reduce(
-        (sum, it) => sum + (cart[it.id] ?? 0) * (parseFloat(it.price) || 0),
-        0
-      ),
-    [cart, allItems]
-  )
+  // One total per currency: a USD item and a UYU item used to be added up
+  // and shown as UYU. A negative price (stored before the API refused them)
+  // must not take money off the order.
+  const cartTotals = useMemo(() => {
+    const totals: Record<string, number> = {}
+    for (const it of allItems) {
+      const qty = cart[it.id] ?? 0
+      if (!qty) continue
+      const cur = it.currency || currency
+      totals[cur] =
+        (totals[cur] ?? 0) + qty * Math.max(0, parseFloat(it.price) || 0)
+    }
+    return totals
+  }, [cart, allItems, currency])
+  const cartTotalLabel =
+    Object.entries(cartTotals)
+      .map(([cur, total]) => money(total, cur))
+      .join(' + ') || money(0)
   const base = useMemo(() => {
     const t = q.trim().toLowerCase()
     return t
@@ -267,7 +296,9 @@ export function MenuScreen() {
       document.head.appendChild(icon)
     }
 
-    document.title = `${list?.name || 'Price list'} · ${tenant.name}`
+    // Without a list (the index, or a list that does not exist) the tab just
+    // carries the shop's name; it used to say «Price list» in English.
+    document.title = list?.name ? `${list.name} · ${tenant.name}` : tenant.name
     icon.href = tenant.logoUrl || '/miprecio-favicon.png'
     // Tenant logos may be PNG, JPEG, WebP, or an uploaded image URL; let the
     // browser infer the type rather than retaining the app favicon's PNG hint.
@@ -365,7 +396,9 @@ export function MenuScreen() {
   const orderMessage = useMemo(() => {
     const lines = allItems
       .filter((it) => cart[it.id])
-      .map((it) => `• ${cart[it.id]}× ${it.name} — ${money(it.price)}`)
+      .map(
+        (it) => `• ${cart[it.id]}× ${it.name} — ${money(it.price, it.currency)}`
+      )
     if (lines.length === 0) return t('pub.whatsappQuestionMessage')
     const datos = [
       customer.name && `Nombre: ${customer.name}`,
@@ -381,12 +414,12 @@ export function MenuScreen() {
       t('pub.cartHeading'),
       lines.join('\n'),
       '',
-      `Total: ${money(cartTotal)}`,
+      `Total: ${cartTotalLabel}`,
       datos.length ? `\n${datos.join('\n')}` : '',
     ].join('\n')
     return msg
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, allItems, cartTotal, customer])
+  }, [cart, allItems, cartTotalLabel, customer])
   const waHref = useMemo(() => {
     if (checkoutChannel === 'whatsapp')
       return whatsappOrderHref(tenant && whatsappPhone(tenant), orderMessage)
@@ -402,7 +435,36 @@ export function MenuScreen() {
     orderMessage,
     tenant,
   ])
+  /** Records the cart's contact details as a lead.
+   *
+   *  Called on the way to WhatsApp/Instagram, never in its place: whoever
+   *  built a cart is the warmest lead a shop gets, and that contact evaporates
+   *  every time the message is composed but never actually sent.
+   *
+   *  Deliberately fire-and-forget. If this fails the order still goes through
+   *  — nobody loses a sale over a problem of ours. The server ignores it when
+   *  the shop's plan or settings don't take leads. */
+  const rememberCartContact = () => {
+    if (!tenant?.leadsEnabled || !customer.name.trim()) return
+    if (!customer.phone.trim() && !customer.email.trim()) return
+    const ordered = allItems
+      .filter((it) => cart[it.id])
+      .map((it) => `${cart[it.id]}× ${it.name}`)
+      .join(', ')
+    void api
+      .createLead(tenant.subdomain, {
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email,
+        message: ordered ? `Pedido: ${ordered}` : undefined,
+        listId: list?.id ?? null,
+        listName: list?.name ?? null,
+        source: 'cart',
+      })
+      .catch(() => {})
+  }
   const onCheckout = () => {
+    rememberCartContact()
     if (checkoutChannel === 'instagram')
       void navigator.clipboard?.writeText(orderMessage)
   }
@@ -612,6 +674,11 @@ export function MenuScreen() {
   const barInk = ownSurface
     ? withAlpha(readableOn(ownSurface.base), 0.66)
     : C.muted
+  // The lead form sits on that same surface; its ink must be a plain 6-digit
+  // hex (the form derives its hairlines by appending alpha to it).
+  const leadInk = /^#[0-9a-f]{6}$/i.test(barSurface)
+    ? readableOn(barSurface)
+    : C.ink
   // Tinting the logo with the shop's accent only reads when the two differ
   // enough — on `catalog` the accent IS the hero, i.e. the surface itself.
   const barLogo =
@@ -641,12 +708,13 @@ export function MenuScreen() {
     cartCount,
     addToCart,
     decFromCart,
-    openCart: () => setShowCart(true),
+    openCart: openCartPage,
     waHref,
     checkoutChannel,
     onCheckout,
     isService,
     listName: list?.name ?? null,
+    pageListName: listId ? (list?.name ?? null) : null,
     edition,
     taxId: tenant.taxId,
     hasBg,
@@ -750,7 +818,7 @@ export function MenuScreen() {
                 list={list}
                 norm={norm}
                 isService={isService}
-                openCart={() => setShowCart(true)}
+                openCart={openCartPage}
                 content={content}
               />
             ) : design === 'nordic' ? (
@@ -770,6 +838,25 @@ export function MenuScreen() {
             ) : (
               <ClassicList {...designProps} />
             )}
+          </div>
+          {/* One form for every template, after the design and before the
+              MiPrecio band, on that band's surface so it reads as the close
+              of the page. It renders nothing unless the shop takes leads. */}
+          <div
+            className="relative z-10 w-full"
+            style={{ backgroundColor: barSurface, backgroundImage: barTexture }}
+          >
+            <div className="mx-auto w-full max-w-[1120px] px-5 pt-10 pb-2 md:px-12">
+              <LeadForm
+                tenant={tenant}
+                listId={list?.id ?? null}
+                listName={list?.name ?? null}
+                ink={leadInk}
+                accent={listAccent}
+                accentInk={readableOn(listAccent)}
+                dark={leadInk === '#FFFFFF'}
+              />
+            </div>
           </div>
           {isPencilCartDesign && !isService && !showCart && (
             <PencilActionBar
@@ -853,7 +940,7 @@ export function MenuScreen() {
           cart={cart}
           allItems={allItems}
           cartCount={cartCount}
-          cartTotal={cartTotal}
+          cartTotal={cartTotalLabel}
           addToCart={addToCart}
           decFromCart={decFromCart}
           removeFromCart={removeFromCart}
@@ -911,7 +998,7 @@ export function MenuScreen() {
                     n: String(cartCount),
                     unit:
                       cartCount === 1 ? t('pub.product') : t('pub.products'),
-                    total: money(cartTotal),
+                    total: cartTotalLabel,
                   })}
                 </span>
               </div>
@@ -927,7 +1014,7 @@ export function MenuScreen() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowCart(true)}
+                onClick={openCartPage}
                 className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-[13px] font-bold text-white hover:opacity-90 md:px-5 md:py-3 md:text-[14px]"
                 style={{ background: cartGradient }}
               >
@@ -1173,10 +1260,12 @@ function ListNotFound({
 
       <div className="relative flex flex-col items-center gap-3 text-center">
         {tenant.logoUrl ? (
+          // Shown whole, at its own proportions: a wide logo in a square
+          // box with object-cover read «CAFI / AUR».
           <img
             src={tenant.logoUrl}
             alt={tenant.name}
-            className="h-16 w-16 rounded-2xl object-cover"
+            className="h-16 w-auto max-w-[200px] object-contain"
           />
         ) : (
           <span
@@ -1284,7 +1373,9 @@ interface StoreProps {
   content: ListContent | null
 }
 
-function Storefront(p: StoreProps) {
+/** The «Tienda» layout. Exported so the template picker can show the real
+ *  thing in its thumbnail, like every other design. */
+export function Storefront(p: StoreProps) {
   const {
     tenant,
     C,
@@ -1869,11 +1960,12 @@ interface CartProps {
   T: CartTheme
   accent: string
   t: ReturnType<typeof getT>
-  money: (p: string | number) => string
+  money: (p: string | number, currency?: string | null) => string
   cart: Record<string, number>
   allItems: Item[]
   cartCount: number
-  cartTotal: number
+  /** Already formatted, one amount per currency («UYU 280 + USD 10»). */
+  cartTotal: string
   addToCart: (id: string) => void
   decFromCart: (id: string) => void
   removeFromCart: (id: string) => void
@@ -1916,8 +2008,26 @@ function CartView(p: CartProps) {
     background: `linear-gradient(135deg, ${cartActionAccent} 0%, ${lighten(cartActionAccent, 0.22)} 100%)`,
   }
   const cartItems = allItems.filter((it) => (cart[it.id] ?? 0) > 0)
+  const cartCurrencies = [
+    ...new Set(cartItems.map((it) => it.currency || tenant.currency || 'UYU')),
+  ]
   const set = (patch: Partial<CartCustomer>) =>
     setCustomer((c) => ({ ...c, ...patch }))
+  // The shop answers by WhatsApp, so an order needs a name and a phone. It
+  // used to go out with both empty and the shop had no one to reply to.
+  const [triedSend, setTriedSend] = useState(false)
+  const missingName = !customer.name.trim()
+  const missingPhone = customer.phone.replace(/\D/g, '').length < 6
+  const send = (event: React.MouseEvent) => {
+    if (missingName || missingPhone) {
+      event.preventDefault()
+      setTriedSend(true)
+      return
+    }
+    onCheckout?.()
+  }
+  const invalid = (missing: boolean) =>
+    triedSend && missing ? { borderColor: '#EF4444' } : undefined
   const field =
     'h-[46px] w-full border px-3.5 text-[13px] font-semibold outline-none focus:ring-2'
   const fieldStyle = {
@@ -2207,14 +2317,14 @@ function CartView(p: CartProps) {
                         className="text-[18px] font-black"
                         style={{ color: T.ink }}
                       >
-                        {money(line)}
+                        {money(line, it.currency)}
                       </span>
                       {qty > 1 && (
                         <span
                           className="text-[12px] font-medium"
                           style={{ color: T.muted }}
                         >
-                          {money(it.price)} {t('store.each')}
+                          {money(it.price, it.currency)} {t('store.each')}
                         </span>
                       )}
                     </div>
@@ -2241,7 +2351,12 @@ function CartView(p: CartProps) {
                   className="text-[14px] font-medium"
                   style={{ color: T.body }}
                 >
-                  {t('store.cartSubtotalN', { n: String(cartCount) })}
+                  {t(
+                    cartCount === 1
+                      ? 'store.cartSubtotal1'
+                      : 'store.cartSubtotalN',
+                    { n: String(cartCount) }
+                  )}
                 </span>
                 <span
                   className="text-[18px] font-extrabold"
@@ -2251,7 +2366,7 @@ function CartView(p: CartProps) {
                     letterSpacing: T.headingTracking,
                   }}
                 >
-                  {money(cartTotal)}
+                  {cartTotal}
                 </span>
               </div>
             </div>
@@ -2288,8 +2403,9 @@ function CartView(p: CartProps) {
                     value={customer.name}
                     onChange={(e) => set({ name: e.target.value })}
                     placeholder={t('store.cartNamePh')}
+                    aria-invalid={triedSend && missingName ? true : undefined}
                     className={field}
-                    style={fieldStyle}
+                    style={{ ...fieldStyle, ...invalid(missingName) }}
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
@@ -2303,8 +2419,10 @@ function CartView(p: CartProps) {
                     value={customer.phone}
                     onChange={(e) => set({ phone: e.target.value })}
                     placeholder={t('store.cartPhonePh')}
+                    inputMode="tel"
+                    aria-invalid={triedSend && missingPhone ? true : undefined}
                     className={field}
-                    style={fieldStyle}
+                    style={{ ...fieldStyle, ...invalid(missingPhone) }}
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
@@ -2419,9 +2537,13 @@ function CartView(p: CartProps) {
                   className="text-[12px] font-medium"
                   style={{ color: T.muted }}
                 >
-                  {t('store.cartPricesIn', {
-                    currency: tenant.currency || 'UYU',
-                  })}
+                  {cartCurrencies.length > 1
+                    ? t('store.cartPricesMixed', {
+                        currencies: cartCurrencies.join(', '),
+                      })
+                    : t('store.cartPricesIn', {
+                        currency: cartCurrencies[0] || tenant.currency || 'UYU',
+                      })}
                 </p>
               </div>
               <div className="flex items-center justify-between">
@@ -2435,7 +2557,7 @@ function CartView(p: CartProps) {
                   className="text-[14px] font-bold"
                   style={{ color: T.ink }}
                 >
-                  {money(cartTotal)}
+                  {cartTotal}
                 </span>
               </div>
               <div className="h-px w-full" style={{ background: T.divider }} />
@@ -2450,12 +2572,20 @@ function CartView(p: CartProps) {
                   className="text-[24px] font-black"
                   style={{ color: T.ink }}
                 >
-                  {money(cartTotal)}
+                  {cartTotal}
                 </span>
               </div>
+              {triedSend && (missingName || missingPhone) && (
+                <p
+                  role="alert"
+                  className="text-center text-[13px] font-semibold text-[#EF4444]"
+                >
+                  {t('store.cartMissingContact')}
+                </p>
+              )}
               <a
                 href={waHref}
-                onClick={onCheckout}
+                onClick={send}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-14 items-center justify-center gap-2 text-[16px] font-extrabold text-white"

@@ -32,6 +32,13 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
   const inviteEmail = searchParams.get('email')
   const [email, setEmail] = useState(inviteEmail ?? '')
   const [code, setCode] = useState('')
+  // A short wait between codes: the API caps them per email anyway (M16).
+  const [resendIn, setResendIn] = useState(0)
+  useEffect(() => {
+    if (resendIn <= 0) return
+    const id = setTimeout(() => setResendIn((s) => s - 1), 1000)
+    return () => clearTimeout(id)
+  }, [resendIn])
   const inviteAttempted = useRef(false)
 
   useEffect(() => {
@@ -61,6 +68,14 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
     event.preventDefault()
     dispatch(clearAuthError())
     void dispatch(sendCode({ email }))
+    setResendIn(30)
+  }
+  const handleResend = () => {
+    if (!pendingEmail || resendIn > 0) return
+    dispatch(clearAuthError())
+    setCode('')
+    void dispatch(sendCode({ email: pendingEmail }))
+    setResendIn(30)
   }
   const handleVerifyCode = async (event: FormEvent) => {
     event.preventDefault()
@@ -88,6 +103,8 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
           onChangeEmail={handleChangeEmail}
           onCodeChange={setCode}
           onSubmit={handleVerifyCode}
+          onResend={handleResend}
+          resendIn={resendIn}
         />
       ) : (
         <EmailForm

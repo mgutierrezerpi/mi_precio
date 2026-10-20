@@ -8,6 +8,8 @@ from urllib.parse import urljoin
 import httpx
 from bs4 import BeautifulSoup
 
+from lib.services.safe_fetch import safe_get
+
 logger = logging.getLogger(__name__)
 
 def fetch_page(url: str) -> tuple[str, str]:
@@ -19,8 +21,7 @@ def fetch_page(url: str) -> tuple[str, str]:
         "Accept-Language": "es-AR,es;q=0.9,en-US;q=0.8,en;q=0.7",
     }
 
-    response = httpx.get(url, headers=headers, follow_redirects=True, timeout=30.0)
-    response.raise_for_status()
+    response = safe_get(url, headers=headers, timeout=30.0, max_bytes=5_000_000)
     logger.info(
         f"[Fetch] Response status: {response.status_code}, size: {len(response.text)} chars"
     )
@@ -97,8 +98,7 @@ def download_image_as_base64(url: str) -> str | None:
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
         }
-        response = httpx.get(url, headers=headers, follow_redirects=True, timeout=15.0)
-        response.raise_for_status()
+        response = safe_get(url, headers=headers, timeout=15.0, max_bytes=10_000_000)
 
         content_type = response.headers.get("content-type", "image/jpeg")
         if ";" in content_type:
