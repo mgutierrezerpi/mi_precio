@@ -107,7 +107,12 @@ def update_linktree_endpoint(
     tree = linktrees.get_linktree(tenant_id)
     if not tree:
         raise HTTPException(status_code=404, detail="Business not found")
-    tree = linktrees.update_linktree(tree.id, **data.model_dump(exclude_unset=True))
+    try:
+        tree = linktrees.update_linktree(
+            tree.id, **data.model_dump(exclude_unset=True)
+        )
+    except linktrees.SlugTaken as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
     activity.record(
         tenant_id,
         "linktree.updated",
