@@ -93,6 +93,11 @@ export const DICT_BASE_02: Record<string, TranslationEntry> = {
     en: 'The seller will contact you on WhatsApp to arrange delivery and payment.',
     pt: 'O vendedor entrará em contato pelo WhatsApp para combinar a entrega e o pagamento.',
   },
+  'store.cartMissingContact': {
+    es: 'Completá tu nombre y tu teléfono para que el comercio te pueda responder.',
+    en: 'Add your name and phone so the shop can reply to you.',
+    pt: 'Preencha seu nome e telefone para que a loja possa responder.',
+  },
   'store.cartName': {
     es: 'Nombre completo',
     en: 'Full name',

@@ -8,6 +8,7 @@ import { useT } from '../../../lib/i18n'
 import { NotificationsPanel } from './NotificationsPanel'
 import { Icon } from './ui'
 import { useEscapeToClose } from '../../../hooks/useEscapeToClose'
+import { pollWhileVisible } from '../../../lib/pollWhileVisible'
 
 const BELL_BUTTON_CLASS = [
   'relative flex h-10 w-10 items-center justify-center rounded-[10px]',
@@ -65,10 +66,10 @@ function useNotifications(tenantId?: string) {
         }
       })
     load()
-    const id = setInterval(load, 10000)
+    const stop = pollWhileVisible(load, 10000)
     return () => {
       cancelled = true
-      clearInterval(id)
+      stop()
     }
   }, [tenantId])
   return { items, unread, setUnread }

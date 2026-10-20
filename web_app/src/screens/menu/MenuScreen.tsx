@@ -1998,6 +1998,21 @@ function CartView(p: CartProps) {
   const cartItems = allItems.filter((it) => (cart[it.id] ?? 0) > 0)
   const set = (patch: Partial<CartCustomer>) =>
     setCustomer((c) => ({ ...c, ...patch }))
+  // The shop answers by WhatsApp, so an order needs a name and a phone. It
+  // used to go out with both empty and the shop had no one to reply to.
+  const [triedSend, setTriedSend] = useState(false)
+  const missingName = !customer.name.trim()
+  const missingPhone = customer.phone.replace(/\D/g, '').length < 6
+  const send = (event: React.MouseEvent) => {
+    if (missingName || missingPhone) {
+      event.preventDefault()
+      setTriedSend(true)
+      return
+    }
+    onCheckout?.()
+  }
+  const invalid = (missing: boolean) =>
+    triedSend && missing ? { borderColor: '#EF4444' } : undefined
   const field =
     'h-[46px] w-full border px-3.5 text-[13px] font-semibold outline-none focus:ring-2'
   const fieldStyle = {
@@ -2373,8 +2388,9 @@ function CartView(p: CartProps) {
                     value={customer.name}
                     onChange={(e) => set({ name: e.target.value })}
                     placeholder={t('store.cartNamePh')}
+                    aria-invalid={triedSend && missingName ? true : undefined}
                     className={field}
-                    style={fieldStyle}
+                    style={{ ...fieldStyle, ...invalid(missingName) }}
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
@@ -2388,8 +2404,10 @@ function CartView(p: CartProps) {
                     value={customer.phone}
                     onChange={(e) => set({ phone: e.target.value })}
                     placeholder={t('store.cartPhonePh')}
+                    inputMode="tel"
+                    aria-invalid={triedSend && missingPhone ? true : undefined}
                     className={field}
-                    style={fieldStyle}
+                    style={{ ...fieldStyle, ...invalid(missingPhone) }}
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
@@ -2538,9 +2556,17 @@ function CartView(p: CartProps) {
                   {money(cartTotal)}
                 </span>
               </div>
+              {triedSend && (missingName || missingPhone) && (
+                <p
+                  role="alert"
+                  className="text-center text-[13px] font-semibold text-[#EF4444]"
+                >
+                  {t('store.cartMissingContact')}
+                </p>
+              )}
               <a
                 href={waHref}
-                onClick={onCheckout}
+                onClick={send}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-14 items-center justify-center gap-2 text-[16px] font-extrabold text-white"

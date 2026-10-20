@@ -36,6 +36,7 @@ import {
   STOCK_TONE,
   displayCategory,
 } from './crm/productFormat'
+import { pollWhileVisible } from '../../lib/pollWhileVisible'
 
 const FAVICON = '/miprecio-favicon.png'
 
@@ -1214,10 +1215,10 @@ function ActivityFeed({
         }
       })
     load()
-    const id = setInterval(load, 7000)
+    const stop = pollWhileVisible(load, 7000)
     return () => {
       cancelled = true
-      clearInterval(id)
+      stop()
     }
   }, [tenantId])
 

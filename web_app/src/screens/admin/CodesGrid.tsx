@@ -80,7 +80,7 @@ function QrCard({
     </div>
     <div className="flex items-center justify-center gap-2">
       <CardButton icon="download" title={t('codes.downloadPng')} onClick={() => onDownload(list)} />
-      <CardButton icon="share-2" title={t('codes.openList')} onClick={() => window.open(urlOf(list), '_blank')} />
+      <CardButton icon="external-link" title={t('codes.openList')} onClick={() => window.open(urlOf(list), '_blank')} />
       <CardButton icon={copied ? 'circle-check' : 'copy'} title={t('codes.copyLink')} onClick={() => onCopy(list)} />
     </div>
   </div>

@@ -12,6 +12,7 @@ import { ActivityRow } from './crm/activity'
 import { tone, gradient, type Tone } from './crm/theme'
 import { localeOf, normalizeLang, useT, type TFn } from '../../lib/i18n'
 import { DICT_ANALYTICS } from '../../lib/i18nDictionaryAnalytics'
+import { pollWhileVisible } from '../../lib/pollWhileVisible'
 
 function useAnalyticsI18n() {
   const baseT = useT()
@@ -378,10 +379,10 @@ function ActivityLog({
           }
         })
     load()
-    const id = setInterval(load, 7000)
+    const stop = pollWhileVisible(load, 7000)
     return () => {
       cancelled = true
-      clearInterval(id)
+      stop()
     }
   }, [audit, page, tenantId])
 
