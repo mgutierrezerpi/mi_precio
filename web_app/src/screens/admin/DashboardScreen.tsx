@@ -1039,7 +1039,7 @@ function RecentProductRow({
         </>
       )}
       <span className="w-[70px] text-[13px] font-bold text-[var(--dash-text)] sm:w-[90px]">
-        {formatPrice(product.price)}
+        {formatPrice(product.price, product.currency)}
       </span>
       <span className="w-[90px] text-right sm:w-[110px] sm:text-left">
         <span
