@@ -55,15 +55,22 @@ export const DICT_CATALOG_PRODUCT_EDIT: Record<string, TranslationEntry> = {
     en: 'Description',
     pt: 'Descrição',
   },
+  // Neutral examples: these were a hardware store's («Tornillo hexagonal
+  // 8mm») and showed up in every shop, cafés included.
   'products.namePlaceholder': {
-    es: 'Tornillo hexagonal 8mm',
-    en: '8mm hex bolt',
-    pt: 'Parafuso sextavado 8mm',
+    es: 'Nombre del producto',
+    en: 'Product name',
+    pt: 'Nome do produto',
   },
   'products.categoryPlaceholder': {
-    es: 'Ferretería',
-    en: 'Hardware',
-    pt: 'Ferragens',
+    es: 'Ej.: Destacados',
+    en: 'E.g. Featured',
+    pt: 'Ex.: Destaques',
+  },
+  'products.skuPlaceholder': {
+    es: 'Código interno (opcional)',
+    en: 'Internal code (optional)',
+    pt: 'Código interno (opcional)',
   },
   'products.descriptionPlaceholder': {
     es: 'Detalle opcional',

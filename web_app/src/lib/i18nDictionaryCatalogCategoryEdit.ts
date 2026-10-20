@@ -46,15 +46,16 @@ export const DICT_CATALOG_CATEGORY_EDIT: Record<string, TranslationEntry> = {
     en: 'A category with that name already exists',
     pt: 'Já existe uma categoria com esse nome',
   },
+  // Neutral examples (they used to be a hardware store's, in any shop).
   'categories.namePlaceholder': {
-    es: 'Ferretería',
-    en: 'Hardware',
-    pt: 'Ferragens',
+    es: 'Ej.: Destacados',
+    en: 'E.g. Featured',
+    pt: 'Ex.: Destaques',
   },
   'categories.descriptionPlaceholder': {
-    es: 'Tornillos, bisagras y herrajes.',
-    en: 'Screws, hinges, and hardware.',
-    pt: 'Parafusos, dobradiças e ferragens.',
+    es: 'Qué vas a encontrar en esta categoría (opcional)',
+    en: 'What this category has (optional)',
+    pt: 'O que tem nesta categoria (opcional)',
   },
   'categories.cancel': { es: 'Cancelar', en: 'Cancel', pt: 'Cancelar' },
   'categories.saving': { es: 'Guardando…', en: 'Saving…', pt: 'Salvando…' },

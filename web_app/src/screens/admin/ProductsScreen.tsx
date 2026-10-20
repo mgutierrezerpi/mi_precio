@@ -1613,7 +1613,7 @@ export function ProductModal({
               <input
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
-                placeholder="TOR-001"
+                placeholder={t('products.skuPlaceholder')}
                 className={inputCls}
               />
             </Field>
