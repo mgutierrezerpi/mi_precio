@@ -293,7 +293,9 @@ export function CustomersScreen() {
       onSearchChange={setSearch}
     >
       <main className="flex min-h-full flex-col gap-4 px-4 py-6 md:px-10 md:py-8 xl:min-w-[980px]">
-        <section className="flex min-h-[60px] items-end justify-between gap-4">
+        {/* On a phone the buttons go under the title: side by side they ran
+         *  55 px past a 375 px screen and cut «+ Nuevo cliente». */}
+        <section className="flex min-h-[60px] flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="flex flex-col gap-1">
             <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">
               {t('customers.title')}
@@ -303,7 +305,7 @@ export function CustomersScreen() {
             </p>
           </div>
           {canEdit && (
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
               {customerEmailList.length > 0 && (
                 <button
                   type="button"
