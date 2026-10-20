@@ -73,6 +73,11 @@ export const DICT_BASE_02: Record<string, TranslationEntry> = {
   },
   'store.each': { es: 'c/u', en: 'each', pt: 'cada' },
   'store.cartRemove': { es: 'Quitar', en: 'Remove', pt: 'Remover' },
+  'store.cartSubtotal1': {
+    es: 'Subtotal (1 producto):',
+    en: 'Subtotal (1 item):',
+    pt: 'Subtotal (1 produto):',
+  },
   'store.cartSubtotalN': {
     es: 'Subtotal ({n} productos):',
     en: 'Subtotal ({n} items):',

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
@@ -125,6 +125,17 @@ export function MenuScreen() {
   const clearCart = () => setCart({})
   // Full cart page (mirrors the Pencil "Carrito" design). "Mi carrito" opens this instead of jumping to WhatsApp.
   const [showCart, setShowCart] = useState(false)
+  // The cart is a page of its own: it opens at the top, and «volver» returns
+  // to where the visitor was in the list. It used to keep the list's scroll,
+  // so on a long list the cart opened as an empty, scrolled-past screen.
+  const listScrollY = useRef(0)
+  const openCartPage = () => {
+    listScrollY.current = window.scrollY
+    setShowCart(true)
+  }
+  useLayoutEffect(() => {
+    window.scrollTo(0, showCart ? 0 : listScrollY.current)
+  }, [showCart])
   // Customer details collected on the cart page; folded into the WhatsApp order message.
   const [customer, setCustomer] = useState({
     name: '',
@@ -276,7 +287,9 @@ export function MenuScreen() {
       document.head.appendChild(icon)
     }
 
-    document.title = `${list?.name || 'Price list'} · ${tenant.name}`
+    // Without a list (the index, or a list that does not exist) the tab just
+    // carries the shop's name; it used to say «Price list» in English.
+    document.title = list?.name ? `${list.name} · ${tenant.name}` : tenant.name
     icon.href = tenant.logoUrl || '/miprecio-favicon.png'
     // Tenant logos may be PNG, JPEG, WebP, or an uploaded image URL; let the
     // browser infer the type rather than retaining the app favicon's PNG hint.
@@ -684,7 +697,7 @@ export function MenuScreen() {
     cartCount,
     addToCart,
     decFromCart,
-    openCart: () => setShowCart(true),
+    openCart: openCartPage,
     waHref,
     checkoutChannel,
     onCheckout,
@@ -794,7 +807,7 @@ export function MenuScreen() {
                 list={list}
                 norm={norm}
                 isService={isService}
-                openCart={() => setShowCart(true)}
+                openCart={openCartPage}
                 content={content}
               />
             ) : design === 'nordic' ? (
@@ -990,7 +1003,7 @@ export function MenuScreen() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowCart(true)}
+                onClick={openCartPage}
                 className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-[13px] font-bold text-white hover:opacity-90 md:px-5 md:py-3 md:text-[14px]"
                 style={{ background: cartGradient }}
               >
@@ -2304,7 +2317,12 @@ function CartView(p: CartProps) {
                   className="text-[14px] font-medium"
                   style={{ color: T.body }}
                 >
-                  {t('store.cartSubtotalN', { n: String(cartCount) })}
+                  {t(
+                    cartCount === 1
+                      ? 'store.cartSubtotal1'
+                      : 'store.cartSubtotalN',
+                    { n: String(cartCount) }
+                  )}
                 </span>
                 <span
                   className="text-[18px] font-extrabold"
