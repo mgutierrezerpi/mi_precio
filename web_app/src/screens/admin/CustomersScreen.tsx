@@ -346,13 +346,17 @@ export function CustomersScreen() {
         </section>
         <div className="flex flex-col gap-4">
           <div className="overflow-x-auto rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)]">
-            <div className="flex min-w-[720px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
-              <span className="flex-1">{t('customers.customer')}</span>
-              <span className="w-[150px]">{t('customers.phone')}</span>
-              <span className="w-[120px]">{t('customers.lastPurchase')}</span>
-              <span className="w-[110px]">{t('customers.total')}</span>
-              <span className="w-[90px]">{t('customers.status')}</span>
-              <span className="w-[184px] text-right">
+            <div className="flex min-w-[800px] items-center gap-3 bg-[var(--dash-table-head)] px-5 py-4 text-xs font-bold uppercase tracking-wide text-[var(--dash-muted)]">
+              <span className="min-w-[160px] flex-1">
+                {t('customers.customer')}
+              </span>
+              <span className="w-[150px] shrink-0">{t('customers.phone')}</span>
+              <span className="hidden w-[120px] shrink-0 xl:block">
+                {t('customers.lastPurchase')}
+              </span>
+              <span className="w-[110px] shrink-0">{t('customers.total')}</span>
+              <span className="w-[90px] shrink-0">{t('customers.status')}</span>
+              <span className="w-[184px] shrink-0 text-right">
                 {t('customers.actions')}
               </span>
             </div>
@@ -381,9 +385,13 @@ export function CustomersScreen() {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') setOpenId(c.id)
                     }}
-                    className={`flex w-full min-w-[720px] cursor-pointer items-center gap-3 bg-[var(--dash-surface)] px-5 py-4 text-left hover:bg-[var(--dash-soft)] ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
+                    className={`flex w-full min-w-[800px] cursor-pointer items-center gap-3 bg-[var(--dash-surface)] px-5 py-4 text-left hover:bg-[var(--dash-soft)] ${i > 0 ? 'border-t border-[var(--dash-divider)]' : ''}`}
                   >
-                    <div className="flex flex-1 items-center gap-3">
+                    {/* A floor for the name and shrink-0 on the fixed columns:
+                     *  a long email used to push Teléfono and Total out of
+                     *  line. «Última compra» waits for xl so the actions still
+                     *  fit at 1024–1280 px; narrower screens scroll sideways. */}
+                    <div className="flex min-w-[160px] flex-1 items-center gap-3">
                       <span
                         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold"
                         style={tone(avatarTone(c.name))}
@@ -403,20 +411,20 @@ export function CustomersScreen() {
                         )}
                       </div>
                     </div>
-                    <span className="w-[150px] text-xs font-medium text-[var(--dash-text2)]">
+                    <span className="w-[150px] shrink-0 text-xs font-medium text-[var(--dash-text2)]">
                       {c.phone ? (
                         <CopyableContact value={c.phone} kind="phone" />
                       ) : (
                         '—'
                       )}
                     </span>
-                    <span className="w-[120px] text-xs font-medium text-[var(--dash-muted)]">
+                    <span className="hidden w-[120px] shrink-0 text-xs font-medium text-[var(--dash-muted)] xl:block">
                       {relativeTime(c.lastOrderAt, t)}
                     </span>
-                    <span className="w-[110px] text-[13px] font-extrabold text-[var(--dash-text)]">
+                    <span className="w-[110px] shrink-0 text-[13px] font-extrabold text-[var(--dash-text)]">
                       {money(c.totalSpent)}
                     </span>
-                    <span className="w-[90px]">
+                    <span className="w-[90px] shrink-0">
                       <span
                         className="rounded-full px-2.5 py-1 text-[11px] font-bold"
                         style={tone(statusTone[st])}
@@ -424,7 +432,7 @@ export function CustomersScreen() {
                         {statusLabel(st, t)}
                       </span>
                     </span>
-                    <div className="flex w-[184px] items-center justify-end gap-2">
+                    <div className="flex w-[184px] shrink-0 items-center justify-end gap-2">
                       <button
                         type="button"
                         onClick={(e) => {
