@@ -164,8 +164,9 @@ export function CategoriesScreen() {
       onSearchChange={setSearch}
     >
       <div className="flex flex-col gap-5 p-4 md:p-8 xl:min-w-[900px]">
-        {/* KPIs */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* KPIs — four across only from xl: at 1024–1280 px each card got
+         *  ~150 px and cut «12» to «1.» and «Cafés» to «C…». */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((k) => (
             <div
               key={k.label}
@@ -178,11 +179,14 @@ export function CategoriesScreen() {
                 <Icon name={k.icon} size={22} />
               </span>
               <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex items-end gap-2">
-                  <span className="truncate text-[22px] font-black leading-none text-[var(--dash-text)]">
+                <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
+                  <span
+                    title={String(k.value)}
+                    className="max-w-full truncate text-[22px] font-black leading-none text-[var(--dash-text)]"
+                  >
                     {k.value}
                   </span>
-                  <span className="truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">
+                  <span className="min-w-0 truncate pb-0.5 text-xs font-semibold text-[var(--dash-text2)]">
                     {k.label}
                   </span>
                 </div>
