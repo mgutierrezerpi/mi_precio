@@ -13,6 +13,7 @@ import type { Tenant } from '../../../types'
 import { planById } from '../../../lib/plans'
 import { useT } from '../../../lib/i18n'
 import { tone, gradient } from './theme'
+import { initialsOf } from '../../../lib/initials'
 
 /* ── Inline icon set (lucide-style) ──────────────────────────────── */
 export type IconName =
@@ -483,14 +484,7 @@ function useAccount() {
         .replace(/\b\w/g, (c) => c.toUpperCase())
     : ''
   const name = tenant?.name?.trim() || emailName || 'Mi cuenta'
-  const initials =
-    name
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0])
-      .join('')
-      .toUpperCase() || 'U'
+  const initials = initialsOf(name)
   const plan = planById(tenant?.plan ?? 'free').name
   return { name, initials, plan, logoUrl: tenant?.logoUrl ?? null }
 }
@@ -746,7 +740,7 @@ function TenantSwitcher({
               <span
                 className={`flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold text-white ${gradient}`}
               >
-                {tenant.name.slice(0, 2).toUpperCase()}
+                {initialsOf(tenant.name)}
               </span>
             )}
             <span className="min-w-0 flex-1 truncate">{tenant.name}</span>
