@@ -1249,10 +1249,12 @@ function ListNotFound({
 
       <div className="relative flex flex-col items-center gap-3 text-center">
         {tenant.logoUrl ? (
+          // Shown whole, at its own proportions: a wide logo in a square
+          // box with object-cover read «CAFI / AUR».
           <img
             src={tenant.logoUrl}
             alt={tenant.name}
-            className="h-16 w-16 rounded-2xl object-cover"
+            className="h-16 w-auto max-w-[200px] object-contain"
           />
         ) : (
           <span

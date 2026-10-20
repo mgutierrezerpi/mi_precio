@@ -311,6 +311,11 @@ html.linktree-public-document::-webkit-scrollbar-thumb:hover {
   object-fit: cover;
 }
 
+.profile-avatar img[data-fit='contain'] {
+  padding: 14%;
+  object-fit: contain;
+}
+
 .profile-avatar::before {
   position: absolute;
   top: -30px;
