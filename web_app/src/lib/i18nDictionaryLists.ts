@@ -10,7 +10,9 @@ export const DICT_LISTS: Record<string, TranslationEntry> = {
   },
   'pl.tab.all': { es: 'Todas', en: 'All', pt: 'Todas' },
   'pl.tab.active': { es: 'Activas', en: 'Active', pt: 'Ativas' },
-  'pl.tab.inactive': { es: 'Inactivas', en: 'Inactive', pt: 'Inativas' },
+  // Same word as the row's status chip («Borrador»): the filter said
+  // «Inactivas» for the very same lists.
+  'pl.tab.inactive': { es: 'Borradores', en: 'Drafts', pt: 'Rascunhos' },
   'pl.new': { es: 'Nueva lista', en: 'New list', pt: 'Nova lista' },
   'pl.loading': {
     es: 'Cargando listas…',
