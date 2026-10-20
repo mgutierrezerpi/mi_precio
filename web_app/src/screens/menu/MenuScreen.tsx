@@ -227,8 +227,10 @@ export function MenuScreen() {
     new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0 }).format(
       typeof price === 'number' ? price : parseFloat(price)
     )
-  // Non-breaking space keeps the currency and the amount together on the same line.
-  const money = (price: string | number) => `${currency}\u00a0${fmt(price)}`
+  // Non-breaking space keeps the currency and the amount together on the same
+  // line. An item may be priced in another currency than the shop's.
+  const money = (price: string | number, itemCurrency?: string | null) =>
+    `${itemCurrency || currency}\u00a0${fmt(price)}`
 
   const norm = (s?: string | null) => (s?.trim() || 'Otros').toLowerCase()
   const disp = (s?: string | null) => {
@@ -245,17 +247,24 @@ export function MenuScreen() {
     () => Object.values(cart).reduce((a, b) => a + b, 0),
     [cart]
   )
-  const cartTotal = useMemo(
-    () =>
-      allItems.reduce(
-        // A negative price (stored before the API refused them) must not
-        // take money off the order.
-        (sum, it) =>
-          sum + (cart[it.id] ?? 0) * Math.max(0, parseFloat(it.price) || 0),
-        0
-      ),
-    [cart, allItems]
-  )
+  // One total per currency: a USD item and a UYU item used to be added up
+  // and shown as UYU. A negative price (stored before the API refused them)
+  // must not take money off the order.
+  const cartTotals = useMemo(() => {
+    const totals: Record<string, number> = {}
+    for (const it of allItems) {
+      const qty = cart[it.id] ?? 0
+      if (!qty) continue
+      const cur = it.currency || currency
+      totals[cur] =
+        (totals[cur] ?? 0) + qty * Math.max(0, parseFloat(it.price) || 0)
+    }
+    return totals
+  }, [cart, allItems, currency])
+  const cartTotalLabel =
+    Object.entries(cartTotals)
+      .map(([cur, total]) => money(total, cur))
+      .join(' + ') || money(0)
   const base = useMemo(() => {
     const t = q.trim().toLowerCase()
     return t
@@ -387,7 +396,9 @@ export function MenuScreen() {
   const orderMessage = useMemo(() => {
     const lines = allItems
       .filter((it) => cart[it.id])
-      .map((it) => `• ${cart[it.id]}× ${it.name} — ${money(it.price)}`)
+      .map(
+        (it) => `• ${cart[it.id]}× ${it.name} — ${money(it.price, it.currency)}`
+      )
     if (lines.length === 0) return t('pub.whatsappQuestionMessage')
     const datos = [
       customer.name && `Nombre: ${customer.name}`,
@@ -403,12 +414,12 @@ export function MenuScreen() {
       t('pub.cartHeading'),
       lines.join('\n'),
       '',
-      `Total: ${money(cartTotal)}`,
+      `Total: ${cartTotalLabel}`,
       datos.length ? `\n${datos.join('\n')}` : '',
     ].join('\n')
     return msg
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, allItems, cartTotal, customer])
+  }, [cart, allItems, cartTotalLabel, customer])
   const waHref = useMemo(() => {
     if (checkoutChannel === 'whatsapp')
       return whatsappOrderHref(tenant && whatsappPhone(tenant), orderMessage)
@@ -929,7 +940,7 @@ export function MenuScreen() {
           cart={cart}
           allItems={allItems}
           cartCount={cartCount}
-          cartTotal={cartTotal}
+          cartTotal={cartTotalLabel}
           addToCart={addToCart}
           decFromCart={decFromCart}
           removeFromCart={removeFromCart}
@@ -987,7 +998,7 @@ export function MenuScreen() {
                     n: String(cartCount),
                     unit:
                       cartCount === 1 ? t('pub.product') : t('pub.products'),
-                    total: money(cartTotal),
+                    total: cartTotalLabel,
                   })}
                 </span>
               </div>
@@ -1949,11 +1960,12 @@ interface CartProps {
   T: CartTheme
   accent: string
   t: ReturnType<typeof getT>
-  money: (p: string | number) => string
+  money: (p: string | number, currency?: string | null) => string
   cart: Record<string, number>
   allItems: Item[]
   cartCount: number
-  cartTotal: number
+  /** Already formatted, one amount per currency («UYU 280 + USD 10»). */
+  cartTotal: string
   addToCart: (id: string) => void
   decFromCart: (id: string) => void
   removeFromCart: (id: string) => void
@@ -1996,6 +2008,9 @@ function CartView(p: CartProps) {
     background: `linear-gradient(135deg, ${cartActionAccent} 0%, ${lighten(cartActionAccent, 0.22)} 100%)`,
   }
   const cartItems = allItems.filter((it) => (cart[it.id] ?? 0) > 0)
+  const cartCurrencies = [
+    ...new Set(cartItems.map((it) => it.currency || tenant.currency || 'UYU')),
+  ]
   const set = (patch: Partial<CartCustomer>) =>
     setCustomer((c) => ({ ...c, ...patch }))
   // The shop answers by WhatsApp, so an order needs a name and a phone. It
@@ -2302,14 +2317,14 @@ function CartView(p: CartProps) {
                         className="text-[18px] font-black"
                         style={{ color: T.ink }}
                       >
-                        {money(line)}
+                        {money(line, it.currency)}
                       </span>
                       {qty > 1 && (
                         <span
                           className="text-[12px] font-medium"
                           style={{ color: T.muted }}
                         >
-                          {money(it.price)} {t('store.each')}
+                          {money(it.price, it.currency)} {t('store.each')}
                         </span>
                       )}
                     </div>
@@ -2351,7 +2366,7 @@ function CartView(p: CartProps) {
                     letterSpacing: T.headingTracking,
                   }}
                 >
-                  {money(cartTotal)}
+                  {cartTotal}
                 </span>
               </div>
             </div>
@@ -2522,9 +2537,13 @@ function CartView(p: CartProps) {
                   className="text-[12px] font-medium"
                   style={{ color: T.muted }}
                 >
-                  {t('store.cartPricesIn', {
-                    currency: tenant.currency || 'UYU',
-                  })}
+                  {cartCurrencies.length > 1
+                    ? t('store.cartPricesMixed', {
+                        currencies: cartCurrencies.join(', '),
+                      })
+                    : t('store.cartPricesIn', {
+                        currency: cartCurrencies[0] || tenant.currency || 'UYU',
+                      })}
                 </p>
               </div>
               <div className="flex items-center justify-between">
@@ -2538,7 +2557,7 @@ function CartView(p: CartProps) {
                   className="text-[14px] font-bold"
                   style={{ color: T.ink }}
                 >
-                  {money(cartTotal)}
+                  {cartTotal}
                 </span>
               </div>
               <div className="h-px w-full" style={{ background: T.divider }} />
@@ -2553,7 +2572,7 @@ function CartView(p: CartProps) {
                   className="text-[24px] font-black"
                   style={{ color: T.ink }}
                 >
-                  {money(cartTotal)}
+                  {cartTotal}
                 </span>
               </div>
               {triedSend && (missingName || missingPhone) && (
