@@ -116,6 +116,11 @@ def update_list(list_id: str, **updates) -> PriceList | None:
             price_list.tenant_id, updates["name"], price_list.id
         )
 
+    # The editor sends the current slug back on every save. Re-normalising it
+    # would turn an old «promos_de_la_semana» into «promos-de-la-semana» and
+    # break every QR already printed, so an unchanged slug is left alone.
+    if updates.get("slug") == price_list.slug:
+        updates.pop("slug")
     if updates.get("slug"):
         updates["slug"] = unique_list_slug(
             price_list.tenant_id, updates["slug"], price_list.id

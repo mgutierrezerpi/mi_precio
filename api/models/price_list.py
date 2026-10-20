@@ -12,7 +12,9 @@ def slugify_list_name(name: str) -> str:
     normalized = (
         unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode("ascii")
     )
-    slug = re.sub(r"[^a-z0-9]+", "_", normalized.lower()).strip("_")
+    # Hyphens, like the shop's own address (`/p/mi-cafe`); older lists keep
+    # the underscores they were created with (see update_list).
+    slug = re.sub(r"[^a-z0-9]+", "-", normalized.lower()).strip("-")
     return slug or "lista"
 
 
@@ -29,7 +31,7 @@ def unique_list_slug(tenant_id: str, name: str, current_id: str | None = None) -
             query = query.where(PriceList.id != current_id)
         if not query.exists():
             return slug
-        slug = f"{base}_{counter}"
+        slug = f"{base}-{counter}"
         counter += 1
 
 

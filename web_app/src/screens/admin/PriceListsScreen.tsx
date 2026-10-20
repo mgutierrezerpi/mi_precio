@@ -24,6 +24,7 @@ import type {
 } from '../../types'
 import api from '../../services/api'
 import { localeOf, useT, type TFn } from '../../lib/i18n'
+import { toast } from '../../lib/toast'
 import { ListAppearanceFields } from '../../components/appearance/ListAppearanceFields'
 import { hasOwnAppearance, type ListAppearance } from '../../lib/listAppearance'
 import { CrmLayout } from './crm/CrmLayout'
@@ -1738,6 +1739,14 @@ function ListModal({
     }
   }
 
+  // A typed link that was already taken, or had spaces or accents, is saved
+  // adjusted (`menu` → `menu-2`). Say what it became instead of letting the
+  // shop share a link that leads somewhere else.
+  const noticeSlug = (savedSlug?: string | null) => {
+    if (slug.trim() && savedSlug && savedSlug !== slug.trim())
+      toast.info(t('pl.slugAdjusted', { slug: savedSlug }))
+  }
+
   const finalize = async () => {
     if (!name.trim()) return
     setSaving(true)
@@ -1766,6 +1775,7 @@ function ListModal({
           setSaveError(String(res.payload ?? t('pl.saveFailed')))
           return
         }
+        if (slug.trim() !== (list?.slug ?? '')) noticeSlug(res.payload?.slug)
         if (versionId.current) await syncItems(versionId.current)
       } else if (tenantId) {
         const res = await dispatch(
@@ -1779,7 +1789,7 @@ function ListModal({
           const vid = res.payload.versions?.[0]?.id
           // Not checked on purpose: the list already exists by now, and holding
           // the dialog open would let a second click create a duplicate.
-          await dispatch(
+          const saved = await dispatch(
             updateList({
               listId: res.payload.id,
               data: {
@@ -1792,6 +1802,7 @@ function ListModal({
               },
             })
           )
+          if (updateList.fulfilled.match(saved)) noticeSlug(saved.payload?.slug)
           if (vid) await syncItems(vid)
           trackEvent('Created Price List', {
             kind,
