@@ -344,8 +344,11 @@ export function ProductsScreen() {
 
         <div className="flex flex-col gap-4">
           {/* Header */}
-          <section className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center justify-center gap-2">
+          {/* On a phone: two even columns (Filtros | Ordenar, Exportar |
+           *  Nuevo) with the category picker across. It used to mix full,
+           *  half and centred widths. From lg it is one row, as before. */}
+          <section className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-3">
+            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
               <FilterMenu
                 status={status}
                 onStatus={(s) => resetTo(() => setStatus(s))}
@@ -362,7 +365,7 @@ export function ProductsScreen() {
               />
               <SortMenu sort={sort} onSort={setSort} />
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
               <ExportMenu
                 count={someSelected ? selected.size : visible.length}
                 scoped={someSelected}
@@ -833,11 +836,11 @@ function CategoryDropdown({
   const label =
     value === 'all' ? t('products.allCategories') : displayCategory(value)
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative order-last col-span-2 lg:order-none">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-9 items-center gap-1.5 rounded-full border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-text2)]"
+        className="flex h-[38px] w-full items-center gap-1.5 rounded-[10px] border border-[var(--dash-border)] bg-[var(--dash-surface)] px-3 text-xs font-bold text-[var(--dash-text2)] lg:h-9 lg:w-auto lg:rounded-full"
       >
         <Icon name="tags" size={14} className="text-[var(--dash-link)]" />{' '}
         {label}
