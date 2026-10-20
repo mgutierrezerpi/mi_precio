@@ -2332,8 +2332,11 @@ function ListModal({
           </form>
         ) : (
           <div>
-            <div className="mb-3 flex items-center gap-2">
-              <label className="flex h-10 flex-1 items-center gap-2.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3 focus-within:border-[#7C3AED] focus-within:ring-2 focus-within:ring-[#7C3AED]/15">
+            {/* Wraps instead of overflowing: on a phone the search takes the
+             *  whole row and the two buttons go under it. In one row they ran
+             *  ~170 px past the modal and cut the placeholder. */}
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <label className="flex h-10 min-w-[220px] flex-1 basis-full items-center gap-2.5 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-3 focus-within:border-[#7C3AED] focus-within:ring-2 focus-within:ring-[#7C3AED]/15 sm:basis-0">
                 <Icon
                   name="search"
                   size={16}
