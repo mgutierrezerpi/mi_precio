@@ -433,11 +433,13 @@ export function ProductsScreen() {
                 />
               </span>
               <span className="flex-1">{t('products.product')}</span>
-              <span className="w-[90px]">SKU</span>
+              <span className="hidden w-[90px] xl:block">SKU</span>
               <span className="w-[115px]">{t('products.category')}</span>
-              <span className="w-[100px]">{t('products.price')}</span>
+              <span className="w-[120px] shrink-0">{t('products.price')}</span>
               <span className="w-[145px]">{t('products.availability')}</span>
-              <span className="w-[105px]">{t('products.updated')}</span>
+              <span className="hidden w-[105px] xl:block">
+                {t('products.updated')}
+              </span>
               <span className="w-8" />
             </div>
 
@@ -571,7 +573,9 @@ export function ProductsScreen() {
                         </span>
                       </span>
                     </div>
-                    <span className="hidden w-[90px] text-xs font-semibold text-[var(--dash-text2)] lg:block">
+                    {/* SKU and «Actualizado» wait for xl: between 1024 and 1280 px the
+                     *  fixed columns left the product name 0 px wide. */}
+                    <span className="hidden w-[90px] text-xs font-semibold text-[var(--dash-text2)] xl:block">
                       {p.sku || '—'}
                     </span>
                     <span className="hidden w-[115px] lg:block">
@@ -588,8 +592,12 @@ export function ProductsScreen() {
                         </span>
                       )}
                     </span>
-                    <span className="hidden w-[100px] text-sm font-extrabold text-[var(--dash-text)] lg:block">
-                      {formatProductPrice(p.price)}
+                    {/* A long price wraps inside its column instead of running
+                     *  under the availability toggle next to it — at the space
+                     *  after the currency (Intl puts a non-breaking one there),
+                     *  never inside the number. */}
+                    <span className="hidden w-[120px] shrink-0 text-sm font-extrabold leading-tight text-[var(--dash-text)] [overflow-wrap:break-word] lg:block">
+                      {formatProductPrice(p.price).replace(/ /g, ' ')}
                     </span>
                     <span className="hidden w-[145px] lg:block">
                       {canEdit ? (
@@ -615,7 +623,7 @@ export function ProductsScreen() {
                         </span>
                       )}
                     </span>
-                    <span className="hidden w-[105px] text-xs font-medium text-[var(--dash-muted)] lg:block">
+                    <span className="hidden w-[105px] text-xs font-medium text-[var(--dash-muted)] xl:block">
                       {new Intl.DateTimeFormat(locale, {
                         dateStyle: 'medium',
                       }).format(parseUtcDate(p.updatedAt))}
