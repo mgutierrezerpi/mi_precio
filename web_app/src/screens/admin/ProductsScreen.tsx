@@ -27,6 +27,7 @@ import {
 import api from '../../services/api'
 import { localeOf } from '../../lib/i18n'
 import { useCatalogT } from '../../lib/i18nDictionaryCatalog'
+import { useEscapeToClose } from '../../hooks/useEscapeToClose'
 
 const DEFAULT_PAGE_SIZE = 8
 const PAGE_SIZE_OPTIONS = [8, 16, 32, 64] as const
@@ -828,6 +829,7 @@ function CategoryDropdown({
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
+  useEscapeToClose(open, () => setOpen(false))
   const label =
     value === 'all' ? t('products.allCategories') : displayCategory(value)
   return (
@@ -920,6 +922,7 @@ function Menu({
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
+  useEscapeToClose(open, () => setOpen(false))
   return (
     <div ref={ref} className="relative w-full lg:w-auto">
       <button

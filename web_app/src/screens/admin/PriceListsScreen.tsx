@@ -40,6 +40,7 @@ import {
 } from '../../lib/qrRender'
 import { trackEvent } from '../../lib/analytics'
 import { useStoredQrColor } from '../../hooks/useStoredQrColor'
+import { useEscapeToClose } from '../../hooks/useEscapeToClose'
 
 type Tab = 'all' | 'active' | 'inactive' | 'offline'
 
@@ -723,6 +724,7 @@ function RowMenu({
       window.removeEventListener('resize', close)
     }
   }, [open])
+  useEscapeToClose(open, () => setOpen(false))
 
   const act = (fn: () => void) => () => {
     setOpen(false)

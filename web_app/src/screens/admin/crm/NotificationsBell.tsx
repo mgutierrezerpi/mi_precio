@@ -7,6 +7,7 @@ import type { Activity } from '../../../types'
 import { useT } from '../../../lib/i18n'
 import { NotificationsPanel } from './NotificationsPanel'
 import { Icon } from './ui'
+import { useEscapeToClose } from '../../../hooks/useEscapeToClose'
 
 const BELL_BUTTON_CLASS = [
   'relative flex h-10 w-10 items-center justify-center rounded-[10px]',
@@ -83,6 +84,7 @@ function useOutsideClose(open: boolean, close: () => void) {
     document.addEventListener('mousedown', onDocumentMouseDown)
     return () => document.removeEventListener('mousedown', onDocumentMouseDown)
   }, [close, open])
+  useEscapeToClose(open, close)
   return ref
 }
 
