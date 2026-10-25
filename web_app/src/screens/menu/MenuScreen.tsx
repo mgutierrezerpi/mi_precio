@@ -102,6 +102,7 @@ export function MenuScreen() {
   const [magazines, setMagazines] = useState<Magazine[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [errorCode, setErrorCode] = useState<string | null>(null)
   const [cat, setCat] = useState<string>('all')
   const [q, setQ] = useState('')
   const [copied, setCopied] = useState(false)
@@ -167,6 +168,7 @@ export function MenuScreen() {
       if (!subdomain) return
       setIsLoading(true)
       setError(null)
+      setErrorCode(null)
       const response = (await api.getPublicMenu(
         subdomain,
         listId,
@@ -174,8 +176,12 @@ export function MenuScreen() {
       )) as {
         data?: PublicMenuData
         error?: string
+        errorCode?: string
       }
-      if (response.error) setError(response.error)
+      if (response.error) {
+        setError(response.error)
+        setErrorCode(response.errorCode ?? null)
+      }
       else if (response.data) {
         setTenant(response.data.tenant)
         setLists(response.data.lists)
@@ -482,7 +488,7 @@ export function MenuScreen() {
   // shop, so it is the only one that may talk about MiPrecio.
   // `error` is the API's raw `detail` — English, written for us, not for someone
   // who just scanned a QR. It belongs in the console, never on screen.
-  if (error === 'Access code required' && subdomain && listId) {
+  if (errorCode === 'Access code required' && subdomain && listId) {
     const unlock = async (event: React.FormEvent) => {
       event.preventDefault()
       if (!accessCode.trim()) return
