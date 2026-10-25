@@ -31,7 +31,7 @@ export function AdminExperienceLayout() {
 
   return <>
     {trialDays > 0 && (tenant?.plan ?? 'free') === 'free' && (
-      <div className="sticky top-0 z-[60] flex items-center justify-center gap-3 bg-[#4C1D95] px-4 py-2 text-center text-xs font-semibold text-white sm:text-sm">
+      <div className="sticky top-0 z-[60] flex items-center justify-center gap-3 bg-[#4C1D95] px-4 py-2 text-center font-sans text-xs font-semibold text-white sm:text-sm">
         <span>Prueba Pro: te quedan {trialDays} {trialDays === 1 ? 'día' : 'días'}. No necesitás tarjeta.</span>
         <button
           type="button"
