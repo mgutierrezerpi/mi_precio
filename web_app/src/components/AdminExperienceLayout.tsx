@@ -29,9 +29,9 @@ export function AdminExperienceLayout() {
     ? Math.max(1, Math.ceil((trialEnd - renderedAt) / 86_400_000))
     : 0
 
-  return <>
+  return <div className="flex h-[100dvh] flex-col overflow-hidden">
     {trialDays > 0 && (tenant?.plan ?? 'free') === 'free' && (
-      <div className="sticky top-0 z-[60] flex items-center justify-center gap-3 bg-[#4C1D95] px-4 py-2 text-center font-sans text-xs font-semibold text-white sm:text-sm">
+      <div className="z-[60] flex shrink-0 items-center justify-center gap-3 bg-[#4C1D95] px-4 py-2 text-center font-sans text-xs font-semibold text-white sm:text-sm">
         <span>Prueba Pro: te quedan {trialDays} {trialDays === 1 ? 'día' : 'días'}. No necesitás tarjeta.</span>
         <button
           type="button"
@@ -42,8 +42,10 @@ export function AdminExperienceLayout() {
         </button>
       </div>
     )}
-    <Outlet />
-  </>
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      <Outlet />
+    </div>
+  </div>
 }
 
 export default AdminExperienceLayout
