@@ -42,3 +42,6 @@ def test_checkout_skips_provider_trial(monkeypatch, db):
 
     assert result["checkout_id"] == "checkout-1"
     assert captured["data"]["attributes"]["checkout_options"]["skip_trial"] is True
+    assert captured["data"]["attributes"]["checkout_data"]["billing_address"] == {
+        "country": "UY"
+    }

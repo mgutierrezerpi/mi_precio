@@ -59,7 +59,10 @@ def create_checkout(
         "locale": "en" if locale == "en" else "es",
         "skip_trial": True,
     }
-    checkout_data: dict[str, Any] = {"custom": {"tenant_id": tenant_id, "plan": plan}}
+    checkout_data: dict[str, Any] = {
+        "billing_address": {"country": "UY"},
+        "custom": {"tenant_id": tenant_id, "plan": plan},
+    }
     if email:
         checkout_data["email"] = email
     if name:
