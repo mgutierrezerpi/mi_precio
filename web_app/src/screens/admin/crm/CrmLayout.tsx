@@ -45,7 +45,7 @@ export function CrmLayout({
     else setNavOpen(true)
   }
   return (
-    <div className="dash flex h-screen overflow-hidden bg-[var(--dash-bg)] font-sans text-[var(--dash-text)]">
+    <div className="dash flex h-full overflow-hidden bg-[var(--dash-bg)] font-sans text-[var(--dash-text)]">
       <OnboardingTour />
       <CrmSidebar
         active={active}
