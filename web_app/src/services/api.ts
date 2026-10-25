@@ -40,7 +40,7 @@ export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 type ApiResponse<T> =
   | { data: T; error?: never }
-  | { data?: never; error: string }
+  | { data?: never; error: string; errorCode?: string }
 
 type VisitBucket = {
   today: number
@@ -352,7 +352,16 @@ class ApiService {
         const detail = errorData.detail
         if (response.status === 402 && detail?.code === 'plan_required')
           onPlanRequired?.()
-        return { error: apiErrorMessage(response.status, detail) }
+        const errorCode =
+          typeof detail === 'string'
+            ? detail
+            : typeof detail?.code === 'string'
+              ? detail.code
+              : undefined
+        return {
+          error: apiErrorMessage(response.status, detail),
+          ...(errorCode ? { errorCode } : {}),
+        }
       }
 
       const data = await response.json()
