@@ -60,7 +60,10 @@ def trial_active(tenant: Tenant, now=None) -> bool:
     """Whether a never-subscribed tenant is inside its cardless app trial."""
     ends_at = getattr(tenant, "trial_ends_at", None)
     return bool(
-        ends_at and not _has_subscription(tenant) and ends_at > (now or utc_now())
+        normalize_plan(getattr(tenant, "plan", "free")) == "free"
+        and ends_at
+        and not _has_subscription(tenant)
+        and ends_at > (now or utc_now())
     )
 
 

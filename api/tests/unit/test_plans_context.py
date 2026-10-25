@@ -108,6 +108,17 @@ def test_active_cardless_trial_temporarily_unlocks_crm_and_pro_features(tenant):
     assert plans.plan_info(tenant.id)["limits"] == plans.PLANS["pro"]
 
 
+def test_selecting_a_plan_ends_the_cardless_trial_entitlements(tenant):
+    assert plans.start_trial(tenant)
+
+    plans.set_plan(tenant.id, "micro")
+    tenant = Tenant.get_by_id(tenant.id)
+
+    assert not plans.trial_active(tenant)
+    assert plans.plan_info(tenant.id)["plan"] == "micro"
+    assert plans.plan_info(tenant.id)["limits"] == plans.PLANS["micro"]
+
+
 def test_expired_cardless_trial_requires_payment(tenant):
     tenant.plan_gate = True
     tenant.trial_started_at = utc_now() - timedelta(days=14)
