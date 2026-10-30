@@ -141,6 +141,24 @@ def test_backfill_orphan_items_creates_and_links_global_products(db):
     assert Product.get_by_id(orphan.product_id).name == "Legacy Pizza"
 
 
+def test_update_product_with_unchanged_price_keeps_list_prices(db):
+    # The edit form resends the price on every save; editing only the
+    # description must not reset a promo price to the catalog price.
+    tenant = identity.create_tenant("Test Store", "test_store")
+    product = products.create_product(tenant.id, name="Pizza", price=150)
+    created = lists.create_list(tenant.id, "Promo")
+    item = items.create_item(created.version.id, name="Pizza", price=150)
+    item.product = product
+    item.price = 100
+    item.save()
+
+    products.update_product(product.id, price=150.0, description="New description")
+
+    item = Item.get_by_id(item.id)
+    assert item.price == Decimal("100.00")
+    assert item.description == "New description"
+
+
 def test_update_product_price_can_target_selected_lists(db):
     tenant = identity.create_tenant("Test Store", "test_store")
     product = products.create_product(tenant.id, name="Pizza", price=150)
