@@ -3,10 +3,12 @@
 import sqlite3
 from datetime import datetime, timedelta
 
+import pytest
 from huey import SqliteHuey
 
 from models import AuthCode, Tenant, TenantMembership, User
 from tasks import (
+    LiteFSScheduler,
     huey,
     run_billing_maintenance,
     send_due_trial_notices,
@@ -29,6 +31,29 @@ def test_huey_queue_uses_litefs_compatible_rollback_journal(tmp_path):
     with sqlite3.connect(queue_path) as connection:
         mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
     assert mode == "delete"
+
+
+def test_scheduler_skips_periodic_round_when_queue_is_read_only(monkeypatch):
+    def readonly_enqueue(data, priority=None):
+        raise sqlite3.OperationalError("attempt to write a readonly database")
+
+    monkeypatch.setattr(huey.storage, "enqueue", readonly_enqueue)
+    consumer = huey.create_consumer()
+    scheduler = consumer._create_scheduler()
+
+    assert isinstance(scheduler, LiteFSScheduler)
+    scheduler.enqueue_periodic_tasks(datetime(2026, 11, 2, 10, 35))
+
+
+def test_scheduler_still_raises_other_queue_errors(monkeypatch):
+    def broken_enqueue(data, priority=None):
+        raise sqlite3.OperationalError("disk I/O error")
+
+    monkeypatch.setattr(huey.storage, "enqueue", broken_enqueue)
+    scheduler = huey.create_consumer()._create_scheduler()
+
+    with pytest.raises(sqlite3.OperationalError, match="disk I/O error"):
+        scheduler.enqueue_periodic_tasks(datetime(2026, 11, 2, 10, 35))
 
 
 def test_run_billing_maintenance_expires_billing_and_prunes_auth_codes(db):

@@ -59,6 +59,12 @@ fly secrets set --app mi-precio SENTRY_DSN="https://<public-key>@bugsink.mipreci
 
 Do not commit the DSN to `fly.toml` or an `.env` file.
 
+The Huey queue lives on the LiteFS mount (`/litefs/huey.db`), which is only
+writable while the machine holds the primary lease. If the lease drops for a
+moment, the scheduler logs a warning and skips that periodic round instead of
+dying; an `OperationalError: attempt to write a readonly database` in Bugsink
+from the worker means that guard was bypassed.
+
 ## Feature flags
 
 Feature flags use OpenFeature with tenant-specific assignments stored in the

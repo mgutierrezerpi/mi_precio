@@ -7,11 +7,13 @@ tasks, and periodic jobs may rerun after restarts.
 
 import logging
 import os
+import sqlite3
 from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlencode
 
 from huey import SqliteHuey, crontab
+from huey.consumer import Consumer, Scheduler
 
 from config import settings
 from infra.mailer import mailer
@@ -34,7 +36,37 @@ _huey_db_parent = Path(HUEY_DB_PATH).parent
 if str(_huey_db_parent) not in ("", "."):
     _huey_db_parent.mkdir(parents=True, exist_ok=True)
 
-huey = SqliteHuey(
+
+class LiteFSScheduler(Scheduler):
+    """Skip a periodic round while LiteFS has this node's mount read-only.
+
+    LiteFS only accepts writes on the node holding the primary lease. If the
+    lease is lost for a moment, enqueueing raises ``attempt to write a readonly
+    database``; unhandled, that kills the scheduler thread, which the consumer
+    health check restarts every few seconds only to die again. Periodic jobs
+    are idempotent, so dropping one round is safe: the next one runs normally
+    once the lease is back.
+    """
+
+    def enqueue_periodic_tasks(self, now):
+        try:
+            super().enqueue_periodic_tasks(now)
+        except sqlite3.OperationalError as exc:
+            if "readonly" not in str(exc):
+                raise
+            logger.warning("Skipping periodic tasks: Huey queue is read-only (%s)", exc)
+
+
+class LiteFSConsumer(Consumer):
+    scheduler_class = LiteFSScheduler
+
+
+class LiteFSSqliteHuey(SqliteHuey):
+    def create_consumer(self, **options):
+        return LiteFSConsumer(self, **options)
+
+
+huey = LiteFSSqliteHuey(
     "mi_precio",
     filename=HUEY_DB_PATH,
     # Huey defaults to WAL, but production stores this database on LiteFS's
