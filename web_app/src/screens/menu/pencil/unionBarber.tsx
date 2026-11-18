@@ -200,7 +200,7 @@ export function UnionBarber({
   const { left } = footerLines(config, props)
   const bookLabel =
     props.checkoutChannel === 'instagram'
-      ? 'Copiar pedido · Instagram'
+      ? t('pub.instagramCheckoutShort')
       : t('pub.bookWhatsApp')
   // Desktop has no floating bar for this design (`pencilHasDesktopCover`),
   // and the sign's buttons scroll away — the sticky bar carries them instead.
@@ -309,7 +309,7 @@ export function UnionBarber({
       {photos.length >= 3 && (
         <section
           className="barber-marquee overflow-hidden py-8 motion-reduce:overflow-x-auto"
-          aria-label="Trabajos"
+          aria-label={t('pub.works')}
         >
           <div
             className="barber-track flex w-max gap-4 px-4"

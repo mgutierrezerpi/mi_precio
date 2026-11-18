@@ -40,7 +40,13 @@ export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 type ApiResponse<T> =
   | { data: T; error?: never }
-  | { data?: never; error: string; errorCode?: string }
+  | {
+      data?: never
+      error: string
+      errorCode?: string
+      /** The shop's language, on a refusal that still has to speak it. */
+      errorLanguage?: string
+    }
 
 type VisitBucket = {
   today: number
@@ -361,6 +367,9 @@ class ApiService {
         return {
           error: apiErrorMessage(response.status, detail),
           ...(errorCode ? { errorCode } : {}),
+          ...(typeof errorData.language === 'string'
+            ? { errorLanguage: errorData.language }
+            : {}),
         }
       }
 

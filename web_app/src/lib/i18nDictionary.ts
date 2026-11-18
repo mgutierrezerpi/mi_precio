@@ -1,6 +1,7 @@
 import { DICT_EXTRA } from './i18nDictionaryExtra'
 import { DICT_LEADS } from './i18nDictionaryLeads'
 import { DICT_LISTS } from './i18nDictionaryLists'
+import { DICT_PUBLIC } from './i18nDictionaryPublic'
 import { DICT_SOCIALS } from './i18nDictionarySocials'
 import { DICT_TOUR } from './i18nDictionaryTour'
 import { DICT_BASE_01 } from './i18nDictionaryBase01'
@@ -40,4 +41,5 @@ export const DICT = {
   ...DICT_SOCIALS,
   ...DICT_LEADS,
   ...DICT_LISTS,
+  ...DICT_PUBLIC,
 }

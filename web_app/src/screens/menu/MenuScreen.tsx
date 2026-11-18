@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
-import { getT, localeOf, type TFn } from '../../lib/i18n'
+import { getT, localeOf, normalizeLang, type TFn } from '../../lib/i18n'
 import type {
   Tenant,
   ListVersion,
@@ -32,7 +32,11 @@ import {
 import { lighten, readableOn, withAlpha } from '../../lib/designColors'
 import { parseUtc } from '../../lib/datetime'
 import { categoryIcon } from '../../lib/categoryIcon'
-import { whatsappOrderHref, whatsappPhone } from '../../lib/whatsappOrder'
+import {
+  orderContactLines,
+  whatsappOrderHref,
+  whatsappPhone,
+} from '../../lib/whatsappOrder'
 import {
   PencilList,
   pencilAskLabel,
@@ -103,6 +107,7 @@ export function MenuScreen() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [errorCode, setErrorCode] = useState<string | null>(null)
+  const [errorLanguage, setErrorLanguage] = useState<string | null>(null)
   const [cat, setCat] = useState<string>('all')
   const [q, setQ] = useState('')
   const [copied, setCopied] = useState(false)
@@ -169,6 +174,7 @@ export function MenuScreen() {
       setIsLoading(true)
       setError(null)
       setErrorCode(null)
+      setErrorLanguage(null)
       const response = (await api.getPublicMenu(
         subdomain,
         listId,
@@ -177,10 +183,12 @@ export function MenuScreen() {
         data?: PublicMenuData
         error?: string
         errorCode?: string
+        errorLanguage?: string
       }
       if (response.error) {
         setError(response.error)
         setErrorCode(response.errorCode ?? null)
+        setErrorLanguage(response.errorLanguage ?? null)
       }
       else if (response.data) {
         setTenant(response.data.tenant)
@@ -224,13 +232,27 @@ export function MenuScreen() {
   const C = { ...BASE, accent, accent2: accent }
   const brandGradient = `linear-gradient(135deg, ${accent} 0%, ${lighten(accent, 0.42)} 100%)`
 
-  // Translations + locale follow the tenant's configured language.
-  const t = getT(tenant?.language)
-  const locale = localeOf(tenant?.language)
+  // Translations + locale follow the tenant's configured language. A private
+  // list refuses before sending the tenant, but says which language it speaks.
+  const language = tenant?.language ?? errorLanguage
+  const t = getT(language)
+  const locale = localeOf(language)
+
+  // Screen readers and the browser's translate offer read the page's language
+  // from here. Restored on the way out, like the title and favicon below.
+  useEffect(() => {
+    if (!language) return
+    const root = document.documentElement
+    const previous = root.lang
+    root.lang = normalizeLang(language)
+    return () => {
+      root.lang = previous
+    }
+  }, [language])
 
   const currency = tenant?.currency || 'UYU'
   const fmt = (price: string | number) =>
-    new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0 }).format(
+    new Intl.NumberFormat(locale, { minimumFractionDigits: 0 }).format(
       typeof price === 'number' ? price : parseFloat(price)
     )
   // Non-breaking space keeps the currency and the amount together on the same
@@ -239,8 +261,12 @@ export function MenuScreen() {
     `${itemCurrency || currency}\u00a0${fmt(price)}`
 
   const norm = (s?: string | null) => (s?.trim() || 'Otros').toLowerCase()
+  // «Otros» is our word for items without a category, so it gets translated;
+  // every other category is the shop's own.
+  const otherLabel = t('store.other')
   const disp = (s?: string | null) => {
     const c = s?.trim() || 'Otros'
+    if (c.toLowerCase() === 'otros') return otherLabel
     return c.charAt(0).toUpperCase() + c.slice(1)
   }
 
@@ -350,7 +376,8 @@ export function MenuScreen() {
       return [{ ...section, name: definition.title }]
     })
     return [...ordered, ...remaining.values()]
-  }, [base, content])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base, content, otherLabel])
   const viewerPromptEnabled = Boolean(
     list?.captureViewerInfo && !viewerSubmitted && !isEditorPreview
   )
@@ -406,26 +433,17 @@ export function MenuScreen() {
         (it) => `• ${cart[it.id]}× ${it.name} — ${money(it.price, it.currency)}`
       )
     if (lines.length === 0) return t('pub.whatsappQuestionMessage')
-    const datos = [
-      customer.name && `Nombre: ${customer.name}`,
-      customer.phone && `Tel: ${customer.phone}`,
-      customer.email && `Email: ${customer.email}`,
-      `Entrega: ${customer.delivery === 'delivery' ? 'Envío a domicilio' : 'Retiro en el local'}`,
-      customer.delivery === 'delivery' &&
-        customer.address &&
-        `Dirección: ${customer.address}`,
-      customer.notes && `Notas: ${customer.notes}`,
-    ].filter(Boolean)
+    const datos = orderContactLines(customer, t)
     const msg = [
       t('pub.cartHeading'),
       lines.join('\n'),
       '',
-      `Total: ${cartTotalLabel}`,
+      `${t('store.cartTotal')}: ${cartTotalLabel}`,
       datos.length ? `\n${datos.join('\n')}` : '',
     ].join('\n')
     return msg
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, allItems, cartTotalLabel, customer])
+  }, [cart, allItems, cartTotalLabel, customer, language])
   const waHref = useMemo(() => {
     if (checkoutChannel === 'whatsapp')
       return whatsappOrderHref(tenant && whatsappPhone(tenant), orderMessage)
@@ -462,7 +480,7 @@ export function MenuScreen() {
         name: customer.name,
         phone: customer.phone,
         email: customer.email,
-        message: ordered ? `Pedido: ${ordered}` : undefined,
+        message: ordered ? `${t('pub.order.lead')}: ${ordered}` : undefined,
         listId: list?.id ?? null,
         listName: list?.name ?? null,
         source: 'cart',
@@ -506,31 +524,31 @@ export function MenuScreen() {
           className="w-full max-w-sm rounded-3xl border border-[#9bc6b7] bg-white p-7 text-center shadow-2xl"
         >
           <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#07583f]">
-            Lista privada
+            {t('pub.access.eyebrow')}
           </p>
           <h1 className="mt-3 text-2xl font-extrabold text-[#062d20]">
-            Ingresá tu código
+            {t('pub.access.title')}
           </h1>
           <p className="mt-2 text-sm font-medium text-[#23483b]">
-            Esta lista está disponible solo para personas invitadas.
+            {t('pub.access.hint')}
           </p>
           <input
             autoFocus
             value={accessCode}
             onChange={(e) => setAccessCode(e.target.value)}
             className="mt-6 w-full rounded-xl border-2 border-[#5d9f89] bg-[#f5fbf8] px-4 py-3 text-center font-bold tracking-[0.08em] text-[#062d20] outline-none placeholder:text-[#527365] focus:border-[#07583f] focus:ring-4 focus:ring-[#07583f]/15"
-            placeholder="Código de acceso"
+            placeholder={t('pub.access.placeholder')}
           />
           {accessError && (
             <p className="mt-2 text-xs font-semibold text-red-600">
-              El código no es válido. Intentá de nuevo.
+              {t('pub.access.invalid')}
             </p>
           )}
           <button
             disabled={accessSaving}
             className="mt-4 w-full rounded-xl bg-[#07583f] py-3 text-sm font-extrabold text-white shadow-[0_4px_0_#043b2a] transition hover:bg-[#043b2a] active:translate-y-px disabled:opacity-60"
           >
-            {accessSaving ? 'Verificando…' : 'Ver lista'}
+            {accessSaving ? t('pub.access.checking') : t('pub.access.submit')}
           </button>
         </form>
       </main>
@@ -2607,7 +2625,7 @@ function CartView(p: CartProps) {
               >
                 <SIco name="message-circle" size={22} color="#fff" />{' '}
                 {checkoutChannel === 'instagram'
-                  ? 'Copiar pedido y abrir Instagram'
+                  ? t('pub.instagramCheckout')
                   : t('store.cartSend')}
               </a>
               <div className="flex items-center justify-center gap-1.5">

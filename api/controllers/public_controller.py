@@ -1,6 +1,7 @@
 """Public marketplace and catalog rendering endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 
 from controllers.public_interactions_controller import (
     router as public_interactions_router,
@@ -96,7 +97,15 @@ def get_public_menu(
             published_lists[0].price_list, viewer_token
         )
     ):
-        raise HTTPException(status_code=403, detail="Access code required")
+        # The code prompt is the only page of the shop drawn without its data,
+        # so the language travels with the refusal.
+        return JSONResponse(
+            status_code=403,
+            content={
+                "detail": "Access code required",
+                "language": tenant.language or "es",
+            },
+        )
     published_magazines = (
         public.get_published_magazines(tenant, magazine)
         if feature_flags.magazines_enabled(tenant.id)

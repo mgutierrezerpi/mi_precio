@@ -1,3 +1,5 @@
+import type { TFn } from './i18n'
+
 /** The shop's WhatsApp number as wa.me wants it (digits only), or null.
  *
  *  `socialWhatsapp` is what shops fill in Settings; `whatsappUrl` is the older
@@ -43,4 +45,34 @@ function phoneDigits(raw: string): string {
  *  whoever the customer chooses — keep that only as the last resort. */
 export function whatsappOrderHref(phone: string | null, message: string) {
   return `https://wa.me/${phone || ''}?text=${encodeURIComponent(message)}`
+}
+
+/** The customer's details as they read in the order message. It goes to the
+ *  shop, so it is written in the language the shop chose. */
+export function orderContactLines(
+  customer: {
+    name: string
+    phone: string
+    email: string
+    delivery: 'pickup' | 'delivery'
+    address: string
+    notes: string
+  },
+  t: TFn
+): string[] {
+  const shipping = customer.delivery === 'delivery'
+  const line = (key: string, value: string) => `${t(key)}: ${value}`
+  return [
+    customer.name && line('pub.order.name', customer.name),
+    customer.phone && line('pub.order.phone', customer.phone),
+    customer.email && line('pub.order.email', customer.email),
+    line(
+      'pub.order.delivery',
+      t(shipping ? 'store.cartShipping' : 'store.cartPickup')
+    ),
+    shipping &&
+      customer.address &&
+      line('pub.order.address', customer.address),
+    customer.notes && line('pub.order.notes', customer.notes),
+  ].filter((entry): entry is string => Boolean(entry))
 }
