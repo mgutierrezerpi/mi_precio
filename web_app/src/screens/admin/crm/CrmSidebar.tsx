@@ -11,6 +11,8 @@ import { fetchLists, selectLists } from '../../../store/slices/menuSlice'
 import api from '../../../services/api'
 import type { PlanId } from '../../../types'
 import { planById } from '../../../lib/plans'
+import { publicListStatus } from '../../../lib/publicListStatus'
+import { usePlanInfo } from '../../../lib/usePlanInfo'
 import { useT } from '../../../lib/i18n'
 import { Icon, type IconName } from './ui'
 import { tone, gradient } from './theme'
@@ -373,8 +375,10 @@ export function CrmSidebar({
   const tenant = useAppSelector(selectTenant)
   const isSuperAdmin = useAppSelector(selectIsSuperAdmin)
   const lists = useAppSelector(selectLists)
-  const mainList = lists.find((list) => list.showOnIndex)
-  const nextPlan = tenant ? NEXT_PLAN[tenant.plan] : undefined
+  const listStatus = publicListStatus(lists)
+  const mainList = listStatus.kind === 'public' ? listStatus.list : undefined
+  const { plan, settled } = usePlanInfo()
+  const nextPlan = tenant && settled ? NEXT_PLAN[plan] : undefined
   const [linkCopied, setLinkCopied] = useState(false)
 
   useEffect(() => {
@@ -454,7 +458,7 @@ export function CrmSidebar({
           >
             <div className="flex items-center justify-between gap-2">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">
-                {t('side.planTag', { plan: planById(tenant.plan).name })}
+                {t('side.planTag', { plan: planById(plan).name })}
               </p>
               {/* The next plan's price; it used to be a fixed «Micro», which
                *  a Plus shop read as «Plan Plus · Micro». */}

@@ -15,6 +15,7 @@ from lib.ctx.product_item_sync import (
     sync_item_prices,
     sync_item_profile,
 )
+from lib.ctx.version_freshness import touch_product_versions
 from models import Item, ListVersion, PriceList, Product, Tenant
 
 
@@ -124,9 +125,12 @@ def update_product(product_id: str, **updates) -> Product | None:
         return None
     price_list_ids = updates.pop("price_list_ids", None)
     old_price = Decimal(str(product.price))
+    old_visible = _visible_profile(product)
     for key, value in updates.items():
         setattr(product, key, value)
     product.save()
+    if _visible_profile(product) != old_visible:
+        touch_product_versions(product.id)
     # The edit form always resends the price. Only a real change may reach the
     # lists, or saving a new description resets every promo/wholesale price.
     if "price" in updates and Decimal(str(product.price)) != old_price:
@@ -145,6 +149,20 @@ def delete_product(product_id: str) -> bool:
     product = get_product(product_id)
     if not product:
         return False
+    touch_product_versions(product.id)
     Item.delete().where(Item.product == product.id).execute()
     product.delete_instance()
     return True
+
+
+def _visible_profile(product: Product) -> tuple:
+    """Catalog fields public lists show; prices are per list (sync_item_prices)."""
+    return (
+        product.name,
+        product.description,
+        product.category,
+        product.currency,
+        product.image_url,
+        product.image_thumb_url,
+        product.available,
+    )

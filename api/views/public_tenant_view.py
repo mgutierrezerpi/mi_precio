@@ -1,5 +1,6 @@
 """Tenant data that is safe to return from public catalog endpoints."""
 
+from lib.ctx.leads_context import leads_open
 from models import LinkTree
 from views.base_view import BaseView
 
@@ -56,7 +57,9 @@ class PublicTenantView(BaseView):
                 getattr(tenant, "whatsapp_url", None)
                 or (linktree.whatsapp_url if linktree else None)
             ),
-            leads_enabled=bool(getattr(tenant, "leads_enabled", False)),
+            # Whether leads are really kept, plan included: the cart tells the
+            # visitor what happens to their details based on this.
+            leads_enabled=leads_open(tenant),
             delivery_enabled=bool(getattr(tenant, "delivery_enabled", False)),
             tax_id=getattr(tenant, "tax_id", None),
             address=getattr(tenant, "address", None),

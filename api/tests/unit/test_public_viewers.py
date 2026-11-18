@@ -1,5 +1,9 @@
 """Tests for identified public-list viewers."""
 
+import hashlib
+
+import pytest
+
 from lib.ctx import customers, identity, lists, public_viewers, versions
 from models import (
     Customer,
@@ -249,3 +253,62 @@ def test_a_form_with_a_known_email_does_not_inherit_the_customers_access(db):
     assert kept.visitor_token == original_token
     assert kept.name == "Lucía"
     assert public_viewers.has_list_access(private, original_token)
+
+
+def _private_list_for(tenant_id: str, customer: Customer) -> PriceList:
+    created = lists.create_list(tenant_id, "Mayorista")
+    created.price_list.is_private = True
+    created.price_list.save()
+    lists.update_list(created.price_list.id, published=True)
+    versions.update_version(created.version.id, published=True)
+    CustomerListAccess.create(customer=customer, price_list=created.price_list)
+    return created.price_list
+
+
+def _legacy_hash(code: str) -> str:
+    """A hash as stored before codes ignored case: the exact text the shop typed."""
+    salt = bytes(range(16))
+    digest = hashlib.scrypt(code.encode(), salt=salt, n=2**14, r=8, p=1).hex()
+    return f"{salt.hex()}${digest}"
+
+
+@pytest.mark.parametrize("typed", ["ABCD1234", "abcd1234", "AbCd1234", "  abcd1234 "])
+def test_access_code_ignores_case(db, typed):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    customer = customers.create_customer(tenant.id, name="Acme", access_code="ABCD1234")
+    price_list = _private_list_for(tenant.id, customer)
+
+    assert public_viewers.unlock_list(tenant.id, price_list.id, typed, None) is not None
+
+
+@pytest.mark.parametrize("typed", ["ABCD123", "ABCD12345", "ABCD 1234", "WXYZ1234", ""])
+def test_access_code_still_rejects_every_other_code(db, typed):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    customer = customers.create_customer(tenant.id, name="Acme", access_code="ABCD1234")
+    price_list = _private_list_for(tenant.id, customer)
+
+    assert public_viewers.unlock_list(tenant.id, price_list.id, typed, None) is None
+
+
+@pytest.mark.parametrize("saved", ["ABCD1234", "abcd1234"])
+@pytest.mark.parametrize("typed", ["ABCD1234", "abcd1234"])
+def test_codes_saved_before_the_change_ignore_case_too(db, saved, typed):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    customer = customers.create_customer(
+        tenant.id, name="Acme", access_code_hash=_legacy_hash(saved)
+    )
+    price_list = _private_list_for(tenant.id, customer)
+
+    assert public_viewers.unlock_list(tenant.id, price_list.id, typed, None) is not None
+
+
+def test_mixed_case_legacy_code_ignores_case_after_its_first_exact_use(db):
+    tenant = identity.create_tenant("Test Store", "test-store")
+    customer = customers.create_customer(
+        tenant.id, name="Acme", access_code_hash=_legacy_hash("AcMe2026")
+    )
+    price_list = _private_list_for(tenant.id, customer)
+
+    assert public_viewers.unlock_list(tenant.id, price_list.id, "acme2026", None) is None
+    assert public_viewers.unlock_list(tenant.id, price_list.id, "AcMe2026", None)
+    assert public_viewers.unlock_list(tenant.id, price_list.id, "acme2026", None)

@@ -1,5 +1,8 @@
 """Catalog helpers that keep list snapshots synchronized with products."""
 
+from decimal import Decimal
+
+from lib.ctx.version_freshness import touch_versions
 from models import Item, ListVersion, PriceList, Product
 
 
@@ -25,6 +28,14 @@ def sync_item_prices(
     )
     if price_list_ids is not None:
         version_ids = version_ids.where(PriceList.id.in_(price_list_ids))
+    new_price = Decimal(str(price))
+    touch_versions(
+        item.list_version_id
+        for item in Item.select().where(
+            (Item.list_version.in_(version_ids)) & (Item.product == product_id)
+        )
+        if Decimal(str(item.price)) != new_price
+    )
     Item.update(price=price).where(
         (Item.list_version.in_(version_ids)) & (Item.product == product_id)
     ).execute()

@@ -35,7 +35,13 @@ describe('API errors', () => {
       'fetch',
       vi.fn().mockResolvedValue(
         new Response(
-          JSON.stringify({ detail: 'Access code required', language: 'pt' }),
+          JSON.stringify({
+            detail: {
+              code: 'Access code required',
+              message: 'Access code required',
+              shop: { name: 'Cafecitos', language: 'pt' },
+            },
+          }),
           { status: 403, headers: { 'Content-Type': 'application/json' } }
         )
       )
@@ -45,7 +51,7 @@ describe('API errors', () => {
 
     expect(response).toMatchObject({
       errorCode: 'Access code required',
-      errorLanguage: 'pt',
+      errorShop: { name: 'Cafecitos', language: 'pt' },
     })
   })
 })

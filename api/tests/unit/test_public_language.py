@@ -57,5 +57,8 @@ def test_private_list_refusal_says_which_language_to_ask_in(client):
     )
 
     assert response.status_code == 403
-    # Only the language: the prompt must not leak the shop's catalog data.
-    assert response.json() == {"detail": "Access code required", "language": "en"}
+    # The shop's identity and language only, never its catalog.
+    detail = response.json()["detail"]
+    assert detail["code"] == "Access code required"
+    assert detail["shop"]["language"] == "en"
+    assert set(detail["shop"]) == {"name", "logoUrl", "brandColor", "language"}

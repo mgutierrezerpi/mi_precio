@@ -3,9 +3,9 @@
 import ipaddress
 import re
 import secrets
-import hashlib
-import hmac
 
+from lib.access_codes import access_code_matches, hash_access_code, needs_rehash
+from lib.ctx.list_schedule import on_schedule
 from lib.ctx.public_viewer_management import (
     anonymous_dismissal_count,  # noqa: F401
     delete_viewer,  # noqa: F401
@@ -58,7 +58,7 @@ def unlock_list(
         & PriceList.published
         & ((PriceList.id == list_key) | (PriceList.slug == list_key))
     )
-    if not price_list or not price_list.is_private:
+    if not price_list or not price_list.is_private or not on_schedule(price_list):
         return None
     customer = next(
         (
@@ -66,12 +66,17 @@ def unlock_list(
             for candidate in CustomerListAccess.select()
             .join(Customer)
             .where(CustomerListAccess.price_list == price_list.id)
-            if _verify_access_code(candidate.customer.access_code_hash, code)
+            if access_code_matches(candidate.customer.access_code_hash, code)
         ),
         None,
     )
     if not customer:
         return None
+    # A code saved before matching ignored case only proves itself when typed
+    # as the shop wrote it. From then on, any casing opens it.
+    if needs_rehash(customer.access_code_hash, code):
+        customer.access_code_hash = hash_access_code(code)
+        customer.save()
     token = _normalize_token(visitor_token) or secrets.token_urlsafe(32)
     viewer = PublicViewer.get_or_none(
         (PublicViewer.tenant == tenant_id)
@@ -101,19 +106,6 @@ def unlock_list(
     )
 
 
-def _verify_access_code(stored: str | None, code: str) -> bool:
-    if not stored or not code:
-        return False
-    try:
-        salt_hex, expected = stored.split("$", 1)
-        actual = hashlib.scrypt(
-            code.strip().encode("utf-8"), salt=bytes.fromhex(salt_hex), n=2**14, r=8, p=1
-        ).hex()
-        return hmac.compare_digest(actual, expected)
-    except (ValueError, TypeError):
-        return False
-
-
 def capture_viewer(
     tenant_id: str,
     list_id: str,
@@ -130,7 +122,7 @@ def capture_viewer(
     )
     if not tenant or not price_list or not price_list.published:
         return None
-    if not price_list.capture_viewer_info:
+    if not price_list.capture_viewer_info or not on_schedule(price_list):
         return None
 
     normalized_email = email.strip().lower() if email else None

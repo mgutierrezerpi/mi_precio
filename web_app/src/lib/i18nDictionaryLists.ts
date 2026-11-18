@@ -74,6 +74,8 @@ export const DICT_LISTS: Record<string, TranslationEntry> = {
   ...DICT_LIST_WIZARD,
   'pl.tab.offline': { es: 'Fuera de línea', en: 'Offline', pt: 'Offline' },
   'pl.status.offline': { es: 'Fuera de línea', en: 'Offline', pt: 'Offline' },
+  'pl.status.upcoming': { es: 'Programada', en: 'Scheduled', pt: 'Agendada' },
+  'pl.status.ended': { es: 'Vencida', en: 'Ended', pt: 'Encerrada' },
   'pl.offline.oneTitle': {
     es: 'Una de tus listas publicadas no se está viendo',
     en: 'One of your published lists is not visible',

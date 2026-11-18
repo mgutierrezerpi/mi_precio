@@ -2,11 +2,10 @@
 
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-import hashlib
-import secrets
 
 from peewee import fn
 
+from lib.access_codes import hash_access_code
 from lib.ctx.customer_orders import (
     create_order,
     delete_order,
@@ -60,7 +59,7 @@ def create_customer(tenant_id: str, **attrs) -> Customer | None:
     if access_list_ids is not None and not _private_list_ids_are_valid(tenant_id, access_list_ids):
         return None
     if access_code:
-        attrs["access_code_hash"] = _hash_access_code(access_code)
+        attrs["access_code_hash"] = hash_access_code(access_code)
     customer = Customer.create(tenant=tenant, **attrs)
     if access_list_ids is not None:
         _replace_private_list_accesses(customer, access_list_ids)
@@ -75,7 +74,7 @@ def update_customer(customer_id: str, **updates) -> Customer | None:
     if "access_code" in updates:
         access_code = updates.pop("access_code")
         updates["access_code_hash"] = (
-            _hash_access_code(access_code) if access_code else None
+            hash_access_code(access_code) if access_code else None
         )
     access_list_ids = updates.pop("access_list_ids", None)
     if access_list_ids is not None and not _private_list_ids_are_valid(
@@ -89,12 +88,6 @@ def update_customer(customer_id: str, **updates) -> Customer | None:
         _replace_private_list_accesses(customer, access_list_ids)
     _annotate(customer)
     return customer
-
-
-def _hash_access_code(code: str) -> str:
-    salt = secrets.token_bytes(16)
-    digest = hashlib.scrypt(code.encode("utf-8"), salt=salt, n=2**14, r=8, p=1).hex()
-    return f"{salt.hex()}${digest}"
 
 
 def _replace_private_list_accesses(customer: Customer, list_ids: list[str]) -> bool:

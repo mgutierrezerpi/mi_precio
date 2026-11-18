@@ -140,7 +140,7 @@ describe.each(LANGUAGES)('public page of a shop in %s', (language) => {
     vi.spyOn(api, 'getPublicMenu').mockResolvedValue({
       error: 'Esta lista pide un código de acceso.',
       errorCode: 'Access code required',
-      errorLanguage: language,
+      errorShop: { name: 'Test Shop', language },
     } as never)
     const t = getT(language)
 

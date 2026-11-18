@@ -28,10 +28,20 @@ export const DICT_BASE_03: Record<string, TranslationEntry> = {
     en: 'Send order via WhatsApp',
     pt: 'Enviar pedido pelo WhatsApp',
   },
-  'store.cartTrust': {
-    es: 'Tu información no se comparte. El envío es directo a WhatsApp.',
-    en: 'Your info is not shared. It goes straight to WhatsApp.',
-    pt: 'Suas informações não são compartilhadas. Vai direto para o WhatsApp.',
+  'store.cartTrustLeads': {
+    es: 'Tus datos le llegan al comercio, que los guarda para coordinar el pedido.',
+    en: 'Your details reach the shop, which keeps them to arrange your order.',
+    pt: 'Seus dados chegam à loja, que os guarda para combinar o pedido.',
+  },
+  'store.cartTrustWhatsapp': {
+    es: 'Los datos de este pedido no se guardan: van directo al comercio por WhatsApp.',
+    en: 'The details of this order are not stored: they go straight to the shop on WhatsApp.',
+    pt: 'Os dados deste pedido não são guardados: vão direto para a loja pelo WhatsApp.',
+  },
+  'store.cartTrustInstagram': {
+    es: 'Los datos de este pedido no se guardan: van directo al comercio por Instagram.',
+    en: 'The details of this order are not stored: they go straight to the shop on Instagram.',
+    pt: 'Os dados deste pedido não são guardados: vão direto para a loja pelo Instagram.',
   },
   'store.cartEmptyTitle': {
     es: 'Tu carrito está vacío',

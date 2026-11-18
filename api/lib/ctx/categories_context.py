@@ -2,6 +2,7 @@
 
 from peewee import fn
 
+from lib.ctx.version_freshness import touch_category_versions
 from models import Category, Product, Tenant
 
 
@@ -72,6 +73,7 @@ def update_category(category_id: str, **updates) -> Category | None:
         setattr(category, key, value)
     category.save()
     if "name" in updates and category.name != old_name:
+        touch_category_versions(category.tenant_id, old_name)
         # Match products case-insensitively: their category is free text and may
         # differ only in casing from the category record (casing is preserved on
         # save, not canonicalized), so an exact match would miss them.
@@ -92,6 +94,7 @@ def delete_category(category_id: str) -> bool:
     if not category:
         return False
     if not _name_taken(category.tenant_id, category.name, exclude_id=category.id):
+        touch_category_versions(category.tenant_id, category.name)
         # Case-insensitive match: product categories are free text and may
         # differ only in casing from the category record (see update_category).
         Product.update(category=None).where(

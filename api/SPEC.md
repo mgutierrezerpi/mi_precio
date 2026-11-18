@@ -616,13 +616,18 @@ def get_products_controller() -> ProductsController:
 
 ### Plan gate
 
-Tenants created after paid onboarding shipped are flagged with `tenant.plan_gate`
-and receive a one-time, application-managed 14-day Pro trial. The trial starts
-when the tenant is created and does not require a payment method or create a
-Lemon Squeezy subscription. While the trial is active, Pro limits and features
-apply even though the persisted plan remains `free`.
+Tenants created after paid onboarding shipped are flagged with `tenant.plan_gate`.
+Each owner receives one application-managed 14-day Pro trial, recorded in
+`user.trial_used_at`. The trial starts when their first business is created and
+does not require a payment method or create a Lemon Squeezy subscription. While
+the trial is active, Pro limits and features apply even though the persisted plan
+remains `free`. Any further business of that owner starts without a trial, on the
+plan screen; a trial already running on a business is never taken away.
 
-After the trial expires, `plans_context.plan_required()` is true and the
+Trial notices go only to tenants on `free` with no real subscription. An abandoned
+checkout (`billing_status = "checkout_pending"`) still receives them.
+
+Once the trial expires, or when a business has none, `plans_context.plan_required()` is true and the
 `require_active_plan` dependency answers CRM endpoints with:
 
 ```json
@@ -665,6 +670,13 @@ and `public.live_list_ids` filters at serve time, so paying again restores the
 whole storefront with no republishing. `PriceListView.live` reports the
 difference so the CRM can mark those lists as offline instead of pretending they
 are reachable.
+
+A list's validity period follows the same rule. `starts_at` and `ends_at` are
+calendar days: the date the owner picked applies as written, both days count
+whole, and today is the calendar day in the shop's timezone
+(`lib/ctx/list_schedule.py`). Outside the period the list stays published but is
+not served by its link, the index or the Linktree, takes no plan slot, and
+`PriceListView.schedule_state` says `upcoming` or `ended`.
 
 Expiring also mails the owner (`tasks.notify_subscription_expired`), from the
 webhook on the `expired` transition and from `expire_ended_subscriptions` for the
