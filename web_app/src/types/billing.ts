@@ -28,6 +28,8 @@ export interface PlanInfo {
   billingEnabled?: boolean
   /** True while the tenant still has to pick a plan before the CRM opens up. */
   planRequired?: boolean
+  /** `plan` reads "pro" during the cardless trial; this says nothing is paid yet. */
+  trialActive?: boolean
   /** End of the one-time cardless trial managed by Mi Precio. */
   trialEndsAt?: string | null
   /** camelCase: `api.request` camelizes every response key. Declaring these in

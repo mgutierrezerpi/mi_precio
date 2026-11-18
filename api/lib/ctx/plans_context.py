@@ -4,7 +4,7 @@ There is no payment gateway yet, so changing plan is immediate (no charge).
 What is real: per-plan limits on products, lists and team members, the current
 usage, and enforcement when creating those resources."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from config import settings
 from lib.ctx.plan_catalog import (
@@ -138,11 +138,27 @@ def normalize_plan(plan: str | None) -> str:
     return plan if plan in PLANS else "free"
 
 
+def _utc_iso(value: datetime | str | None) -> str | None:
+    """Render a stored timestamp as an explicit UTC instant.
+
+    `plan_info` is a plain dict, so it skips the stamping `BaseView` does and a
+    naive value reached the browser as local time. Provider dates are saved with
+    an offset, which SQLite hands back as text instead of a datetime."""
+    if not value:
+        return None
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
 def plan_info(tenant_id: str) -> dict:
     """Current plan + its limits + current usage for the billing screen."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
     stored_plan = normalize_plan(getattr(tenant, "plan", "free")) if tenant else "free"
-    plan = "pro" if tenant and trial_active(tenant) else stored_plan
+    on_trial = bool(tenant and trial_active(tenant))
+    plan = "pro" if on_trial else stored_plan
     # When billing is disabled there is no payment gateway, so the UI switches
     # plans immediately via PATCH instead of opening a checkout.
     info = {
@@ -154,7 +170,9 @@ def plan_info(tenant_id: str) -> dict:
         "billing_enabled": settings.billing_enabled,
         # Lets the plan screen poll for the checkout/webhook to land.
         "plan_required": plan_required(tenant_id),
-        "trial_ends_at": (getattr(tenant, "trial_ends_at", None) if tenant else None),
+        # `plan` reads "pro" during the trial; this says none of it is paid for.
+        "trial_active": on_trial,
+        "trial_ends_at": _utc_iso(getattr(tenant, "trial_ends_at", None)),
     }
     if tenant:
         info["billing"] = {
@@ -163,9 +181,9 @@ def plan_info(tenant_id: str) -> dict:
             "subscription_id": tenant.billing_subscription_id,
             "variant_id": tenant.billing_variant_id,
             "status": tenant.billing_status,
-            "renews_at": tenant.billing_renews_at,
-            "ends_at": tenant.billing_ends_at,
-            "trial_ends_at": tenant.billing_trial_ends_at,
+            "renews_at": _utc_iso(tenant.billing_renews_at),
+            "ends_at": _utc_iso(tenant.billing_ends_at),
+            "trial_ends_at": _utc_iso(tenant.billing_trial_ends_at),
             "portal_url": tenant.billing_portal_url,
             "update_payment_url": tenant.billing_update_payment_url,
             "card_brand": tenant.billing_card_brand,

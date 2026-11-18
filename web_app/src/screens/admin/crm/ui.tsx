@@ -11,6 +11,7 @@ import {
 import api from '../../../services/api'
 import type { Tenant } from '../../../types'
 import { planById } from '../../../lib/plans'
+import { usePlanInfo } from '../../../lib/usePlanInfo'
 import { useT } from '../../../lib/i18n'
 import { tone, gradient } from './theme'
 import { initialsOf } from '../../../lib/initials'
@@ -475,8 +476,10 @@ export function Icon({
 
 /* Friendly user data derived from auth state. */
 function useAccount() {
+  const t = useT()
   const tenant = useAppSelector(selectTenant)
   const user = useAppSelector(selectUser)
+  const { plan: planId, onTrial, settled } = usePlanInfo()
   const emailName = user?.email
     ? user.email
         .split('@')[0]
@@ -485,7 +488,12 @@ function useAccount() {
     : ''
   const name = tenant?.name?.trim() || emailName || 'Mi cuenta'
   const initials = initialsOf(name)
-  const plan = planById(tenant?.plan ?? 'free').name
+  const planName = planById(planId).name
+  const plan = !settled
+    ? ''
+    : onTrial
+      ? t('bill.trial.tag', { plan: planName })
+      : planName
   return { name, initials, plan, logoUrl: tenant?.logoUrl ?? null }
 }
 

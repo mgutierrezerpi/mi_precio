@@ -1,6 +1,6 @@
 """Unit tests for the plans context: tiers, usage and limit enforcement."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from peewee import SqliteDatabase
@@ -27,6 +27,43 @@ def db():
 @pytest.fixture
 def tenant(db):
     return Tenant.create(name="Shop", subdomain="shop", currency="UYU")
+
+
+def test_plan_info_marks_every_date_as_utc(tenant):
+    # N12: a naive date was read by the browser as local time, so in Montevideo
+    # the trial looked alive three hours after it had ended.
+    tenant.trial_ends_at = datetime(2026, 11, 13, 12, 58, 45)
+    tenant.billing_renews_at = datetime(2026, 12, 1, 10, 0, 0)
+    tenant.billing_ends_at = datetime(2026, 12, 2, 10, 0, tzinfo=timezone.utc)
+    tenant.billing_trial_ends_at = datetime(
+        2026, 12, 3, 7, 0, tzinfo=timezone(timedelta(hours=-3))
+    )
+    tenant.save()
+
+    info = plans.plan_info(tenant.id)
+
+    assert info["trial_ends_at"] == "2026-11-13T12:58:45Z"
+    assert info["billing"]["renews_at"] == "2026-12-01T10:00:00Z"
+    assert info["billing"]["ends_at"] == "2026-12-02T10:00:00Z"
+    assert info["billing"]["trial_ends_at"] == "2026-12-03T10:00:00Z"
+
+
+def test_plan_info_leaves_missing_dates_empty(tenant):
+    info = plans.plan_info(tenant.id)
+
+    assert info["trial_ends_at"] is None
+    assert info["billing"]["renews_at"] is None
+
+
+def test_plan_info_tells_the_trial_apart_from_a_paid_pro(tenant):
+    # N3: both read `plan: "pro"`, and only one of them has paid for it.
+    assert plans.start_trial(tenant)
+    on_trial = plans.plan_info(tenant.id)
+    assert (on_trial["plan"], on_trial["trial_active"]) == ("pro", True)
+
+    plans.set_plan(tenant.id, "pro")
+    paid = plans.plan_info(tenant.id)
+    assert (paid["plan"], paid["trial_active"]) == ("pro", False)
 
 
 def test_new_tenant_is_free(tenant):
