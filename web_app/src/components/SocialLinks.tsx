@@ -1,5 +1,5 @@
 import { getT } from '../lib/i18n'
-import { activeSocials } from '../lib/socials'
+import { activeSocials, shopSocials } from '../lib/socials'
 import { SocialIcon } from './SocialIcon'
 import type { Tenant } from '../types'
 
@@ -31,7 +31,7 @@ export function SocialLinks({
   size?: number
 }) {
   const t = getT(tenant.language)
-  const socials = activeSocials(tenant)
+  const socials = activeSocials(shopSocials(tenant))
   if (!socials.length) return null
 
   return (

@@ -3,6 +3,10 @@ import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
 import { getT, localeOf, normalizeLang, type TFn } from '../../lib/i18n'
+import { useExportPdfWhenReady } from '../../hooks/useExportPdfWhenReady'
+import { pdfFileName } from '../../lib/exportListPdf'
+import { activeSocials, shopSocials } from '../../lib/socials'
+import { SocialLinks } from '../../components/SocialLinks'
 import type {
   Tenant,
   ListVersion,
@@ -51,6 +55,7 @@ import { isPencilVariant } from './pencil/variants'
 import { PencilActionBar } from './pencilActions'
 import { PencilJournal } from './pencilJournal'
 import { StoreChip } from './StoreChip'
+import { ExportOverlay } from './ExportOverlay'
 import { MagazineShelf } from './MagazineShelf'
 import { LeadForm } from '../../components/LeadForm'
 import { pickDisplayLists } from './displayLists'
@@ -105,6 +110,9 @@ export function MenuScreen() {
   // Embedded in the admin template editor: show the list itself, never the
   // visitor-identification interruption intended for real customers.
   const isEditorPreview = searchParams.get('preview') === 'editor'
+  // «Exportar a PDF» opens the real list with ?pdf=1 instead of redrawing it:
+  // the sheet is the design itself, not a copy that drifts.
+  const pdfMode = searchParams.get('pdf') === '1'
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [lists, setLists] = useState<PublicList[]>([])
   const [magazines, setMagazines] = useState<Magazine[]>([])
@@ -212,6 +220,8 @@ export function MenuScreen() {
     // match a published list — a bogus or unpublished slug must not pollute metrics.
     if (!subdomain || isLoading || error || !tenant) return
     if (displayLists.length === 0) return
+    // The shop exporting its own list is not a customer visiting it.
+    if (pdfMode) return
     const key = `${subdomain}/${listId ?? ''}/${viewSource}`
     const now = Date.now()
     const last = recentViews.get(key)
@@ -222,7 +232,16 @@ export function MenuScreen() {
       listId ? displayLists[0]?.id : undefined,
       viewSource
     )
-  }, [subdomain, listId, viewSource, isLoading, error, tenant, displayLists])
+  }, [
+    subdomain,
+    listId,
+    viewSource,
+    isLoading,
+    error,
+    tenant,
+    displayLists,
+    pdfMode,
+  ])
 
   // The catalog wears the brand color set in Settings → Brand ("used in
   // accents, buttons and the cart"). It used to prefer the Linktree's accent,
@@ -379,7 +398,10 @@ export function MenuScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [base, content, otherLabel])
   const viewerPromptEnabled = Boolean(
-    list?.captureViewerInfo && !viewerSubmitted && !isEditorPreview
+    list?.captureViewerInfo &&
+      !viewerSubmitted &&
+      !isEditorPreview &&
+      !pdfMode
   )
   const submitViewer = async () => {
     if (!list || !subdomain) return
@@ -492,6 +514,13 @@ export function MenuScreen() {
     if (checkoutChannel === 'instagram')
       void navigator.clipboard?.writeText(orderMessage)
   }
+
+  // Called before the early returns below so the hook order never changes.
+  const exportState = useExportPdfWhenReady(
+    pdfMode && !isLoading && !error && !!tenant && displayLists.length > 0,
+    '.miprecio-public-list',
+    pdfFileName(tenant?.name, list?.name)
+  )
 
   if (isLoading)
     return (
@@ -725,6 +754,8 @@ export function MenuScreen() {
         fontFamily: publicFont,
       }}
     >
+      {pdfMode && <ExportOverlay state={exportState} accent={accent} t={t} />}
+
       {/* Tint the page scrollbar with the tenant's brand color while this public list is shown. */}
       <style>{`
         html { scrollbar-color: ${accent} transparent; }
@@ -841,9 +872,22 @@ export function MenuScreen() {
                 accentInk={readableOn(listAccent)}
                 dark={leadInk === '#FFFFFF'}
               />
+              {/* The Pencil templates draw their own closing, dozens of them
+                  with no shared footer, so their networks live on this band. */}
+              {isPencilCartDesign &&
+                activeSocials(shopSocials(tenant)).length > 0 && (
+                  <div className="pt-2 pb-6">
+                    <SocialLinks
+                      tenant={tenant}
+                      color={barInk}
+                      hoverColor={leadInk}
+                      align="center"
+                    />
+                  </div>
+                )}
             </div>
           </div>
-          {isPencilCartDesign && !isService && !showCart && (
+          {isPencilCartDesign && !isService && !showCart && !pdfMode && (
             <PencilActionBar
               props={designProps}
               hideOnDesktop={pencilHasDesktopCover(design)}
@@ -1900,25 +1944,30 @@ export function Storefront(p: StoreProps) {
       {/* Footer */}
       <footer className="py-10" style={{ background: FOOTER_BANDS.store }}>
         <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-3 px-5 md:px-16">
-          <span className="text-[16px] font-bold text-white">
-            {tenant.name}
-          </span>
-          {tenant.address && (
-            <span
-              className="text-[12px] font-medium"
-              style={{ color: '#94A3B8' }}
-            >
-              {tenant.address}
-            </span>
-          )}
-          {tenant.taxId && (
-            <span
-              className="text-[12px] font-medium"
-              style={{ color: '#94A3B8' }}
-            >
-              {t('pub.taxId')} {tenant.taxId}
-            </span>
-          )}
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex flex-col gap-3">
+              <span className="text-[16px] font-bold text-white">
+                {tenant.name}
+              </span>
+              {tenant.address && (
+                <span
+                  className="text-[12px] font-medium"
+                  style={{ color: '#94A3B8' }}
+                >
+                  {tenant.address}
+                </span>
+              )}
+              {tenant.taxId && (
+                <span
+                  className="text-[12px] font-medium"
+                  style={{ color: '#94A3B8' }}
+                >
+                  {t('pub.taxId')} {tenant.taxId}
+                </span>
+              )}
+            </div>
+            <SocialLinks tenant={tenant} color="#94A3B8" hoverColor="#FFFFFF" />
+          </div>
           <div
             className="my-2 h-px w-full"
             style={{ background: 'rgba(255,255,255,0.1)' }}
@@ -2610,10 +2659,16 @@ function CartView(p: CartProps) {
 
       {/* Footer */}
       <footer
-        className="flex flex-col items-center gap-2 px-5 py-8 md:px-16"
+        className="flex flex-col items-center gap-4 px-5 py-8 md:px-16"
         style={{ background: T.footerBg }}
       >
         <span className="text-[14px] font-bold text-white">{tenant.name}</span>
+        <SocialLinks
+          tenant={tenant}
+          color={T.footerText}
+          hoverColor="#FFFFFF"
+          align="center"
+        />
         <span
           className="text-[12px] font-medium"
           style={{ color: T.footerText }}

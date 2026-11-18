@@ -523,6 +523,11 @@ class ApiService {
       whatsappUrl?: string | null
       websiteUrl?: string | null
       instagramUrl?: string | null
+      socialInstagram?: string | null
+      socialFacebook?: string | null
+      socialTiktok?: string | null
+      socialWebsite?: string | null
+      socialWhatsapp?: string | null
       legalName?: string | null
       taxId?: string | null
       address?: string | null
@@ -547,6 +552,11 @@ class ApiService {
       whatsappUrl: 'whatsapp_url',
       websiteUrl: 'website_url',
       instagramUrl: 'instagram_url',
+      socialInstagram: 'social_instagram',
+      socialFacebook: 'social_facebook',
+      socialTiktok: 'social_tiktok',
+      socialWebsite: 'social_website',
+      socialWhatsapp: 'social_whatsapp',
     }
     const body: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(data)) body[map[k] ?? k] = v

@@ -23,6 +23,23 @@ export const DICT_PUBLIC: Record<string, TranslationEntry> = {
     pt: 'Copiar pedido · Instagram',
   },
 
+  /* ── The tab that exports a list to PDF ────────────────────────── */
+  'pub.pdf.working': {
+    es: 'Generando tu PDF…',
+    en: 'Generating your PDF…',
+    pt: 'Gerando seu PDF…',
+  },
+  'pub.pdf.done': {
+    es: 'Listo. Buscá el PDF en tus descargas.',
+    en: 'Done. Look for the PDF in your downloads.',
+    pt: 'Pronto. Procure o PDF nos seus downloads.',
+  },
+  'pub.pdf.error': {
+    es: 'No pudimos generar el PDF. Cerrá esta pestaña y probá de nuevo.',
+    en: 'We could not generate the PDF. Close this tab and try again.',
+    pt: 'Não foi possível gerar o PDF. Feche esta aba e tente de novo.',
+  },
+
   /* ── The prompt of a private list ──────────────────────────────── */
   'pub.access.eyebrow': {
     es: 'Lista privada',

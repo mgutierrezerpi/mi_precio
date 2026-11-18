@@ -4,6 +4,8 @@
  *  `socialWhatsapp` holds digits, not a URL — shops know their phone number,
  *  not their wa.me link — so `hrefOf` builds the link at render time. */
 
+import { whatsappPhone } from './whatsappOrder'
+
 export type SocialId =
   | 'socialInstagram'
   | 'socialFacebook'
@@ -53,6 +55,20 @@ export const SOCIALS: SocialDef[] = [
 /** Values as held on the tenant. Kept loose so both the saved tenant and the
  *  in-progress Settings form can be passed in. */
 export type SocialValues = Partial<Record<SocialId, string | null | undefined>>
+
+/** The networks to show for a shop. WhatsApp also reads the older «Link de
+ *  WhatsApp» setting, so the number on the footer is the one orders go to. */
+export function shopSocials(
+  tenant: SocialValues & { whatsappUrl?: string | null }
+): SocialValues {
+  return {
+    socialInstagram: tenant.socialInstagram,
+    socialFacebook: tenant.socialFacebook,
+    socialTiktok: tenant.socialTiktok,
+    socialWebsite: tenant.socialWebsite,
+    socialWhatsapp: whatsappPhone(tenant),
+  }
+}
 
 /** The URL to open, or null when the shop left this network empty.
  *

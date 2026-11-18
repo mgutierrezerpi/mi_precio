@@ -18,6 +18,11 @@ export const DICT_SOCIALS: Record<string, TranslationEntry> = {
   'social.instagram': { es: 'Instagram', en: 'Instagram', pt: 'Instagram' },
   'social.facebook': { es: 'Facebook', en: 'Facebook', pt: 'Facebook' },
   'social.whatsapp': { es: 'WhatsApp', en: 'WhatsApp', pt: 'WhatsApp' },
+  'social.whatsappHelp': {
+    es: 'A este número llegan los pedidos del carrito.',
+    en: 'Cart orders are sent to this number.',
+    pt: 'Os pedidos do carrinho chegam a este número.',
+  },
   'social.tiktok': { es: 'TikTok', en: 'TikTok', pt: 'TikTok' },
   'social.website': { es: 'Sitio web', en: 'Website', pt: 'Site' },
 

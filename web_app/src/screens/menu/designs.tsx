@@ -1,6 +1,7 @@
 import { getT } from '../../lib/i18n'
 import { lighten, readableOn, withAlpha } from '../../lib/designColors'
 import { categoryIcon } from '../../lib/categoryIcon'
+import { SocialLinks } from '../../components/SocialLinks'
 import type { Item, Tenant, ListDesign, ListContent } from '../../types'
 
 /* ── Shared helpers (used by MenuScreen's Storefront/CartView and the designs) ── */
@@ -1041,6 +1042,7 @@ export function ClassicList(p: DesignProps) {
             >
               {tenant.name}
             </span>
+            <SocialLinks tenant={tenant} color={C.muted} align="center" />
             <p className="text-xs font-medium" style={{ color: C.muted }}>
               {t('pub.footer', { currency })}
             </p>
@@ -1275,7 +1277,7 @@ export function NordicMenu(p: DesignProps) {
         </main>
 
         <footer
-          className="flex flex-col items-center gap-2 py-10 text-center"
+          className="flex flex-col items-center gap-5 py-10 text-center"
           style={{ borderTop: `3px double ${line}` }}
         >
           <span
@@ -1284,6 +1286,12 @@ export function NordicMenu(p: DesignProps) {
           >
             {tenant.name}
           </span>
+          <SocialLinks
+            tenant={tenant}
+            color={soft}
+            hoverColor={ink}
+            align="center"
+          />
           <p className="text-[11px]" style={{ color: soft }}>
             {t('pub.footer', { currency })}
           </p>
@@ -1445,7 +1453,7 @@ export function FineDining(p: DesignProps) {
           </main>
 
           <footer
-            className="mt-14 flex flex-col items-center gap-2 border-t pt-8 text-center"
+            className="mt-14 flex flex-col items-center gap-5 border-t pt-8 text-center"
             style={{ borderColor: `${gold}55` }}
           >
             <span
@@ -1454,6 +1462,12 @@ export function FineDining(p: DesignProps) {
             >
               {tenant.name}
             </span>
+            <SocialLinks
+              tenant={tenant}
+              color={soft}
+              hoverColor={ink}
+              align="center"
+            />
             <p className="text-[11px]" style={{ color: soft }}>
               {t('pub.footer', { currency })}
             </p>
@@ -1636,16 +1650,19 @@ export function ModernBrand(p: DesignProps) {
 
       {/* Footer */}
       <footer className="py-10" style={{ background: FOOTER_BANDS.modern }}>
-        <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-6 md:px-12">
-          <span className="text-[16px] font-bold text-white">
-            {tenant.name}
-          </span>
-          <span
-            className="text-[12px] font-medium"
-            style={{ color: '#9CA3AF' }}
-          >
-            {t('pub.footer', { currency })}
-          </span>
+        <div className="mx-auto flex w-full max-w-[1120px] flex-wrap items-center justify-between gap-4 px-6 md:px-12">
+          <div className="flex flex-col gap-2">
+            <span className="text-[16px] font-bold text-white">
+              {tenant.name}
+            </span>
+            <span
+              className="text-[12px] font-medium"
+              style={{ color: '#9CA3AF' }}
+            >
+              {t('pub.footer', { currency })}
+            </span>
+          </div>
+          <SocialLinks tenant={tenant} color="#9CA3AF" hoverColor="#FFFFFF" />
         </div>
       </footer>
     </div>
@@ -1868,15 +1885,18 @@ export function PhotoLookbook(p: DesignProps) {
         </main>
 
         <footer
-          className="mt-12 flex flex-col gap-2 border-t pt-8"
+          className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t pt-8"
           style={{ borderColor: '#262626' }}
         >
-          <span className="text-[15px] font-bold" style={{ color: ink }}>
-            {tenant.name}
-          </span>
-          <span className="text-[12px] font-medium" style={{ color: soft }}>
-            {t('pub.footer', { currency })}
-          </span>
+          <div className="flex flex-col gap-2">
+            <span className="text-[15px] font-bold" style={{ color: ink }}>
+              {tenant.name}
+            </span>
+            <span className="text-[12px] font-medium" style={{ color: soft }}>
+              {t('pub.footer', { currency })}
+            </span>
+          </div>
+          <SocialLinks tenant={tenant} color={soft} hoverColor={ink} />
         </footer>
       </div>
     </div>
@@ -2087,6 +2107,13 @@ export function ServiceCards(p: DesignProps) {
           <span className="mt-1 text-[12px] font-medium text-white/60">
             {t('pub.footer', { currency })}
           </span>
+          <div className="mt-2 empty:hidden">
+            <SocialLinks
+              tenant={tenant}
+              color="rgba(255,255,255,0.75)"
+              hoverColor="#FFFFFF"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -2318,24 +2345,27 @@ export function ImageCatalog(p: DesignProps) {
 
       {/* Hero-colored footer */}
       <footer style={{ background: hero }}>
-        <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-1 px-5 py-8 md:px-12">
-          <span className="text-[15px] font-bold" style={{ color: heroInk }}>
-            {tenant.name}
-          </span>
-          {tenant.address && (
+        <div className="mx-auto flex w-full max-w-[1180px] flex-wrap items-center justify-between gap-4 px-5 py-8 md:px-12">
+          <div className="flex flex-col gap-1">
+            <span className="text-[15px] font-bold" style={{ color: heroInk }}>
+              {tenant.name}
+            </span>
+            {tenant.address && (
+              <span
+                className="text-[12px] font-medium"
+                style={{ color: heroInk, opacity: 0.72 }}
+              >
+                {tenant.address}
+              </span>
+            )}
             <span
               className="text-[12px] font-medium"
-              style={{ color: heroInk, opacity: 0.72 }}
+              style={{ color: heroInk, opacity: 0.55 }}
             >
-              {tenant.address}
+              {t('pub.footer', { currency })}
             </span>
-          )}
-          <span
-            className="text-[12px] font-medium"
-            style={{ color: heroInk, opacity: 0.55 }}
-          >
-            {t('pub.footer', { currency })}
-          </span>
+          </div>
+          <SocialLinks tenant={tenant} color={heroInk} />
         </div>
       </footer>
     </div>
@@ -2559,18 +2589,26 @@ export function TechGrid(p: DesignProps) {
         </main>
 
         <footer
-          className="mt-8 flex items-center justify-between gap-3 border-t pt-6"
+          className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-6"
           style={{ borderColor: border }}
         >
-          <span className="text-[13px] font-bold" style={{ color: ink }}>
-            {tenant.name}
-          </span>
-          <span
-            className="text-[11px]"
-            style={{ color: soft, fontFamily: MONO }}
-          >
-            {t('pub.footer', { currency })}
-          </span>
+          <div className="flex flex-col gap-1">
+            <span className="text-[13px] font-bold" style={{ color: ink }}>
+              {tenant.name}
+            </span>
+            <span
+              className="text-[11px]"
+              style={{ color: soft, fontFamily: MONO }}
+            >
+              {t('pub.footer', { currency })}
+            </span>
+          </div>
+          <SocialLinks
+            tenant={tenant}
+            color={soft}
+            hoverColor={ink}
+            size={17}
+          />
         </footer>
       </div>
     </div>

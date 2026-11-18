@@ -305,6 +305,8 @@ export function CafecitosTemplate({
               <button
                 type="button"
                 key={item.id}
+                // The card is the product, so the PDF has to keep it.
+                data-export-keep
                 onClick={() =>
                   setSelectedServiceId((current) =>
                     current === item.id ? null : item.id

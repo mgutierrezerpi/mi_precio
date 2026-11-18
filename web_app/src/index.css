@@ -2379,3 +2379,42 @@ div:has(> img[alt='Dani, Cafecitos con Dani'])::after {
     transform: none;
   }
 }
+
+/* ==========================================
+   Exporting a public price list to PDF
+   ==========================================
+   The export captures the real page (lib/exportListPdf), so the sheet is the
+   design itself. This class is worn only while the capture runs, and only
+   removes what belongs to a screen. */
+.mp-exporting button:not([data-export-keep]),
+.mp-exporting input,
+.mp-exporting select,
+.mp-exporting [data-no-export] {
+  display: none !important;
+}
+
+/* The capture can land mid-entrance, when a template's rows are still at
+   opacity 0: the PDF would come out with the hero and no products. */
+.mp-exporting,
+.mp-exporting *,
+.mp-exporting *::before,
+.mp-exporting *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* A hero sized to fill the viewport would leave a screen-tall gap of colour at
+   the top of the PDF, and a full-height page pads a short menu the same way. */
+.mp-exporting.min-h-\[100dvh\],
+.mp-exporting .min-h-\[100dvh\],
+.mp-exporting .min-h-screen,
+.mp-exporting .h-screen {
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+/* Sticky bars are anchored to a scrolling viewport that the PDF does not have;
+   left alone they land halfway down the capture. */
+.mp-exporting .sticky {
+  position: static !important;
+}
