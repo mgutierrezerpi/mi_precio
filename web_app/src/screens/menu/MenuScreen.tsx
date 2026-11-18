@@ -47,6 +47,7 @@ import { StoreChip } from './StoreChip'
 import { MagazineShelf } from './MagazineShelf'
 import { LeadForm } from '../../components/LeadForm'
 import { pickDisplayLists } from './displayLists'
+import { cartTrustKey } from './cartTrust'
 
 export interface PublicList {
   id: string
@@ -2616,7 +2617,7 @@ function CartView(p: CartProps) {
                   className="text-[11px] font-medium"
                   style={{ color: T.muted }}
                 >
-                  {t('store.cartTrust')}
+                  {t(cartTrustKey(tenant.leadsEnabled, checkoutChannel))}
                 </span>
               </div>
             </div>
