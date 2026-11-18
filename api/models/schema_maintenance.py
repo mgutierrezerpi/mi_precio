@@ -1,5 +1,6 @@
 from models.base import db
 from models.schema_columns import add_missing_columns, columns_for
+from models.tenant import Tenant
 from models.tenant_membership import TenantMembership
 from models.tenant_schema import ensure_tenant_columns
 from models.user import User
@@ -90,6 +91,7 @@ def _ensure_user_columns() -> None:
         ("is_super_admin", "is_super_admin INTEGER NOT NULL DEFAULT 0"),
         ("last_seen_at", "last_seen_at DATETIME"), ("notif_prefs", "notif_prefs TEXT"),
         ("notifications_seen_at", "notifications_seen_at DATETIME"),
+        ("trial_used_at", "trial_used_at DATETIME"),
     ])
     for column in ("simple_admin_ui", "admin_ui_mode"):
         if column in columns:
@@ -128,3 +130,25 @@ def sync_legacy_roles() -> None:
     )
     for member in primary:
         User.update(role=member.role).where(User.id == member.user_id).execute()
+
+
+def backfill_trial_usage() -> None:
+    """Record the trial of owners who got one before `trial_used_at` existed.
+
+    Only writes to users: a trial already running on a business is untouched."""
+    trials = (
+        TenantMembership.select(TenantMembership.user, Tenant.trial_started_at)
+        .join(Tenant)
+        .switch(TenantMembership)
+        .join(User)
+        .where(
+            (TenantMembership.role == "owner")
+            & Tenant.trial_started_at.is_null(False)
+            & User.trial_used_at.is_null(True)
+        )
+        # Newest first, so the earliest trial is the one left in the dict.
+        .order_by(Tenant.trial_started_at.desc())
+        .tuples()
+    )
+    for user_id, started_at in dict(trials).items():
+        User.update(trial_used_at=started_at).where(User.id == user_id).execute()

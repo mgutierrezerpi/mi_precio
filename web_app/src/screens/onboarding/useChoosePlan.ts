@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useT } from '../../lib/i18n'
+import { trialHasEnded } from '../../lib/plans'
 import api from '../../services/api'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import {
@@ -139,8 +140,6 @@ export function useChoosePlan() {
     isPlanStatusKnown: info !== null,
     isPlanRequired: info?.planRequired === true,
     tenant,
-    expired: Boolean(info?.billing?.status) || Boolean(
-      info?.trialEndsAt && new Date(info.trialEndsAt).getTime() <= renderedAt
-    ),
+    expired: Boolean(info?.billing?.status) || trialHasEnded(info, renderedAt),
   }
 }

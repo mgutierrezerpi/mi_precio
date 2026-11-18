@@ -187,6 +187,46 @@ export const DICT_EXTRA: Record<string, TranslationEntry> = {
     en: 'The plan could not be changed.',
     pt: 'Não foi possível mudar o plano.',
   },
+  'bill.trial.tag': {
+    es: 'Prueba {plan}',
+    en: '{plan} trial',
+    pt: 'Teste {plan}',
+  },
+  'bill.trial.badge': {
+    es: 'En prueba',
+    en: 'On trial',
+    pt: 'Em teste',
+  },
+  'bill.trial.subscribe': {
+    es: 'Contratar {plan}',
+    en: 'Subscribe to {plan}',
+    pt: 'Assinar {plan}',
+  },
+  'bill.trial.pay': {
+    es: 'Continuar al pago',
+    en: 'Continue to payment',
+    pt: 'Continuar para o pagamento',
+  },
+  'bill.trial.confirm': {
+    es: 'Al contratar {plan} se cobran {price} en ese momento y tu prueba gratis termina, aunque iba hasta el {date}. Los días de prueba que te quedaban se pierden.',
+    en: 'When you subscribe to {plan}, {price} is charged right then and your free trial ends, even though it ran until {date}. Any trial days you had left are lost.',
+    pt: 'Ao assinar o {plan}, {price} são cobrados na hora e seu teste grátis termina, mesmo que fosse até {date}. Os dias de teste restantes são perdidos.',
+  },
+  'bill.trial.confirmNoDate': {
+    es: 'Al contratar {plan} se cobran {price} en ese momento y tu prueba gratis termina. Los días de prueba que te quedaban se pierden.',
+    en: 'When you subscribe to {plan}, {price} is charged right then and your free trial ends. Any trial days you had left are lost.',
+    pt: 'Ao assinar o {plan}, {price} são cobrados na hora e seu teste grátis termina. Os dias de teste restantes são perdidos.',
+  },
+  'bill.trial.confirmNoCharge': {
+    es: 'Al elegir {plan} tu prueba gratis termina ahora, aunque iba hasta el {date}. Los días de prueba que te quedaban se pierden.',
+    en: 'When you choose {plan}, your free trial ends now, even though it ran until {date}. Any trial days you had left are lost.',
+    pt: 'Ao escolher o {plan}, seu teste grátis termina agora, mesmo que fosse até {date}. Os dias de teste restantes são perdidos.',
+  },
+  'bill.trial.confirmNoChargeNoDate': {
+    es: 'Al elegir {plan} tu prueba gratis termina ahora. Los días de prueba que te quedaban se pierden.',
+    en: 'When you choose {plan}, your free trial ends now. Any trial days you had left are lost.',
+    pt: 'Ao escolher o {plan}, seu teste grátis termina agora. Os dias de teste restantes são perdidos.',
+  },
   'bill.sub.resuming': {
     es: 'Reanudando…',
     en: 'Resuming…',
@@ -205,10 +245,10 @@ export const DICT_EXTRA: Record<string, TranslationEntry> = {
     en: 'We created the “{name}” account. Activate a plan and you’re in.',
     pt: 'Criamos a conta “{name}”. Ative um plano e entre no painel.',
   },
-  'gate.trialNote': {
-    es: 'No se cobra nada hoy. El pago empieza al suscribirte.',
-    en: 'Nothing is charged today. Billing starts when you subscribe.',
-    pt: 'Nada é cobrado hoje. A cobrança começa quando você assina.',
+  'gate.chargeNote': {
+    es: 'El cobro se hace en el momento de suscribirte.',
+    en: 'You are charged at the moment you subscribe.',
+    pt: 'A cobrança é feita no momento da assinatura.',
   },
   'gate.choose': {
     es: 'Suscribirme',
