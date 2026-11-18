@@ -112,6 +112,7 @@ def get_public_menu(
                     "name": tenant.name,
                     "logoUrl": tenant.logo_url,
                     "brandColor": tenant.brand_color,
+                    "language": tenant.language or "es",
                 },
             },
         )

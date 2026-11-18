@@ -66,7 +66,7 @@ export function PencilActionBar({
         >
           <SIco name="message-circle" size={18} color="#fff" />
           {checkoutChannel === 'instagram'
-            ? 'Copiar pedido · Instagram'
+            ? t('pub.instagramCheckoutShort')
             : askLabel
               ? askLabel
               : cartCount > 0

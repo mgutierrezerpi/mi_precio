@@ -77,5 +77,6 @@ def test_private_list_gate_carries_the_brand_of_the_shop(setup):
         "name": "Café",
         "logoUrl": None,
         "brandColor": "#7C3AED",
+        "language": "es",
     }
     assert "lists" not in response.json()

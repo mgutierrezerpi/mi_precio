@@ -1,5 +1,74 @@
 import { describe, expect, it } from 'vitest'
-import { whatsappOrderHref, whatsappPhone } from './whatsappOrder'
+import { getT } from './i18n'
+import {
+  orderContactLines,
+  whatsappOrderHref,
+  whatsappPhone,
+} from './whatsappOrder'
+
+describe('orderContactLines', () => {
+  const customer = {
+    name: 'Ana',
+    phone: '099 111 222',
+    email: 'ana@example.com',
+    delivery: 'delivery' as const,
+    address: 'Calle 1',
+    notes: '$& sin azúcar',
+  }
+
+  it.each([
+    [
+      'es',
+      [
+        'Nombre: Ana',
+        'Tel: 099 111 222',
+        'Email: ana@example.com',
+        'Entrega: Envío a domicilio',
+        'Dirección: Calle 1',
+        'Notas: $& sin azúcar',
+      ],
+    ],
+    [
+      'en',
+      [
+        'Name: Ana',
+        'Phone: 099 111 222',
+        'Email: ana@example.com',
+        `Delivery: ${getT('en')('store.cartShipping')}`,
+        'Address: Calle 1',
+        'Notes: $& sin azúcar',
+      ],
+    ],
+    [
+      'pt',
+      [
+        'Nome: Ana',
+        'Tel: 099 111 222',
+        'E-mail: ana@example.com',
+        `Entrega: ${getT('pt')('store.cartShipping')}`,
+        'Endereço: Calle 1',
+        'Observações: $& sin azúcar',
+      ],
+    ],
+  ])('writes the details in %s', (language, expected) => {
+    expect(orderContactLines(customer, getT(language))).toEqual(expected)
+  })
+
+  it('leaves out what the customer did not fill in', () => {
+    const lines = orderContactLines(
+      {
+        name: '',
+        phone: '',
+        email: '',
+        delivery: 'pickup',
+        address: 'Calle 1',
+        notes: '',
+      },
+      getT('es')
+    )
+    expect(lines).toEqual(['Entrega: Retiro en el local'])
+  })
+})
 
 describe('whatsappPhone', () => {
   it('reads the number the shop typed, formatting and all', () => {

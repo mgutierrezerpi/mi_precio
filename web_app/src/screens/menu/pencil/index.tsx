@@ -5,6 +5,7 @@ import type { ListContent, ListDesign } from '../../../types'
 import { SpecialPencilList } from '../pencilSpecialDesigns'
 import { PencilActionBar } from '../pencilActions'
 import { useIsDesktop } from '../../../hooks/useMediaQuery'
+import type { TFn } from '../../../lib/i18n'
 import { footerLines, pencilPrice } from './copy'
 import { PoweredByMark, ProductShowcase, ShopLogo } from './shared'
 import { PENCIL_TEMPLATE_CONFIG } from './templates'
@@ -269,6 +270,7 @@ function Masthead({
   color,
   logoUrl,
   brandName,
+  t,
   align = 'center',
 }: {
   eyebrow?: string
@@ -277,6 +279,7 @@ function Masthead({
   color: PencilConfig
   logoUrl?: string | null
   brandName: string
+  t: TFn
   align?: 'left' | 'center'
 }) {
   return (
@@ -286,7 +289,7 @@ function Masthead({
       {logoUrl && (
         <img
           src={logoUrl}
-          alt={`Logo de ${brandName}`}
+          alt={t('pub.logoOf', { name: brandName })}
           className="mb-2 h-24 w-24 rounded-2xl border bg-white object-contain p-1 shadow-sm"
           style={{ borderColor: `${color.accent}66` }}
         />
@@ -365,13 +368,16 @@ function PencilShowcase({
   config,
   items,
   className,
+  t,
 }: {
   config: PencilConfig
   items: Section['items']
   className?: string
+  t: TFn
 }) {
   return (
     <ProductShowcase
+      t={t}
       items={items}
       caption={{
         background: config.background,
@@ -495,7 +501,7 @@ function PencilItem({
       className="cursor-zoom-in break-words text-left text-[18px] leading-[1.08] underline decoration-transparent underline-offset-4 transition group-hover:decoration-current sm:text-[20px]"
       style={{ color: color.ink, fontFamily: fontFor(color, 'heading') }}
       onClick={() => setImageIndex(Math.max(itemImageIndex, 0))}
-      aria-label={`Ver foto de ${item.name}`}
+      aria-label={props.t('pub.viewPhotoOf', { name: item.name })}
     >
       {item.name}
     </button>
@@ -587,14 +593,14 @@ function PencilItem({
                 className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-5"
                 role="dialog"
                 aria-modal="true"
-                aria-label={`Foto de ${activeImage.name}`}
+                aria-label={props.t('pub.photoOf', { name: activeImage.name })}
                 onClick={() => setImageIndex(null)}
               >
                 <button
                   type="button"
                   className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-2xl text-black shadow-lg"
                   onClick={() => setImageIndex(null)}
-                  aria-label="Cerrar foto"
+                  aria-label={props.t('pub.closePhoto')}
                 >
                   ×
                 </button>
@@ -607,7 +613,7 @@ function PencilItem({
                         event.stopPropagation()
                         moveImage(-1)
                       }}
-                      aria-label="Foto anterior"
+                      aria-label={props.t('pub.previousPhoto')}
                     >
                       ‹
                     </button>
@@ -618,7 +624,7 @@ function PencilItem({
                         event.stopPropagation()
                         moveImage(1)
                       }}
-                      aria-label="Foto siguiente"
+                      aria-label={props.t('pub.nextPhoto')}
                     >
                       ›
                     </button>
@@ -738,13 +744,13 @@ function PencilGallery({
         className="text-[10px] uppercase tracking-[1.8px]"
         style={{ color: config.accent, fontFamily: fontFor(config, 'label') }}
       >
-        Segunda página
+        {props.t('pub.secondPage')}
       </p>
       <h2
         className="mb-6 mt-1 text-[36px] leading-none sm:text-[46px]"
         style={{ color: config.ink, fontFamily: fontFor(config, 'heading') }}
       >
-        Galería
+        {props.t('pub.gallery')}
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {items.map((item, index) => (
@@ -801,17 +807,19 @@ function PencilPageNav({
   page,
   setPage,
   config,
+  t,
 }: {
   page: 'catalog' | 'gallery'
   setPage: (page: 'catalog' | 'gallery') => void
   config: PencilConfig
+  t: TFn
 }) {
   return (
-    <nav className="mb-7 flex gap-2" aria-label="Páginas de la lista">
+    <nav className="mb-7 flex gap-2" aria-label={t('pub.listPages')}>
       {(
         [
-          ['catalog', 'Productos'],
-          ['gallery', 'Galería'],
+          ['catalog', t('pub.productsTab')],
+          ['gallery', t('pub.gallery')],
         ] as const
       ).map(([value, label]) => (
         <button
@@ -955,6 +963,7 @@ function PencilCoverSpread({
           config={config}
           items={items}
           className="min-h-0 flex-1"
+          t={props.t}
         />
         <div className="flex flex-col gap-5 px-10 py-9 xl:px-14 xl:py-11">
           <div className="flex flex-col items-start gap-4">
@@ -1089,6 +1098,7 @@ export function PencilList({
         color={config}
         logoUrl={props.tenant.logoUrl}
         brandName={props.tenant.name}
+        t={props.t}
       />
       <Rule
         color={config.accent}
@@ -1101,7 +1111,7 @@ export function PencilList({
     </>
   )
   const pageNav = galleryItems.length > 0 && (
-    <PencilPageNav page={page} setPage={setPage} config={config} />
+    <PencilPageNav page={page} setPage={setPage} config={config} t={props.t} />
   )
   const catalog =
     page === 'gallery' ? (
@@ -1149,6 +1159,7 @@ export function PencilList({
             config={config}
             items={galleryItems}
             className="min-h-[260px]"
+            t={props.t}
           />
           {promo}
         </div>
@@ -1170,6 +1181,7 @@ export function PencilList({
             color={config}
             logoUrl={props.tenant.logoUrl}
             brandName={props.tenant.name}
+            t={props.t}
             align="left"
           />
           <PencilImage config={config} className="h-[156px]" />

@@ -9,6 +9,7 @@ import type { Section } from '../designs'
 import { useMediaQuery } from '../../../hooks/useMediaQuery'
 import { pencilPrice } from './copy'
 import { useLogoInk } from '../../../lib/logoInk'
+import type { TFn } from '../../../lib/i18n'
 
 const SHOWCASE_INTERVAL_MS = 5000
 
@@ -28,6 +29,7 @@ export function ProductShowcase({
   className,
   fallback,
   variant = 'tag',
+  t,
 }: {
   items: Section['items']
   caption: {
@@ -47,6 +49,7 @@ export function ProductShowcase({
    * a price pill, with story-style progress segments across the top.
    */
   variant?: 'tag' | 'story'
+  t: TFn
 }) {
   const photos = items.filter((item) => item.imageUrl || item.imageThumbUrl)
   const [index, setIndex] = useState(0)
@@ -72,8 +75,8 @@ export function ProductShowcase({
     <div
       className={`relative overflow-hidden ${className ?? ''}`}
       role="region"
-      aria-roledescription="carrusel"
-      aria-label="Fotos de productos"
+      aria-roledescription={t('pub.carousel')}
+      aria-label={t('pub.productPhotos')}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -103,7 +106,7 @@ export function ProductShowcase({
                   key={photo.id}
                   type="button"
                   onClick={() => setIndex(i)}
-                  aria-label={`Ver ${photo.name}`}
+                  aria-label={t('pub.viewItem', { name: photo.name })}
                   aria-current={i === active}
                   className="h-1 flex-1 overflow-hidden rounded-full"
                   style={{ background: '#FFFFFF55' }}
@@ -195,7 +198,7 @@ export function ProductShowcase({
                   key={photo.id}
                   type="button"
                   onClick={() => setIndex(i)}
-                  aria-label={`Ver ${photo.name}`}
+                  aria-label={t('pub.viewItem', { name: photo.name })}
                   aria-current={i === active}
                   className="h-1.5 rounded-full transition-all"
                   style={{

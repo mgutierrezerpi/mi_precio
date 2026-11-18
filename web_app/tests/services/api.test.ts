@@ -29,4 +29,29 @@ describe('API errors', () => {
       errorCode: 'Access code required',
     })
   })
+
+  it('passes on the language a private list asks for its code in', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            detail: {
+              code: 'Access code required',
+              message: 'Access code required',
+              shop: { name: 'Cafecitos', language: 'pt' },
+            },
+          }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+    )
+
+    const response = await api.getPublicMenu('cafecitos', 'colaboraciones')
+
+    expect(response).toMatchObject({
+      errorCode: 'Access code required',
+      errorShop: { name: 'Cafecitos', language: 'pt' },
+    })
+  })
 })

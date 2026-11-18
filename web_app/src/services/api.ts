@@ -43,6 +43,7 @@ export interface PrivateListShop {
   name: string
   logoUrl?: string | null
   brandColor?: string | null
+  language?: string | null
 }
 
 type ApiResponse<T> =

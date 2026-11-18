@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { LoadingSpinner } from '../../components'
 import api from '../../services/api'
-import { getT, localeOf, type TFn } from '../../lib/i18n'
+import { getT, localeOf, normalizeLang, type TFn } from '../../lib/i18n'
 import type {
   Tenant,
   ListVersion,
@@ -35,7 +35,11 @@ import { PrivateListGate } from './PrivateListGate'
 import type { PrivateListShop } from '../../services/api'
 import { parseUtc } from '../../lib/datetime'
 import { categoryIcon } from '../../lib/categoryIcon'
-import { whatsappOrderHref, whatsappPhone } from '../../lib/whatsappOrder'
+import {
+  orderContactLines,
+  whatsappOrderHref,
+  whatsappPhone,
+} from '../../lib/whatsappOrder'
 import {
   PencilList,
   pencilAskLabel,
@@ -228,13 +232,27 @@ export function MenuScreen() {
   const C = { ...BASE, accent, accent2: accent }
   const brandGradient = `linear-gradient(135deg, ${accent} 0%, ${lighten(accent, 0.42)} 100%)`
 
-  // Translations + locale follow the tenant's configured language.
-  const t = getT(tenant?.language)
-  const locale = localeOf(tenant?.language)
+  // Translations + locale follow the tenant's configured language. A private
+  // list refuses before sending the tenant, but says which language it speaks.
+  const language = tenant?.language ?? privateShop?.language
+  const t = getT(language)
+  const locale = localeOf(language)
+
+  // Screen readers and the browser's translate offer read the page's language
+  // from here. Restored on the way out, like the title and favicon below.
+  useEffect(() => {
+    if (!language) return
+    const root = document.documentElement
+    const previous = root.lang
+    root.lang = normalizeLang(language)
+    return () => {
+      root.lang = previous
+    }
+  }, [language])
 
   const currency = tenant?.currency || 'UYU'
   const fmt = (price: string | number) =>
-    new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0 }).format(
+    new Intl.NumberFormat(locale, { minimumFractionDigits: 0 }).format(
       typeof price === 'number' ? price : parseFloat(price)
     )
   // Non-breaking space keeps the currency and the amount together on the same
@@ -243,8 +261,12 @@ export function MenuScreen() {
     `${itemCurrency || currency}\u00a0${fmt(price)}`
 
   const norm = (s?: string | null) => (s?.trim() || 'Otros').toLowerCase()
+  // «Otros» is our word for items without a category, so it gets translated;
+  // every other category is the shop's own.
+  const otherLabel = t('store.other')
   const disp = (s?: string | null) => {
     const c = s?.trim() || 'Otros'
+    if (c.toLowerCase() === 'otros') return otherLabel
     return c.charAt(0).toUpperCase() + c.slice(1)
   }
 
@@ -354,7 +376,8 @@ export function MenuScreen() {
       return [{ ...section, name: definition.title }]
     })
     return [...ordered, ...remaining.values()]
-  }, [base, content])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base, content, otherLabel])
   const viewerPromptEnabled = Boolean(
     list?.captureViewerInfo && !viewerSubmitted && !isEditorPreview
   )
@@ -410,26 +433,17 @@ export function MenuScreen() {
         (it) => `• ${cart[it.id]}× ${it.name} — ${money(it.price, it.currency)}`
       )
     if (lines.length === 0) return t('pub.whatsappQuestionMessage')
-    const datos = [
-      customer.name && `Nombre: ${customer.name}`,
-      customer.phone && `Tel: ${customer.phone}`,
-      customer.email && `Email: ${customer.email}`,
-      `Entrega: ${customer.delivery === 'delivery' ? 'Envío a domicilio' : 'Retiro en el local'}`,
-      customer.delivery === 'delivery' &&
-        customer.address &&
-        `Dirección: ${customer.address}`,
-      customer.notes && `Notas: ${customer.notes}`,
-    ].filter(Boolean)
+    const datos = orderContactLines(customer, t)
     const msg = [
       t('pub.cartHeading'),
       lines.join('\n'),
       '',
-      `Total: ${cartTotalLabel}`,
+      `${t('store.cartTotal')}: ${cartTotalLabel}`,
       datos.length ? `\n${datos.join('\n')}` : '',
     ].join('\n')
     return msg
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, allItems, cartTotalLabel, customer])
+  }, [cart, allItems, cartTotalLabel, customer, language])
   const waHref = useMemo(() => {
     if (checkoutChannel === 'whatsapp')
       return whatsappOrderHref(tenant && whatsappPhone(tenant), orderMessage)
@@ -466,7 +480,7 @@ export function MenuScreen() {
         name: customer.name,
         phone: customer.phone,
         email: customer.email,
-        message: ordered ? `Pedido: ${ordered}` : undefined,
+        message: ordered ? `${t('pub.order.lead')}: ${ordered}` : undefined,
         listId: list?.id ?? null,
         listName: list?.name ?? null,
         source: 'cart',
@@ -2577,7 +2591,7 @@ function CartView(p: CartProps) {
               >
                 <SIco name="message-circle" size={22} color="#fff" />{' '}
                 {checkoutChannel === 'instagram'
-                  ? 'Copiar pedido y abrir Instagram'
+                  ? t('pub.instagramCheckout')
                   : t('store.cartSend')}
               </a>
               <div className="flex items-center justify-center gap-1.5">

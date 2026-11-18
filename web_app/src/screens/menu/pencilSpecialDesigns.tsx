@@ -580,7 +580,7 @@ function CasaServices({
   const uncategorizedLabel =
     template?.uncategorizedLabel !== undefined
       ? template.uncategorizedLabel
-      : config.uncategorizedLabel || 'Otros'
+      : config.uncategorizedLabel || props.t('store.other')
   const footer =
     template?.footerLeft !== undefined
       ? template.footerLeft
@@ -682,6 +682,7 @@ function AutoDetail({
       priceFormat={config.priceFormat}
       className={className}
       fallback={<Image config={config} className={className} />}
+      t={props.t}
     />
   )
   const heading = (
@@ -1099,6 +1100,7 @@ function CalmSpa({
         }}
         priceFormat={config.priceFormat}
         variant="story"
+        t={props.t}
         className="h-full w-full"
         fallback={<div className="h-full w-full" style={{ background: green }} />}
       />

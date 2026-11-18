@@ -1,4 +1,5 @@
 import { useState, type CSSProperties, type FormEvent } from 'react'
+import { getT } from '../../lib/i18n'
 import { privateListPalette } from '../../lib/privateListPalette'
 import api, { type PrivateListShop } from '../../services/api'
 
@@ -16,6 +17,7 @@ export function PrivateListGate({
   const [saving, setSaving] = useState(false)
   const [invalid, setInvalid] = useState(false)
   const palette = privateListPalette(shop?.brandColor)
+  const t = getT(shop?.language)
 
   const unlock = async (event: FormEvent) => {
     event.preventDefault()
@@ -54,13 +56,13 @@ export function PrivateListGate({
           className="text-xs font-extrabold uppercase tracking-[0.18em]"
           style={{ color: palette.ink }}
         >
-          Lista privada
+          {t('pub.access.eyebrow')}
         </p>
         <h1 className="mt-3 text-2xl font-extrabold text-[#0F0D1A]">
-          Ingresá tu código
+          {t('pub.access.title')}
         </h1>
         <p className="mt-2 text-sm font-medium text-[#44424E]">
-          Esta lista está disponible solo para personas invitadas.
+          {t('pub.access.hint')}
         </p>
         <input
           autoFocus
@@ -75,11 +77,11 @@ export function PrivateListGate({
               '--gate-ring': palette.focusRing,
             } as CSSProperties
           }
-          placeholder="Código de acceso"
+          placeholder={t('pub.access.placeholder')}
         />
         {invalid && (
           <p className="mt-2 text-xs font-semibold text-red-600">
-            El código no es válido. Intentá de nuevo.
+            {t('pub.access.invalid')}
           </p>
         )}
         <button
@@ -91,7 +93,7 @@ export function PrivateListGate({
             boxShadow: `0 4px 0 ${palette.pressed}`,
           }}
         >
-          {saving ? 'Verificando…' : 'Ver lista'}
+          {saving ? t('pub.access.checking') : t('pub.access.submit')}
         </button>
       </form>
     </main>
