@@ -3,6 +3,7 @@
 from datetime import datetime
 
 from lib.ctx.identity_context import get_tenant
+from lib.ctx.list_schedule import calendar_midnight
 from lib.ctx.list_variants import copy_parent_snapshot
 from lib.value_objects import CreatedList
 from models import Customer, ListVersion, PriceList
@@ -64,7 +65,10 @@ def create_list(
         )
         if not customer:
             return None
-    if ends_at and starts_at and ends_at <= starts_at:
+    starts_at = calendar_midnight(starts_at)
+    ends_at = calendar_midnight(ends_at)
+    # Both days count whole, so a one-day promotion starts and ends on the same day.
+    if ends_at and starts_at and ends_at < starts_at:
         return None
 
     price_list = PriceList.create(

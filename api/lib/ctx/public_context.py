@@ -2,6 +2,7 @@
 
 from lib.ctx import plans_context as plans
 from lib.ctx.identity_context import find_tenant_by_subdomain
+from lib.ctx.list_schedule import on_schedule, shop_today
 from lib.ctx.marketplace_context import nearby_marketplace_tenants
 from lib.ctx.public_catalog import product_details, visible_items
 from lib.value_objects import PublishedList
@@ -14,12 +15,15 @@ __all__ = [
     "get_published_magazines",
     "get_tenant_by_subdomain",
     "live_list_ids",
+    "off_schedule_list_keys",
     "nearby_marketplace_tenants",
 ]
 
 
 def live_list_ids(tenant: Tenant) -> list[str]:
-    """Ids of the published lists the tenant's plan actually allows on air.
+    """Ids of the published lists actually on air today.
+
+    A list outside its validity period is not on air and takes no plan slot.
 
     Publishing is the owner's intent; the plan decides how much of that intent is
     served. When a plan no longer covers everything that is published we keep the
@@ -29,19 +33,36 @@ def live_list_ids(tenant: Tenant) -> list[str]:
     Nothing is unpublished to make this true: paying again restores the whole
     storefront on its own, with no republishing to do.
     """
-    published = list(
-        PriceList.select(PriceList.id)
+    today = shop_today(tenant)
+    published = [
+        price_list
+        for price_list in PriceList.select(
+            PriceList.id, PriceList.starts_at, PriceList.ends_at
+        )
         .where(
             (PriceList.tenant == tenant.id)
             & PriceList.published
             & (PriceList.design.is_null(True) | (PriceList.design != "pencil-journal"))
         )
         .order_by(PriceList.created_at, PriceList.id)
-    )
+        if on_schedule(price_list, today)
+    ]
     allowance = plans.live_list_allowance(tenant)
     if allowance is not None:
         published = published[:allowance]
     return [price_list.id for price_list in published]
+
+
+def off_schedule_list_keys(tenant: Tenant) -> set[str]:
+    """Ids and slugs of the published lists outside their validity period today."""
+    today = shop_today(tenant)
+    keys: set[str] = set()
+    for price_list in PriceList.select().where(
+        (PriceList.tenant == tenant.id) & PriceList.published
+    ):
+        if not on_schedule(price_list, today):
+            keys.update(key for key in (price_list.id, price_list.slug) if key)
+    return keys
 
 
 def get_published_lists(
@@ -52,7 +73,8 @@ def get_published_lists(
     Catalog-linked items inherit the current product metadata. A name-based
     fallback keeps older rows working while the startup backfill completes.
     The tenant-wide index is capped by the plan; an explicitly shared list URL
-    remains reachable so existing QR codes and shared variants keep working.
+    remains reachable so existing QR codes and shared variants keep working,
+    but no path serves a list outside its validity period.
     """
     allowed = live_list_ids(tenant)
     if not allowed:
@@ -79,12 +101,15 @@ def get_published_lists(
             ]
         )
 
+    today = shop_today(tenant)
     result = []
     for price_list in (
         PriceList.select()
         .where(*conditions)
         .order_by(PriceList.created_at, PriceList.id)
     ):
+        if not on_schedule(price_list, today):
+            continue
         version = ListVersion.get_or_none(
             (ListVersion.list == price_list.id) & ListVersion.published
         )
