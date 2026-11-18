@@ -672,7 +672,7 @@ const LIST_STATUS_COPY = {
   },
   hidden: {
     title: 'Tu lista pública',
-    body: 'Tu lista está publicada, pero tu plan actual no la está mostrando.',
+    body: 'Tu lista está publicada, pero ahora no se está mostrando. Revisá su vigencia y los límites de tu plan.',
     action: 'Ver mis listas',
     creates: false,
   },

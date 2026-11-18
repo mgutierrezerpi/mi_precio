@@ -24,6 +24,7 @@ from models.public_viewer_dismissal import (
     PublicViewerDismissal as PublicViewerDismissal,
 )
 from models.push_subscription import PushSubscription as PushSubscription
+from models.schema_maintenance import backfill_trial_usage as backfill_trial_usage
 from models.schema_maintenance import ensure_columns as ensure_columns
 from models.schema_maintenance import ensure_memberships as ensure_memberships
 from models.schema_maintenance import sync_legacy_roles as sync_legacy_roles
@@ -39,3 +40,4 @@ def create_tables() -> None:
     ensure_columns()
     ensure_memberships()
     sync_legacy_roles()
+    backfill_trial_usage()

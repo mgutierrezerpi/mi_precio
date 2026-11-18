@@ -142,3 +142,78 @@ def test_trial_notices_are_sent_once(monkeypatch, db):
         "ending@example.com",
         "expired@example.com",
     }
+
+
+def _tenant_on_trial(slug, ends_in_days, **fields):
+    now = datetime.utcnow()
+    tenant = Tenant.create(
+        name=slug,
+        subdomain=slug,
+        plan_gate=True,
+        trial_started_at=now + timedelta(days=ends_in_days - 14),
+        trial_ends_at=now + timedelta(days=ends_in_days),
+        **fields,
+    )
+    owner = User.create(email=f"{slug}@example.com", tenant=tenant, role="owner")
+    TenantMembership.create(user=owner, tenant=tenant, role="owner")
+    return tenant
+
+
+@pytest.mark.parametrize("ends_in_days", [2, -1])
+@pytest.mark.parametrize("plan", ["micro", "plus", "pro", "pyme"])
+def test_trial_notices_skip_a_business_with_a_paid_plan(
+    monkeypatch, db, plan, ends_in_days
+):
+    # N6: demo shops get their plan by hand, so billing_status stays NULL.
+    _tenant_on_trial("demo", ends_in_days, plan=plan)
+    sent = []
+    monkeypatch.setattr(
+        "tasks.mailer.send", lambda **kwargs: sent.append(kwargs) or True
+    )
+
+    assert send_due_trial_notices() == {"ending": 0, "expired": 0}
+    assert sent == []
+
+
+@pytest.mark.parametrize(
+    ("ends_in_days", "expected"),
+    [(2, {"ending": 1, "expired": 0}), (-1, {"ending": 0, "expired": 1})],
+)
+def test_trial_notices_reach_an_owner_who_abandoned_checkout(
+    monkeypatch, db, ends_in_days, expected
+):
+    # N17: opening the checkout leaves this status even if nothing was paid.
+    _tenant_on_trial(
+        "abandoned",
+        ends_in_days,
+        billing_provider="lemonsqueezy",
+        billing_status="checkout_pending",
+    )
+    sent = []
+    monkeypatch.setattr(
+        "tasks.mailer.send", lambda **kwargs: sent.append(kwargs) or True
+    )
+
+    assert send_due_trial_notices() == expected
+    assert [message["to"] for message in sent] == ["abandoned@example.com"]
+
+
+@pytest.mark.parametrize(
+    "billing",
+    [
+        {"billing_status": "active"},
+        {"billing_status": "cancelled"},
+        {"billing_status": "expired"},
+        # A subscription that exists even though a new checkout is under way.
+        {"billing_status": "checkout_pending", "billing_subscription_id": "sub_1"},
+    ],
+)
+def test_trial_notices_skip_an_owner_with_a_real_subscription(monkeypatch, db, billing):
+    _tenant_on_trial("subscribed", -1, **billing)
+    sent = []
+    monkeypatch.setattr(
+        "tasks.mailer.send", lambda **kwargs: sent.append(kwargs) or True
+    )
+
+    assert send_due_trial_notices() == {"ending": 0, "expired": 0}
+    assert sent == []

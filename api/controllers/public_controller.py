@@ -86,8 +86,14 @@ def get_public_menu(
     published_lists = public.get_published_lists(tenant, list)
     # The business-level catalog URL is only valid when there is an actual
     # public list to show. Otherwise a Linktree catalog card led to an empty
-    # storefront instead of behaving like an unavailable public page.
-    if not list and not published_lists:
+    # storefront instead of behaving like an unavailable public page. A shop
+    # whose lists are only waiting for their dates still answers, so its
+    # customers get the shop's own unavailable page.
+    if (
+        not list
+        and not published_lists
+        and not public.off_schedule_list_keys(tenant)
+    ):
         raise HTTPException(status_code=404, detail="No published lists found")
     if (
         list
@@ -120,6 +126,9 @@ def get_public_menu(
     viewer_identified = public_viewers.touch_viewer(
         str(tenant.id), viewer_token, selected_list_id, request_ip(request)
     ) or public_viewers.has_viewer(str(tenant.id), viewer_token)
+    # A link to a list that is not on air offers the rest of the shop's catalog.
+    if list and not published_lists:
+        published_lists = public.get_published_lists(tenant)
     return PublicMenuView.render(
         tenant,
         published_lists,

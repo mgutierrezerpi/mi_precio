@@ -912,10 +912,10 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
             const dark = plan.popular
             const englishPlan = localeForHostname() === 'en'
               ? ({
-                  micro: { description: 'Start with a simple list and share it with a link or QR code.', cadence: 'per month', trialLabel: '14-day free trial', features: ['14 days free', 'Up to 25 products', '3 public lists', 'Custom QR code'] },
-                  plus: { description: 'More products, more lists, and tools to run your business better.', cadence: 'per month', trialLabel: '14-day free trial', features: ['14 days free', 'Up to 300 products', '15 public lists', 'Team of up to 5 users'] },
-                  pro: { description: 'High limits, a complete team, and advanced features.', cadence: 'per month', trialLabel: '14-day free trial', features: ['14 days free', 'Unlimited products', 'Unlimited public lists', 'Unlimited users'] },
-                } as Partial<Record<typeof plan.id, { description: string; cadence: string; trialLabel: string; features: string[] }>>)[plan.id]
+                  micro: { description: 'Start with a simple list and share it with a link or QR code.', cadence: 'per month', features: ['14 days free', 'Up to 25 products', '3 public lists', 'Custom QR code'] },
+                  plus: { description: 'More products, more lists, and tools to run your business better.', cadence: 'per month', features: ['14 days free', 'Up to 300 products', '15 public lists', 'Team of up to 5 users'] },
+                  pro: { description: 'High limits, a complete team, and advanced features.', cadence: 'per month', features: ['14 days free', 'Unlimited products', 'Unlimited public lists', 'Unlimited users'] },
+                } as Partial<Record<typeof plan.id, { description: string; cadence: string; features: string[] }>>)[plan.id]
               : undefined
             const planCopy = englishPlan ?? plan
             return (
@@ -953,7 +953,8 @@ function Pricing({ onAuth }: { onAuth: OpenAuth }) {
                 <span
                   className={`flex w-fit items-center gap-1.5 rounded-full px-[11px] py-[5px] text-[0.74rem] font-semibold ${dark ? 'bg-white/[0.12] text-[#C4B5FD]' : 'bg-[#EDE9FE] text-[#7C3AED]'}`}
                 >
-                  <Sparkles size={14} /> {planCopy.trialLabel}
+                  {/* True here: whoever signs up from the landing starts with the trial. */}
+                  <Sparkles size={14} /> {landingText('14 días de prueba gratis', '14-day free trial')}
                 </span>
                 <div
                   className={`h-px ${dark ? 'bg-white/10' : 'bg-[#F1F5F9]'}`}

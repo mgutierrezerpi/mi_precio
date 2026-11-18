@@ -1,5 +1,6 @@
 """Aggregate public-viewer dismissal and listing operations."""
 
+from lib.ctx.list_schedule import on_schedule
 from models import PriceList, PublicViewer, PublicViewerDismissal
 from models.base import utc_now
 
@@ -10,6 +11,8 @@ def record_anonymous_dismissal(tenant_id: str, list_id: str) -> bool:
         (PriceList.id == list_id) & (PriceList.tenant == tenant_id)
     )
     if not price_list or not price_list.published or not price_list.capture_viewer_info:
+        return False
+    if not on_schedule(price_list):
         return False
     record, created = PublicViewerDismissal.get_or_create(
         tenant=tenant_id,

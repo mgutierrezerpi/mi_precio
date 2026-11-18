@@ -5,6 +5,7 @@ import pytest
 from lib import encode_token, rate_limit
 from lib.ctx import identity, leads, plans
 from models import Customer, Lead, Tenant, TenantMembership, User
+from views.public_tenant_view import PublicTenantView
 
 
 _members = 0
@@ -73,6 +74,25 @@ class TestThePublicForm:
 
         assert res.status_code == 201
         assert leads.list_leads(shop.id) == []
+
+    @pytest.mark.parametrize(
+        ("plan", "enabled", "kept"),
+        [("plus", True, True), ("plus", False, False), ("micro", True, False)],
+    )
+    def test_the_public_page_knows_if_the_details_are_kept(
+        self, client, db, plan, enabled, kept
+    ):
+        # The cart's privacy notice is chosen from this flag, so it has to agree
+        # with what the endpoint really does with the visitor's details.
+        shop = _shop(plan=plan, enabled=enabled)
+
+        assert PublicTenantView.render(shop).leads_enabled is kept
+
+        client.post(
+            f"/api/v1/public/{shop.subdomain}/leads",
+            json={"name": "Ana", "phone": "59899123456", "source": "cart"},
+        )
+        assert bool(leads.list_leads(shop.id)) is kept
 
     def test_a_missing_shop_is_a_404(self, client, db):
         res = client.post(

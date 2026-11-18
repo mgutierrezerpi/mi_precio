@@ -9,7 +9,7 @@ export type PublicListStatus<T> =
   | { kind: 'public'; list: T }
   /** Published and served, but only to people with a code. */
   | { kind: 'private' }
-  /** Published, but the current plan is not serving it. */
+  /** Published, but its dates or the current plan keep it from being served. */
   | { kind: 'hidden' }
   /** Lists exist, none published yet. */
   | { kind: 'draft' }

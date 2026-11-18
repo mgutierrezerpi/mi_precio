@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from controllers.deps import get_current_user, require_editor
@@ -6,6 +8,12 @@ from lib.ctx import activity, brand_assets, linktrees, public
 from views import LinkTreeView
 
 router = APIRouter(tags=["linktrees"])
+
+
+def _targets_list(url: object, subdomain: str, list_keys: set[str]) -> bool:
+    """Whether a link opens one of these lists of the shop."""
+    path = urlparse(str(url or "")).path.strip("/").split("/")
+    return len(path) == 3 and path[:2] == ["p", subdomain] and path[2] in list_keys
 
 
 @router.post("/tenants/{tenant_id}/list-template/image", status_code=201)
@@ -139,6 +147,12 @@ def get_public_linktree_endpoint(subdomain: str):
     if not public.get_published_lists(tenant):
         catalog_url = f"/p/{tenant.subdomain}"
         view.links = [link for link in view.links if link.get("url") != catalog_url]
+    off_schedule = public.off_schedule_list_keys(tenant)
+    view.links = [
+        link
+        for link in view.links
+        if not _targets_list(link.get("url"), tenant.subdomain, off_schedule)
+    ]
     return {
         "tenant": {"name": tenant.name, "subdomain": tenant.subdomain},
         "linktree": view,

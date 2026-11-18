@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { localeOf, useT } from '../../lib/i18n'
-import { planHasFeature } from '../../lib/plans'
+import { usePlanInfo } from '../../lib/usePlanInfo'
 import api from '../../services/api'
 import { useAppSelector } from '../../store/hooks'
 import { selectCanEdit, selectTenant } from '../../store/slices/authSlice'
@@ -31,13 +31,15 @@ export function LeadsScreen() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [tab, setTab] = useState<LeadStatus | 'all'>('all')
   const [loading, setLoading] = useState(true)
-  const unlocked = tenant ? planHasFeature(tenant.plan, 'leads') : false
+  const { hasFeature, settled } = usePlanInfo()
+  const unlocked = !!tenant && hasFeature('leads')
   const load = useCallback(async () => {
+    if (!settled) return
     if (!tenant?.id || !unlocked) return setLoading(false)
     const res = await api.getLeads(tenant.id)
     if (res.data) setLeads(res.data)
     setLoading(false)
-  }, [tenant, unlocked])
+  }, [settled, tenant, unlocked])
 
   useEffect(() => {
     void Promise.resolve().then(load)
@@ -60,7 +62,7 @@ export function LeadsScreen() {
         <h1 className="text-[28px] font-bold leading-none text-[#F8F7FF]">{t('leads.title')}</h1>
         <p className="text-[13px] text-[#9694A6]">{t('leads.subtitle')}</p>
       </section>
-      {!unlocked ? <LeadsUpsell onSeePlans={() => navigate('/admin/settings?section=billing')} t={t} /> : <>
+      {!settled ? null : !unlocked ? <LeadsUpsell onSeePlans={() => navigate('/admin/settings?section=billing')} t={t} /> : <>
         <div className="flex flex-wrap gap-2">
           {TABS.map((key) => <button
             key={key}
