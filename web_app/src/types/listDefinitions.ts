@@ -105,8 +105,11 @@ export interface PriceList {
   parentListId?: string | null
   variantType?: PriceListVariantType | null
   customerId?: string | null
+  /** Calendar days (`YYYY-MM-DD`); read them with `lib/calendarDate`. */
   startsAt?: string | null
   endsAt?: string | null
+  /** Where today falls in that period, in the shop's timezone. */
+  scheduleState?: 'current' | 'upcoming' | 'ended'
   /** Per-list appearance. `null` inherits the tenant's `list*` defaults. */
   design: ListDesign | null
   heroColor: string | null
@@ -115,10 +118,10 @@ export interface PriceList {
   captureViewerInfo?: boolean
   isPrivate?: boolean
   itemCount: number
-  /** `published` is intent; `live` is what the plan actually serves. A published
-   *  list goes `live: false` when the plan allows fewer lists than are published
-   *  (downgrade) or the subscription expired. Nothing is unpublished: paying
-   *  again brings it back on its own. */
+  /** `published` is intent; `live` is what is actually served. A published list
+   *  goes `live: false` when the plan allows fewer lists than are published
+   *  (downgrade), the subscription expired, or today is outside its dates.
+   *  Nothing is unpublished: it comes back on its own. */
   live: boolean
   createdAt: string
   updatedAt: string

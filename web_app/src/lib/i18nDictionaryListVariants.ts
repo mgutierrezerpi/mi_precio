@@ -82,11 +82,11 @@ export const DICT_LIST_VARIANTS: Record<string, TranslationEntry> = {
 },
 'pl.variant.noDates': { es: 'Sin fechas', en: 'No dates', pt: 'Sem datas' },
 'pl.variant.starts': { es: 'Empieza:', en: 'Starts:', pt: 'Começa:' },
-'pl.variant.now': { es: 'Ahora', en: 'Now', pt: 'Agora' },
+'pl.variant.now': { es: 'Hoy', en: 'Today', pt: 'Hoje' },
 'pl.variant.tomorrow': {
-  es: 'Mañana 9:00',
-  en: 'Tomorrow 9:00 AM',
-  pt: 'Amanhã 9:00',
+  es: 'Mañana',
+  en: 'Tomorrow',
+  pt: 'Amanhã',
 },
 'pl.variant.nextMonday': {
   es: 'Próximo lunes',

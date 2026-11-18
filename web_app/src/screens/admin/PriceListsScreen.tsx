@@ -23,6 +23,12 @@ import type {
   ListContent,
 } from '../../types'
 import api from '../../services/api'
+import {
+  addCalendarDays,
+  formatCalendarDay,
+  nextMondayCalendarDay,
+  todayCalendarDay,
+} from '../../lib/calendarDate'
 import { localeOf, useT, type TFn } from '../../lib/i18n'
 import { toast } from '../../lib/toast'
 import { ListAppearanceFields } from '../../components/appearance/ListAppearanceFields'
@@ -151,7 +157,7 @@ export function PriceListsScreen() {
       all: lists.length,
       active: lists.filter((l) => l.published && l.live).length,
       inactive: lists.filter((l) => !l.published).length,
-      offline: lists.filter((l) => l.published && !l.live).length,
+      offline: lists.filter(isHeldBackByPlan).length,
     }),
     [lists]
   )
@@ -165,7 +171,7 @@ export function PriceListsScreen() {
     return lists.filter((l) => {
       if (tab === 'active' && !(l.published && l.live)) return false
       if (tab === 'inactive' && l.published) return false
-      if (tab === 'offline' && !(l.published && !l.live)) return false
+      if (tab === 'offline' && !isHeldBackByPlan(l)) return false
       if (l.parentListId) return false
       const variants = lists.filter((child) => child.parentListId === l.id)
       return matches(l) || variants.some(matches)
@@ -559,20 +565,10 @@ function ListRow({
           </span>
           <span
             className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
-            style={tone(
-              list.published && list.live
-                ? 'green'
-                : list.published
-                  ? 'red'
-                  : 'amber'
-            )}
+            style={tone(listStatusTone(list))}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            {list.published && !list.live
-              ? t('pl.status.offline')
-              : list.published
-                ? t('pl.status.active')
-                : t('pl.status.draft')}
+            {listStatusLabel(list, t)}
           </span>
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
@@ -593,20 +589,10 @@ function ListRow({
       <span className="hidden w-[110px] lg:block">
         <span
           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold"
-          style={tone(
-            list.published && list.live
-              ? 'green'
-              : list.published
-                ? 'red'
-                : 'amber'
-          )}
+          style={tone(listStatusTone(list))}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current" />{' '}
-          {list.published && !list.live
-            ? t('pl.status.offline')
-            : list.published
-              ? t('pl.status.active')
-              : t('pl.status.draft')}
+          {listStatusLabel(list, t)}
         </span>
       </span>
       <span className="hidden w-[110px] text-xs font-medium text-[var(--dash-muted)] lg:block">
@@ -826,6 +812,26 @@ function MenuItemBtn({
   )
 }
 
+const isOffSchedule = (list: PriceList) =>
+  list.scheduleState === 'upcoming' || list.scheduleState === 'ended'
+
+/** Published but not served, and only a better plan would bring it back. A list
+ *  waiting for its dates is not one: upgrading would not change anything. */
+const isHeldBackByPlan = (list: PriceList) =>
+  list.published && !list.live && !isOffSchedule(list)
+
+function listStatusTone(list: PriceList): 'green' | 'red' | 'amber' {
+  if (!list.published || isOffSchedule(list)) return 'amber'
+  return list.live ? 'green' : 'red'
+}
+
+function listStatusLabel(list: PriceList, t: TFn): string {
+  if (!list.published) return t('pl.status.draft')
+  if (list.scheduleState === 'upcoming') return t('pl.status.upcoming')
+  if (list.scheduleState === 'ended') return t('pl.status.ended')
+  return list.live ? t('pl.status.active') : t('pl.status.offline')
+}
+
 function variantLabel(list: PriceList, t: TFn): string {
   if (list.variantType === 'customer') return t('pl.variant.customer')
   if (list.variantType === 'promotion') return t('pl.variant.promotion')
@@ -842,24 +848,12 @@ function variantDetail(
     ? t('pl.variant.customerWithName', { name: customer.name })
     : variantLabel(list, t)
   const date = list.startsAt
-    ? ` · ${t('pl.variant.from', { date: new Date(list.startsAt).toLocaleDateString() })}`
+    ? ` · ${t('pl.variant.from', { date: formatCalendarDay(list.startsAt) })}`
     : ''
   const end = list.endsAt
-    ? ` ${t('pl.variant.to', { date: new Date(list.endsAt).toLocaleDateString() })}`
+    ? ` ${t('pl.variant.to', { date: formatCalendarDay(list.endsAt) })}`
     : ''
   return `${audience}${date}${end}`
-}
-
-function dateTimeInputValue(date: Date): string {
-  const pad = (value: number) => String(value).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
-
-function scheduledDate(daysFromNow: number, hour = 9): Date {
-  const date = new Date()
-  date.setDate(date.getDate() + daysFromNow)
-  date.setHours(hour, 0, 0, 0)
-  return date
 }
 
 function VariantModal({
@@ -893,17 +887,8 @@ function VariantModal({
   const shortcutClass =
     'rounded-lg border border-[var(--dash-border)] px-2.5 py-1 text-[11px] font-bold text-[var(--dash-text2)] hover:bg-[var(--dash-soft)]'
 
-  const setStart = (date: Date) => setStartsAt(dateTimeInputValue(date))
-  const setEndAfter = (days: number) => {
-    const date = startsAt ? new Date(startsAt) : new Date()
-    date.setDate(date.getDate() + days)
-    setEndsAt(dateTimeInputValue(date))
-  }
-  const setNextMonday = () => {
-    const today = new Date()
-    const days = (8 - today.getDay()) % 7 || 7
-    setStart(scheduledDate(days))
-  }
+  const setEndAfter = (days: number) =>
+    setEndsAt(addCalendarDays(startsAt || todayCalendarDay(), days))
 
   useEffect(() => {
     void api
@@ -1214,21 +1199,25 @@ function VariantModal({
                 </span>
                 <button
                   type="button"
-                  onClick={() => setStart(new Date())}
+                  onClick={() => setStartsAt(todayCalendarDay())}
                   className={shortcutClass}
                 >
                   {t('pl.variant.now')}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setStart(scheduledDate(1))}
+                  onClick={() =>
+                    setStartsAt(addCalendarDays(todayCalendarDay(), 1))
+                  }
                   className={shortcutClass}
                 >
                   {t('pl.variant.tomorrow')}
                 </button>
                 <button
                   type="button"
-                  onClick={setNextMonday}
+                  onClick={() =>
+                    setStartsAt(nextMondayCalendarDay(todayCalendarDay()))
+                  }
                   className={shortcutClass}
                 >
                   {t('pl.variant.nextMonday')}
@@ -1283,7 +1272,7 @@ function VariantModal({
                     {t('pl.variant.fromDate')}
                   </span>
                   <input
-                    type="datetime-local"
+                    type="date"
                     value={startsAt}
                     onChange={(event) => setStartsAt(event.target.value)}
                     className={inputCls}
@@ -1294,7 +1283,7 @@ function VariantModal({
                     {t('pl.variant.toDate')}
                   </span>
                   <input
-                    type="datetime-local"
+                    type="date"
                     value={endsAt}
                     min={startsAt || undefined}
                     onChange={(event) => setEndsAt(event.target.value)}

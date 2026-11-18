@@ -203,7 +203,7 @@ export function MenuScreen() {
     // Only count a view once the tenant loaded fine. If a slug is given, it must
     // match a published list — a bogus or unpublished slug must not pollute metrics.
     if (!subdomain || isLoading || error || !tenant) return
-    if (listId && displayLists.length === 0) return
+    if (displayLists.length === 0) return
     const key = `${subdomain}/${listId ?? ''}/${viewSource}`
     const now = Date.now()
     const last = recentViews.get(key)
@@ -617,10 +617,11 @@ export function MenuScreen() {
       </div>
     )
   }
-  // The slug matches no list we serve: renamed, unpublished, or held back by the
-  // plan. The shop exists, so send its customer to the rest of its catalogue —
-  // never to MiPrecio's landing, which sells them nothing they came for.
-  if (listId && displayLists.length === 0) {
+  // Nothing to serve here: the slug was renamed, unpublished, held back by the
+  // plan or is outside its dates. The shop exists, so send its customer to the
+  // rest of its catalogue — never to MiPrecio's landing, which sells them
+  // nothing they came for.
+  if (displayLists.length === 0) {
     return (
       <ListNotFound
         tenant={tenant}

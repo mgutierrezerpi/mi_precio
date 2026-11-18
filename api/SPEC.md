@@ -671,6 +671,13 @@ whole storefront with no republishing. `PriceListView.live` reports the
 difference so the CRM can mark those lists as offline instead of pretending they
 are reachable.
 
+A list's validity period follows the same rule. `starts_at` and `ends_at` are
+calendar days: the date the owner picked applies as written, both days count
+whole, and today is the calendar day in the shop's timezone
+(`lib/ctx/list_schedule.py`). Outside the period the list stays published but is
+not served by its link, the index or the Linktree, takes no plan slot, and
+`PriceListView.schedule_state` says `upcoming` or `ended`.
+
 Expiring also mails the owner (`tasks.notify_subscription_expired`), from the
 webhook on the `expired` transition and from `expire_ended_subscriptions` for the
 tenants the backstop catches. It is the one downgrade nobody asked for, and it

@@ -169,9 +169,9 @@ export const DICT_BASE_01: Record<string, TranslationEntry> = {
     pt: 'Tente novamente mais tarde ou entre em contato diretamente com a empresa.',
   },
   'pub.listGone': {
-    es: 'Esta lista ya no está disponible.',
-    en: 'This price list is no longer available.',
-    pt: 'Esta lista de preços não está mais disponível.',
+    es: 'Esta lista no está disponible en este momento.',
+    en: 'This price list is not available right now.',
+    pt: 'Esta lista de preços não está disponível no momento.',
   },
   'pub.listGoneOthers': {
     es: 'Podés visitar estas otras listas',
