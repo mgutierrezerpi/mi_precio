@@ -4,7 +4,7 @@ There is no payment gateway yet, so changing plan is immediate (no charge).
 What is real: per-plan limits on products, lists and team members, the current
 usage, and enforcement when creating those resources."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from config import settings
 from lib.ctx.plan_catalog import (
@@ -31,12 +31,10 @@ __all__ = [
     "plan_info",
     "plan_required",
     "set_plan",
-    "start_trial",
 ]
 
 # Shown on the blocking plan screen when a gated tenant has no paid plan yet.
 PLAN_REQUIRED_MESSAGE = "Elegí un plan para empezar a usar Mi Precio."
-APP_TRIAL_DAYS = 14
 
 
 def _ever_subscribed(tenant: Tenant) -> bool:
@@ -65,22 +63,6 @@ def trial_active(tenant: Tenant, now=None) -> bool:
         and not _has_subscription(tenant)
         and ends_at > (now or utc_now())
     )
-
-
-def start_trial(tenant: Tenant, now=None) -> bool:
-    """Start the tenant's one-time cardless trial."""
-    if (
-        normalize_plan(getattr(tenant, "plan", "free")) != "free"
-        or _ever_subscribed(tenant)
-        or getattr(tenant, "trial_started_at", None) is not None
-    ):
-        return False
-    tenant.plan_gate = True
-    started_at = now or utc_now()
-    tenant.trial_started_at = started_at
-    tenant.trial_ends_at = started_at + timedelta(days=APP_TRIAL_DAYS)
-    tenant.save(only=[Tenant.plan_gate, Tenant.trial_started_at, Tenant.trial_ends_at])
-    return True
 
 
 def plan_required(tenant_id: str) -> bool:

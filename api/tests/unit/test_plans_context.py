@@ -57,7 +57,7 @@ def test_plan_info_leaves_missing_dates_empty(tenant):
 
 def test_plan_info_tells_the_trial_apart_from_a_paid_pro(tenant):
     # N3: both read `plan: "pro"`, and only one of them has paid for it.
-    assert plans.start_trial(tenant)
+    _start_trial(tenant)
     on_trial = plans.plan_info(tenant.id)
     assert (on_trial["plan"], on_trial["trial_active"]) == ("pro", True)
 
@@ -130,14 +130,18 @@ def test_set_plan_rejects_invalid(tenant):
         plans.set_plan(tenant.id, "enterprise")
 
 
+def _start_trial(tenant, now=None):
+    started_at = now or utc_now()
+    tenant.plan_gate = True
+    tenant.trial_started_at = started_at
+    tenant.trial_ends_at = started_at + timedelta(days=14)
+    tenant.save()
+
+
 def test_active_cardless_trial_temporarily_unlocks_crm_and_pro_features(tenant):
-    now = utc_now()
-    assert plans.start_trial(tenant, now=now)
+    _start_trial(tenant)
 
     assert tenant.plan == "free"
-    assert tenant.plan_gate is True
-    assert tenant.trial_started_at == now
-    assert tenant.trial_ends_at == now + timedelta(days=14)
     assert not plans.plan_required(tenant.id)
     assert plans.has_feature(tenant.id, "leads")
     assert plans.live_list_allowance(tenant) is None
@@ -146,7 +150,7 @@ def test_active_cardless_trial_temporarily_unlocks_crm_and_pro_features(tenant):
 
 
 def test_selecting_a_plan_ends_the_cardless_trial_entitlements(tenant):
-    assert plans.start_trial(tenant)
+    _start_trial(tenant)
 
     plans.set_plan(tenant.id, "micro")
     tenant = Tenant.get_by_id(tenant.id)
@@ -167,23 +171,9 @@ def test_expired_cardless_trial_requires_payment(tenant):
     assert plans.live_list_allowance(tenant) == 0
 
 
-def test_cardless_trial_is_one_time_and_does_not_reset_billing(tenant):
-    first_end = utc_now() - timedelta(days=1)
-    tenant.trial_started_at = first_end - timedelta(days=14)
-    tenant.trial_ends_at = first_end
-    tenant.save()
-
-    assert not plans.start_trial(tenant)
-    tenant.trial_started_at = None
-    tenant.trial_ends_at = None
-    tenant.billing_status = "expired"
-    tenant.save()
-    assert not plans.start_trial(tenant)
-
-
 def test_pending_checkout_does_not_end_the_cardless_trial(tenant):
     now = utc_now()
-    assert plans.start_trial(tenant, now=now)
+    _start_trial(tenant, now=now)
     tenant.billing_provider = "lemonsqueezy"
     tenant.billing_status = "checkout_pending"
     tenant.save()
