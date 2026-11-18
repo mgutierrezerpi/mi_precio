@@ -19,7 +19,12 @@ import type {
 } from '../../types'
 import api from '../../services/api'
 import { useT, type TFn } from '../../lib/i18n'
-import { PLANS, planById, planHasFeature } from '../../lib/plans'
+import {
+  PLANS,
+  hasLiveSubscription,
+  planById,
+  planHasFeature,
+} from '../../lib/plans'
 import {
   getPushStatus,
   enablePush,
@@ -36,6 +41,8 @@ import {
   type ListAppearance,
 } from '../../lib/listAppearance'
 import { CrmLayout } from './crm/CrmLayout'
+import { PlanChangeConfirm } from './crm/PlanChangeConfirm'
+import { SubscriptionPanel } from './crm/SubscriptionPanel'
 import { Icon, type IconName } from './crm/ui'
 import { gradient, tone } from './crm/theme'
 
@@ -1615,6 +1622,7 @@ function BillingSection({
   const dispatch = useAppDispatch()
   const [info, setInfo] = useState<PlanInfo | null>(null)
   const [changing, setChanging] = useState<PlanId | null>(null)
+  const [planToConfirm, setPlanToConfirm] = useState<PlanId | null>(null)
   const [error, setError] = useState<string | null>(null)
   const tenantId = tenant?.id
   const pendingKey = tenantId ? `billing_pending_plan_${tenantId}` : null
@@ -1688,6 +1696,13 @@ function BillingSection({
       return
     }
 
+    // Already paying: move that subscription, a new checkout would charge twice.
+    if (hasLiveSubscription(info)) {
+      setChanging(null)
+      setPlanToConfirm(plan)
+      return
+    }
+
     // Billing enabled: open the Lemon Squeezy checkout.
     const redirectUrl = `${window.location.origin}/admin/settings?section=billing&checkout_plan=${plan}&order_id=[order_id]`
     const res = await api.createCheckout(tenant.id, plan, redirectUrl)
@@ -1696,6 +1711,27 @@ function BillingSection({
       if (pendingKey) sessionStorage.setItem(pendingKey, plan)
       window.location.assign(res.data.url)
     } else setError(res.error || 'No se pudo abrir el checkout.')
+  }
+
+  const refreshPlan = async () => {
+    if (!tenantId) return
+    const res = await api.getPlan(tenantId)
+    if (res.data) setInfo(res.data)
+  }
+
+  const confirmPlanChange = async () => {
+    if (!tenantId || !planToConfirm) return
+    setChanging(planToConfirm)
+    setError(null)
+    const res = await api.changeSubscriptionPlan(tenantId, planToConfirm)
+    setChanging(null)
+    setPlanToConfirm(null)
+    if (!res.data) {
+      setError(res.error || t('bill.change.failed'))
+      return
+    }
+    dispatch(setTenant(res.data))
+    await refreshPlan()
   }
 
   const limitLabel = (n: number | null) =>
@@ -1779,6 +1815,18 @@ function BillingSection({
         >
           <Icon name="tags" size={16} /> {t('bill.managePortal')}
         </a>
+      )}
+
+      {planToConfirm && (
+        <PlanChangeConfirm
+          t={t}
+          from={planById(current as PlanId).name}
+          to={planById(planToConfirm).name}
+          resumes={info?.billing?.status === 'cancelled'}
+          busy={changing !== null}
+          onConfirm={confirmPlanChange}
+          onDismiss={() => setPlanToConfirm(null)}
+        />
       )}
 
       {/* Plan cards — same copy as the public landing (lib/plans). */}
@@ -1866,6 +1914,17 @@ function BillingSection({
       <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
         <Icon name="tags" size={15} /> {t('bill.paymentNote')}
       </div>
+
+      {/* Last: managing what you already have comes after seeing the plans. */}
+      <SubscriptionPanel
+        t={t}
+        info={info}
+        isOwner={isOwner}
+        tenantId={tenantId}
+        language={tenant?.language}
+        onTenantChanged={(next) => dispatch(setTenant(next))}
+        onChanged={refreshPlan}
+      />
     </>
   )
 }
@@ -1966,6 +2025,9 @@ function DeleteSection({
             {t('set.delete.warning', { name: tenant?.name || '' })}
           </p>
         </div>
+        <p className="text-xs font-semibold text-[var(--tone-red-fg)]">
+          {t('set.delete.billingNote')}
+        </p>
         {error && (
           <p className="text-xs font-bold text-[var(--tone-red-fg)]">{error}</p>
         )}

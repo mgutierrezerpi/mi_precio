@@ -17,6 +17,13 @@ class SubscriptionAction(BaseModel):
     tenant_id: str
 
 
+class PlanChange(BaseModel):
+    """Move the tenant's own live subscription to another plan."""
+
+    tenant_id: str
+    plan: str
+
+
 class ManualSubscriptionSync(BaseModel):
     tenant_id: str
     plan: str
