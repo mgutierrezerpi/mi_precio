@@ -38,6 +38,15 @@ describe('ChoosePlanContent', () => {
     expect(onSwitchTenant).toHaveBeenCalledWith(aurora)
   })
 
+  it('does not promise a trial that subscribing skips (N7)', () => {
+    // The checkout charges at once, so these cards cannot offer free days.
+    const { container } = paint({})
+
+    expect(container.textContent).not.toMatch(/prueba gratis/i)
+    expect(container.textContent).not.toMatch(/No se cobra nada/i)
+    expect(container.textContent).toContain('momento de suscribirte')
+  })
+
   it('shows only «Salir» when there is no other business', () => {
     paint({})
     expect(screen.queryByRole('button', { name: /Volver a/ })).toBeNull()
