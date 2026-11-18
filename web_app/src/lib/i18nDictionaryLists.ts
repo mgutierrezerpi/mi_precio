@@ -70,6 +70,11 @@ export const DICT_LISTS: Record<string, TranslationEntry> = {
     en: 'Make main',
     pt: 'Definir como principal',
   },
+  'pl.menu.exportPdf': {
+    es: 'Exportar a PDF',
+    en: 'Export to PDF',
+    pt: 'Exportar para PDF',
+  },
   'pl.menu.delete': { es: 'Eliminar', en: 'Delete', pt: 'Excluir' },
   ...DICT_LIST_WIZARD,
   'pl.tab.offline': { es: 'Fuera de línea', en: 'Offline', pt: 'Offline' },

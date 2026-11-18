@@ -282,9 +282,10 @@ then and a second click would create a duplicate.
 
 `lib/socials.ts` is the single definition of the shop's networks — used by the
 Settings → Marca fields that capture them and the footer that renders them.
-`activeSocials(tenant)` returns only the ones filled in, so a shop with none
-gets no icon row at all rather than a line of placeholders advertising that it
-has no presence anywhere.
+`activeSocials(shopSocials(tenant))` returns only the ones filled in, so a shop
+with none gets no icon row at all rather than a line of placeholders advertising
+that it has no presence anywhere. `shopSocials` also reads the older «Link de
+WhatsApp» setting, so the number on the footer is the one cart orders go to.
 
 `hrefOf` builds `wa.me/<digits>` for WhatsApp and passes the rest through. It
 also re-adds a missing scheme defensively: a scheme-less href resolves as a
@@ -295,11 +296,14 @@ sending them off-site.
 never its rewriting — there is one canonical form and it is server-side. It
 exists because a rejected PATCH surfaces as a bare `Error 422`: FastAPI sends
 validation detail as a list, which `api.request` cannot turn into a sentence a
-shop can act on. A field with an error is held back rather than sent.
+shop can act on. A field with an error is held back rather than sent, and
+`useSocialLinks` sends only the fields the owner changed.
 
 The footer is **not one component**: besides Storefront and CartView in
 `MenuScreen`, each of the eight templates in `designs.tsx` has its own footer
-with its own palette. All nine render the shared `components/SocialLinks`.
+with its own palette. All of those render the shared `components/SocialLinks`.
+The Pencil templates have no shared footer, so `MenuScreen` draws their icons
+once, on the closing band of the page, and a new template gets them for free.
 That component draws bare glyphs with no chip behind them on purpose — the
 designs run from near-black to off-white footers, and any fixed overlay colour
 is invisible on half of them.
@@ -517,9 +521,16 @@ code: at 176px a mark punched into the middle costs modules a scanner needs.
 
 ### Exporting a list to PDF
 
-"Exportar a PDF" in a list's row menu opens its own public page with `?pdf=1`.
-That page renders the list, captures itself and downloads the file
-(`lib/exportListPdf` + `hooks/useExportPdfWhenReady`).
+"Exportar a PDF" in a list's row menu opens its own public page with
+`?pdf=1&preview=editor`. That page renders the list, captures itself and
+downloads the file (`lib/exportListPdf` + `hooks/useExportPdfWhenReady`). The
+preview lets the shop's team export a private list without its access code, and
+`pdf=1` keeps the export out of the visit counts and the visitor prompt.
+
+While capturing, `.mp-exporting` hides buttons and form controls and turns
+animations off, because a template caught mid-entrance has its rows at opacity 0.
+A button that *is* the product, like the Cafecitos cards, carries
+`data-export-keep`.
 
 The sheet is a **picture of the real page**, not a redrawing of it. The nine
 designs stay the single source of truth, so the export cannot drift from what a

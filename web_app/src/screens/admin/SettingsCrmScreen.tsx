@@ -38,6 +38,7 @@ import {
 } from '../../lib/listAppearance'
 import { CrmLayout } from './crm/CrmLayout'
 import { PlanChangeConfirm } from './crm/PlanChangeConfirm'
+import { SocialLinksFields, useSocialLinks } from './crm/SocialLinksFields'
 import { SubscriptionPanel } from './crm/SubscriptionPanel'
 import { TrialPlanConfirm } from './crm/TrialPlanConfirm'
 import { Icon, type IconName } from './crm/ui'
@@ -633,6 +634,9 @@ function BrandSection({
 }: Ctx) {
   const { hasFeature } = usePlanInfo()
   const identity = useBrandIdentity(tenant, canManage, save)
+  const socials = useSocialLinks(tenant, canManage, (patch) =>
+    save(patch, 'brand')
+  )
   const editor = useAppearanceEditor(tenant, canManage, save, reportError)
 
   return (
@@ -651,6 +655,12 @@ function BrandSection({
         color={identity.color}
         description={identity.description}
         tenant={tenant}
+        t={t}
+      />
+      <SocialLinksFields
+        {...socials}
+        accent={identity.color}
+        canManage={canManage}
         t={t}
       />
       <AppearanceFields

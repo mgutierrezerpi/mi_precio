@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { SOCIALS, activeSocials, hrefOf, socialError } from '../../src/lib/socials'
+import {
+  SOCIALS,
+  activeSocials,
+  hrefOf,
+  shopSocials,
+  socialError,
+} from '../../src/lib/socials'
 
 describe('hrefOf', () => {
   it('builds the wa.me link from the stored digits', () => {
@@ -112,5 +118,35 @@ describe('socialError', () => {
     expect(socialError('socialWhatsapp', '1'.repeat(16))).toBe(
       'social.error.phone'
     )
+  })
+})
+
+describe('shopSocials', () => {
+  it('keeps the networks the shop filled in', () => {
+    expect(
+      shopSocials({ socialInstagram: 'https://instagram.com/micafe' })
+        .socialInstagram
+    ).toBe('https://instagram.com/micafe')
+  })
+
+  it('prefers the number typed in the social links', () => {
+    expect(
+      shopSocials({
+        socialWhatsapp: '59899111222',
+        whatsappUrl: 'https://wa.me/59899333444',
+      }).socialWhatsapp
+    ).toBe('59899111222')
+  })
+
+  it('falls back to the WhatsApp link orders already use', () => {
+    expect(
+      shopSocials({ whatsappUrl: 'https://wa.me/59899333444' }).socialWhatsapp
+    ).toBe('59899333444')
+  })
+
+  it('shows no WhatsApp for a link with no phone in it', () => {
+    expect(
+      shopSocials({ whatsappUrl: 'https://wa.me/message/ABC123' }).socialWhatsapp
+    ).toBeNull()
   })
 })

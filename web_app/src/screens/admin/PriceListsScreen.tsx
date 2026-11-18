@@ -60,6 +60,10 @@ const publicUrl = (sub: string | undefined, l: PriceList) =>
   `${window.location.origin}${publicPath(sub, l)}`
 const qrUrl = (sub: string | undefined, l: PriceList) =>
   `${publicUrl(sub, l)}?src=qr`
+/** The list's own page, which captures itself into a PDF on arrival. It opens
+ *  as the shop's preview so a private list exports without asking for a code. */
+const pdfExportUrl = (sub: string | undefined, l: PriceList) =>
+  `${publicUrl(sub, l)}?pdf=1&preview=editor`
 const qrFileName = (l: PriceList) =>
   (l.slug || l.name)
     .toLowerCase()
@@ -357,6 +361,9 @@ export function PriceListsScreen() {
                     window.open(publicUrl(tenant?.subdomain, l), '_blank')
                   }
                   onReports={() => navigate(`/admin/reports?list=${l.id}`)}
+                  onExportPdf={() =>
+                    window.open(pdfExportUrl(tenant?.subdomain, l), '_blank')
+                  }
                   onCreateVariant={() => setVariantParent(l)}
                 />
                 {lists
@@ -407,6 +414,12 @@ export function PriceListsScreen() {
                       }
                       onReports={() =>
                         navigate(`/admin/reports?list=${variant.id}`)
+                      }
+                      onExportPdf={() =>
+                        window.open(
+                          pdfExportUrl(tenant?.subdomain, variant),
+                          '_blank'
+                        )
                       }
                     />
                   ))}
@@ -464,6 +477,7 @@ function ListRow({
   onQr,
   onOpen,
   onReports,
+  onExportPdf,
   onCreateVariant,
   variant = false,
   variantDetail,
@@ -480,6 +494,7 @@ function ListRow({
   onQr: () => void
   onOpen: () => void
   onReports: () => void
+  onExportPdf: () => void
   onCreateVariant?: () => void
   variant?: boolean
   variantDetail?: string
@@ -644,6 +659,7 @@ function ListRow({
             onCreateVariant={onCreateVariant}
             isVariant={variant}
             onReports={onReports}
+            onExportPdf={onExportPdf}
           />
         )}
       </div>
@@ -661,6 +677,7 @@ function RowMenu({
   onCreateVariant,
   isVariant = false,
   onReports,
+  onExportPdf,
 }: {
   list: PriceList
   onEdit: () => void
@@ -671,13 +688,14 @@ function RowMenu({
   onCreateVariant?: () => void
   isVariant?: boolean
   onReports: () => void
+  onExportPdf: () => void
 }) {
   const t = useT()
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const H = isVariant ? 220 : 270
+  const H = isVariant ? 260 : 350
 
   const toggle = () => {
     if (open) {
@@ -776,6 +794,14 @@ function RowMenu({
               label={t('nav.reports')}
               onClick={act(onReports)}
             />
+            {/* The PDF is a picture of the real page, so there has to be one. */}
+            {list.published && list.live && (
+              <MenuItemBtn
+                icon="file-spreadsheet"
+                label={t('pl.menu.exportPdf')}
+                onClick={act(onExportPdf)}
+              />
+            )}
             <div className="my-1 h-px bg-[var(--dash-divider)]" />
             <MenuItemBtn
               icon="circle-x"
