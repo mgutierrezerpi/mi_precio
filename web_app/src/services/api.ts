@@ -38,9 +38,21 @@ import { apiErrorMessage } from '../lib/apiErrors'
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
+/** The brand a private list's access-code screen is dressed in. */
+export interface PrivateListShop {
+  name: string
+  logoUrl?: string | null
+  brandColor?: string | null
+}
+
 type ApiResponse<T> =
   | { data: T; error?: never }
-  | { data?: never; error: string; errorCode?: string }
+  | {
+      data?: never
+      error: string
+      errorCode?: string
+      errorShop?: PrivateListShop
+    }
 
 type VisitBucket = {
   today: number
@@ -361,6 +373,7 @@ class ApiService {
         return {
           error: apiErrorMessage(response.status, detail),
           ...(errorCode ? { errorCode } : {}),
+          ...(detail?.shop ? { errorShop: detail.shop } : {}),
         }
       }
 

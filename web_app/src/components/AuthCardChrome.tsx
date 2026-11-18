@@ -1,4 +1,19 @@
+import { localeForHostname } from '../lib/domainLocale'
 import { ShieldCheck, XIcon } from './AuthCardIcons'
+
+/** Why the card was opened: to come back, or to start the free trial. */
+export type AuthIntent = 'login' | 'signup'
+
+const signupCopy = () =>
+  localeForHostname() === 'en'
+    ? {
+        title: 'Create your account',
+        body: 'Enter your email to start your 14-day free trial. No card needed.',
+      }
+    : {
+        title: 'Creá tu cuenta',
+        body: 'Ingresá tu email y empezá tus 14 días gratis, sin tarjeta.',
+      }
 
 export function AuthHeader({ onClose }: { onClose: () => void }) {
   return (
@@ -22,15 +37,20 @@ export function AuthHeader({ onClose }: { onClose: () => void }) {
 
 export function AuthIntro({
   codeSent,
+  intent = 'login',
   pendingEmail,
 }: {
   codeSent: boolean
+  intent?: AuthIntent
   pendingEmail: string | null
 }) {
+  const signup = intent === 'signup' ? signupCopy() : null
   return (
     <div className="flex flex-col gap-1.5">
       <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-[#0F172A]">
-        {codeSent ? 'Revisá tu email' : 'Bienvenido de vuelta'}
+        {codeSent
+          ? 'Revisá tu email'
+          : (signup?.title ?? 'Bienvenido de vuelta')}
       </h1>
       <p className="text-sm leading-relaxed text-[#64748B]">
         {codeSent ? (
@@ -40,7 +60,7 @@ export function AuthIntro({
             .
           </>
         ) : (
-          'Iniciá sesión para gestionar tu catálogo.'
+          (signup?.body ?? 'Iniciá sesión para gestionar tu catálogo.')
         )}
       </p>
     </div>

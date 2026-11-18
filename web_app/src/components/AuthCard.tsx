@@ -15,11 +15,22 @@ import {
   tenantNeedsPlan,
   verifyCode,
 } from '../store/slices/authSlice'
-import { AuthHeader, AuthIntro, SecurityNote } from './AuthCardChrome'
+import {
+  AuthHeader,
+  AuthIntro,
+  SecurityNote,
+  type AuthIntent,
+} from './AuthCardChrome'
 import { CodeForm, EmailForm } from './AuthCardForms'
 
 /** Email-to-code authentication state and redirect coordinator. */
-export function AuthCard({ onClose }: { onClose: () => void }) {
+export function AuthCard({
+  intent,
+  onClose,
+}: {
+  intent?: AuthIntent
+  onClose: () => void
+}) {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -30,6 +41,9 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const needsPlan = useAppSelector(selectNeedsPlan)
   const inviteEmail = searchParams.get('email')
+  // The static landing can only say so through its link: /login?alta=1.
+  const cardIntent =
+    intent ?? (searchParams.get('alta') === '1' ? 'signup' : 'login')
   const [email, setEmail] = useState(inviteEmail ?? '')
   const [code, setCode] = useState('')
   // A short wait between codes: the API caps them per email anyway (M16).
@@ -94,7 +108,11 @@ export function AuthCard({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex w-full max-w-[440px] flex-col gap-5 rounded-[24px] bg-white p-9 shadow-[0_30px_80px_-20px_rgba(30,27,75,0.45)] sm:p-10">
       <AuthHeader onClose={onClose} />
-      <AuthIntro codeSent={codeSent} pendingEmail={pendingEmail} />
+      <AuthIntro
+        codeSent={codeSent}
+        intent={cardIntent}
+        pendingEmail={pendingEmail}
+      />
       {codeSent ? (
         <CodeForm
           code={code}

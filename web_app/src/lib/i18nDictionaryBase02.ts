@@ -1,11 +1,6 @@
 import type { TranslationEntry } from './i18nTypes'
 
 export const DICT_BASE_02: Record<string, TranslationEntry> = {
-  'store.heroSub': {
-    es: 'Comprá mayorista o minorista. Precios siempre actualizados.',
-    en: 'Buy wholesale or retail. Prices always up to date.',
-    pt: 'Compre atacado ou varejo. Preços e estoque sempre atualizados.',
-  },
   'store.statProducts': { es: 'Productos', en: 'Products', pt: 'Produtos' },
   'store.statShipping': {
     es: 'Pedidos por WhatsApp',

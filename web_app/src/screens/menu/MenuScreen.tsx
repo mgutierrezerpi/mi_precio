@@ -30,6 +30,9 @@ import {
   type CartTheme,
 } from './designs'
 import { lighten, readableOn, withAlpha } from '../../lib/designColors'
+import { defaultHeroStats } from '../../lib/publicHeroStats'
+import { PrivateListGate } from './PrivateListGate'
+import type { PrivateListShop } from '../../services/api'
 import { parseUtc } from '../../lib/datetime'
 import { categoryIcon } from '../../lib/categoryIcon'
 import { whatsappOrderHref, whatsappPhone } from '../../lib/whatsappOrder'
@@ -104,6 +107,7 @@ export function MenuScreen() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [errorCode, setErrorCode] = useState<string | null>(null)
+  const [privateShop, setPrivateShop] = useState<PrivateListShop>()
   const [cat, setCat] = useState<string>('all')
   const [q, setQ] = useState('')
   const [copied, setCopied] = useState(false)
@@ -155,9 +159,6 @@ export function MenuScreen() {
   const [viewerSubmitted, setViewerSubmitted] = useState(false)
   const [viewerSaving, setViewerSaving] = useState(false)
   const [viewerError, setViewerError] = useState(false)
-  const [accessCode, setAccessCode] = useState('')
-  const [accessSaving, setAccessSaving] = useState(false)
-  const [accessError, setAccessError] = useState(false)
 
   const displayLists = pickDisplayLists(lists, listId)
   // Service lists are read-only price lists: no cart / add-to-cart.
@@ -178,10 +179,12 @@ export function MenuScreen() {
         data?: PublicMenuData
         error?: string
         errorCode?: string
+        errorShop?: PrivateListShop
       }
       if (response.error) {
         setError(response.error)
         setErrorCode(response.errorCode ?? null)
+        setPrivateShop(response.errorShop)
       }
       else if (response.data) {
         setTenant(response.data.tenant)
@@ -489,54 +492,14 @@ export function MenuScreen() {
   // shop, so it is the only one that may talk about MiPrecio.
   // `error` is the API's raw `detail` — English, written for us, not for someone
   // who just scanned a QR. It belongs in the console, never on screen.
-  if (errorCode === 'Access code required' && subdomain && listId) {
-    const unlock = async (event: React.FormEvent) => {
-      event.preventDefault()
-      if (!accessCode.trim()) return
-      setAccessSaving(true)
-      setAccessError(false)
-      const response = await api.unlockPublicList(subdomain, listId, accessCode)
-      setAccessSaving(false)
-      if (response.data) window.location.reload()
-      else setAccessError(true)
-    }
+  if (errorCode === 'Access code required' && subdomain && listId)
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0d3d30] px-5 font-sans">
-        <form
-          onSubmit={unlock}
-          className="w-full max-w-sm rounded-3xl border border-[#9bc6b7] bg-white p-7 text-center shadow-2xl"
-        >
-          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#07583f]">
-            Lista privada
-          </p>
-          <h1 className="mt-3 text-2xl font-extrabold text-[#062d20]">
-            Ingresá tu código
-          </h1>
-          <p className="mt-2 text-sm font-medium text-[#23483b]">
-            Esta lista está disponible solo para personas invitadas.
-          </p>
-          <input
-            autoFocus
-            value={accessCode}
-            onChange={(e) => setAccessCode(e.target.value)}
-            className="mt-6 w-full rounded-xl border-2 border-[#5d9f89] bg-[#f5fbf8] px-4 py-3 text-center font-bold tracking-[0.08em] text-[#062d20] outline-none placeholder:text-[#527365] focus:border-[#07583f] focus:ring-4 focus:ring-[#07583f]/15"
-            placeholder="Código de acceso"
-          />
-          {accessError && (
-            <p className="mt-2 text-xs font-semibold text-red-600">
-              El código no es válido. Intentá de nuevo.
-            </p>
-          )}
-          <button
-            disabled={accessSaving}
-            className="mt-4 w-full rounded-xl bg-[#07583f] py-3 text-sm font-extrabold text-white shadow-[0_4px_0_#043b2a] transition hover:bg-[#043b2a] active:translate-y-px disabled:opacity-60"
-          >
-            {accessSaving ? 'Verificando…' : 'Ver lista'}
-          </button>
-        </form>
-      </main>
+      <PrivateListGate
+        subdomain={subdomain}
+        listId={listId}
+        shop={privateShop}
+      />
     )
-  }
   if (error || !tenant) {
     if (error) console.warn('[public] %s: %s', subdomain, error)
     // No shop to borrow an identity from, so this one is ours. It also doubles
@@ -1434,11 +1397,14 @@ export function Storefront(p: StoreProps) {
     hero?.title ||
     tenant.description ||
     t('store.heroTitle', { name: tenant.name })
-  const heroStats = hero?.stats?.map((stat) => [stat.value, stat.label]) ?? [
-    [`${allItems.length}`, t('store.statProducts')],
-    ['24/7', t('store.statShipping')],
-    [updated, t('store.statUpdated')],
-  ]
+  const heroStats =
+    hero?.stats?.map((stat) => [stat.value, stat.label]) ??
+    defaultHeroStats({
+      productCount: allItems.length,
+      whatsapp: whatsappPhone(tenant),
+      updated,
+      t,
+    })
   const promotion = content?.blocks.find(
     (block) => block.type === 'promotion_strip'
   )
@@ -1520,12 +1486,14 @@ export function Storefront(p: StoreProps) {
             >
               {heroTitle}
             </h1>
-            <p
-              className="max-w-[560px] text-[15px] font-medium"
-              style={{ color: heroInk, opacity: 0.82 }}
-            >
-              {hero?.body || t('store.heroSub')}
-            </p>
+            {hero?.body && (
+              <p
+                className="max-w-[560px] text-[15px] font-medium"
+                style={{ color: heroInk, opacity: 0.82 }}
+              >
+                {hero.body}
+              </p>
+            )}
             <div className="mt-2 flex flex-wrap gap-8">
               {heroStats.map(([v, l]) => (
                 <div key={l} className="flex flex-col gap-0.5">

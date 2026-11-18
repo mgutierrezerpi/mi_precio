@@ -102,7 +102,19 @@ def get_public_menu(
             published_lists[0].price_list, viewer_token
         )
     ):
-        raise HTTPException(status_code=403, detail="Access code required")
+        # The code screen is the shop's too, and nothing else tells it whose.
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "Access code required",
+                "message": "Access code required",
+                "shop": {
+                    "name": tenant.name,
+                    "logoUrl": tenant.logo_url,
+                    "brandColor": tenant.brand_color,
+                },
+            },
+        )
     published_magazines = (
         public.get_published_magazines(tenant, magazine)
         if feature_flags.magazines_enabled(tenant.id)

@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
 import { AuthCard } from './AuthCard'
+import type { AuthIntent } from './AuthCardChrome'
 
 interface AuthModalProps {
   open: boolean
+  intent?: AuthIntent
   onClose: () => void
 }
 
@@ -12,7 +14,7 @@ const overlayClass = [
 ].join(' ')
 
 /** Login card shown as an overlay on top of the landing page. */
-export function AuthModal({ open, onClose }: AuthModalProps) {
+export function AuthModal({ open, intent, onClose }: AuthModalProps) {
   // Lock background scroll + close on Escape while open.
   useEffect(() => {
     if (!open) return
@@ -40,7 +42,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
       aria-modal="true"
     >
       <div className="w-full max-w-[440px] animate-scale-in">
-        <AuthCard onClose={onClose} />
+        <AuthCard intent={intent} onClose={onClose} />
       </div>
     </div>
   )

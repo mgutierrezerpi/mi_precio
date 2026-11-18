@@ -1971,13 +1971,13 @@ export function ServiceCards(p: DesignProps) {
               {t('pub.updated', { date: updated })}
             </span>
             <span className="text-[20px] font-extrabold leading-tight">
-              {t('store.heroSub')}
+              {allItems.length} {t('store.statProducts')}
             </span>
             <span
               className="mt-1 text-[13px] font-semibold"
               style={{ color: heroInk, opacity: 0.9 }}
             >
-              {allItems.length} · {currency}
+              {currency}
             </span>
           </div>
         </header>
@@ -2183,12 +2183,12 @@ export function ImageCatalog(p: DesignProps) {
               tenant.description ||
               t('store.heroTitle', { name: tenant.name })}
           </h1>
-          {tenant.description && (
+          {p.pageListName && tenant.description && (
             <p
               className="max-w-[560px] text-[13px] font-medium"
               style={{ color: heroInk, opacity: 0.72 }}
             >
-              {t('store.heroSub')}
+              {tenant.description}
             </p>
           )}
         </div>

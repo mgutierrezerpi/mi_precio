@@ -127,9 +127,9 @@ export const DICT_BASE_06: Record<string, TranslationEntry> = {
     pt: 'Mais produtos, listas e multiusuário.',
   },
   'side.upgradeDesc.pro': {
-    es: 'Multimoneda, importación masiva y usuarios ilimitados.',
-    en: 'Multi-currency, bulk import and unlimited users.',
-    pt: 'Multimoeda, importação em massa e usuários ilimitados.',
+    es: 'Productos, listas y usuarios ilimitados.',
+    en: 'Unlimited products, lists and users.',
+    pt: 'Produtos, listas e usuários ilimitados.',
   },
   'side.viewPlans': { es: 'Ver planes', en: 'View plans', pt: 'Ver planos' },
 

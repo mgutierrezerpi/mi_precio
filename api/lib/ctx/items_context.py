@@ -1,7 +1,10 @@
 """Items context - item operations."""
 
+from decimal import Decimal
+
 from lib.ctx.item_products import find_product, next_product_position
 from lib.ctx.plans_context import assert_can_add
+from lib.ctx.version_freshness import touch_product_versions, touch_versions
 from models import Item, ListVersion, Product
 
 
@@ -65,11 +68,13 @@ def create_item(version_id: str, **attrs) -> Item | None:
         image_thumb_url=product.image_thumb_url,
         category=product.category,
     )
-    return Item.create(
+    item = Item.create(
         list_version=version,
         position=_next_position(version_id),
         **attrs,
     )
+    touch_versions([version_id])
+    return item
 
 
 def update_item(item_id: str, **updates) -> Item | None:
@@ -77,7 +82,9 @@ def update_item(item_id: str, **updates) -> Item | None:
     item = get_item(item_id)
     if not item:
         return None
+    before = _visible_state(item)
     product = item.product
+    profile_changed = False
     if product:
         profile_fields = {
             "name",
@@ -90,6 +97,9 @@ def update_item(item_id: str, **updates) -> Item | None:
         profile_updates = {
             key: value for key, value in updates.items() if key in profile_fields
         }
+        profile_changed = any(
+            getattr(product, key) != value for key, value in profile_updates.items()
+        )
         for key, value in profile_updates.items():
             setattr(product, key, value)
         if profile_updates:
@@ -115,6 +125,11 @@ def update_item(item_id: str, **updates) -> Item | None:
         if value is not None:
             setattr(item, key, value)
     item.save()
+    # A product's profile is shared, so its edit shows on every list carrying it.
+    if profile_changed:
+        touch_product_versions(product.id)
+    elif _visible_state(item) != before:
+        touch_versions([item.list_version_id])
     return item
 
 
@@ -123,17 +138,42 @@ def delete_item(item_id: str) -> bool:
     item = get_item(item_id)
     if not item:
         return False
+    version_id = item.list_version_id
     item.delete_instance()
+    touch_versions([version_id])
     return True
 
 
 def reorder_items(version_id: str, item_ids: list[str]) -> bool:
     """Reorder items by updating their positions."""
+    moved = 0
     for position, item_id in enumerate(item_ids):
-        Item.update(position=position).where(
-            (Item.id == item_id) & (Item.list_version == version_id)
-        ).execute()
+        moved += (
+            Item.update(position=position)
+            .where(
+                (Item.id == item_id)
+                & (Item.list_version == version_id)
+                & (Item.position != position)
+            )
+            .execute()
+        )
+    if moved:
+        touch_versions([version_id])
     return True
+
+
+def _visible_state(item: Item) -> tuple:
+    """What a visitor can see of an item, comparable across value types."""
+    return (
+        item.name,
+        Decimal(str(item.price)),
+        item.currency,
+        item.description,
+        item.category,
+        item.image_url,
+        item.image_thumb_url,
+        item.position,
+    )
 
 
 def _next_position(version_id: str) -> int:

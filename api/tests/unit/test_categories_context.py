@@ -9,14 +9,14 @@ import pytest
 from peewee import SqliteDatabase
 
 from lib.ctx import categories, identity, products
-from models import Category, Product, Tenant
+from models import Category, Item, ListVersion, PriceList, Product, Tenant
 
 categories_db = SqliteDatabase(":memory:")
 
 
 @pytest.fixture(scope="function")
 def db():
-    models = [Tenant, Category, Product]
+    models = [Tenant, Category, Product, PriceList, ListVersion, Item]
     categories_db.bind(models)
     categories_db.connect()
     categories_db.create_tables(models)
