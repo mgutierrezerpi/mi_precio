@@ -3,7 +3,7 @@
 import pytest
 
 from lib import encode_token
-from lib.ctx import identity, items, lists
+from lib.ctx import identity, items, lists, versions
 from models import TenantMembership, User
 from tests.conftest import subscribed_tenant
 
@@ -57,3 +57,25 @@ def test_another_shops_team_does_not_see_the_draft(setup):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.json()["lists"] == []
+
+
+def test_private_list_gate_carries_the_brand_of_the_shop(setup):
+    client, tenant, draft, _ = setup
+    tenant.brand_color = "#7C3AED"
+    tenant.save()
+    lists.update_list(draft.id, published=True, is_private=True)
+    versions.update_version(lists.get_list(draft.id).versions[0].id, published=True)
+
+    response = client.get(
+        f"/api/v1/public/{tenant.subdomain}", params={"list": draft.id}
+    )
+
+    assert response.status_code == 403
+    detail = response.json()["detail"]
+    assert detail["code"] == "Access code required"
+    assert detail["shop"] == {
+        "name": "Café",
+        "logoUrl": None,
+        "brandColor": "#7C3AED",
+    }
+    assert "lists" not in response.json()
