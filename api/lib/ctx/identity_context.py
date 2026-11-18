@@ -16,6 +16,22 @@ def _trial_fields() -> dict:
     }
 
 
+def _new_business_fields(owner: User | None) -> dict:
+    """The trial is one per owner: only the first business that claims it gets it.
+
+    Without a trial the business is still gated, so it opens on the plan screen.
+    The conditional update lets a double submit claim the trial only once."""
+    if owner is None:
+        return _trial_fields()
+    fields = _trial_fields()
+    claimed = (
+        User.update(trial_used_at=fields["trial_started_at"])
+        .where((User.id == owner.id) & User.trial_used_at.is_null(True))
+        .execute()
+    )
+    return fields if claimed else {"plan_gate": True}
+
+
 def list_tenants(user_id: str | None = None) -> list[Tenant]:
     if not user_id:
         return list(Tenant.select())
@@ -50,9 +66,11 @@ def create_tenant(
         return None
     # Additional businesses follow the same paid onboarding as new signups.
     # Existing tenants retain their persisted gate state.
-    tenant = Tenant.create(name=name, subdomain=subdomain, **_trial_fields())
-    if owner_user_id:
-        user = User.get_or_none(User.id == owner_user_id)
+    user = User.get_or_none(User.id == owner_user_id) if owner_user_id else None
+    with Tenant._meta.database.atomic():
+        tenant = Tenant.create(
+            name=name, subdomain=subdomain, **_new_business_fields(user)
+        )
         if user:
             TenantMembership.create(user=user, tenant=tenant, role="owner")
     return tenant
@@ -179,6 +197,12 @@ def get_or_create_user(email: str, language: str = "es") -> UserResult:
         **_trial_fields(),
     )
     # First user of a brand-new tenant owns it.
-    user = User.create(email=email, tenant=tenant, name=name, role="owner")
+    user = User.create(
+        email=email,
+        tenant=tenant,
+        name=name,
+        role="owner",
+        trial_used_at=tenant.trial_started_at,
+    )
     TenantMembership.create(user=user, tenant=tenant, role="owner")
     return UserResult(user, True)

@@ -1,4 +1,5 @@
-import type { PlanId } from '../types'
+import type { PlanId, PlanInfo } from '../types'
+import { parseUtc } from './datetime'
 
 /** Marketing content for each plan — the single source shared by the landing and
  *  the in-app billing cards so they always say the same thing. Ordered cheapest → top. */
@@ -16,7 +17,6 @@ export interface PlanContent {
   description: string
   price: string
   cadence: string
-  trialLabel: string
   features: string[]
   limits: PlanLimits
   popular?: boolean
@@ -34,7 +34,6 @@ const FREE_PLAN: PlanContent = {
   description: 'Cuenta sin suscripción activa.',
   price: '$U 0',
   cadence: 'sin suscripción',
-  trialLabel: '',
   features: ['Hasta 10 productos', '1 lista pública', '1 usuario'],
   limits: { products: 10, lists: 1, members: 1 },
 }
@@ -47,7 +46,6 @@ export const PLANS: PlanContent[] = [
       'Para empezar con una lista simple y compartirla por link o QR.',
     price: '$U 200',
     cadence: 'por mes',
-    trialLabel: '14 días de prueba gratis',
     features: [
       'Hasta 25 productos',
       '3 listas públicas',
@@ -61,7 +59,6 @@ export const PLANS: PlanContent[] = [
     description: 'Más productos, más listas y herramientas para operar mejor.',
     price: '$U 800',
     cadence: 'por mes',
-    trialLabel: '14 días de prueba gratis',
     features: [
       'Hasta 300 productos',
       '15 listas públicas',
@@ -77,7 +74,6 @@ export const PLANS: PlanContent[] = [
     description: 'Límites altos, equipo completo y funciones avanzadas.',
     price: '$U 1.500',
     cadence: 'por mes',
-    trialLabel: '14 días de prueba gratis',
     features: [
       'Productos ilimitados',
       'Listas ilimitadas',
@@ -93,3 +89,18 @@ export const planById = (id: PlanId): PlanContent =>
 
 export const planHasFeature = (plan: PlanId, feature: PlanFeature): boolean =>
   FEATURE_PLANS[feature].includes(plan)
+
+/** Whether the cardless trial is over at `now`. The API's dates are UTC. */
+export const trialHasEnded = (info: PlanInfo | null, now: number): boolean => {
+  const ends = parseUtc(info?.trialEndsAt)
+  return ends !== null && ends.getTime() <= now
+}
+
+/** Mirrors the API's `has_live_subscription`: this customer changes plan on the
+ *  subscription they have, because a new checkout would charge them twice. */
+export const hasLiveSubscription = (info: PlanInfo | null): boolean =>
+  !!info?.billingEnabled &&
+  info.plan !== 'free' &&
+  info.billing?.provider === 'lemonsqueezy' &&
+  !!info.billing.subscriptionId &&
+  info.billing.status !== 'expired'

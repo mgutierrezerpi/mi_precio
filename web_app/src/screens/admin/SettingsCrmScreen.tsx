@@ -14,12 +14,13 @@ import type {
   Role,
   NotifPrefs,
   PlanId,
-  PlanInfo,
   PriceList,
 } from '../../types'
 import api from '../../services/api'
-import { useT, type TFn } from '../../lib/i18n'
-import { PLANS, planById, planHasFeature } from '../../lib/plans'
+import { localeOf, useT, type TFn } from '../../lib/i18n'
+import { parseUtc } from '../../lib/datetime'
+import { PLANS, hasLiveSubscription, planById } from '../../lib/plans'
+import { usePlanInfo } from '../../lib/usePlanInfo'
 import {
   getPushStatus,
   enablePush,
@@ -36,6 +37,9 @@ import {
   type ListAppearance,
 } from '../../lib/listAppearance'
 import { CrmLayout } from './crm/CrmLayout'
+import { PlanChangeConfirm } from './crm/PlanChangeConfirm'
+import { SubscriptionPanel } from './crm/SubscriptionPanel'
+import { TrialPlanConfirm } from './crm/TrialPlanConfirm'
 import { Icon, type IconName } from './crm/ui'
 import { gradient, tone } from './crm/theme'
 
@@ -627,6 +631,7 @@ function BrandSection({
   savedKey,
   reportError,
 }: Ctx) {
+  const { hasFeature } = usePlanInfo()
   const identity = useBrandIdentity(tenant, canManage, save)
   const editor = useAppearanceEditor(tenant, canManage, save, reportError)
 
@@ -657,7 +662,7 @@ function BrandSection({
       <LeadsToggle
         canManage={canManage}
         enabled={!!tenant?.leadsEnabled}
-        unlocked={tenant ? planHasFeature(tenant.plan, 'leads') : false}
+        unlocked={!!tenant && hasFeature('leads')}
         onToggle={(value) => void save({ leadsEnabled: value }, 'brand')}
         t={t}
       />
@@ -1613,8 +1618,12 @@ function BillingSection({
   isOwner: boolean
 }) {
   const dispatch = useAppDispatch()
-  const [info, setInfo] = useState<PlanInfo | null>(null)
+  const { info, onTrial, refresh: refreshPlan } = usePlanInfo()
   const [changing, setChanging] = useState<PlanId | null>(null)
+  const [planToConfirm, setPlanToConfirm] = useState<PlanId | null>(null)
+  const [trialPlanToConfirm, setTrialPlanToConfirm] = useState<PlanId | null>(
+    null
+  )
   const [error, setError] = useState<string | null>(null)
   const tenantId = tenant?.id
   const pendingKey = tenantId ? `billing_pending_plan_${tenantId}` : null
@@ -1624,26 +1633,11 @@ function BillingSection({
   )
 
   useEffect(() => {
-    if (!tenantId) return
-    let cancelled = false
-    api.getPlan(tenantId).then((res) => {
-      if (!cancelled && res.data) setInfo(res.data)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [tenantId])
-
-  useEffect(() => {
     if (!pendingKey) return
     const params = new URLSearchParams(window.location.search)
     const orderId = params.get('order_id')
     if (orderId && tenantId) {
-      void api.reconcileCheckout(tenantId, orderId).then(() =>
-        api.getPlan(tenantId).then((res) => {
-          if (res.data) setInfo(res.data)
-        })
-      )
+      void api.reconcileCheckout(tenantId, orderId).then(refreshPlan)
       params.delete('order_id')
     }
     if (returnedPlan) {
@@ -1656,19 +1650,33 @@ function BillingSection({
         `${window.location.pathname}${qs ? `?${qs}` : ''}`
       )
     }
-  }, [pendingKey, returnedPlan, tenantId])
+  }, [pendingKey, refreshPlan, returnedPlan, tenantId])
 
-  const current = info?.plan ?? tenant?.plan ?? 'free'
+  const effectivePlan = info?.plan ?? tenant?.plan ?? 'free'
+  // The trial runs on Pro, but nothing is contracted until the owner pays.
+  const current = onTrial ? 'free' : effectivePlan
   const visiblePlan =
-    pendingPlan && current !== pendingPlan ? pendingPlan : current
+    pendingPlan && current !== pendingPlan ? pendingPlan : effectivePlan
+  const trialEnds =
+    parseUtc(info?.trialEndsAt)?.toLocaleDateString(
+      localeOf(tenant?.language),
+      { day: 'numeric', month: 'long', year: 'numeric' }
+    ) ?? null
 
   useEffect(() => {
     if (!pendingKey || current !== pendingPlan) return
     sessionStorage.removeItem(pendingKey)
   }, [current, pendingKey, pendingPlan])
 
-  const choosePlan = async (plan: PlanId) => {
-    if (!tenant?.id || plan === current) return
+  const choosePlan = (plan: PlanId) => {
+    if (plan === current) return
+    setError(null)
+    if (onTrial) setTrialPlanToConfirm(plan)
+    else void startPlan(plan)
+  }
+
+  const startPlan = async (plan: PlanId) => {
+    if (!tenant?.id) return
     setChanging(plan)
     setError(null)
 
@@ -1676,15 +1684,22 @@ function BillingSection({
     if (!info?.billingEnabled) {
       const res = await api.updatePlan(tenant.id, plan)
       setChanging(null)
+      setTrialPlanToConfirm(null)
       if (res.data) {
-        const refreshed = await api.getPlan(tenant.id)
-        if (refreshed.data) setInfo(refreshed.data)
+        const refreshed = await refreshPlan()
         // Keep the auth store's tenant in sync so the header plan badge (and any
         // other consumer) reflects the new plan without needing a re-login.
-        dispatch(setTenant({ ...tenant, plan: refreshed.data?.plan ?? plan }))
+        dispatch(setTenant({ ...tenant, plan: refreshed?.plan ?? plan }))
       } else {
         setError(res.error || 'No se pudo cambiar el plan.')
       }
+      return
+    }
+
+    // Already paying: move that subscription, a new checkout would charge twice.
+    if (hasLiveSubscription(info)) {
+      setChanging(null)
+      setPlanToConfirm(plan)
       return
     }
 
@@ -1692,10 +1707,26 @@ function BillingSection({
     const redirectUrl = `${window.location.origin}/admin/settings?section=billing&checkout_plan=${plan}&order_id=[order_id]`
     const res = await api.createCheckout(tenant.id, plan, redirectUrl)
     setChanging(null)
+    setTrialPlanToConfirm(null)
     if (res.data?.url) {
       if (pendingKey) sessionStorage.setItem(pendingKey, plan)
       window.location.assign(res.data.url)
     } else setError(res.error || 'No se pudo abrir el checkout.')
+  }
+
+  const confirmPlanChange = async () => {
+    if (!tenantId || !planToConfirm) return
+    setChanging(planToConfirm)
+    setError(null)
+    const res = await api.changeSubscriptionPlan(tenantId, planToConfirm)
+    setChanging(null)
+    setPlanToConfirm(null)
+    if (!res.data) {
+      setError(res.error || t('bill.change.failed'))
+      return
+    }
+    dispatch(setTenant(res.data))
+    await refreshPlan()
   }
 
   const limitLabel = (n: number | null) =>
@@ -1781,20 +1812,54 @@ function BillingSection({
         </a>
       )}
 
+      {planToConfirm && (
+        <PlanChangeConfirm
+          t={t}
+          from={planById(current as PlanId).name}
+          to={planById(planToConfirm).name}
+          resumes={info?.billing?.status === 'cancelled'}
+          busy={changing !== null}
+          onConfirm={confirmPlanChange}
+          onDismiss={() => setPlanToConfirm(null)}
+        />
+      )}
+
+      {trialPlanToConfirm && (
+        <TrialPlanConfirm
+          t={t}
+          plan={planById(trialPlanToConfirm).name}
+          price={planById(trialPlanToConfirm).price}
+          trialEnds={trialEnds}
+          charges={!!info?.billingEnabled}
+          busy={changing !== null}
+          onConfirm={() => void startPlan(trialPlanToConfirm)}
+          onDismiss={() => setTrialPlanToConfirm(null)}
+        />
+      )}
+
       {/* Plan cards — same copy as the public landing (lib/plans). */}
       <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {PLANS.map((plan) => {
           const isCurrent = plan.id === current
           const isPending = plan.id === pendingPlan && plan.id !== current
+          const isTrialPlan = onTrial && plan.id === effectivePlan
           return (
             <div
               key={plan.id}
-              className={`flex flex-col gap-2.5 rounded-2xl border p-4 ${isCurrent || isPending ? 'border-[var(--dash-link)] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)]'}`}
+              className={`flex flex-col gap-2.5 rounded-2xl border p-4 ${isCurrent || isPending || isTrialPlan ? 'border-[var(--dash-link)] bg-[var(--dash-soft)]' : 'border-[var(--dash-border)]'}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[15px] font-extrabold text-[var(--dash-text)]">
                   {plan.name}
                 </span>
+                {isTrialPlan && (
+                  <span
+                    className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                    style={tone('green')}
+                  >
+                    {t('bill.trial.badge')}
+                  </span>
+                )}
                 {plan.popular && (
                   <span
                     className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
@@ -1850,7 +1915,11 @@ function BillingSection({
                   onClick={() => choosePlan(plan.id)}
                   className={`mt-auto flex h-9 items-center justify-center rounded-xl text-[13px] font-bold text-white disabled:opacity-50 ${gradient}`}
                 >
-                  {changing === plan.id ? t('bill.changing') : t('bill.choose')}
+                  {changing === plan.id
+                    ? t('bill.changing')
+                    : onTrial
+                      ? t('bill.trial.subscribe', { plan: plan.name })
+                      : t('bill.choose')}
                 </button>
               )}
             </div>
@@ -1866,6 +1935,19 @@ function BillingSection({
       <div className="flex items-center gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-soft)] px-4 py-3 text-xs font-semibold text-[var(--dash-text2)]">
         <Icon name="tags" size={15} /> {t('bill.paymentNote')}
       </div>
+
+      {/* Last: managing what you already have comes after seeing the plans. */}
+      <SubscriptionPanel
+        t={t}
+        info={info}
+        isOwner={isOwner}
+        tenantId={tenantId}
+        language={tenant?.language}
+        onTenantChanged={(next) => dispatch(setTenant(next))}
+        onChanged={async () => {
+          await refreshPlan()
+        }}
+      />
     </>
   )
 }
@@ -1966,6 +2048,9 @@ function DeleteSection({
             {t('set.delete.warning', { name: tenant?.name || '' })}
           </p>
         </div>
+        <p className="text-xs font-semibold text-[var(--tone-red-fg)]">
+          {t('set.delete.billingNote')}
+        </p>
         {error && (
           <p className="text-xs font-bold text-[var(--tone-red-fg)]">{error}</p>
         )}

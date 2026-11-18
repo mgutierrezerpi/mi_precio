@@ -6,6 +6,7 @@ import secrets
 import hashlib
 import hmac
 
+from lib.ctx.list_schedule import on_schedule
 from lib.ctx.public_viewer_management import (
     anonymous_dismissal_count,  # noqa: F401
     delete_viewer,  # noqa: F401
@@ -58,7 +59,7 @@ def unlock_list(
         & PriceList.published
         & ((PriceList.id == list_key) | (PriceList.slug == list_key))
     )
-    if not price_list or not price_list.is_private:
+    if not price_list or not price_list.is_private or not on_schedule(price_list):
         return None
     customer = next(
         (
@@ -130,7 +131,7 @@ def capture_viewer(
     )
     if not tenant or not price_list or not price_list.published:
         return None
-    if not price_list.capture_viewer_info:
+    if not price_list.capture_viewer_info or not on_schedule(price_list):
         return None
 
     normalized_email = email.strip().lower() if email else None

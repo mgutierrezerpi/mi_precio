@@ -1,18 +1,19 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import field_validator
 
+from lib.ctx.list_schedule import CURRENT, calendar_day, schedule_state, shop_today
 from views.base_view import BaseView
 from views.list_version_view import ListVersionView
 
 
-def _live_ids(tenant_id: str) -> set[str]:
-    """Ids of this tenant's lists the plan currently allows on the public page."""
+def _serving(tenant_id: str) -> tuple[set[str], date]:
+    """Ids of this tenant's lists on the public page, and the shop's today."""
     from lib.ctx import public
     from models import Tenant
 
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)
-    return set(public.live_list_ids(tenant)) if tenant else set()
+    return set(public.live_list_ids(tenant)) if tenant else set(), shop_today(tenant)
 
 
 def _item_count(price_list) -> int:
@@ -66,8 +67,9 @@ class PriceListView(BaseView):
     parent_list_id: str | None = None
     variant_type: str | None = None
     customer_id: str | None = None
-    starts_at: datetime | None = None
-    ends_at: datetime | None = None
+    # Calendar days, sent as `YYYY-MM-DD`: an instant would shift them by timezone.
+    starts_at: date | None = None
+    ends_at: date | None = None
     # Per-list appearance; null means "inherit the tenant default".
     design: str | None = None
     hero_color: str | None = None
@@ -76,14 +78,21 @@ class PriceListView(BaseView):
     capture_viewer_info: bool = False
     is_private: bool = False
     item_count: int = 0
-    # Published says what the owner wants; live says what the plan actually
-    # serves. They differ when a downgrade or an expired subscription leaves more
-    # lists published than the plan allows — nothing is unpublished, so the CRM
-    # has to be the one to admit the list is not reachable.
+    # Published says what the owner wants; live says what is actually served.
+    # They differ when a downgrade or an expired subscription leaves more lists
+    # published than the plan allows, or when today is outside the list's dates —
+    # nothing is unpublished, so the CRM has to admit the list is not reachable.
     live: bool = True
+    # Tells a list waiting for its dates from one the plan is holding back.
+    schedule_state: str = CURRENT
     created_at: datetime
     updated_at: datetime
     versions: list[ListVersionView] | None = None
+
+    @field_validator("starts_at", "ends_at", mode="before")
+    @classmethod
+    def render_calendar_day(cls, value):
+        return calendar_day(value)
 
     @field_validator("versions", mode="before")
     @classmethod
@@ -103,12 +112,13 @@ class PriceListView(BaseView):
         ]
 
     @classmethod
-    def render(cls, price_list, include_versions=False, live_ids=None):
+    def render(cls, price_list, include_versions=False, live_ids=None, today=None):
         view = cls.model_validate(price_list)
         view.item_count = _item_count(price_list)
-        if live_ids is None:
-            live_ids = _live_ids(price_list.tenant_id)
+        if live_ids is None or today is None:
+            live_ids, today = _serving(price_list.tenant_id)
         view.live = price_list.id in live_ids
+        view.schedule_state = schedule_state(price_list, today)
         if include_versions:
             view.versions = ListVersionView.render_many(price_list.versions)
         return view
@@ -117,7 +127,10 @@ class PriceListView(BaseView):
     def render_many(cls, lists, include_versions=False):
         lists = list(lists)
         # One lookup for the whole page instead of one per list.
-        live_ids = _live_ids(lists[0].tenant_id) if lists else set()
+        if not lists:
+            return []
+        live_ids, today = _serving(lists[0].tenant_id)
         return [
-            cls.render(price_list, include_versions, live_ids) for price_list in lists
+            cls.render(price_list, include_versions, live_ids, today)
+            for price_list in lists
         ]

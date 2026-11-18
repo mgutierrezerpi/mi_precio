@@ -19,6 +19,9 @@ class User(BaseModel):
     # In-app notifications: JSON of enabled categories + when the user last opened the bell.
     notif_prefs = TextField(null=True)
     notifications_seen_at = DateTimeField(null=True)
+    # The app trial is one per owner. Kept here rather than read from their
+    # businesses so deleting the business that had it does not earn a new one.
+    trial_used_at = DateTimeField(null=True)
 
     class Meta:
         table_name = "users"
