@@ -1,5 +1,7 @@
 """Products context - tenant-level product catalog operations."""
 
+from decimal import Decimal
+
 from infra.storage import object_storage
 from lib.ctx import product_images
 from lib.ctx.product_images import (
@@ -121,10 +123,13 @@ def update_product(product_id: str, **updates) -> Product | None:
     if not product:
         return None
     price_list_ids = updates.pop("price_list_ids", None)
+    old_price = Decimal(str(product.price))
     for key, value in updates.items():
         setattr(product, key, value)
     product.save()
-    if "price" in updates:
+    # The edit form always resends the price. Only a real change may reach the
+    # lists, or saving a new description resets every promo/wholesale price.
+    if "price" in updates and Decimal(str(product.price)) != old_price:
         sync_item_prices(product.tenant_id, product.id, product.price, price_list_ids)
     if any(
         field in updates for field in ("name", "description", "category", "currency")
