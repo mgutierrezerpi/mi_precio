@@ -30,6 +30,7 @@ import {
   type CartTheme,
 } from './designs'
 import { lighten, readableOn, withAlpha } from '../../lib/designColors'
+import { defaultHeroStats } from '../../lib/publicHeroStats'
 import { PrivateListGate } from './PrivateListGate'
 import type { PrivateListShop } from '../../services/api'
 import { parseUtc } from '../../lib/datetime'
@@ -1394,11 +1395,14 @@ export function Storefront(p: StoreProps) {
     hero?.title ||
     tenant.description ||
     t('store.heroTitle', { name: tenant.name })
-  const heroStats = hero?.stats?.map((stat) => [stat.value, stat.label]) ?? [
-    [`${allItems.length}`, t('store.statProducts')],
-    ['24/7', t('store.statShipping')],
-    [updated, t('store.statUpdated')],
-  ]
+  const heroStats =
+    hero?.stats?.map((stat) => [stat.value, stat.label]) ??
+    defaultHeroStats({
+      productCount: allItems.length,
+      whatsapp: whatsappPhone(tenant),
+      updated,
+      t,
+    })
   const promotion = content?.blocks.find(
     (block) => block.type === 'promotion_strip'
   )
@@ -1480,12 +1484,14 @@ export function Storefront(p: StoreProps) {
             >
               {heroTitle}
             </h1>
-            <p
-              className="max-w-[560px] text-[15px] font-medium"
-              style={{ color: heroInk, opacity: 0.82 }}
-            >
-              {hero?.body || t('store.heroSub')}
-            </p>
+            {hero?.body && (
+              <p
+                className="max-w-[560px] text-[15px] font-medium"
+                style={{ color: heroInk, opacity: 0.82 }}
+              >
+                {hero.body}
+              </p>
+            )}
             <div className="mt-2 flex flex-wrap gap-8">
               {heroStats.map(([v, l]) => (
                 <div key={l} className="flex flex-col gap-0.5">
