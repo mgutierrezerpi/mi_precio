@@ -114,6 +114,23 @@ def run_billing_maintenance() -> dict[str, int]:
     }
 
 
+def _still_needs_a_plan():
+    """Tenants with no paid plan and no real subscription.
+
+    An abandoned checkout only leaves `checkout_pending` behind, so it still
+    counts: that owner has not paid and needs the notices. Same rule as
+    `plans_context._has_subscription`, written as a query.
+    """
+    return (
+        (Tenant.plan == "free")
+        & Tenant.billing_subscription_id.is_null(True)
+        & (
+            Tenant.billing_status.is_null(True)
+            | (Tenant.billing_status == "checkout_pending")
+        )
+    )
+
+
 def send_due_trial_notices(now=None) -> dict[str, int]:
     """Send each tenant one reminder and one expiry notice for its app trial."""
     current = now or utc_now()
@@ -122,12 +139,12 @@ def send_due_trial_notices(now=None) -> dict[str, int]:
         Tenant.trial_ends_at > current,
         Tenant.trial_ends_at <= current + timedelta(days=3),
         Tenant.trial_ending_notified_at.is_null(True),
-        Tenant.billing_status.is_null(True),
+        _still_needs_a_plan(),
     )
     expired = Tenant.select().where(
         Tenant.trial_ends_at <= current,
         Tenant.trial_expired_notified_at.is_null(True),
-        Tenant.billing_status.is_null(True),
+        _still_needs_a_plan(),
     )
     counts = {"ending": 0, "expired": 0}
     for tenant in list(ending):
