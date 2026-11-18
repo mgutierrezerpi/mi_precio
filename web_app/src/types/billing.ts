@@ -13,6 +13,7 @@ export type BillingStatus =
   | 'cancelled'
   | 'expired'
   | 'paused'
+  | 'checkout_pending'
 
 export interface PlanInfo {
   plan: PlanId

@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from config import settings
@@ -10,9 +12,12 @@ from controllers.deps import (
 from controllers.input_types import CreateTenant, UpdatePlan, UpdateTenant
 from lib import encode_token
 from lib.ctx import activity, brand_assets, identity, plans
+from lib.ctx import billing_context as billing
 from lib.value_objects import AuthResult
 from models import User
 from views import AuthTokenView, DeletedView, TenantView
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
@@ -149,6 +154,17 @@ def delete_tenant_endpoint(tenant_id: str, current_user: dict = Depends(require_
         raise HTTPException(
             status_code=403, detail="No tenés permisos para esta acción"
         )
+    try:
+        billing.cancel_before_deleting(tenant_id)
+    except billing.BillingError as exc:
+        logger.exception("Could not cancel the subscription of %s", tenant_id)
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "No pudimos cancelar tu suscripción, así que no eliminamos el "
+                "negocio. Probá de nuevo o escribinos a soporte@miprecio.app."
+            ),
+        ) from exc
     if not identity.delete_tenant(tenant_id):
         raise HTTPException(status_code=404, detail="Tenant not found")
     return DeletedView()

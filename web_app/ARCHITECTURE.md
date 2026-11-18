@@ -622,10 +622,16 @@ open should never ask to be scrolled.
 
 ### Subscription panel
 
-`SubscriptionPanel` (bottom of Settings → Plan y facturación) shows the state,
-dates and card from `PlanInfo.billing`, plus the provider portal links and the
-cancel / resume actions (`api.cancelSubscription` / `resumeSubscription`,
-owner-only). It renders nothing when the account never subscribed.
+`SubscriptionPanel` (`screens/admin/crm/`, bottom of Settings → Plan y
+facturación) shows the state, dates and card from `PlanInfo.billing`, plus the
+update-card link and the cancel / resume actions (`api.cancelSubscription` /
+`resumeSubscription`, owner-only). It renders nothing when the account has no
+subscription, including a trial with a checkout still open.
+
+Choosing another plan depends on `hasLiveSubscription(info)`: a customer who is
+already paying confirms in `PlanChangeConfirm` and moves that subscription
+(`api.changeSubscriptionPlan`). Only customers without one go to the checkout,
+because a second checkout would charge them twice.
 
 Cancelling is at the end of the paid period: `status: "cancelled"` still means
 "paid plan, access until `endsAt`", so the panel reads "access until X" and

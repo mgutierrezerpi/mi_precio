@@ -25,6 +25,17 @@ def sync_subscription_from_attributes(
 
     variant_id = attrs.get("variant_id")
     status = attrs.get("status")
+    # The end of a replaced subscription says nothing about the current one:
+    # applying it would take the plan away from a customer who is still paying.
+    incoming_id = str(attrs.get("id") or attrs.get("subscription_id") or "")
+    current_id = tenant.billing_subscription_id
+    if (
+        status in ("cancelled", "expired")
+        and incoming_id
+        and current_id
+        and incoming_id != current_id
+    ):
+        return None
     provider_plan = plan_for_variant(variant_id)
 
     tenant.billing_provider = "lemonsqueezy"

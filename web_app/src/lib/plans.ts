@@ -1,4 +1,4 @@
-import type { PlanId } from '../types'
+import type { PlanId, PlanInfo } from '../types'
 
 /** Marketing content for each plan — the single source shared by the landing and
  *  the in-app billing cards so they always say the same thing. Ordered cheapest → top. */
@@ -93,3 +93,12 @@ export const planById = (id: PlanId): PlanContent =>
 
 export const planHasFeature = (plan: PlanId, feature: PlanFeature): boolean =>
   FEATURE_PLANS[feature].includes(plan)
+
+/** Mirrors the API's `has_live_subscription`: this customer changes plan on the
+ *  subscription they have, because a new checkout would charge them twice. */
+export const hasLiveSubscription = (info: PlanInfo | null): boolean =>
+  !!info?.billingEnabled &&
+  info.plan !== 'free' &&
+  info.billing?.provider === 'lemonsqueezy' &&
+  !!info.billing.subscriptionId &&
+  info.billing.status !== 'expired'

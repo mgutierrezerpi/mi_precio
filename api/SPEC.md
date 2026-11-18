@@ -693,6 +693,27 @@ UI turns into "access until X" plus a Resume button.
 With `BILLING_ENABLED=false` (local dev) there is no provider to call, so both
 operations run against our own row — same state transitions, no HTTP.
 
+**Changing plan.** `POST /billing/plan-changes` (owner only, body
+`{tenant_id, plan}`) moves a live subscription to the new variant with a `PATCH`
+to Lemon Squeezy. The plan applies at once and the difference is prorated on the
+next invoice. During a cancellation's grace period it also undoes the
+cancellation.
+
+`POST /billing/checkouts` answers 400 while the tenant has a live subscription
+(`has_live_subscription`): a second checkout would open a second subscription
+and charge for both. For the same reason `sync_subscription_from_attributes`
+ignores the `cancelled` / `expired` event of a subscription that is no longer the
+tenant's current one, so the end of a replaced subscription cannot take the plan
+away.
+
+**Deleting a business.** `DELETE /tenants/{id}` cancels the subscription first
+(`cancel_before_deleting`), because the row holds the only reference to it. If
+Lemon Squeezy fails the endpoint answers 502 and keeps the business; a 404 from
+the provider means there is nothing left to charge, so the deletion goes on.
+
+`BillingGatewayError` carries the provider's raw response for the logs. These
+endpoints log it and answer 502 with a message written for the customer.
+
 ### Public-list appearance
 
 The look of a public list resolves field by field:

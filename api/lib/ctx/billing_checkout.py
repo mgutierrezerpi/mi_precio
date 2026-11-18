@@ -8,7 +8,7 @@ from urllib import error, request
 
 from config import settings
 from lib.ctx import plans
-from lib.ctx.billing_common import BillingError
+from lib.ctx.billing_common import BillingError, has_live_subscription
 from lib.ctx.billing_gateway import variant_for_plan
 from models import Tenant
 
@@ -43,6 +43,11 @@ def create_checkout(
         raise BillingError("Tenant not found")
     if plan not in plans.PLANS or plan == "free":
         raise BillingError("Invalid paid plan")
+    if has_live_subscription(tenant):
+        raise BillingError(
+            "Ya tenés una suscripción activa. Cambiá de plan desde "
+            "Configuración → Plan y facturación."
+        )
     if not settings.lemonsqueezy_api_key or not settings.lemonsqueezy_store_id:
         raise BillingError("Lemon Squeezy is not configured")
 

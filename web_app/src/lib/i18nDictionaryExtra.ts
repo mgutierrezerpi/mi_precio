@@ -103,6 +103,95 @@ export const DICT_EXTRA: Record<string, TranslationEntry> = {
     pt: 'Você selecionou {plan}. Aguardando a confirmação do Lemon Squeezy.',
   },
   'bill.pendingShort': { es: 'Pendiente', en: 'Pending', pt: 'Pendente' },
+  'bill.sub.title': {
+    es: 'Tu suscripción',
+    en: 'Your subscription',
+    pt: 'Sua assinatura',
+  },
+  'bill.sub.plan': { es: 'Plan {plan}', en: '{plan} plan', pt: 'Plano {plan}' },
+  'bill.sub.renews': { es: 'Se renueva el', en: 'Renews on', pt: 'Renova em' },
+  'bill.sub.accessUntil': {
+    es: 'Tenés acceso hasta el',
+    en: 'Access until',
+    pt: 'Acesso até',
+  },
+  'bill.sub.trialEnds': {
+    es: 'La prueba termina el',
+    en: 'Trial ends on',
+    pt: 'O teste termina em',
+  },
+  'bill.sub.card': { es: 'Tarjeta', en: 'Card', pt: 'Cartão' },
+  'bill.sub.updateCard': {
+    es: 'Cambiar tarjeta',
+    en: 'Update card',
+    pt: 'Trocar cartão',
+  },
+  'bill.sub.cancel': {
+    es: 'Cancelar suscripción',
+    en: 'Cancel subscription',
+    pt: 'Cancelar assinatura',
+  },
+  'bill.sub.cancelling': {
+    es: 'Cancelando…',
+    en: 'Cancelling…',
+    pt: 'Cancelando…',
+  },
+  'bill.sub.confirm': {
+    es: '¿Cancelar la suscripción? Seguís usando tu plan hasta el {date}; después la cuenta queda sin plan.',
+    en: 'Cancel the subscription? You keep your plan until {date}; after that the account has no plan.',
+    pt: 'Cancelar a assinatura? Você mantém seu plano até {date}; depois a conta fica sem plano.',
+  },
+  'bill.sub.confirmNoDate': {
+    es: '¿Cancelar la suscripción? Seguís usando tu plan hasta que termine el período pago; después la cuenta queda sin plan.',
+    en: 'Cancel the subscription? You keep your plan until the paid period ends; after that the account has no plan.',
+    pt: 'Cancelar a assinatura? Você mantém seu plano até o fim do período pago; depois a conta fica sem plano.',
+  },
+  'bill.sub.confirmYes': {
+    es: 'Sí, cancelar',
+    en: 'Yes, cancel',
+    pt: 'Sim, cancelar',
+  },
+  'bill.sub.confirmNo': {
+    es: 'No, seguir',
+    en: 'No, keep it',
+    pt: 'Não, manter',
+  },
+  'bill.sub.cancelledNote': {
+    es: 'Tu suscripción está cancelada: no se va a renovar. Podés reanudarla hasta la fecha de vencimiento.',
+    en: 'Your subscription is cancelled and will not renew. You can resume it until the end date.',
+    pt: 'Sua assinatura está cancelada e não será renovada. Você pode retomá-la até a data final.',
+  },
+  'bill.sub.resume': {
+    es: 'Reanudar suscripción',
+    en: 'Resume subscription',
+    pt: 'Retomar assinatura',
+  },
+  'bill.change.confirm': {
+    es: 'Vas a pasar de {from} a {to} ahora mismo. No pagás de nuevo: la diferencia se ajusta en tu próxima factura.',
+    en: 'You will move from {from} to {to} right away. You do not pay again: the difference is adjusted on your next invoice.',
+    pt: 'Você vai passar de {from} para {to} agora mesmo. Você não paga de novo: a diferença é ajustada na próxima fatura.',
+  },
+  'bill.change.confirmResume': {
+    es: 'Vas a pasar de {from} a {to} y tu suscripción cancelada vuelve a renovarse. La diferencia se ajusta en tu próxima factura.',
+    en: 'You will move from {from} to {to} and your cancelled subscription will renew again. The difference is adjusted on your next invoice.',
+    pt: 'Você vai passar de {from} para {to} e sua assinatura cancelada volta a ser renovada. A diferença é ajustada na próxima fatura.',
+  },
+  'bill.change.yes': {
+    es: 'Sí, cambiar de plan',
+    en: 'Yes, change plan',
+    pt: 'Sim, mudar de plano',
+  },
+  'bill.change.no': { es: 'Volver', en: 'Go back', pt: 'Voltar' },
+  'bill.change.failed': {
+    es: 'No se pudo cambiar el plan.',
+    en: 'The plan could not be changed.',
+    pt: 'Não foi possível mudar o plano.',
+  },
+  'bill.sub.resuming': {
+    es: 'Reanudando…',
+    en: 'Resuming…',
+    pt: 'Retomando…',
+  },
   // Plan names, prices and feature copy now live in lib/plans (shared with the landing).
 
   // ── Plan gate (blocking screen shown to new signups) ────────────

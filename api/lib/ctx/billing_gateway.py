@@ -9,7 +9,7 @@ from typing import Any
 from urllib import error, parse, request
 
 from config import settings
-from lib.ctx.billing_common import BillingError
+from lib.ctx.billing_common import BillingError, BillingGatewayError
 
 
 def _lemonsqueezy_get(path: str, params: dict[str, str]) -> dict[str, Any]:
@@ -34,7 +34,7 @@ def _ls_request(
 ) -> dict[str, Any]:
     """Call the Lemon Squeezy API and return its decoded JSON body."""
     if not settings.lemonsqueezy_api_key:
-        raise BillingError("Lemon Squeezy is not configured")
+        raise BillingGatewayError("Lemon Squeezy is not configured")
     body = json.dumps(payload).encode("utf-8") if payload is not None else None
     req = request.Request(
         f"https://api.lemonsqueezy.com/v1/{path.lstrip('/')}",
@@ -51,9 +51,13 @@ def _ls_request(
             raw = response.read().decode("utf-8")
     except error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")
-        raise BillingError(f"Lemon Squeezy {method} {path} failed: {detail}") from exc
+        raise BillingGatewayError(
+            f"Lemon Squeezy {method} {path} failed: {detail}", status=exc.code
+        ) from exc
     except OSError as exc:
-        raise BillingError(f"Lemon Squeezy {method} {path} request failed") from exc
+        raise BillingGatewayError(
+            f"Lemon Squeezy {method} {path} request failed"
+        ) from exc
     return json.loads(raw) if raw else {}
 
 
