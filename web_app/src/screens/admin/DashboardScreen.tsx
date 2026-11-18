@@ -37,6 +37,10 @@ import {
   displayCategory,
 } from './crm/productFormat'
 import { pollWhileVisible } from '../../lib/pollWhileVisible'
+import {
+  publicListStatus,
+  type PublicListStatus,
+} from '../../lib/publicListStatus'
 
 const FAVICON = '/miprecio-favicon.png'
 
@@ -95,8 +99,10 @@ export function DashboardScreen() {
     copied,
     copyUrl,
     goCreateList,
+    goLists,
     goProducts,
     goQr,
+    listStatus,
     principalList,
     publicUrlDisplay,
     qrColor,
@@ -150,7 +156,9 @@ export function DashboardScreen() {
         <DashboardHero
           copied={copied}
           goCreateList={goCreateList}
+          goLists={goLists}
           goQr={openQrModal}
+          listStatus={listStatus}
           onCopy={copyUrl}
           principalList={principalList}
           publicUrlDisplay={publicUrlDisplay}
@@ -223,10 +231,8 @@ function useDashboardData(navigate: ReturnType<typeof useNavigate>) {
       cancelled = true
     }
   }, [tenant?.id])
-  const principalList = useMemo(
-    () => lists.find((list) => list.showOnIndex) || null,
-    [lists]
-  )
+  const listStatus = useMemo(() => publicListStatus(lists), [lists])
+  const principalList = listStatus.kind === 'public' ? listStatus.list : null
   const qrList =
     principalList || lists.find((list) => list.published) || lists[0] || null
   const listPath = principalList
@@ -243,6 +249,8 @@ function useDashboardData(navigate: ReturnType<typeof useNavigate>) {
     copyUrl: () =>
       copyUrl(principalList ? `${window.location.origin}${listPath}` : ''),
     goCreateList: () => navigate('/admin/lists?new=1'),
+    goLists: () => navigate('/admin/lists'),
+    listStatus,
     goProducts: () => navigate('/admin/items'),
     goQr: () => navigate('/admin/qr'),
     metrics,
@@ -288,7 +296,9 @@ function dashboardMetrics(visits: VisitStats | null) {
 function DashboardHero({
   copied,
   goCreateList,
+  goLists,
   goQr,
+  listStatus,
   onCopy,
   principalList,
   publicUrlDisplay,
@@ -300,7 +310,9 @@ function DashboardHero({
 }: {
   copied: boolean
   goCreateList: () => void
+  goLists: () => void
   goQr: () => void
+  listStatus: PublicListStatus<PriceList>
   onCopy: () => void
   principalList: PriceList | null
   publicUrlDisplay: string
@@ -328,8 +340,10 @@ function DashboardHero({
           className="w-full shrink-0 xl:w-[292px]"
         />
       ) : (
-        <CreateListCard
+        <ListStatusCard
+          kind={listStatus.kind === 'public' ? 'none' : listStatus.kind}
           onCreate={goCreateList}
+          onViewLists={goLists}
           className="w-full shrink-0 xl:w-[292px]"
         />
       )}
@@ -636,13 +650,46 @@ function PublicListCard({
   )
 }
 
-function CreateListCard({
+/** What each state of the shop's lists says, and the step that moves it on. */
+const LIST_STATUS_COPY = {
+  none: {
+    title: 'Tu lista pública',
+    body: 'Creá una lista principal para compartir tu catálogo.',
+    action: 'Crear lista',
+    creates: true,
+  },
+  private: {
+    title: 'Tu lista es privada',
+    body: 'Está publicada, pero solo entra quien tenga un código. Para compartir tu catálogo con todos, creá una lista pública.',
+    action: 'Crear lista pública',
+    creates: true,
+  },
+  draft: {
+    title: 'Tu lista pública',
+    body: 'Tu lista todavía no está publicada. Publicala para compartir tu catálogo.',
+    action: 'Ver mis listas',
+    creates: false,
+  },
+  hidden: {
+    title: 'Tu lista pública',
+    body: 'Tu lista está publicada, pero tu plan actual no la está mostrando.',
+    action: 'Ver mis listas',
+    creates: false,
+  },
+}
+
+function ListStatusCard({
+  kind,
   onCreate,
+  onViewLists,
   className = '',
 }: {
+  kind: keyof typeof LIST_STATUS_COPY
   onCreate: () => void
+  onViewLists: () => void
   className?: string
 }) {
+  const copy = LIST_STATUS_COPY[kind]
   return (
     <div
       className={`flex min-h-[208px] flex-col justify-center gap-4 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-5 ${className}`}
@@ -655,19 +702,19 @@ function CreateListCard({
         </span>
         <div className="flex min-w-0 flex-col gap-1">
           <p className="text-lg font-bold text-[var(--dash-text)]">
-            Tu lista pública
+            {copy.title}
           </p>
           <p className="text-[13px] leading-relaxed text-[var(--dash-muted)]">
-            Creá una lista principal para compartir tu catálogo.
+            {copy.body}
           </p>
         </div>
       </div>
       <button
         type="button"
-        onClick={onCreate}
+        onClick={copy.creates ? onCreate : onViewLists}
         className={`flex h-10 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold text-white ${gradient}`}
       >
-        <Icon name="plus" size={16} /> Crear lista
+        {copy.creates && <Icon name="plus" size={16} />} {copy.action}
       </button>
     </div>
   )

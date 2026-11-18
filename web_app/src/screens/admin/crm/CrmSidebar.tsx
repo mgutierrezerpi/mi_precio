@@ -11,6 +11,7 @@ import { fetchLists, selectLists } from '../../../store/slices/menuSlice'
 import api from '../../../services/api'
 import type { PlanId } from '../../../types'
 import { planById } from '../../../lib/plans'
+import { publicListStatus } from '../../../lib/publicListStatus'
 import { useT } from '../../../lib/i18n'
 import { Icon, type IconName } from './ui'
 import { tone, gradient } from './theme'
@@ -373,7 +374,8 @@ export function CrmSidebar({
   const tenant = useAppSelector(selectTenant)
   const isSuperAdmin = useAppSelector(selectIsSuperAdmin)
   const lists = useAppSelector(selectLists)
-  const mainList = lists.find((list) => list.showOnIndex)
+  const listStatus = publicListStatus(lists)
+  const mainList = listStatus.kind === 'public' ? listStatus.list : undefined
   const nextPlan = tenant ? NEXT_PLAN[tenant.plan] : undefined
   const [linkCopied, setLinkCopied] = useState(false)
 
