@@ -9,9 +9,11 @@ from lib.ctx.billing_common import (
     ACTIVE_SUBSCRIPTION_STATUSES,
     PENDING_SYNC_DELAYS,
     BillingError,
+    BillingGatewayError,
     _parse_dt,
     activity_summary,
     expiry_notice_target,
+    has_live_subscription,
     is_expired,
 )
 from lib.ctx.billing_gateway import (
@@ -25,7 +27,9 @@ from lib.ctx.billing_lifecycle import (
     _cancel_without_gateway,
     _resume_without_gateway,
     _subscription_of,
+    cancel_before_deleting,
     cancel_subscription,
+    change_subscription_plan,
     resume_subscription,
 )
 from lib.ctx.billing_sync_state import (

@@ -11,6 +11,28 @@ class BillingError(Exception):
     """Raised when billing configuration or provider calls fail."""
 
 
+class BillingGatewayError(BillingError):
+    """Lemon Squeezy failed or refused a call. The message is for our logs: it
+    can carry the provider's raw response, so it must not reach the customer."""
+
+    def __init__(self, message: str, status: int | None = None):
+        super().__init__(message)
+        self.status = status
+
+
+def has_live_subscription(tenant: Tenant) -> bool:
+    """Whether the provider is still billing, or can resume billing, this tenant.
+
+    Such a tenant must change plan on that subscription: a new checkout would
+    open a second one and charge for both."""
+    return bool(
+        tenant.billing_provider == "lemonsqueezy"
+        and tenant.billing_subscription_id
+        and tenant.billing_status != "expired"
+        and tenant.plan != "free"
+    )
+
+
 def is_expired(tenant_id: str) -> bool:
     """Whether the tenant is already in the expired state (before a sync runs)."""
     tenant = Tenant.get_or_none(Tenant.id == tenant_id)

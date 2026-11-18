@@ -615,6 +615,17 @@ class ApiService {
     })
   }
 
+  /** Move a live subscription to another plan, with no second checkout. */
+  async changeSubscriptionPlan(
+    tenantId: string,
+    plan: PlanId
+  ): Promise<ApiResponse<Tenant>> {
+    return this.request('/billing/plan-changes', {
+      method: 'POST',
+      body: JSON.stringify({ tenant_id: tenantId, plan }),
+    })
+  }
+
   // Support (Zoho Desk ticket). Requester identity comes from the JWT server-side.
   async createSupportTicket(
     subject: string,

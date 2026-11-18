@@ -33,6 +33,11 @@ export const DICT_BASE_01: Record<string, TranslationEntry> = {
     en: 'Your account “{name}” will be deleted with all its products, lists, customers, sales and team members. This cannot be undone.',
     pt: 'Sua conta “{name}” será excluída com todos os produtos, listas, clientes, vendas e membros da equipe. Isso não pode ser desfeito.',
   },
+  'set.delete.billingNote': {
+    es: 'Si tenés una suscripción paga, la cancelamos al eliminar el negocio y no se te cobra más.',
+    en: 'If you have a paid subscription, we cancel it when the business is deleted and you will not be charged again.',
+    pt: 'Se você tem uma assinatura paga, nós a cancelamos ao excluir o negócio e você não será mais cobrado.',
+  },
   'set.delete.confirm': {
     es: 'Escribí «{keyword}» para confirmar',
     en: 'Type “{keyword}” to confirm',
