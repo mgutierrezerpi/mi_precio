@@ -414,7 +414,10 @@ a {
   background: linear-gradient(135deg, #2a1c66 0%, #17102d 100%);
 }
 
-[data-theme='dark'] .dash {
+/* The public landing is always dark: its hero, header logo and buttons are
+   drawn for a dark background, so it never follows the light theme. */
+[data-theme='dark'] .dash,
+.dash.landing-page {
   --dash-bg: #0e071d;
   --dash-surface: #160d2d;
   --dash-border: #33205b;
@@ -1036,6 +1039,7 @@ a {
 
 /* ── Landing: smooth interactions ─────────────────────────────────── */
 .landing-page {
+  color-scheme: dark;
   --landing-page: var(--dash-bg);
   --landing-surface: var(--dash-soft);
   --landing-card: var(--dash-surface);
